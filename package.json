@@ -2,5 +2,8 @@
   "dependencies": {
     "@types/three": "^0.182.0",
     "three": "^0.182.0"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
   }
 }
