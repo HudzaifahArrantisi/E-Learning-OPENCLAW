@@ -21,6 +21,7 @@ NF StudentHub dirancang sebagai one-stop academic platform untuk memusatkan laya
 - Absensi berbasis QR (dosen dan mahasiswa)
 - Komunikasi real-time via WebSocket
 - Media informasi kampus (feed ala sosial media)
+- **Sistem Pengingat Otomatis (OpenClaw Automation Engine)** via Telegram
 
 Sistem berbasis role memastikan setiap pengguna hanya mengakses fitur sesuai perannya.
 
@@ -39,10 +40,15 @@ Sistem berbasis role memastikan setiap pengguna hanya mengakses fitur sesuai per
 
 ### 👨‍🏫 Dosen
 - Kelola mata kuliah & pertemuan
-- Upload materi & tugas
+- Upload materi & tugas (terintegrasi *auto-reminder* Telegram)
 - Input nilai mahasiswa
 - Generate QR absensi
 - Komunikasi dengan mahasiswa
+
+### 🤖 OpenClaw (Automation Engine)
+- Menarik dan memantau tugas/materi dari MySQL (Outbox Pattern & Direct Query)
+- Menyebarkan notifikasi *real-time* ke bot Telegram
+- Pengingat *deadline* (tenggat waktu) tugas secara otomatis
 
 ### 🛠️ Admin
 - Manajemen akun pengguna
@@ -81,13 +87,14 @@ Sistem berbasis role memastikan setiap pengguna hanya mengakses fitur sesuai per
 - MUI + Emotion
 - React Icons / Lucide
 
-### Backend
+### Backend & Automation
 - Go 1.24
 - Gin (HTTP framework)
 - GORM + MySQL
 - JWT Authentication (HS256)
 - Gorilla/WebSocket (real-time chat)
 - godotenv (env loader)
+- **OpenClaw Automation Engine**: Microservice mandiri untuk notifikasi background via **Telegram Bot API**
 
 ---
 
@@ -111,6 +118,11 @@ npm install
 # Backend
 cd ../backend
 go mod download
+
+# OpenClaw (Automation Engine)
+cd openclaw
+go mod download
+cd ..
 ```
 
 ---
@@ -128,6 +140,13 @@ JWT_SECRET=ubah_ini_dengan_secret_yang_kuat
 
 # Banner ASCII opsional
 NAMA=NF StudentHub
+
+# Konfigurasi OpenClaw (Opsional - default: localhost:9090)
+OPENCLAW_BASE_URL=http://localhost:9090
+
+# Konfigurasi Telegram Bot (Untuk OpenClaw)
+TELEGRAM_BOT_TOKEN=token_bot_telegram_anda
+TELEGRAM_CHANNEL_ID=@tugasreminder_channel_atau_group_id
 ```
 
 Catatan:
@@ -157,10 +176,15 @@ cd frontend
 npm run dev
 # Akses: http://localhost:5173
 
-# Terminal 2 (Backend)
+# Terminal 2 (Backend UTama)
 cd backend
 go run main.go
 # API: http://localhost:8080
+
+# Terminal 3 (OpenClaw Service)
+cd backend/openclaw
+go run main.go
+# OpenClaw Internal API: http://localhost:9090
 ```
 
 ### Production (Windows)
@@ -198,8 +222,14 @@ NF-Student-HUB/
 │   ├── handlers/
 │   ├── middlewares/
 │   ├── models/
+│   ├── openclaw/        # Microservice Automation & Notifikasi
+│   │   ├── discord/     # Modul Discord (Future)
+│   │   ├── handler/     # Event handler (Tugas/Materi)
+│   │   ├── telegram/    # Modul Bot Telegram
+│   │   └── main.go
 │   ├── routes/
 │   ├── uploads/
+│   ├── utils/           # Utility functions include OpenClaw events
 │   └── main.go
 └── README.md
 ```
