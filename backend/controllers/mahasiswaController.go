@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"database/sql"
 
 	"nf-student-hub-backend/config"
 	"nf-student-hub-backend/utils"
@@ -1447,4 +1448,306 @@ func GetSubmissionStatus(c *gin.Context) {
 	}
 
 	utils.SuccessResponse(c, submission, "Submission found")
+}
+
+// GetPendingTugas - Get daftar tugas yang belum dikumpulkan oleh mahasiswa
+// Join tugas + mahasiswa_mata_kuliah + submissions
+// Hanya tugas dengan type='tugas', deleted_at IS NULL, due_date IS NOT NULL
+// Urutkan berdasarkan due_date terdekat
+func GetPendingTugas(c *gin.Context) {
+	userID, exists := c.Get("user_id")
+	if !exists {
+		utils.ErrorResponse(c, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	// Get mahasiswa ID
+	var mahasiswaID int
+	err := config.DB.QueryRow("SELECT id FROM mahasiswa WHERE user_id = ?", userID).Scan(&mahasiswaID)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusNotFound, "Mahasiswa not found")
+		return
+	}
+
+	query := `
+		SELECT 
+			t.id,
+			t.course_id,
+			mk.nama AS course_name,
+			t.pertemuan,
+			t.title,
+			COALESCE(t.description, '') AS description,
+			COALESCE(t.file_tugas, '') AS file_tugas,
+			t.due_date,
+			DATEDIFF(t.due_date, NOW()) AS days_remaining,
+			CASE WHEN t.due_date < NOW() THEN 1 ELSE 0 END AS is_overdue,
+			t.created_at
+		FROM tugas t
+		JOIN mata_kuliah mk ON t.course_id = mk.kode
+		JOIN mahasiswa_mata_kuliah mmk ON mmk.mata_kuliah_kode = t.course_id
+		WHERE mmk.mahasiswa_id = ?
+			AND t.type = 'tugas'
+			AND t.deleted_at IS NULL
+			AND t.due_date IS NOT NULL
+			AND NOT EXISTS (
+				SELECT 1 FROM submissions s 
+				WHERE s.task_id = t.id AND s.student_id = ?
+			)
+		ORDER BY t.due_date ASC
+	`
+
+	rows, err := config.DB.Query(query, mahasiswaID, mahasiswaID)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to fetch pending tasks: "+err.Error())
+		return
+	}
+	defer rows.Close()
+
+	var pendingTasks []gin.H
+	for rows.Next() {
+		var id, pertemuan int
+		var courseID, courseName, title, description, fileTugas string
+		var dueDate, createdAt time.Time
+		var daysRemaining int
+		var isOverdue int
+
+		err := rows.Scan(&id, &courseID, &courseName, &pertemuan, &title, &description,
+			&fileTugas, &dueDate, &daysRemaining, &isOverdue, &createdAt)
+		if err != nil {
+			continue
+		}
+
+		pendingTasks = append(pendingTasks, gin.H{
+			"id":             id,
+			"course_id":      courseID,
+			"course_name":    courseName,
+			"pertemuan":      pertemuan,
+			"title":          title,
+			"description":    description,
+			"file_tugas":     fileTugas,
+			"due_date":       dueDate.Format("2006-01-02T15:04:05"),
+			"days_remaining": daysRemaining,
+			"is_overdue":     isOverdue == 1,
+			"created_at":     createdAt.Format("2006-01-02T15:04:05"),
+		})
+	}
+
+	if pendingTasks == nil {
+		pendingTasks = []gin.H{}
+	}
+
+	utils.SuccessResponse(c, gin.H{
+		"pending_tasks": pendingTasks,
+		"total":         len(pendingTasks),
+	}, "Pending tasks retrieved")
+}
+
+// GetMahasiswaTugasList - Get daftar semua tugas dan materi untuk mata kuliah yang diambil mahasiswa
+func GetMahasiswaTugasList(c *gin.Context) {
+	userID, exists := c.Get("user_id")
+	if !exists {
+		utils.ErrorResponse(c, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	// Get mahasiswa ID
+	var mahasiswaID int
+	err := config.DB.QueryRow("SELECT id FROM mahasiswa WHERE user_id = ?", userID).Scan(&mahasiswaID)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusNotFound, "Mahasiswa not found")
+		return
+	}
+
+	query := `
+		SELECT 
+			t.id,
+			t.course_id,
+			mk.nama AS course_name,
+			t.pertemuan,
+			t.title,
+			COALESCE(t.description, '') AS description,
+			COALESCE(t.file_tugas, '') AS file_tugas,
+			t.due_date,
+			t.type,
+			t.created_at,
+			s.id AS submission_id,
+			s.grade
+		FROM tugas t
+		JOIN mata_kuliah mk ON t.course_id = mk.kode
+		JOIN mahasiswa_mata_kuliah mmk ON mmk.mata_kuliah_kode = t.course_id
+		LEFT JOIN submissions s ON s.task_id = t.id AND s.student_id = ?
+		WHERE mmk.mahasiswa_id = ?
+			AND t.deleted_at IS NULL
+		ORDER BY t.created_at DESC
+	`
+
+	rows, err := config.DB.Query(query, mahasiswaID, mahasiswaID)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to fetch tasks: "+err.Error())
+		return
+	}
+	defer rows.Close()
+
+	var tasks []gin.H
+	for rows.Next() {
+		var id, pertemuan int
+		var courseID, courseName, title, description, fileTugas, typeTugas string
+		var dueDate, createdAt sql.NullTime
+		var submissionID sql.NullInt64
+		var grade sql.NullInt64
+
+		err := rows.Scan(&id, &courseID, &courseName, &pertemuan, &title, &description,
+			&fileTugas, &dueDate, &typeTugas, &createdAt, &submissionID, &grade)
+		if err != nil {
+			continue
+		}
+
+		taskData := gin.H{
+			"id":             id,
+			"course_id":      courseID,
+			"course_name":    courseName,
+			"pertemuan":      pertemuan,
+			"title":          title,
+			"description":    description,
+			"file_tugas":     fileTugas,
+			"type":           typeTugas,
+			"has_submission": submissionID.Valid,
+		}
+
+		if dueDate.Valid {
+			taskData["due_date"] = dueDate.Time.Format("2006-01-02T15:04:05")
+			daysRemaining := int(dueDate.Time.Sub(time.Now()).Hours() / 24)
+			taskData["days_remaining"] = daysRemaining
+			taskData["is_overdue"] = dueDate.Time.Before(time.Now())
+		}
+
+		if createdAt.Valid {
+			taskData["created_at"] = createdAt.Time.Format("2006-01-02T15:04:05")
+		}
+
+		if grade.Valid {
+			taskData["grade"] = grade.Int64
+		} else if submissionID.Valid {
+			taskData["grade"] = nil
+		}
+
+		tasks = append(tasks, taskData)
+	}
+
+	if tasks == nil {
+		tasks = []gin.H{}
+	}
+
+	utils.SuccessResponse(c, gin.H{
+		"tasks": tasks,
+		"total": len(tasks),
+	}, "Tasks retrieved successfully")
+}
+
+// GetMahasiswaTugasByCourse - Get daftar tugas dan materi per mata kuliah
+func GetMahasiswaTugasByCourse(c *gin.Context) {
+	userID, exists := c.Get("user_id")
+	if !exists {
+		utils.ErrorResponse(c, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	courseID := c.Param("course_id")
+
+	// Get mahasiswa ID
+	var mahasiswaID int
+	err := config.DB.QueryRow("SELECT id FROM mahasiswa WHERE user_id = ?", userID).Scan(&mahasiswaID)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusNotFound, "Mahasiswa not found")
+		return
+	}
+
+	// Verify enrollment
+	var enrolled bool
+	err = config.DB.QueryRow("SELECT EXISTS(SELECT 1 FROM mahasiswa_mata_kuliah WHERE mahasiswa_id = ? AND mata_kuliah_kode = ?)", mahasiswaID, courseID).Scan(&enrolled)
+	if err != nil || !enrolled {
+		utils.ErrorResponse(c, http.StatusForbidden, "Not enrolled in this course")
+		return
+	}
+
+	query := `
+		SELECT 
+			t.id,
+			t.course_id,
+			t.pertemuan,
+			t.title,
+			COALESCE(t.description, '') AS description,
+			COALESCE(t.file_tugas, '') AS file_tugas,
+			t.due_date,
+			t.type,
+			t.created_at,
+			s.id AS submission_id,
+			s.grade
+		FROM tugas t
+		LEFT JOIN submissions s ON s.task_id = t.id AND s.student_id = ?
+		WHERE t.course_id = ?
+			AND t.deleted_at IS NULL
+		ORDER BY t.created_at DESC
+	`
+
+	rows, err := config.DB.Query(query, mahasiswaID, courseID)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to fetch tasks: "+err.Error())
+		return
+	}
+	defer rows.Close()
+
+	var tasks []gin.H
+	for rows.Next() {
+		var id, pertemuan int
+		var courseIDRes, title, description, fileTugas, typeTugas string
+		var dueDate, createdAt sql.NullTime
+		var submissionID sql.NullInt64
+		var grade sql.NullInt64
+
+		err := rows.Scan(&id, &courseIDRes, &pertemuan, &title, &description,
+			&fileTugas, &dueDate, &typeTugas, &createdAt, &submissionID, &grade)
+		if err != nil {
+			continue
+		}
+
+		taskData := gin.H{
+			"id":             id,
+			"course_id":      courseIDRes,
+			"pertemuan":      pertemuan,
+			"title":          title,
+			"description":    description,
+			"file_tugas":     fileTugas,
+			"type":           typeTugas,
+			"has_submission": submissionID.Valid,
+		}
+
+		if dueDate.Valid {
+			taskData["due_date"] = dueDate.Time.Format("2006-01-02T15:04:05")
+			daysRemaining := int(dueDate.Time.Sub(time.Now()).Hours() / 24)
+			taskData["days_remaining"] = daysRemaining
+			taskData["is_overdue"] = dueDate.Time.Before(time.Now())
+		}
+
+		if createdAt.Valid {
+			taskData["created_at"] = createdAt.Time.Format("2006-01-02T15:04:05")
+		}
+
+		if grade.Valid {
+			taskData["grade"] = grade.Int64
+		} else if submissionID.Valid {
+			taskData["grade"] = nil
+		}
+
+		tasks = append(tasks, taskData)
+	}
+
+	if tasks == nil {
+		tasks = []gin.H{}
+	}
+
+	utils.SuccessResponse(c, gin.H{
+		"tasks": tasks,
+		"total": len(tasks),
+	}, "Tasks retrieved successfully")
 }

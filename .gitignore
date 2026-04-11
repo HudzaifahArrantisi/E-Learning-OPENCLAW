@@ -11,16 +11,29 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+vendor/
 
 # Build outputs
 /dist
 /build
+dist/
+build/
+dist-ssr/
 *.min.js
 *.min.css
+*.exe
 
 # Go
-go.sum
+go.work
+go.work.sum
 go.mod.bak
+
+#sql
+openclaw_manual.sql
+schema.sql
+seed.sql
+
+
 
 # IDE
 .vscode/
@@ -53,6 +66,8 @@ logs/
 # Cache
 .cache/
 .parcel-cache/
+.eslintcache
+.vite/
 
 # Testing
 coverage/

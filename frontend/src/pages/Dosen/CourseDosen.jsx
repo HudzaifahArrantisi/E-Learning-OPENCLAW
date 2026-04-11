@@ -24,9 +24,9 @@ const CourseDosen = () => {
 
   const fetchDosenCourses = async () => {
     try {
-      console.log('🔄 Fetching dosen courses...')
+      console.log(' Fetching dosen courses...')
       const response = await api.getDosenCourses()
-      console.log('✅ API Response:', response)
+      console.log('API Response:', response)
       
       if (response.data && response.data.data) {
         let coursesData = response.data.data

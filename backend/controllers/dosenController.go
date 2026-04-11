@@ -3,6 +3,7 @@ package controllers
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -1354,7 +1355,8 @@ func GetDosenCourses(c *gin.Context) {
 	var dosenID int
 	err := config.DB.QueryRow("SELECT id FROM dosen WHERE user_id = ?", userID).Scan(&dosenID)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusNotFound, "Dosen not found")
+		log.Printf("Error GetDosenCourses: user_id=%v err=%v", userID, err)
+		utils.ErrorResponse(c, http.StatusNotFound, "Dosen not found untuk user_id ini")
 		return
 	}
 
@@ -1547,6 +1549,14 @@ func UploadMateri(c *gin.Context) {
 	}
 
 	id, _ := result.LastInsertId()
+
+	// ========== OpenClaw: Publish event materi-uploaded ==========
+	event := utils.BuildTugasEvent(id, courseID, pertemuan, title, desc, time.Now().Add(30*24*time.Hour), dosenID)
+	// Override event type parameter to indicate it's materi
+	event.Type = "materi-uploaded"
+	go utils.PublishTugasCreatedEvent(config.DB, event)
+	// ========== End OpenClaw ==========
+
 	utils.SuccessResponse(c, gin.H{
 		"id":        id,
 		"course_id": courseID,
@@ -1644,6 +1654,17 @@ func CreateTugas(c *gin.Context) {
 	}
 
 	id, _ := result.LastInsertId()
+
+	// ========== OpenClaw: Publish event tugas-created ==========
+	// Hanya publish jika type = tugas dan due_date valid
+	if dueDate.Valid {
+		event := utils.BuildTugasEvent(id, courseID, pertemuan, title, desc, dueDate.Time, dosenID)
+		go utils.PublishTugasCreatedEvent(config.DB, event)
+	} else {
+		utils.LogOpenClawSkip("due_date is null", id)
+	}
+	// ========== End OpenClaw ==========
+
 	utils.SuccessResponse(c, gin.H{
 		"id":          id,
 		"course_id":   courseID,

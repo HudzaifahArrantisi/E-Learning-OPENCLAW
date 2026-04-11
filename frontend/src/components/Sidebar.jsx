@@ -24,6 +24,7 @@ const Sidebar = ({ role, isOpen, onClose }) => {
       { path: '/mahasiswa/cari-invoice', label: 'Invoice', icon: <FaMoneyBill className="text-lg" /> },
       { path: '/mahasiswa/scan-absensi', label: 'Jadwal dan Absensi', icon: <FaCalendar className="text-lg" /> },
       { path: '/mahasiswa/transkrip-nilai', label: 'Nilai', icon: <FaChartBar className="text-lg" /> },
+      { path: '/mahasiswa/tugas', label: 'Tugas & Materi', icon: <FaTasks className="text-lg" /> },
       { path: '/mahasiswa/pesan', label: 'Chat', icon: <FaComment className="text-lg" /> }
     ],
     dosen: [

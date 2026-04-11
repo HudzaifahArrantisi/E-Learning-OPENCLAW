@@ -115,6 +115,9 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB) {
 		mahasiswa.GET("/matkul/:course_id/pertemuan/:pertemuan", controllers.GetPertemuanDetail)
 		mahasiswa.POST("/tugas/submit", controllers.SubmitTugas)
 		mahasiswa.GET("/tugas/:task_id/status", controllers.GetSubmissionStatus)
+		mahasiswa.GET("/me/tugas/pending", controllers.GetPendingTugas)
+		mahasiswa.GET("/tugas", controllers.GetMahasiswaTugasList)
+		mahasiswa.GET("/tugas/course/:course_id", controllers.GetMahasiswaTugasByCourse)
 
 		// ROUTE UNTUK SEMUA MATA KULIAH TANPA FILTER
 		mahasiswa.GET("/courses", controllers.GetMahasiswaCourses)

@@ -24,6 +24,7 @@ import ScanAbsensi from './pages/Mahasiswa/ScanAbsensi'
 import TranskripNilai from './pages/Mahasiswa/TranskripNilai'
 import PesanMahasiswa from './pages/Mahasiswa/PesanMahasiswa'
 import CariInvoice from './pages/Mahasiswa/CariInvoice'
+import TugasMahasiswa from './pages/Mahasiswa/TugasMahasiswa'
 
 // Komponen Baru untuk Mahasiswa - Sistem Materi & Tugas
 import DetailMatkul from './pages/Mahasiswa/DetailMatkul'
@@ -124,6 +125,7 @@ function AuthWrapper() {
         <Route path="/mahasiswa/transkrip-nilai" element={<ProtectedRoute allowedRoles={['mahasiswa']}><TranskripNilai /></ProtectedRoute>} />
         <Route path="/mahasiswa/pesan" element={<ProtectedRoute allowedRoles={['mahasiswa']}><PesanMahasiswa /></ProtectedRoute>} />
         <Route path="/mahasiswa/cari-invoice" element={<ProtectedRoute allowedRoles={['mahasiswa']}><CariInvoice /></ProtectedRoute>} />
+        <Route path="/mahasiswa/tugas" element={<ProtectedRoute allowedRoles={['mahasiswa']}><TugasMahasiswa /></ProtectedRoute>} />
 
         {/* ROUTE BARU UNTUK SISTEM MATERI & TUGAS - MAHASISWA */}
         <Route path="/mahasiswa/matkul/:courseId" element={<ProtectedRoute allowedRoles={['mahasiswa']}><DetailMatkul /></ProtectedRoute>} />

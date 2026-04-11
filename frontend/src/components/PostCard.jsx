@@ -383,15 +383,6 @@ const PostCard = memo(({ post, getRelativeTime }) => {
 
         </div>
 
-        {/* Likes count */}
-        {localLikes > 0 && (
-          <div className="mb-2">
-            <span className="text-sm font-semibold text-gray-900">
-              {localLikes} suka
-            </span>
-          </div>
-        )}
-
         {/* Caption */}
         {displayContent && (
           <div className="mb-2">

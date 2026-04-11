@@ -149,16 +149,6 @@ const DashboardLayout = ({
                 NF StudentHub
               </h1>
             </Link>
-
-            {/* Search & Create Post */}
-            <div className="flex items-center space-x-3">
-              <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                <FaSearch className="text-xl text-gray-700" />
-              </button>
-              <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                <FaPlus className="text-xl text-gray-700" />
-              </button>
-            </div>
           </div>
 
           {/* Role Filter Tabs */}

@@ -305,6 +305,12 @@ api.submitTugas = (formData) =>
     headers: { 'Content-Type': 'multipart/form-data' },
   })
 
+api.getMahasiswaTugasList = () =>
+  api.get('/api/mahasiswa/tugas')
+
+api.getMahasiswaTugasByCourse = (courseId) =>
+  api.get(`/api/mahasiswa/tugas/course/${courseId}`)
+
 // === Absensi Mahasiswa ===
 api.getTodaySchedule = () => api.get('/api/mahasiswa/jadwal/hari-ini')
 
