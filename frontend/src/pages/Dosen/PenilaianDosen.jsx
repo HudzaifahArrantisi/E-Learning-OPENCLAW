@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import Sidebar from '../../components/Sidebar'
 import api from '../../services/api'
+import { resolveBackendAssetUrl } from '../../utils/assetUrl'
 import {
   FiBarChart2, FiBookOpen, FiFilter, FiSearch,
   FiDownload, FiEye, FiCheckCircle, FiXCircle,
@@ -424,7 +425,7 @@ const PenilaianDosen = () => {
                         <td className="px-6 py-4">
                           {submission.file_url ? (
                             <a
-                              href={`http://localhost:8080${submission.file_url}`}
+                              href={resolveBackendAssetUrl(submission.file_url)}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-100 to-emerald-50 text-emerald-700 rounded-lg font-medium hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 border border-emerald-200"

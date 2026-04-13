@@ -10,6 +10,7 @@ import {
 import { FiSend } from 'react-icons/fi'
 import { BsBookmark, BsBookmarkFill, BsHeart, BsHeartFill } from 'react-icons/bs'
 import { MdCropSquare, MdCropPortrait, MdCropLandscape, MdCrop169 } from 'react-icons/md'
+import { resolveBackendAssetUrl } from '../utils/assetUrl'
 
 const cleanUsername = (username) => {
   if (!username) return ''
@@ -295,7 +296,7 @@ const PostCard = memo(({ post, getRelativeTime }) => {
             {/* Image Container with Perfect Centering */}
             <div className="w-full h-full flex items-center justify-center">
               <img
-                src={mediaUrls[currentSlide].startsWith('http') ? mediaUrls[currentSlide] : `http://localhost:8080${mediaUrls[currentSlide]}`}
+                src={resolveBackendAssetUrl(mediaUrls[currentSlide])}
                 alt={`Post content ${currentSlide + 1}`}
                 className="w-full h-auto object-contain"
                 onError={handleImageError}
@@ -443,7 +444,7 @@ const PostCard = memo(({ post, getRelativeTime }) => {
                   <div className="w-1/2 bg-white flex items-center justify-center relative overflow-hidden">
                     <div className="w-full h-full flex items-center justify-center">
                       <img
-                        src={mediaUrls[currentSlide].startsWith('http') ? mediaUrls[currentSlide] : `http://localhost:8080${mediaUrls[currentSlide]}`}
+                        src={resolveBackendAssetUrl(mediaUrls[currentSlide])}
                         alt={`Post content ${currentSlide + 1}`}
                         className="w-full h-full object-contain"
                         onError={handleImageError}

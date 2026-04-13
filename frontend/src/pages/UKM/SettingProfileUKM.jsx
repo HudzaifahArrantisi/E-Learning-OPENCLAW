@@ -242,7 +242,7 @@ const SettingProfileUKM = () => {
                 <div className="font-bold">{formData.name || 'Nama UKM'}</div>
                 <div className="text-sm text-gray-500">@{formData.username || 'username'}</div>
                 <div className="text-xs text-gray-400">
-                  Akan terlihat di: http://localhost:3000/profile/ukm/{formData.username || 'username'}
+                  Akan terlihat di: {window.location.origin}/profile/ukm/{formData.username || 'username'}
                 </div>
               </div>
             </div>
@@ -314,7 +314,7 @@ const SettingProfileUKM = () => {
                     placeholder="nfscc"
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    URL: http://localhost:3000/profile/ukm/{formData.username || 'username'}
+                    URL: {window.location.origin}/profile/ukm/{formData.username || 'username'}
                   </p>
                 </div>
 

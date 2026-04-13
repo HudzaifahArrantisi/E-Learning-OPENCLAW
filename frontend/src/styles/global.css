@@ -1,7 +1,5 @@
 /* ================= FONT ================= */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cabin:ital,wght@0,400..700;1,400..700&family=Google+Sans:ital,opsz,wght@0,17..18,400..700;1,17..18,400..700&family=Quicksand:wght@300..700&family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -28,22 +26,26 @@
 }
 
 body {
-  font-family: 'Poppins', 'Inter', system-ui, sans-serif;
+  font-family: 'Cabin', 'Google Sans', 'Quicksand', system-ui, sans-serif;
   background-color: #ffffff;
   color: #262626;
 }
 
 /* ================= FONT UTILS ================= */
 .font-sans {
-  font-family: 'Roboto', system-ui, sans-serif;
+  font-family: 'Cabin', 'Google Sans', 'Quicksand', system-ui, sans-serif;
 }
 
 .font-instagram {
-  font-family: 'Poppins', system-ui, sans-serif;
+  font-family: 'Quicksand', 'Cabin', system-ui, sans-serif;
 }
 
 .font-logo {
-  font-family: 'Brush Script MT', cursive;
+  font-family: 'Google Sans', 'Cabin', system-ui, sans-serif;
+}
+
+.font-mono {
+  font-family: 'Space Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
 }
 
 /* ================= ANIMATIONS ================= */

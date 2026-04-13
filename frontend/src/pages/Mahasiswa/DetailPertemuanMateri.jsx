@@ -5,6 +5,7 @@ import Sidebar from '../../components/Sidebar'
 import useAuth from '../../hooks/useAuth'
 import api from '../../services/api'
 import { FaDownload, FaArrowLeft, FaBook, FaTasks } from 'react-icons/fa'
+import { resolveBackendAssetUrl } from '../../utils/assetUrl'
 
 const DetailPertemuanMateri = () => {
   const { user } = useAuth()
@@ -140,7 +141,7 @@ const DetailPertemuanMateri = () => {
                         {materi.file_path && (
                           <div className="flex items-center space-x-3">
                             <a 
-                              href={`http://localhost:8080${materi.file_path}`}
+                              href={resolveBackendAssetUrl(materi.file_path)}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="

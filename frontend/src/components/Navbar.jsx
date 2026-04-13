@@ -3,8 +3,19 @@ import { Link } from 'react-router-dom';
 import { FaBars } from 'react-icons/fa';
 import useAuth from '../hooks/useAuth';
 
-const Navbar = ({ onMenuToggle }) => {
+const Navbar = ({ onMenuToggle, onToggleSidebar }) => {
   const { user: authUser } = useAuth();
+
+  const handleMenuToggle = () => {
+    const toggleHandler = onMenuToggle || onToggleSidebar;
+
+    if (typeof toggleHandler === 'function') {
+      toggleHandler();
+      return;
+    }
+
+    window.dispatchEvent(new CustomEvent('nf-sidebar-toggle'));
+  };
 
   return (
     <div className="bg-white shadow-md px-4 py-3 sticky top-0 z-40 w-full">
@@ -14,8 +25,10 @@ const Navbar = ({ onMenuToggle }) => {
 
           {/* Hamburger */}
           <button
-            onClick={onMenuToggle}
+            onClick={handleMenuToggle}
             className="lg:hidden text-gray-700 hover:text-purple-600 transition"
+            aria-label="Buka menu"
+            type="button"
           >
             <FaBars className="text-2xl" />
           </button>
@@ -37,7 +50,7 @@ const Navbar = ({ onMenuToggle }) => {
         {/* Logo */}
         <Link 
           to="/" 
-          className="text-xl font-extrabold bg-gradient-to-r from-purple-600 to-pink-500 
+          className="text-base sm:text-lg md:text-xl font-extrabold bg-gradient-to-r from-purple-600 to-pink-500 
                      bg-clip-text text-transparent tracking-wide select-none"
         >
           NF Student HUB

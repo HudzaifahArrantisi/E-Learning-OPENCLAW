@@ -7,8 +7,10 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Inter', 'ui-sans-serif', 'system-ui'],
-        instagram: ['Poppins', 'system-ui'],
+        sans: ['Cabin', 'Google Sans', 'Quicksand', 'ui-sans-serif', 'system-ui'],
+        instagram: ['Quicksand', 'Cabin', 'system-ui'],
+        logo: ['Google Sans', 'Cabin', 'system-ui'],
+        mono: ['Space Mono', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'Liberation Mono', 'Courier New', 'monospace'],
       },
 
       aspectRatio: {

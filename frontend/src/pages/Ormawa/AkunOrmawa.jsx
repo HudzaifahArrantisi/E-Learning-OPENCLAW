@@ -6,6 +6,7 @@ import Sidebar from '../../components/Sidebar'
 import useAuth from '../../hooks/useAuth'
 import useProfile from '../../hooks/useProfile'
 import { Link } from 'react-router-dom'
+import { resolveBackendAssetUrl } from '../../utils/assetUrl'
 
 const AkunOrmawa = () => {
   const { user } = useAuth()
@@ -127,9 +128,12 @@ const AkunOrmawa = () => {
               <div className="flex-shrink-0 flex justify-center md:justify-start">
                 {profile?.profile_picture ? (
                   <img 
-                    src={profile.profile_picture}
+                    src={resolveBackendAssetUrl(profile.profile_picture)}
                     alt="Profile" 
                     className="w-32 h-32 rounded-full object-cover border-2 border-purple-500"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none'
+                    }}
                   />
                 ) : (
                   <div className="w-32 h-32 rounded-full bg-gradient-to-r from-purple-500 to-purple-700 flex items-center justify-center text-white text-4xl font-bold">
@@ -140,9 +144,9 @@ const AkunOrmawa = () => {
 
               {/* Profile Info */}
               <div className="flex-1">
-                <div className="flex flex-col md:flex-row md:items-center space-y-4 md:space-y-0 md:space-x-6 mb-4">
+                <div className="flex flex-col md:flex-row md:items-center gap-3 md:space-x-6 mb-4">
                   <h1 className="text-2xl font-bold text-gray-900">{profile?.name || 'Ormawa'}</h1>
-                  <div className="flex space-x-3">
+                  <div className="flex flex-wrap gap-2">
                     <Link 
                       to="/ormawa/setting-profile"
                       className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-200"
@@ -213,7 +217,7 @@ const AkunOrmawa = () => {
         </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
           <a
             href={`/profile/ormawa/${profile?.username || 'username'}`}
             target="_blank"
@@ -253,9 +257,12 @@ const AkunOrmawa = () => {
                 <div key={post.id} className="bg-gray-50 rounded-lg border overflow-hidden">
                   {post.media_url && (
                     <img 
-                      src={post.media_url} 
+                      src={resolveBackendAssetUrl(post.media_url)} 
                       alt="post" 
                       className="w-full h-48 object-cover"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none'
+                      }}
                     />
                   )}
                   <div className="p-4">

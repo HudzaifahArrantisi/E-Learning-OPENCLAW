@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query'
 import api from '../../services/api'
 import Sidebar from '../../components/Sidebar'
 import useAuth from '../../hooks/useAuth'
+import { resolveBackendAssetUrl } from '../../utils/assetUrl'
 
 // Icons
 import { 
@@ -20,9 +21,6 @@ import {
   FaImage,
   FaFileAlt
 } from 'react-icons/fa'
-
-// GUNAKAN INI → otomatis ambil dari .env atau fallback ke localhost
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080'
 
 const ProfilePublic = () => {
   const { user } = useAuth()
@@ -128,9 +126,7 @@ const ProfilePublic = () => {
 
   // Fungsi untuk mendapatkan URL gambar yang benar
   const getImageUrl = (mediaUrl) => {
-    if (!mediaUrl) return null
-    if (mediaUrl.startsWith('http')) return mediaUrl
-    return `${API_URL}${mediaUrl}`
+    return resolveBackendAssetUrl(mediaUrl)
   }
 
   // Fungsi untuk handle error gambar profil
@@ -176,17 +172,17 @@ const ProfilePublic = () => {
     if (!commentText.trim() || !selectedPost || isCommenting) return
 
     setIsCommenting(true)
+    const tempComment = {
+      id: Date.now(), // temporary ID
+      content: commentText.trim(),
+      author_name: user?.name || 'Anda',
+      user_role: user?.role || 'mahasiswa',
+      created_at: new Date().toISOString(),
+      replies: []
+    }
+
     try {
       // Optimistically update UI
-      const tempComment = {
-        id: Date.now(), // temporary ID
-        content: commentText.trim(),
-        author_name: user?.name || 'Anda',
-        user_role: user?.role || 'mahasiswa',
-        created_at: new Date().toISOString(),
-        replies: []
-      }
-
       setLocalComments(prev => [tempComment, ...prev])
       setCommentText('')
 
@@ -213,10 +209,10 @@ const ProfilePublic = () => {
   const handleLikePost = async () => {
     if (!selectedPost) return
 
-    try {
-      const originalLiked = selectedPost.user_has_liked
-      const originalLikesCount = selectedPost.likes_count || 0
+    const originalLiked = selectedPost.user_has_liked
+    const originalLikesCount = selectedPost.likes_count || 0
 
+    try {
       // Optimistically update UI
       setSelectedPost(prev => ({
         ...prev,
@@ -253,9 +249,9 @@ const ProfilePublic = () => {
   const handleSavePost = async () => {
     if (!selectedPost) return
 
-    try {
-      const originalSaved = selectedPost.user_has_saved
+    const originalSaved = selectedPost.user_has_saved
 
+    try {
       // Optimistically update UI
       setSelectedPost(prev => ({
         ...prev,

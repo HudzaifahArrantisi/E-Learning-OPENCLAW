@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import Sidebar from '../../components/Sidebar'
 import api from '../../services/api'
+import { resolveBackendAssetUrl } from '../../utils/assetUrl'
 import {
   FiBookOpen, FiFileText, FiCalendar, FiDownload,
   FiTrash2, FiEye, FiChevronRight, FiClock,
@@ -295,7 +296,7 @@ const DetailPertemuanDosen = () => {
                           <div className="flex gap-2">
                             {materi.file_path && (
                               <a
-                                href={`http://localhost:8080${materi.file_path}`}
+                                href={resolveBackendAssetUrl(materi.file_path)}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="p-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition-colors"
@@ -389,7 +390,7 @@ const DetailPertemuanDosen = () => {
                           <div className="flex gap-2">
                             {tugas.file_path && (
                               <a
-                                href={`http://localhost:8080${tugas.file_path}`}
+                                href={resolveBackendAssetUrl(tugas.file_path)}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="p-2 bg-emerald-100 text-emerald-600 rounded-lg hover:bg-emerald-200 transition-colors"

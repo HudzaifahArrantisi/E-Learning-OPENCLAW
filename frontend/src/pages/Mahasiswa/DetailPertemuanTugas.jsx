@@ -5,6 +5,7 @@ import Sidebar from '../../components/Sidebar'
 import useAuth from '../../hooks/useAuth'
 import api from '../../services/api'
 import { FaUpload, FaDownload, FaArrowLeft, FaBook, FaCheckCircle, FaClock } from 'react-icons/fa'
+import { resolveBackendAssetUrl } from '../../utils/assetUrl'
 
 const DetailPertemuanTugas = () => {
   const { user } = useAuth()
@@ -220,7 +221,7 @@ const DetailPertemuanTugas = () => {
                                   <div className="flex items-center space-x-2">
                                     <span className="font-medium text-gray-700">File: </span>
                                     <a 
-                                      href={`http://localhost:8080${submission.file_url}`}
+                                      href={resolveBackendAssetUrl(submission.file_url)}
                                       target="_blank"
                                       rel="noopener noreferrer"
                                       className="text-blue-600 hover:underline flex items-center space-x-1"
@@ -260,7 +261,7 @@ const DetailPertemuanTugas = () => {
                           {tugas.file_path && (
                             <div className="flex items-center space-x-3">
                               <a 
-                                href={`http://localhost:8080${tugas.file_path}`}
+                                href={resolveBackendAssetUrl(tugas.file_path)}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="
@@ -352,7 +353,7 @@ const DetailPertemuanTugas = () => {
                       <p className="text-sm text-blue-600 mt-2">
                         File sebelumnya: 
                         <a 
-                          href={`http://localhost:8080${submissionStatus[selectedTugas?.id].file_url}`}
+                          href={resolveBackendAssetUrl(submissionStatus[selectedTugas?.id].file_url)}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="ml-1 hover:underline"

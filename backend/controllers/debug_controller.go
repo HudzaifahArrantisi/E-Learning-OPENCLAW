@@ -43,7 +43,6 @@ func DebugProfiles(c *gin.Context) {
             log.Printf("Table %s: %d records found for user_id %v", table, count, userID)
         }
 
-        // Tampilkan detail data jika ada
         if count > 0 {
             detailQuery := `
                 SELECT id, user_id, name, username 

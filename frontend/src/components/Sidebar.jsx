@@ -1,5 +1,5 @@
 // src/components/Sidebar.jsx
-import React from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { 
   FaHome, FaUser, FaBook, FaMoneyBill, FaCalendar, 
@@ -12,6 +12,32 @@ import { MdDashboard, MdClass, MdPayment } from 'react-icons/md'
 
 const Sidebar = ({ role, isOpen, onClose }) => {
   const location = useLocation()
+  const [internalOpen, setInternalOpen] = useState(false)
+
+  const isControlled = useMemo(() => typeof isOpen === 'boolean', [isOpen])
+  const sidebarOpen = isControlled ? isOpen : internalOpen
+
+  useEffect(() => {
+    if (isControlled) return
+
+    const handleGlobalToggle = () => {
+      setInternalOpen(prev => !prev)
+    }
+
+    window.addEventListener('nf-sidebar-toggle', handleGlobalToggle)
+    return () => window.removeEventListener('nf-sidebar-toggle', handleGlobalToggle)
+  }, [isControlled])
+
+  const closeSidebar = () => {
+    if (isControlled) {
+      if (typeof onClose === 'function') {
+        onClose()
+      }
+      return
+    }
+
+    setInternalOpen(false)
+  }
 
   const isActive = (path) => location.pathname === path || location.pathname.startsWith(path + '/')
 
@@ -20,11 +46,12 @@ const Sidebar = ({ role, isOpen, onClose }) => {
       { path: '/mahasiswa', label: 'Dashboard', icon: <MdDashboard className="text-lg" /> },
       { path: '/mahasiswa/profile', label: 'Profile', icon: <FaUser className="text-lg" /> },
       { path: '/mahasiswa/matkul', label: 'My Courses', icon: <MdClass className="text-lg" /> },
+      { path: '/mahasiswa/tugas', label: 'Tugas', icon: <FaTasks className="text-lg" /> },
+      { path: '/mahasiswa/materi', label: 'Materi', icon: <FaBook className="text-lg" /> },
       { path: '/mahasiswa/pembayaran-ukt', label: 'Pembayaran UKT', icon: <MdPayment className="text-lg" /> },
       { path: '/mahasiswa/cari-invoice', label: 'Invoice', icon: <FaMoneyBill className="text-lg" /> },
       { path: '/mahasiswa/scan-absensi', label: 'Jadwal dan Absensi', icon: <FaCalendar className="text-lg" /> },
       { path: '/mahasiswa/transkrip-nilai', label: 'Nilai', icon: <FaChartBar className="text-lg" /> },
-      { path: '/mahasiswa/tugas', label: 'Tugas & Materi', icon: <FaTasks className="text-lg" /> },
       { path: '/mahasiswa/pesan', label: 'Chat', icon: <FaComment className="text-lg" /> }
     ],
     dosen: [
@@ -64,10 +91,10 @@ const Sidebar = ({ role, isOpen, onClose }) => {
   return (
     <>
       {/* Overlay untuk mobile */}
-      {isOpen && (
+      {sidebarOpen && (
         <div 
           className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40 lg:hidden transition-opacity duration-300 animate-fadeIn"
-          onClick={onClose}
+          onClick={closeSidebar}
         />
       )}
       
@@ -75,7 +102,7 @@ const Sidebar = ({ role, isOpen, onClose }) => {
       <div className={`
         fixed lg:sticky top-0 left-0 z-50
         w-64 bg-white shadow-2xl transform transition-all duration-500 ease-in-out
-        ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         flex flex-col h-screen border-r border-gray-100
       `}>
         {/* Header Sidebar - Instagram Inspired */}
@@ -93,7 +120,7 @@ const Sidebar = ({ role, isOpen, onClose }) => {
               </div>
             </div>
             <button 
-              onClick={onClose}
+              onClick={closeSidebar}
               className="lg:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors duration-200"
             >
               <FaTimes className="text-gray-500 text-lg" />
@@ -111,7 +138,7 @@ const Sidebar = ({ role, isOpen, onClose }) => {
             <div key={item.path}>
               <Link
                 to={item.path}
-                onClick={() => window.innerWidth < 1024 && onClose()}
+                onClick={() => window.innerWidth < 1024 && closeSidebar()}
                 className={`
                   flex items-center space-x-3 p-3 rounded-xl transition-all duration-300
                   ${isActive(item.path) 

@@ -1,8 +1,9 @@
 // src/services/api.js
 import axios from 'axios'
+import { getBackendBaseUrl, getBackendWebSocketBaseUrl } from '../utils/backendUrl'
 
 const api = axios.create({
-  baseURL: 'http://localhost:8080',
+  baseURL: getBackendBaseUrl(),
   timeout: 10000,
 })
 
@@ -92,8 +93,7 @@ class WebSocketService {
       return
     }
 
-    const wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws'
-    const wsUrl = `${wsProtocol}://localhost:8080/ws/chat?token=${encodeURIComponent(token)}`
+    const wsUrl = `${getBackendWebSocketBaseUrl()}/ws/chat?token=${encodeURIComponent(token)}`
     this.socket = new WebSocket(wsUrl)
 
     this.socket.onopen = () => {

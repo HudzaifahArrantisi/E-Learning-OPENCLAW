@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import Sidebar from '../../components/Sidebar'
 import api from '../../services/api'
+import { resolveBackendAssetUrl } from '../../utils/assetUrl'
 import { 
   FiUpload, FiFileText, FiEye, FiTrash2, FiDownload, 
   FiCalendar, FiChevronLeft, FiChevronRight, FiPlus,
@@ -29,7 +30,7 @@ const KelolaMatkulDosen = () => {
   const [submitting, setSubmitting] = useState(false)
   const [detailLoading, setDetailLoading] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [viewMode, setViewMode] = useState('grid') // 'grid' or 'list'
+  const [viewMode, setViewMode] = useState('grid') 
 
   useEffect(() => {
     fetchPertemuanList()
@@ -796,7 +797,7 @@ const KelolaMatkulDosen = () => {
                                 <div className="flex gap-2">
                                   {materi.file_path && (
                                     <a 
-                                      href={`http://localhost:8080${materi.file_path}`}
+                                      href={resolveBackendAssetUrl(materi.file_path)}
                                       target="_blank"
                                       rel="noopener noreferrer"
                                       className="p-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition-colors"
@@ -879,7 +880,7 @@ const KelolaMatkulDosen = () => {
                                 <div className="flex gap-2">
                                   {tugas.file_path && (
                                     <a 
-                                      href={`http://localhost:8080${tugas.file_path}`}
+                                      href={resolveBackendAssetUrl(tugas.file_path)}
                                       target="_blank"
                                       rel="noopener noreferrer"
                                       className="p-2 bg-emerald-100 text-emerald-600 rounded-lg hover:bg-emerald-200 transition-colors"

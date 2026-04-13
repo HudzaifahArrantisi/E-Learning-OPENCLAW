@@ -6,10 +6,18 @@
 ![License](https://img.shields.io/badge/License-Academic-lightgrey)
 
 
-![Landing Page](frontend/src/assets/image.png)
+![Landing Page](frontend/src/assets/image1.png)
+
+*Landing Page NF StudentHub - hero utama platform akademik terintegrasi.*
+
+![Dashboard Mahasiswa](frontend/src/assets/image2.png)
+
+*Dashboard Mahasiswa - pengalaman feed ala Instagram (For You, like, komentar, posting organisasi) yang digabung dengan fitur akademik seperti tugas, materi, absensi, nilai, dan pembayaran UKT.*
 
 
 NF StudentHub adalah platform digital terintegrasi untuk ekosistem akademik STT Nurul Fikri, yang menghubungkan Mahasiswa, Dosen, Admin, Orang Tua, UKM, dan ORMAWA dalam satu sistem web yang modern, aman, dan scalable.
+
+Secara pengalaman pengguna, NF StudentHub mengadopsi pola interaksi modern yang familiar seperti Instagram (timeline feed, interaksi sosial, dan update komunitas), lalu menggabungkannya dengan kebutuhan inti kampus dalam satu aplikasi (LMS + administrasi + komunikasi real-time).
 
 > One platform. One ecosystem. One academic experience.
 
@@ -24,6 +32,13 @@ NF StudentHub dirancang sebagai one-stop academic platform untuk memusatkan laya
 - **Sistem Pengingat Otomatis (OpenClaw Automation Engine)** via Telegram
 
 Sistem berbasis role memastikan setiap pengguna hanya mengakses fitur sesuai perannya.
+
+### 🎨 Gaya Produk (Mirip Instagram, Fokus Akademik)
+
+- Feed utama menggunakan pola social timeline agar informasi kampus lebih cepat tersampaikan.
+- Interaksi seperti like, komentar, dan update organisasi membuat platform terasa hidup seperti social app modern.
+- Navigasi tetap berorientasi akademik: tugas, materi, absensi, nilai, pembayaran UKT, dan komunikasi dosen-mahasiswa.
+- Hasilnya: bukan sekadar LMS biasa, tapi ekosistem digital kampus yang terasa familiar, engaging, dan produktif.
 
 ---
 
@@ -155,15 +170,21 @@ Catatan:
 - Static file dapat diakses melalui `/uploads/...` (misal: `http://localhost:8080/uploads/materi/...`).
 
 ### Frontend
-- Base API default: `http://localhost:8080`. Ubah di [frontend/src/services/api.js](frontend/src/services/api.js).
-- Dev server Vite berjalan di: `http://localhost:5173`.
+- Base API default otomatis mengikuti host browser: `http://<host-aktif>:8080`.
+- Opsional override via `.env.local`: `VITE_API_BASE_URL=http://<host-backend>:8080` (atau domain production).
+- Dev server Vite berjalan di port `3000` dan listen ke semua interface LAN.
 
 ### CORS
-Origin pengembangan yang diizinkan:
-- http://localhost:5173 (Vite)
-- http://localhost:3000
+- Backend menggunakan konfigurasi CORS yang mengizinkan origin dinamis saat development.
+- Konfigurasi ada di backend (gin-contrib/cors) pada [backend/main.go](backend/main.go).
 
-Konfigurasi CORS ada di backend (gin-contrib/cors) dan middleware.
+### Akses Local Network (LAN)
+1. Jalankan frontend dan backend pada mesin yang sama.
+2. Pastikan device client (HP/laptop lain) berada di jaringan Wi-Fi/LAN yang sama.
+3. Akses frontend dari device lain dengan format:
+	- `http://<IP-LAN-MESIN-ANDA>:3000`
+4. Backend akan otomatis diakses dari host yang sama pada port `8080`.
+5. Jika tidak bisa diakses dari device lain, buka Windows Firewall inbound untuk port `3000`, `8080`, dan (opsional OpenClaw) `9090`.
 
 ---
 
@@ -174,12 +195,14 @@ Konfigurasi CORS ada di backend (gin-contrib/cors) dan middleware.
 # Terminal 1 (Frontend)
 cd frontend
 npm run dev
-# Akses: http://localhost:5173
+# Akses lokal: http://localhost:3000
+# Akses LAN:   http://<IP-LAN-MESIN-ANDA>:3000
 
 # Terminal 2 (Backend UTama)
 cd backend
 go run main.go
-# API: http://localhost:8080
+# API lokal: http://localhost:8080
+# API LAN:   http://<IP-LAN-MESIN-ANDA>:8080
 
 # Terminal 3 (OpenClaw Service)
 cd backend/openclaw

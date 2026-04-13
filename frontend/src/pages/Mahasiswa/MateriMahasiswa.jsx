@@ -1,35 +1,35 @@
-import React, { useState, useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import Navbar from '../../components/Navbar'
 import Sidebar from '../../components/Sidebar'
 import api from '../../services/api'
 import useAuth from '../../hooks/useAuth'
 
-const TugasMahasiswa = () => {
+const MateriMahasiswa = () => {
   const { user } = useAuth()
-  const [tasks, setTasks] = useState([])
+  const [materials, setMaterials] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetchTasks()
+    fetchMaterials()
   }, [])
 
-  const fetchTasks = async () => {
+  const fetchMaterials = async () => {
     try {
       const res = await api.getMahasiswaTugasList()
       if (res.data.success) {
-        setTasks(res.data.data.tasks || [])
+        const materiList = (res.data.data.tasks || []).filter(
+          (item) => (item.type || '').toLowerCase() === 'materi'
+        )
+        setMaterials(materiList)
       }
     } catch (error) {
-      console.error('Error fetching tasks:', error)
+      console.error('Error fetching materials:', error)
     } finally {
       setLoading(false)
     }
   }
 
-  const tugasList = tasks.filter((task) => (task.type || '').toLowerCase() === 'tugas')
-
-  // Format date nicely
   const formatDate = (dateStr) => {
     if (!dateStr) return '-'
     const options = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }
@@ -44,15 +44,15 @@ const TugasMahasiswa = () => {
         <div className="p-8">
           <div className="flex justify-between items-center mb-6">
             <div>
-              <h1 className="text-2xl font-bold text-gray-800">Daftar Tugas</h1>
-              <p className="text-gray-600">Daftar semua tugas dari mata kuliah Anda.</p>
+              <h1 className="text-2xl font-bold text-gray-800">Daftar Materi</h1>
+              <p className="text-gray-600">Daftar semua materi pembelajaran dari mata kuliah Anda.</p>
             </div>
 
             <Link
-              to="/mahasiswa/materi"
+              to="/mahasiswa/tugas"
               className="px-4 py-2 rounded-lg font-medium border bg-white text-gray-600 hover:bg-gray-50 transition"
             >
-              Lihat Materi
+              Lihat Tugas
             </Link>
           </div>
 
@@ -62,13 +62,13 @@ const TugasMahasiswa = () => {
                 <i className="fas fa-spinner fa-spin text-3xl text-blue-500 mb-2"></i>
                 <p className="text-gray-500">Memuat data...</p>
               </div>
-            ) : tugasList.length === 0 ? (
+            ) : materials.length === 0 ? (
               <div className="p-10 text-center">
-                <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <i className="fas fa-folder-open text-2xl text-blue-500"></i>
+                <div className="w-16 h-16 bg-cyan-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <i className="fas fa-book-open text-2xl text-cyan-500"></i>
                 </div>
-                <h3 className="text-lg font-bold text-gray-800 mb-1">Tidak ada data</h3>
-                <p className="text-gray-500">Belum ada tugas untuk Anda.</p>
+                <h3 className="text-lg font-bold text-gray-800 mb-1">Tidak ada materi</h3>
+                <p className="text-gray-500">Belum ada materi yang tersedia untuk Anda.</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -77,52 +77,33 @@ const TugasMahasiswa = () => {
                     <tr className="bg-gray-50 border-b border-gray-100">
                       <th className="p-4 font-semibold text-gray-600">Judul</th>
                       <th className="p-4 font-semibold text-gray-600">Mata Kuliah / Pertemuan</th>
-                      <th className="p-4 font-semibold text-gray-600">Tenggat Waktu</th>
+                      <th className="p-4 font-semibold text-gray-600">Tanggal Upload</th>
                       <th className="p-4 font-semibold text-gray-600">Status</th>
                       <th className="p-4 font-semibold text-gray-600 text-center">Aksi</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
-                    {tugasList.map((task) => (
-                      <tr key={task.id} className="hover:bg-gray-50 transition-colors">
+                    {materials.map((materi) => (
+                      <tr key={materi.id} className="hover:bg-gray-50 transition-colors">
                         <td className="p-4">
-                          <p className="font-semibold text-gray-800">{task.title}</p>
-                          <p className="text-sm text-gray-500 truncate max-w-xs" title={task.description}>
-                            {task.description || '-'}
+                          <p className="font-semibold text-gray-800">{materi.title}</p>
+                          <p className="text-sm text-gray-500 truncate max-w-xs" title={materi.description}>
+                            {materi.description || '-'}
                           </p>
                         </td>
                         <td className="p-4">
-                          <p className="font-medium text-gray-700">{task.course_name}</p>
-                          <p className="text-sm text-gray-500">Pertemuan {task.pertemuan}</p>
+                          <p className="font-medium text-gray-700">{materi.course_name}</p>
+                          <p className="text-sm text-gray-500">Pertemuan {materi.pertemuan}</p>
                         </td>
                         <td className="p-4">
-                          <div>
-                            <p className={`font-medium ${task.is_overdue ? 'text-red-600' : 'text-gray-700'}`}>
-                              {formatDate(task.due_date)}
-                            </p>
-                            <p className={`text-xs mt-1 ${task.is_overdue ? 'text-red-500 font-semibold' : 'text-orange-500'}`}>
-                              {task.is_overdue
-                                ? 'Terlambat'
-                                : task.days_remaining > 0
-                                  ? `${task.days_remaining} hari lagi`
-                                  : 'Hari ini'}
-                            </p>
-                          </div>
+                          <p className="font-medium text-gray-700">{formatDate(materi.created_at)}</p>
                         </td>
                         <td className="p-4">
-                          {task.has_submission ? (
-                            <div className="flex items-center text-green-600 font-medium">
-                              <i className="fas fa-check-circle mr-2"></i> Dikumpulkan
-                            </div>
-                          ) : (
-                            <div className="flex items-center text-red-500 font-medium whitespace-nowrap">
-                              <i className="fas fa-exclamation-circle mr-2"></i> Belum Dikerjakan
-                            </div>
-                          )}
+                          <span className="text-gray-500 text-sm">Tersedia</span>
                         </td>
                         <td className="p-4 text-center">
                           <Link
-                            to={`/mahasiswa/matkul/${task.course_id}/pertemuan/${task.pertemuan || 1}/tugas?taskId=${task.id}`}
+                            to={`/mahasiswa/matkul/${materi.course_id}/pertemuan/${materi.pertemuan || 1}/materi`}
                             className="inline-block px-4 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg font-medium transition"
                           >
                             Detail
@@ -141,4 +122,4 @@ const TugasMahasiswa = () => {
   )
 }
 
-export default TugasMahasiswa
+export default MateriMahasiswa

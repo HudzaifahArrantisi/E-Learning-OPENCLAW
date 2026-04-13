@@ -1,263 +1,515 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import PillNav from '../PillNav';
-import Footer from '../../components/Footer';
+/**
+ * NF StudentHub — Visi & Misi Page
+ * Design System: Editorial Noir (shared)
+ */
 
-const CurriculumPage = () => {
-  const logoDataURL = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImJsYWNrIiBzdHJva2Utd2lkdGg9IjEuOCI+PGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMyIvPjxlbGxpcHNlIGN4PSIxMiIgY3k9IjEyIiByeD0iMTAiIHJ5PSI0LjUiIHRyYW5zZm9ybT0icm90YXRlKDYwIDEyIDEyKSIvPjxlbGxpcHNlIGN4PSIxMiIgY3k9IjEyIiByeD0iMTAiIHJ5PSI0LjUiIHRyYW5zZm9ybT0icm90YXRlKDEyMCAxMiAxMikiLz48ZWxsaXBzZSBjeD0iMTIiIGN5PSIxMiIgcng9IjEwIiByeT0iNC41Ii8+PC9zdmc+";
+import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 
-  const curriculumData = [
-    {
-      semester: "Semester 1",
-      courses: [
-        { name: "Pembentukan Karakter", credits: 2 },
-        { name: "Pendidikan Agama", credits: 2 },
-        { name: "Bahasa Indonesia", credits: 2 },
-        { name: "Matematika Komputer", credits: 3 },
-        { name: "Dasar-Dasar Pemrograman", credits: 3 },
-        { name: "Pengantar Teknologi Informasi", credits: 3 },
-        { name: "Sistem Operasi", credits: 3 },
-        { name: "Pemrograman Web 1", credits: 3 }
-      ],
-      totalCredits: 21
-    },
-    {
-      semester: "Semester 2",
-      courses: [
-        { name: "Komunikasi Efektif", credits: 2 },
-        { name: "Pendidikan Pancasila dan Kewarganegaraan", credits: 2 },
-        { name: "Bahasa Inggris 1", credits: 2 },
-        { name: "Statistik dan Probabilitas", credits: 2 },
-        { name: "Basis Data", credits: 4 },
-        { name: "User Interface & User Experience", credits: 3 },
-        { name: "Jaringan Komputer", credits: 3 },
-        { name: "Pemrograman Web 2", credits: 3 }
-      ],
-      totalCredits: 21
-    },
-    {
-      semester: "Semester 3",
-      courses: [
-        { name: "Kewirausahaan", credits: 2 },
-        { name: "Bahasa Inggris 2", credits: 2 },
-        { name: "Rekayasa Perangkat Lunak", credits: 3 },
-        { name: "Big Data", credits: 3 },
-        { name: "Teori Bahasa dan Otomata", credits: 2 },
-        { name: "Pemrograman Backend", credits: 3 },
-        { name: "Keamanan Web", credits: 3 },
-        { name: "Pola Desain Perangkat Lunak", credits: 3 }
-      ],
-      totalCredits: 21
-    },
-    {
-      semester: "Semester 4",
-      courses: [
-        { name: "Etika Profesi", credits: 2 },
-        { name: "Manajemen Proyek", credits: 3 },
-        { name: "Kecerdasan Artifisial", credits: 3 },
-        { name: "Cloud Computing", credits: 2 },
-        { name: "Keamanan Komputer dan Jaringan", credits: 2 },
-        { name: "Jaminan Kualitas Perangkat Lunak", credits: 3 },
-        { name: "Visualisasi Data", credits: 3 },
-        { name: "Pemrograman Frontend", credits: 3 }
-      ],
-      totalCredits: 21
-    },
-    {
-      semester: "Semester 5",
-      courses: [
-        { name: "Mata Kuliah Pilihan", credits: 3 },
-        { name: "Mata Kuliah Pilihan", credits: 3 },
-        { name: "Mata Kuliah Pilihan", credits: 3 },
-        { name: "Mata Kuliah Pilihan", credits: 3 },
-        { name: "Mata Kuliah Pilihan", credits: 3 },
-        { name: "Mata Kuliah Pilihan", credits: 3 },
-        { name: "Mata Kuliah Pilihan", credits: 3 }
-      ],
-      totalCredits: 21,
-      note: "* Bisa memilih mata kuliah pilihan di prodi sendiri maupun prodi lain"
-    },
-    {
-      semester: "Semester 6",
-      courses: [
-        { name: "Keterampilan Kerjasama", credits: 3 },
-        { name: "Teknik Identifikasi Masalah", credits: 3 },
-        { name: "Analisis dan Desain Solusi", credits: 3 },
-        { name: "Pengujian Desain Solusi", credits: 3 },
-        { name: "Technopreneurship", credits: 4 },
-        { name: "Proyek Kerja Praktek 1", credits: 4 }
-      ],
-      totalCredits: 20
-    },
-    {
-      semester: "Semester 7",
-      courses: [
-        { name: "Keterampilan Kepemimpinan", credits: 3 },
-        { name: "Implementasi Solusi", credits: 3 },
-        { name: "Presentasi Proyek", credits: 3 },
-        { name: "Penulisan Dokumentasi Proyek", credits: 3 },
-        { name: "Integrasi Sistem", credits: 4 },
-        { name: "Proyek Kerja Praktek 2", credits: 4 }
-      ],
-      totalCredits: 20
-    },
-    {
-      semester: "Semester 8",
-      courses: [
-        { name: "Tugas Akhir", credits: 4 }
-      ],
-      totalCredits: 4
-    }
-  ];
+const CSS = `
+:root {
+  --bg:      #040609;
+  --bg1:     #07090f;
+  --surface: #090c18;
+  --card:    #0b0e1e;
+  --border:  rgba(255,255,255,0.06);
+  --border-a:rgba(75,115,255,0.22);
+  --accent:  #4B73FF;
+  --atext:   #8BA4FF;
+  --text:    #EDF0FF;
+  --text2:   #5D6E8F;
+  --text3:   #252E42;
+  --ff-s:   'Quicksand', 'Cabin', system-ui, sans-serif;
+  --ff:     'Cabin', 'Google Sans', 'Quicksand', system-ui, sans-serif;
+  --ff-m:   'Space Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+}
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+html { scroll-behavior:smooth; }
 
-  const Footer = () => (
-    <footer className="bg-gray-900/80 backdrop-blur-md text-gray-400 py-12 border-t border-white/10">
-      <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-8">
-        <div className="col-span-1 md:col-span-2">
-          <h3 className="text-white text-2xl font-bold mb-4">NF StudentHub</h3>
-          <p className="mb-4 max-w-md">
-            Platform akademik modern yang mengintegrasikan pembelajaran dengan pengalaman sosial media untuk mahasiswa, dosen, dan orang tua.
-          </p>
-          <div className="flex space-x-4">
-            <a href="#" className="text-gray-400 hover:text-white transition">
-              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"/>
-              </svg>
-            </a>
-            <a href="#" className="text-gray-400 hover:text-white transition">
-              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
-              </svg>
-            </a>
-            <a href="#" className="text-gray-400 hover:text-white transition">
-              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
-              </svg>
-            </a>
-          </div>
-        </div>
-        <div>
-          <h4 className="text-white font-semibold mb-4">Platform</h4>
-          <ul className="space-y-2">
-            <li><a href="#features" className="hover:text-white transition">Fitur</a></li>
-            <li><a href="/kurikulum" className="hover:text-white transition">Kurikulum</a></li>
-            <li><a href="/visi-misi" className="hover:text-white transition">Visi Misi</a></li>
-            <li><a href="/kalender-akademik" className="hover:text-white transition">Kalender</a></li>
-          </ul>
-        </div>
-        <div>
-          <h4 className="text-white font-semibold mb-4">Perusahaan</h4>
-          <ul className="space-y-2">
-            <li><a href="#" className="hover:text-white transition">Tentang Kami</a></li>
-            <li><a href="#" className="hover:text-white transition">Karir</a></li>
-            <li><a href="#" className="hover:text-white transition">Blog</a></li>
-            <li><a href="#" className="hover:text-white transition">Kontak</a></li>
-          </ul>
-        </div>
-      </div>
-      <div className="max-w-7xl mx-auto px-6 mt-8 pt-8 border-t border-gray-800 text-center">
-        <p>&copy; {new Date().getFullYear()} NF StudentHub. All rights reserved.</p>
-      </div>
-    </footer>
-  );
+.vp {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--ff);
+  font-weight: 300;
+  min-height: 100vh;
+}
+.w { max-width: 1100px; margin: 0 auto; padding: 0 36px; }
+.sep { border: none; border-top: 1px solid var(--border); }
+
+/* NAV */
+.nav {
+  position: fixed;
+  top: 20px; left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  background: rgba(4,6,9,0.82);
+  backdrop-filter: blur(32px);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  padding: 5px 6px 5px 18px;
+  white-space: nowrap;
+  gap: 2px;
+}
+.nav-brand { font-size: 11.5px; font-weight: 600; color: var(--text); letter-spacing: 0.07em; margin-right: 10px; }
+.nav-link { color: var(--text2); text-decoration: none; font-size: 12.5px; padding: 7px 15px; border-radius: 100px; transition: all .18s; }
+.nav-link:hover { color: var(--text); background: rgba(255,255,255,0.05); }
+.nav-enter { background: var(--text); color: var(--bg); text-decoration: none; font-size: 12.5px; font-weight: 600; padding: 8px 20px; border-radius: 100px; transition: all .18s; margin-left: 4px; }
+.nav-enter:hover { background: var(--atext); }
+
+/* HEADER */
+.vp-header {
+  padding: 140px 0 72px;
+  border-bottom: 1px solid var(--border);
+}
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text2);
+  text-decoration: none;
+  font-size: 13px;
+  margin-bottom: 44px;
+  transition: color .18s, gap .18s;
+}
+.back-link:hover { color: var(--text); gap: 12px; }
+.vp-header-meta {
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text3);
+  font-family: var(--ff-m);
+  margin-bottom: 20px;
+  display: block;
+}
+.vp-header-title {
+  font-family: var(--ff-s);
+  font-size: clamp(3rem, 6vw, 5rem);
+  font-weight: 400;
+  line-height: 1.02;
+  letter-spacing: -0.03em;
+  color: var(--text);
+  margin-bottom: 16px;
+}
+.vp-header-title em { font-style: italic; }
+.vp-header-sub {
+  font-size: 16px;
+  font-weight: 300;
+  color: var(--text2);
+  max-width: 520px;
+  line-height: 1.75;
+}
+
+/* INSTITUTION SELECTOR */
+.inst-selector {
+  padding: 36px 0;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+}
+.inst-btn {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 12px 20px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  background: none;
+  font-family: var(--ff);
+  transition: all .22s;
+  text-align: left;
+  min-width: 160px;
+  flex-shrink: 0;
+}
+.inst-btn:hover { border-color: rgba(255,255,255,0.12); background: rgba(255,255,255,0.025); }
+.inst-btn.active {
+  border-color: var(--border-a);
+  background: rgba(75,115,255,0.07);
+}
+.inst-btn-label {
+  font-size: 10px;
+  font-family: var(--ff-m);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text3);
+  transition: color .22s;
+}
+.inst-btn.active .inst-btn-label { color: var(--atext); }
+.inst-btn-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text2);
+  line-height: 1.35;
+  transition: color .22s;
+}
+.inst-btn.active .inst-btn-name { color: var(--text); }
+
+/* CONTENT AREA */
+.vp-content {
+  padding: 72px 0 100px;
+}
+
+/* VISI */
+.visi-block {
+  margin-bottom: 72px;
+  padding-bottom: 72px;
+  border-bottom: 1px solid var(--border);
+}
+.block-label {
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text3);
+  font-family: var(--ff-m);
+  display: block;
+  margin-bottom: 28px;
+}
+.visi-quote {
+  font-family: var(--ff-s);
+  font-style: italic;
+  font-size: clamp(1.8rem, 3.5vw, 2.8rem);
+  line-height: 1.4;
+  color: var(--text);
+  letter-spacing: -0.015em;
+  max-width: 820px;
+  position: relative;
+  padding-left: 32px;
+}
+.visi-quote::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.2em;
+  bottom: 0.2em;
+  width: 2px;
+  background: var(--accent);
+  opacity: .5;
+  border-radius: 2px;
+}
+
+/* MISI + TUJUAN GRID */
+.vm-content-grid {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: 80px;
+}
+
+.vm-block-title {
+  font-family: var(--ff);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text3);
+  font-family: var(--ff-m);
+  display: block;
+  margin-bottom: 28px;
+}
+
+.misi-list { list-style: none; }
+.misi-item {
+  display: flex;
+  gap: 22px;
+  align-items: flex-start;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--border);
+}
+.misi-item:last-child { border-bottom: none; }
+.misi-idx {
+  font-family: var(--ff-m);
+  font-size: 10px;
+  color: var(--text3);
+  flex-shrink: 0;
+  padding-top: 3px;
+  min-width: 28px;
+}
+.misi-text {
+  font-size: 15px;
+  font-weight: 300;
+  color: var(--text2);
+  line-height: 1.72;
+}
+
+.tujuan-list { list-style: none; }
+.tujuan-item {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border);
+}
+.tujuan-item:last-child { border-bottom: none; }
+.tujuan-arrow {
+  font-family: var(--ff-m);
+  font-size: 11px;
+  color: var(--accent);
+  opacity: .6;
+  flex-shrink: 0;
+  padding-top: 3px;
+}
+.tujuan-text {
+  font-size: 14px;
+  font-weight: 300;
+  color: var(--text2);
+  line-height: 1.65;
+}
+
+/* INSTITUTION BADGE */
+.inst-full-name {
+  margin-bottom: 52px;
+}
+.inst-fn-label {
+  font-size: 11px;
+  font-weight: 300;
+  color: var(--text3);
+  font-family: var(--ff-m);
+  letter-spacing: 0.08em;
+  margin-bottom: 8px;
+  display: block;
+}
+.inst-fn-name {
+  font-family: var(--ff-s);
+  font-size: clamp(1.5rem, 2.8vw, 2.2rem);
+  font-weight: 400;
+  color: var(--text);
+  line-height: 1.25;
+  letter-spacing: -0.015em;
+}
+
+/* FOOTER */
+.footer {
+  border-top: 1px solid var(--border);
+  padding: 44px 0;
+}
+.footer-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+.footer-brand { font-size: 11.5px; font-weight: 600; color: var(--text3); letter-spacing: 0.06em; }
+.footer-copy { font-size: 12px; color: var(--text3); }
+.footer-nav { display: flex; gap: 20px; }
+.footer-nav a { font-size: 12.5px; color: var(--text2); text-decoration: none; transition: color .18s; }
+.footer-nav a:hover { color: var(--text); }
+
+/* TRANSITIONS */
+.fade-in {
+  animation: fadeIn .4s ease both;
+}
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+@media (max-width: 768px) {
+  .w { padding: 0 24px; }
+  .vm-content-grid { grid-template-columns: 1fr; gap: 52px; }
+  .nav-link { display: none; }
+  .inst-selector { gap: 6px; }
+  .inst-btn { min-width: 130px; }
+}
+@media (max-width: 520px) {
+  .footer-inner { flex-direction: column; text-align: center; gap: 16px; }
+  .footer-nav { flex-wrap: wrap; justify-content: center; }
+}
+`
+
+const institutions = {
+  'stt-nf': {
+    key: 'stt-nf',
+    abbr: 'STT-NF',
+    fullName: 'Sekolah Tinggi Teknologi Terpadu Nurul Fikri',
+    visi:
+      'Pada tahun 2045 menjadi sekolah tinggi yang unggul di Indonesia, berbudaya inovasi, berjiwa teknopreneur, dan berkarakter religius.',
+    misi: [
+      'Menyelenggarakan pendidikan tinggi berkualitas berlandaskan iman dan takwa.',
+      'Melaksanakan penelitian inovatif berorientasi teknologi masa depan.',
+      'Pengabdian masyarakat dengan teknologi tepat guna.',
+      'Membangun lingkungan akademik kondusif dan berbudaya inovasi.',
+    ],
+    tujuan: [
+      'Menghasilkan sarjana kompeten, profesional, dan berakhlak mulia.',
+      'Menghasilkan karya ilmiah inovatif dan terbuka (open source & open access).',
+      'Menerapkan IPTEK tepat guna bagi masyarakat.',
+      'Membangun kultur akademik inovatif dan kompetitif.',
+    ],
+  },
+  ti: {
+    key: 'ti',
+    abbr: 'TI',
+    fullName: 'Program Studi Teknik Informatika',
+    visi:
+      'Pada tahun 2045 menjadi program studi teknik informatika yang unggul, berbudaya inovasi, dan berkarakter religius.',
+    misi: [
+      'Menyelenggarakan pendidikan teknik informatika berkualitas.',
+      'Melaksanakan penelitian berorientasi teknologi masa depan.',
+      'Pengabdian masyarakat berbasis teknologi tepat guna.',
+      'Membangun budaya akademik inovatif dan mandiri.',
+    ],
+    tujuan: [
+      'Menghasilkan sarjana TI profesional dan berakhlak mulia.',
+      'Melahirkan karya ilmiah terbuka & inovatif di bidang TI.',
+      'Menerapkan teknologi tepat guna bagi masyarakat.',
+    ],
+  },
+  si: {
+    key: 'si',
+    abbr: 'SI',
+    fullName: 'Program Studi Sistem Informasi',
+    visi:
+      'Pada tahun 2045 menjadi program studi sistem informasi yang unggul, inovatif, dan religius.',
+    misi: [
+      'Pendidikan berkualitas bidang Sistem Informasi.',
+      'Penelitian inovatif dan berorientasi masa depan.',
+      'Pengabdian masyarakat berbasis teknologi tepat guna.',
+      'Membangun budaya akademik inovatif dan mandiri.',
+    ],
+    tujuan: [
+      'Lulusan kompeten & profesional di bidang Sistem Informasi.',
+      'Karya ilmiah terbuka dan inovatif.',
+      'Implementasi teknologi tepat guna bagi masyarakat.',
+    ],
+  },
+  bd: {
+    key: 'bd',
+    abbr: 'BD',
+    fullName: 'Program Studi Bisnis Digital',
+    visi:
+      'Pada tahun 2045 menjadi program studi bisnis digital yang unggul, inovatif, dan berkarakter religius.',
+    misi: [
+      'Pendidikan berkualitas bidang bisnis digital.',
+      'Penelitian inovatif berorientasi masa depan.',
+      'Pengabdian masyarakat berbasis teknologi bisnis.',
+      'Membangun budaya akademik inovatif.',
+    ],
+    tujuan: [
+      'Lulusan profesional & berakhlak mulia.',
+      'Karya ilmiah di bidang bisnis digital.',
+      'Penerapan teknologi tepat guna untuk masyarakat.',
+    ],
+  },
+}
+
+export default function VisiMisiPage() {
+  const [activeKey, setActiveKey] = useState('stt-nf')
+  const inst = institutions[activeKey]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-indigo-900 text-white font-sans">
-      {/* Navigation */}
-      <PillNav
-        logo={logoDataURL}
-        logoAlt="NF StudentHub Logo"
-        items={[
-          { label: 'Home', href: '/' },
-          { label: 'Visi Misi', href: '/visi-misi' },
-          { label: 'Kalender', href: '/kalender-akademik' },
-          { label: 'Login', href: '/login' }
-        ]}
-        activeHref="/kurikulum"
-        className="custom-nav"
-        ease="power6.easeOut"
-        baseColor="#fff"
-        pillColor="#060010"
-        hoveredPillTextColor="#060010"
-        pillTextColor="#ffffff"
-      />
+    <>
+      <style>{CSS}</style>
+      <div className="vp">
 
-      {/* Header dengan Back Button */}
-      <header className="pt-32 pb-10 px-6">
-        <div className="max-w-7xl mx-auto">
-          <Link 
-            to="/" 
-            className="inline-flex items-center gap-2 text-purple-300 hover:text-white transition-colors duration-300 mb-6 group"
-          >
-            <svg className="w-5 h-5 transform group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"/>
-            </svg>
-            Kembali ke Beranda
-          </Link>
-          
-          <div className="text-center">
-            <h1 className="font-bold text-5xl md:text-6xl text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400 mb-6">
-              Struktur Kurikulum
+        <nav className="nav">
+          <span className="nav-brand">NF STUDENTHUB</span>
+          <a href="/" className="nav-link">Home</a>
+          <a href="/kurikulum" className="nav-link">Kurikulum</a>
+          <a href="/kalender-akademik" className="nav-link">Kalender</a>
+          <Link to="/login" className="nav-enter">Masuk</Link>
+        </nav>
+
+        <header className="vp-header">
+          <div className="w">
+            <Link to="/" className="back-link">
+              <span>←</span>
+              Kembali ke Beranda
+            </Link>
+            <span className="vp-header-meta">
+              STT Terpadu Nurul Fikri · Institusi & Program Studi
+            </span>
+            <h1 className="vp-header-title">
+              Visi & <em>Misi.</em>
             </h1>
-            <p className="text-xl text-purple-200 max-w-3xl mx-auto">
-              Program Studi Teknik Informatika - Berlaku untuk Angkatan 2020 ke bawah
+            <p className="vp-header-sub">
+              Integritas, inovasi, dan karakter religius sebagai fondasi untuk
+              membangun generasi teknologi unggul Indonesia 2045.
             </p>
           </div>
-        </div>
-      </header>
+        </header>
 
-      {/* Content */}
-      <section className="py-10 px-6 pb-20">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {curriculumData.map((semester, index) => (
-              <div 
-                key={index} 
-                className="bg-gradient-to-br from-gray-800/70 to-gray-900/70 backdrop-blur-md rounded-2xl overflow-hidden shadow-2xl border border-white/10 transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 hover:border-purple-400/30 group"
+        <div className="w">
+          <div className="inst-selector">
+            {Object.values(institutions).map((i) => (
+              <button
+                key={i.key}
+                className={`inst-btn${activeKey === i.key ? ' active' : ''}`}
+                onClick={() => setActiveKey(i.key)}
               >
-                <div className={`h-2 transition-all duration-500 group-hover:h-3 ${
-                  index % 4 === 0 ? 'bg-gradient-to-r from-purple-500 to-pink-500' : 
-                  index % 4 === 1 ? 'bg-gradient-to-r from-blue-500 to-cyan-500' : 
-                  index % 4 === 2 ? 'bg-gradient-to-r from-green-500 to-emerald-500' : 
-                  'bg-gradient-to-r from-yellow-500 to-orange-500'
-                }`}></div>
-                <div className="p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-xl font-bold text-white">{semester.semester}</h3>
-                    <span className="text-xs bg-purple-500/20 text-purple-300 px-2 py-1 rounded-full">
-                      {semester.totalCredits} SKS
-                    </span>
-                  </div>
-                  <div className="space-y-3">
-                    {semester.courses.map((course, courseIndex) => (
-                      <div 
-                        key={courseIndex} 
-                        className="flex justify-between items-start pb-3 border-b border-gray-700/50 last:border-0 group/item hover:bg-gray-700/30 -mx-2 px-2 rounded-lg transition-colors duration-200"
-                      >
-                        <div className="text-gray-300 text-sm flex-1 group-hover/item:text-white transition-colors">
-                          {course.name}
-                        </div>
-                        <div className="text-white font-bold ml-2 bg-gray-700/50 px-2 py-1 rounded text-xs">
-                          {course.credits} SKS
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  {semester.note && (
-                    <div className="mt-4 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
-                      <p className="text-xs text-yellow-300 italic">{semester.note}</p>
-                    </div>
-                  )}
-                </div>
-              </div>
+                <span className="inst-btn-label">{i.abbr}</span>
+                <span className="inst-btn-name">
+                  {i.fullName.split(' ').slice(0, 3).join(' ')}
+                </span>
+              </button>
             ))}
           </div>
         </div>
-      </section>
 
-      <Footer />
-    </div>
-  );
-};
+        <section className="vp-content">
+          <div className="w" key={activeKey}>
 
-export default CurriculumPage;
+            <div className="inst-full-name fade-in">
+              <span className="inst-fn-label">Institusi / Program Studi</span>
+              <div className="inst-fn-name">{inst.fullName}</div>
+            </div>
+
+            {/* VISI */}
+            <div className="visi-block fade-in">
+              <span className="block-label">Visi</span>
+              <blockquote className="visi-quote">
+                {inst.visi}
+              </blockquote>
+            </div>
+
+            {/* MISI + TUJUAN */}
+            <div className="vm-content-grid fade-in">
+              <div>
+                <span className="vm-block-title">Misi</span>
+                <ul className="misi-list">
+                  {inst.misi.map((m, i) => (
+                    <li key={i} className="misi-item">
+                      <span className="misi-idx">0{i + 1}</span>
+                      <span className="misi-text">{m}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div>
+                <span className="vm-block-title">Tujuan</span>
+                <ul className="tujuan-list">
+                  {inst.tujuan.map((t, i) => (
+                    <li key={i} className="tujuan-item">
+                      <span className="tujuan-arrow">→</span>
+                      <span className="tujuan-text">{t}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        <footer className="footer">
+          <div className="w">
+            <div className="footer-inner">
+              <span className="footer-brand">NF STUDENTHUB</span>
+              <nav className="footer-nav">
+                <a href="/">Home</a>
+                <a href="/kurikulum">Kurikulum</a>
+                <a href="/kalender-akademik">Kalender</a>
+                <a href="/login">Login</a>
+              </nav>
+              <span className="footer-copy">
+                © {new Date().getFullYear()} NF StudentHub
+              </span>
+            </div>
+          </div>
+        </footer>
+
+      </div>
+    </>
+  )
+}

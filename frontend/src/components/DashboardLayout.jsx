@@ -1,21 +1,23 @@
 // src/components/DashboardLayout.jsx - DIUPDATE DENGAN DROPDOWN MOBILE
-import React, { useState } from 'react'
+import React, { Suspense, lazy, useState } from 'react'
 import { useQuery } from "@tanstack/react-query"
 import { useNavigate, Link } from 'react-router-dom'
 import api from '../services/api'
 import Sidebar from './Sidebar'
 import useAuth from '../hooks/useAuth'
 import PostCard from './PostCard'
-import Chatbot from './Chatbot'
 import { 
   FaSearch, FaRegHeart, FaBars, FaSignOutAlt, FaPlus, 
-  FaInstagram, FaChevronDown, FaChevronUp, FaUsers, FaUniversity
+  FaInstagram, FaChevronDown, FaChevronUp, FaUsers, FaUniversity, FaClock, FaPaperclip
 } from 'react-icons/fa'
 import { RiHome7Line, RiHome7Fill } from 'react-icons/ri'
 import { FiHome, FiSearch, FiPlusSquare, FiHeart, FiUsers } from 'react-icons/fi'
 import { BsInstagram, BsPeopleFill } from 'react-icons/bs'
 import { MdOutlineSchool } from 'react-icons/md'
 import { getProfilePhotoUrl, getInitials, cleanUsername } from '../utils/profileUtils'
+import { resolveBackendAssetUrl } from '../utils/assetUrl'
+
+const Chatbot = lazy(() => import('./Chatbot'))
 
 const getRelativeTime = (dateString) => {
   const rtf = new Intl.RelativeTimeFormat('id', { numeric: 'auto' })
@@ -34,6 +36,21 @@ const getRelativeTime = (dateString) => {
     day: 'numeric',
     month: 'short'
   })
+}
+
+const formatDateTime = (dateString) => {
+  if (!dateString) return '-'
+  return new Date(dateString).toLocaleString('id-ID', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+}
+
+const getFileUrl = (filePath) => {
+  return resolveBackendAssetUrl(filePath)
 }
 
 const DashboardLayout = ({ 
@@ -70,11 +87,38 @@ const DashboardLayout = ({
     refetchOnMount: false,
     refetchOnReconnect: false,
   })
+
+  const { data: mahasiswaTasks = [], isLoading: tasksLoading } = useQuery({
+    queryKey: ['mahasiswa-task-list'],
+    queryFn: () => api.getMahasiswaTugasList().then(res => res.data?.data?.tasks || []),
+    enabled: role === 'mahasiswa' && !!user,
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    refetchInterval: 15000,
+  })
+
+  const tabs = role === 'mahasiswa'
+    ? [
+        { key: 'all', label: 'For You' },
+        { key: 'admin', label: 'Admin' },
+        { key: 'ormawa', label: 'Organizations' },
+        { key: 'ukm', label: 'UKM' },
+        { key: 'list_tugas', label: 'List Tugas' },
+      ]
+    : [
+        { key: 'all', label: 'For You' },
+        { key: 'admin', label: 'Admin' },
+        { key: 'ormawa', label: 'Organizations' },
+        { key: 'ukm', label: 'UKM' },
+      ]
   
 
   const filteredPosts = activeTab === 'all' 
     ? posts 
     : posts.filter(post => post.role === activeTab)
+
+  const tugasList = mahasiswaTasks.filter((task) => task.type === 'tugas')
+  const showTaskTabContent = role === 'mahasiswa' && activeTab === 'list_tugas'
 
   const handleLogout = async () => {
     try {
@@ -153,18 +197,12 @@ const DashboardLayout = ({
 
           {/* Role Filter Tabs */}
           <div className="flex overflow-x-auto scrollbar-hide border-b border-gray-100">
-            {[
-              { key: 'all', label: 'For You' },
-              { key: 'admin', label: 'Admin' },
-              { key: 'ormawa', label: 'Organizations' },
-              { key: 'ukm', label: 'UKM' },
-            ].map(tab => (
+            {tabs.map(tab => (
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
                 className={`flex-shrink-0 px-6 py-3 font-medium text-sm transition-all duration-200 relative flex items-center space-x-2 ${activeTab === tab.key ? 'text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
               >
-                <span>{tab.icon}</span>
                 <span>{tab.label}</span>
                 {activeTab === tab.key && (
                   <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-12 h-0.5 bg-gray-900 rounded-full animate-pulse"></div>
@@ -279,7 +317,85 @@ const DashboardLayout = ({
 
         {/* Feed Content */}
         <div className="pb-20">
-          {filteredPosts.length > 0 ? (
+          {showTaskTabContent ? (
+            <div className="animate-fadeIn px-4 py-5 space-y-4">
+              {tasksLoading ? (
+                <div className="py-20 text-center">
+                  <div className="animate-spin rounded-full h-10 w-10 border-4 border-pink-500 border-t-transparent mx-auto mb-4"></div>
+                  <p className="text-gray-600">Memuat list tugas...</p>
+                </div>
+              ) : tugasList.length > 0 ? (
+                tugasList.map((task) => {
+                  const dueDate = task.due_date ? formatDateTime(task.due_date) : 'Tidak ditentukan'
+                  const uploadDate = formatDateTime(task.created_at)
+                  const fileUrl = getFileUrl(task.file_tugas)
+
+                  return (
+                    <button
+                      key={task.id}
+                      type="button"
+                      onClick={() => navigate(`/mahasiswa/matkul/${task.course_id}/pertemuan/${task.pertemuan || 1}/tugas?taskId=${task.id}`)}
+                      className="w-full text-left bg-white border border-gray-200 rounded-2xl p-5 hover:border-pink-300 hover:shadow-md transition-all duration-200"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <h3 className="text-lg font-bold text-gray-900">{task.title}</h3>
+                          <p className="text-sm text-gray-600 mt-1">{task.course_name} • Pertemuan {task.pertemuan}</p>
+                        </div>
+                        {task.is_overdue ? (
+                          <span className="text-xs font-semibold px-3 py-1 rounded-full bg-red-100 text-red-700">Terlambat</span>
+                        ) : (
+                          <span className="text-xs font-semibold px-3 py-1 rounded-full bg-green-100 text-green-700">Aktif</span>
+                        )}
+                      </div>
+
+                      <div className="mt-4 grid gap-2 text-sm text-gray-700">
+                        <div className="flex items-center gap-2">
+                          <FaClock className="text-orange-500" />
+                          <span>Deadline: {dueDate}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <FaClock className="text-blue-500" />
+                          <span>Tanggal upload: {uploadDate}</span>
+                        </div>
+                      </div>
+
+                      {task.description && (
+                        <p className="mt-4 text-sm text-gray-600 leading-relaxed">
+                          {task.description}
+                        </p>
+                      )}
+
+                      {fileUrl && (
+                        <div className="mt-4">
+                          <a
+                            href={fileUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="inline-flex items-center gap-2 text-sm text-pink-600 hover:text-pink-700 font-semibold"
+                          >
+                            <FaPaperclip />
+                            <span>Lihat file tugas</span>
+                          </a>
+                        </div>
+                      )}
+                    </button>
+                  )
+                })
+              ) : (
+                <div className="text-center py-16 px-4">
+                  <div className="w-24 h-24 mx-auto mb-6 bg-gradient-to-r from-pink-100 to-orange-100 rounded-full flex items-center justify-center">
+                    <span className="text-4xl">📚</span>
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">Belum ada tugas</h3>
+                  <p className="text-gray-600 max-w-sm mx-auto">
+                    Tugas dari dosen akan tampil otomatis di sini saat dosen upload tugas baru.
+                  </p>
+                </div>
+              )}
+            </div>
+          ) : filteredPosts.length > 0 ? (
             <div className="animate-fadeIn">
               {filteredPosts.map(post => (
                 <PostCard key={post.id} post={post} getRelativeTime={getRelativeTime} />
@@ -442,7 +558,9 @@ const DashboardLayout = ({
       </div>
 
       {/* CHATBOT COMPONENT */}
-      <Chatbot />
+      <Suspense fallback={null}>
+        <Chatbot />
+      </Suspense>
 
       {/* Logout Confirmation Modal */}
       {showLogoutConfirm && (
@@ -468,35 +586,7 @@ const DashboardLayout = ({
             </div>
           </div>
         </div>
-      )}
-
-      {/* Mobile Bottom Navigation */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40 backdrop-blur-md shadow-lg">
-        <div className="flex items-center justify-around py-3">
-          <Link to="/" className="p-3 hover:bg-gray-100 rounded-lg transition-colors flex flex-col items-center">
-            <RiHome7Fill className="text-2xl text-gray-900" />
-            <span className="text-xs mt-1 text-gray-700">Home</span>
-          </Link>
-          <button className="p-3 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors flex flex-col items-center">
-            <FiSearch className="text-xl" />
-            <span className="text-xs mt-1 text-gray-500">Search</span>
-          </button>
-          <button className="p-3 bg-gradient-to-r from-pink-500 to-orange-500 text-white rounded-xl -mt-6 shadow-lg hover:scale-110 transition-transform">
-            <FiPlusSquare className="text-xl" />
-          </button>
-          <button className="p-3 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors relative flex flex-col items-center">
-            <FiHeart className="text-xl" />
-            <span className="absolute top-1 right-3 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center animate-pulse">
-              5
-            </span>
-            <span className="text-xs mt-1 text-gray-500">Notif</span>
-          </button>
-          <Link to={`/mahasiswa/profile`} className="p-3 hover:bg-gray-100 rounded-lg transition-colors flex flex-col items-center">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-r from-pink-500 to-orange-500 shadow-md"></div>
-            <span className="text-xs mt-1 text-gray-500">Profile</span>
-          </Link>
-        </div>
-      </div>
+      )}  
     </div>
   )
 }
