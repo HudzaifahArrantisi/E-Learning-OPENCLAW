@@ -1,4 +1,4 @@
-# 🎓 NF StudentHub
+# STUDENT HUB OPENCLAW
 
 ![Status](https://img.shields.io/badge/Status-Active-success)
 ![Platform](https://img.shields.io/badge/Platform-Web-blue)
