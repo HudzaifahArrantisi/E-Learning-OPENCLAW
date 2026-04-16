@@ -10,7 +10,7 @@
 
 *Landing Page NF StudentHub - hero utama platform akademik terintegrasi.*
 
-![Dashboard Mahasiswa](frontend/src/assets/image2.png)
+![Dashboard Mahasiswa](frontend/src/assets/image1.png)
 
 *Dashboard Mahasiswa - pengalaman feed ala Instagram (For You, like, komentar, posting organisasi) yang digabung dengan fitur akademik seperti tugas, materi, absensi, nilai, dan pembayaran UKT.*
 
