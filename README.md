@@ -1,6 +1,5 @@
 <div align="center">
   <h1>E-learning StudentHub</h1>
-  <p><em>Platform digital terintegrasi untuk ekosistem akademik STT Nurul Fikri</em></p>
 
   ![Status](https://img.shields.io/badge/Status-Active-success)
   ![Platform](https://img.shields.io/badge/Platform-Web-blue)
