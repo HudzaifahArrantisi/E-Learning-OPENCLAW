@@ -9,8 +9,6 @@
   ![License](https://img.shields.io/badge/License-Academic-lightgrey)
 </div>
 
----
-
 ## 📸 Preview
 
 ### 1. Landing Page
