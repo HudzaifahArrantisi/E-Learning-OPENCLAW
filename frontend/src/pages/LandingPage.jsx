@@ -1,1271 +1,516 @@
-/**
- * NF StudentHub — Single Page Application
- * Merged: Landing + Curriculum + Visi & Misi + Academic Calendar
- * Design System: Editorial Noir
- * Fonts: Cabin × Google Sans × Quicksand × Space Mono
- */
-
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import {
+  featureCards, howItWorks, benefits, roles, semesters, visiData, platformFeatures,
+  stats, footerLinks, programs, institutions, academicCalendar, calendarMonths,
+  EVENT_COLORS, EVENT_LABELS, getEventsForDate, fmtDate, dashboardFeed
+} from '../data/landingData'
+import LoginModal from '../components/LoginModal'
 
-/* ─────────────────────────────────────────────────────────────────
-   STYLES
-───────────────────────────────────────────────────────────────── */
-const CSS = `
-:root {
-  --bg:       #040609;
-  --bg1:      #07090f;
-  --surface:  #090c18;
-  --card:     #0b0e1e;
-  --border:   rgba(255,255,255,0.06);
-  --border-a: rgba(75,115,255,0.22);
-  --accent:   #4B73FF;
-  --accent-s: rgba(75,115,255,0.1);
-  --atext:    #8BA4FF;
-  --text:     #EDF0FF;
-  --text2:    #5D6E8F;
-  --text3:    #252E42;
-  --green:    #4ADE80;
-  --ff-s:    'Cabin', 'Google Sans', 'Quicksand', system-ui, sans-serif;
-  --ff:      'Cabin', 'Google Sans', 'Quicksand', system-ui, sans-serif;
-  --ff-m:    'Space Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
-  --nav-h:   56px;
-}
-
-*,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; }
-
-.lp {
-  background: var(--bg);
-  color: var(--text);
-  font-family: var(--ff);
-  font-weight: 300;
-  overflow-x: hidden;
-  line-height: 1.6;
-  min-height: 100vh;
-}
-
-/* ── CONTAINER ── */
-.w { max-width: 1120px; margin: 0 auto; padding: 0 28px; }
-.sec { padding: 104px 0; }
-.sep { border: none; border-top: 1px solid var(--border); }
-section[id] { scroll-margin-top: calc(var(--nav-h) + 44px); }
-
-/* ── SECTION LABELING ── */
-.sec-eyebrow {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  font-size: 10.5px;
-  font-weight: 500;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--text3);
-  margin-bottom: 40px;
-}
-.sec-eyebrow span { font-family: var(--ff-m); color: var(--text3); }
-.sec-eyebrow::after { content: ''; flex: 1; height: 1px; background: var(--border); }
-
-/* ── TYPOGRAPHY ── */
-.t-display {
-  font-family: var(--ff-s);
-  font-size: clamp(2.8rem, 5.5vw, 4.5rem);
-  font-weight: 400;
-  line-height: 1.06;
-  letter-spacing: -0.025em;
-  color: var(--text);
-}
-.t-display em { font-style: italic; }
-.t-body { font-size: 16px; font-weight: 300; color: var(--text2); line-height: 1.8; }
-
-/* ── BUTTONS ── */
-.btn-prim {
-  display: inline-flex; align-items: center; gap: 8px;
-  background: var(--text); color: var(--bg);
-  font-family: var(--ff); font-size: 13px; font-weight: 600;
-  padding: 11px 24px; border-radius: 100px;
-  text-decoration: none; transition: all .2s;
-  letter-spacing: 0.01em; border: none; cursor: pointer;
-}
-.btn-prim:hover { background: var(--atext); transform: translateY(-1px); }
-.btn-ghost {
-  display: inline-flex; align-items: center; gap: 7px;
-  color: var(--text2); font-family: var(--ff); font-size: 13px; font-weight: 400;
-  text-decoration: none; transition: color .18s;
-  background: none; border: none; cursor: pointer; padding: 0;
-}
-.btn-ghost:hover { color: var(--text); }
-.btn-ghost .arr { transition: transform .18s; display: inline-block; }
-.btn-ghost:hover .arr { transform: translateX(4px); }
-
-/* ── REVEAL ANIMATION ── */
-.rv { opacity: 0; transform: translateY(18px); transition: opacity .7s ease, transform .7s ease; }
-.rv.in { opacity: 1; transform: none; }
-.rv.d1 { transition-delay: .1s; }
-.rv.d2 { transition-delay: .2s; }
-.rv.d3 { transition-delay: .3s; }
-
-/* ── FADE IN ── */
-.fade-in { animation: fadeIn .4s ease both; }
-@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
-
-/* ═══════════════════════════════════════════
-   NAV
-═══════════════════════════════════════════ */
-.nav {
-  position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
-  z-index: 1000; display: flex; align-items: center;
-  background: rgba(4,6,9,0.82); backdrop-filter: blur(32px);
-  -webkit-backdrop-filter: blur(32px); border: 1px solid var(--border);
-  border-radius: 100px; padding: 5px 6px 5px 18px; white-space: nowrap; gap: 2px;
-  width: max-content; max-width: calc(100% - 24px); overflow-x: auto;
-  scrollbar-width: none; box-shadow: 0 10px 28px rgba(0,0,0,0.35);
-}
-.nav::-webkit-scrollbar { display: none; }
-.nav-brand { font-size: 11.5px; font-weight: 600; color: var(--text); letter-spacing: 0.07em; margin-right: 10px; }
-.nav-link { color: var(--text2); text-decoration: none; font-size: 12.5px; font-weight: 400; padding: 7px 15px; border-radius: 100px; transition: all .18s; }
-.nav-link:hover { color: var(--text); background: rgba(255,255,255,0.05); }
-.nav-link.active { color: var(--atext); background: rgba(75,115,255,0.08); }
-.nav-enter { background: var(--text); color: var(--bg); text-decoration: none; font-size: 12.5px; font-weight: 600; padding: 8px 20px; border-radius: 100px; transition: all .18s; margin-left: 4px; letter-spacing: 0.01em; }
-.nav-enter:hover { background: var(--atext); }
-.btn-prim:focus-visible, .btn-ghost:focus-visible, .nav-link:focus-visible, .nav-enter:focus-visible {
-  outline: 2px solid rgba(139,164,255,0.45);
-  outline-offset: 2px;
-}
-
-/* ═══════════════════════════════════════════
-   HERO
-═══════════════════════════════════════════ */
-.hero {
-  position: relative; min-height: 100vh;
-  display: flex; align-items: flex-end;
-  padding-bottom: 90px; overflow: hidden;
-}
-.hero-grid {
-  position: absolute; inset: 0;
-  background-image:
-    linear-gradient(rgba(255,255,255,0.024) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.024) 1px, transparent 1px);
-  background-size: 64px 64px;
-}
-.hero-fog { position: absolute; inset: 0; background: radial-gradient(ellipse 120% 80% at 50% 50%, transparent 0%, rgba(4,6,9,.55) 50%, var(--bg) 100%); }
-.hero-bottom { position: absolute; bottom: 0; left: 0; right: 0; height: 50%; background: linear-gradient(transparent, var(--bg)); }
-.hero-scan {
-  position: absolute; left: 0; right: 0; height: 160px;
-  background: linear-gradient(180deg, transparent, rgba(75,115,255,0.01) 35%, rgba(75,115,255,0.024) 50%, rgba(75,115,255,0.01) 65%, transparent);
-  animation: scanAnim 18s linear infinite; pointer-events: none;
-}
-@keyframes scanAnim { from { top: -160px; } to { top: 100%; } }
-.hero-inner { position: relative; z-index: 2; }
-.hero-badge {
-  display: inline-flex; align-items: center; gap: 9px;
-  border: 1px solid rgba(255,255,255,0.1); border-radius: 100px;
-  padding: 5px 15px 5px 10px; font-size: 11.5px; font-weight: 400;
-  color: var(--text2); letter-spacing: 0.03em; margin-bottom: 40px;
-  animation: fadeUp .6s .1s ease both;
-}
-.badge-pulse { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: pulse 3s ease-in-out infinite; }
-@keyframes pulse { 0%,100%{opacity:1}50%{opacity:.35} }
-.hero-h1 {
-  font-family: var(--ff-s); font-size: clamp(3.8rem, 7.4vw, 6.6rem);
-  font-weight: 400; line-height: .96; letter-spacing: -0.035em;
-  color: var(--text); margin-bottom: 30px; animation: fadeUp .9s .35s ease both;
-}
-.hero-h1 em { font-style: italic; color: rgba(255,255,255,.42); }
-.hero-sub {
-  font-size: 17px; font-weight: 300; color: var(--text2);
-  max-width: 560px; line-height: 1.75; margin-bottom: 44px;
-  animation: fadeUp .9s .5s ease both;
-}
-.hero-actions { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; animation: fadeUp .9s .65s ease both; }
-.hero-scroll { position: absolute; bottom: 36px; left: 50%; transform: translateX(-50%); z-index: 2; display: flex; flex-direction: column; align-items: center; animation: fadeUp .9s 1s ease both; }
-.hero-scroll-line { width: 1px; height: 48px; background: linear-gradient(180deg, rgba(255,255,255,.3), transparent); animation: scrollAnim 2.8s ease-in-out infinite; }
-@keyframes scrollAnim { 0%,100%{opacity:.25;transform:scaleY(.5) translateY(-10px)} 50%{opacity:1;transform:scaleY(1) translateY(0)} }
-@keyframes fadeUp { from{opacity:0;transform:translateY(22px)} to{opacity:1;transform:translateY(0)} }
-
-/* ═══════════════════════════════════════════
-   OPENCLAW
-═══════════════════════════════════════════ */
-.oc-grid { display: grid; grid-template-columns: 5fr 7fr; gap: 88px; align-items: center; }
-.oc-text .t-display { margin-bottom: 20px; }
-.oc-text .t-body { margin-bottom: 28px; max-width: 380px; }
-.oc-detail { font-size: 12px; font-weight: 400; color: var(--text3); font-family: var(--ff-m); letter-spacing: 0.05em; }
-.terminal { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
-.terminal-bar { display: flex; align-items: center; gap: 7px; padding: 13px 18px; border-bottom: 1px solid var(--border); background: var(--card); }
-.t-dot { width: 10px; height: 10px; border-radius: 50%; }
-.t-dot-r { background: #FF5F57; } .t-dot-y { background: #FEBC2E; } .t-dot-g { background: #28C840; }
-.terminal-path { font-family: var(--ff-m); font-size: 11px; color: var(--text3); margin-left: 10px; letter-spacing: 0.04em; }
-.terminal-body { padding: 24px 26px 28px; font-family: var(--ff-m); font-size: 12.5px; font-weight: 300; line-height: 2; }
-.t-prompt { color: var(--text3); } .t-cmd { color: var(--atext); } .t-ok { color: var(--green); }
-.t-dim { color: var(--text3); } .t-val { color: var(--text2); }
-.t-line { display: block; } .t-spacer { display: block; height: 0.4em; }
-.t-divider { display: block; color: var(--text3); margin: 4px 0; }
-.t-time { color: var(--text3); font-size: 11.5px; }
-
-/* ═══════════════════════════════════════════
-   ECOSYSTEM ROLES
-═══════════════════════════════════════════ */
-.roles-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-top: 56px; }
-.role-card { border: 1px solid var(--border); border-radius: 14px; padding: 24px 20px; transition: border-color .28s, background .28s; cursor: default; }
-.role-card:hover { border-color: var(--border-a); background: rgba(75,115,255,0.04); }
-.role-idx { font-family: var(--ff-m); font-size: 9.5px; color: var(--text3); letter-spacing: 0.1em; display: block; margin-bottom: 14px; }
-.role-name { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 9px; letter-spacing: -0.01em; line-height: 1.3; }
-.role-desc { font-size: 12px; font-weight: 300; color: var(--text2); line-height: 1.65; margin-bottom: 18px; }
-.role-access { display: flex; flex-direction: column; gap: 5px; }
-.role-access-item { font-family: var(--ff-m); font-size: 10.5px; color: var(--text3); letter-spacing: 0.02em; }
-.role-access-item::before { content: '↳ '; color: var(--accent); opacity: .6; }
-
-/* ═══════════════════════════════════════════
-   CURRICULUM OVERVIEW (landing section)
-═══════════════════════════════════════════ */
-.curr-header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 48px; gap: 24px; }
-.curr-header-left .t-display { max-width: 420px; }
-.curr-header-right .t-body { max-width: 280px; font-size: 14px; }
-.semesters { display: grid; grid-template-columns: repeat(8, 1fr); gap: 10px; }
-.sem { border: 1px solid var(--border); border-radius: 12px; padding: 20px 16px; transition: border-color .22s; cursor: default; position: relative; overflow: hidden; }
-.sem::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background: var(--accent); transform: scaleX(0); transition: transform .28s; transform-origin: left; }
-.sem:hover { border-color: var(--border-a); }
-.sem:hover::after { transform: scaleX(1); }
-.sem-n { font-family: var(--ff-m); font-size: 9.5px; color: var(--text3); letter-spacing: 0.1em; display: block; margin-bottom: 12px; }
-.sem-credits { font-family: var(--ff-s); font-size: 2.6rem; font-weight: 400; color: var(--text); line-height: 1; display: block; margin-bottom: 4px; }
-.sem-label { font-size: 10.5px; font-weight: 300; color: var(--text2); }
-.curr-footer { margin-top: 36px; display: flex; align-items: center; justify-content: space-between; padding-top: 28px; border-top: 1px solid var(--border); }
-.curr-total { display: flex; align-items: baseline; gap: 8px; }
-.curr-total-n { font-family: var(--ff-s); font-size: 2rem; color: var(--text); letter-spacing: -0.02em; }
-.curr-total-l { font-size: 12px; color: var(--text2); font-weight: 300; }
-
-/* ═══════════════════════════════════════════
-   FULL CURRICULUM SECTION
-═══════════════════════════════════════════ */
-.prog-tabs { display: flex; gap: 8px; margin-bottom: 48px; overflow-x: auto; scrollbar-width: none; }
-.prog-tabs::-webkit-scrollbar { display: none; }
-.prog-tab {
-  display: inline-flex; flex-direction: column; gap: 3px;
-  padding: 12px 20px; border-radius: 12px; border: 1px solid var(--border);
-  cursor: pointer; background: none; font-family: var(--ff);
-  transition: all .22s; text-align: left; min-width: 160px; flex-shrink: 0;
-}
-.prog-tab:hover { border-color: rgba(255,255,255,0.12); background: rgba(255,255,255,0.025); }
-.prog-tab.active { border-color: var(--border-a); background: rgba(75,115,255,0.07); }
-.prog-tab-label { font-size: 10px; font-family: var(--ff-m); letter-spacing: 0.1em; text-transform: uppercase; color: var(--text3); transition: color .22s; }
-.prog-tab.active .prog-tab-label { color: var(--atext); }
-.prog-tab-name { font-size: 13px; font-weight: 500; color: var(--text2); line-height: 1.35; transition: color .22s; }
-.prog-tab.active .prog-tab-name { color: var(--text); }
-
-.curr-prog-title { font-family: var(--ff-s); font-size: clamp(1.5rem, 2.8vw, 2.2rem); font-weight: 400; color: var(--text); line-height: 1.25; letter-spacing: -0.015em; margin-bottom: 8px; }
-.curr-prog-meta { font-size: 11px; font-weight: 300; color: var(--text3); font-family: var(--ff-m); letter-spacing: 0.08em; margin-bottom: 40px; display: block; }
-
-.curr-table { width: 100%; border-collapse: collapse; }
-.curr-table thead tr { border-bottom: 1px solid var(--border); }
-.curr-table th { font-family: var(--ff-m); font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text3); padding: 0 0 16px 0; text-align: left; font-weight: 500; }
-.curr-table th:last-child { text-align: right; }
-.curr-table tbody tr { border-bottom: 1px solid var(--border); transition: background .15s; }
-.curr-table tbody tr:last-child { border-bottom: none; }
-.curr-table tbody tr:hover { background: rgba(75,115,255,0.025); }
-.curr-table td { padding: 16px 0; vertical-align: top; }
-.curr-td-sem { font-family: var(--ff-m); font-size: 10px; color: var(--text3); letter-spacing: 0.06em; white-space: nowrap; padding-right: 32px; padding-top: 18px; }
-.curr-td-name { font-size: 14px; font-weight: 400; color: var(--text); line-height: 1.4; }
-.curr-td-type { font-size: 11.5px; font-weight: 300; color: var(--text2); margin-top: 3px; }
-.curr-td-sks { font-family: var(--ff-s); font-size: 1.4rem; color: var(--text); text-align: right; padding-top: 14px; letter-spacing: -0.02em; }
-.curr-td-sks span { font-size: 11px; font-family: var(--ff); font-weight: 300; color: var(--text2); margin-left: 4px; }
-.curr-sem-header td { padding-top: 32px; padding-bottom: 8px; }
-.curr-sem-label { font-family: var(--ff-m); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); opacity: .7; }
-
-/* ═══════════════════════════════════════════
-   VISI MISI SECTION
-═══════════════════════════════════════════ */
-.vm-grid { display: grid; grid-template-columns: 5fr 6fr; gap: 100px; align-items: start; }
-.visi-statement { font-family: var(--ff-s); font-style: italic; font-size: clamp(1.5rem, 2.8vw, 2.1rem); line-height: 1.48; color: var(--text); letter-spacing: -0.01em; margin-bottom: 32px; }
-.visi-source { font-size: 12px; font-weight: 300; color: var(--text3); font-family: var(--ff-m); letter-spacing: 0.06em; text-transform: uppercase; }
-
-/* Full visi-misi deep section */
-.inst-selector { padding: 0 0 36px 0; display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; }
-.inst-selector::-webkit-scrollbar { display: none; }
-.inst-btn {
-  display: inline-flex; flex-direction: column; gap: 3px;
-  padding: 12px 20px; border-radius: 12px; border: 1px solid var(--border);
-  cursor: pointer; background: none; font-family: var(--ff);
-  transition: all .22s; text-align: left; min-width: 160px; flex-shrink: 0;
-}
-.inst-btn:hover { border-color: rgba(255,255,255,0.12); background: rgba(255,255,255,0.025); }
-.inst-btn.active { border-color: var(--border-a); background: rgba(75,115,255,0.07); }
-.inst-btn-label { font-size: 10px; font-family: var(--ff-m); letter-spacing: 0.1em; text-transform: uppercase; color: var(--text3); transition: color .22s; }
-.inst-btn.active .inst-btn-label { color: var(--atext); }
-.inst-btn-name { font-size: 13px; font-weight: 500; color: var(--text2); line-height: 1.35; transition: color .22s; }
-.inst-btn.active .inst-btn-name { color: var(--text); }
-.inst-fn-label { font-size: 11px; font-weight: 300; color: var(--text3); font-family: var(--ff-m); letter-spacing: 0.08em; margin-bottom: 8px; display: block; }
-.inst-fn-name { font-family: var(--ff-s); font-size: clamp(1.5rem, 2.8vw, 2.2rem); font-weight: 400; color: var(--text); line-height: 1.25; letter-spacing: -0.015em; margin-bottom: 40px; }
-.block-label { font-size: 10.5px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text3); font-family: var(--ff-m); display: block; margin-bottom: 28px; }
-.visi-block { margin-bottom: 72px; padding-bottom: 72px; border-bottom: 1px solid var(--border); }
-.visi-quote { font-family: var(--ff-s); font-style: italic; font-size: clamp(1.8rem, 3.5vw, 2.8rem); line-height: 1.4; color: var(--text); letter-spacing: -0.015em; max-width: 820px; position: relative; padding-left: 32px; }
-.visi-quote::before { content: ''; position: absolute; left: 0; top: 0.2em; bottom: 0.2em; width: 2px; background: var(--accent); opacity: .5; border-radius: 2px; }
-.vm-content-grid { display: grid; grid-template-columns: 1.1fr 1fr; gap: 80px; }
-.vm-block-title { font-size: 12px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text3); font-family: var(--ff-m); display: block; margin-bottom: 28px; }
-.misi-list { list-style: none; }
-.misi-item { display: flex; gap: 22px; align-items: flex-start; padding: 20px 0; border-bottom: 1px solid var(--border); }
-.misi-item:last-child { border-bottom: none; }
-.misi-idx { font-family: var(--ff-m); font-size: 10px; color: var(--text3); flex-shrink: 0; padding-top: 3px; min-width: 28px; }
-.misi-text { font-size: 15px; font-weight: 300; color: var(--text2); line-height: 1.72; }
-.tujuan-list { list-style: none; }
-.tujuan-item { display: flex; gap: 16px; align-items: flex-start; padding: 16px 0; border-bottom: 1px solid var(--border); }
-.tujuan-item:last-child { border-bottom: none; }
-.tujuan-arrow { font-family: var(--ff-m); font-size: 11px; color: var(--accent); opacity: .6; flex-shrink: 0; padding-top: 3px; }
-.tujuan-text { font-size: 14px; font-weight: 300; color: var(--text2); line-height: 1.65; }
-
-/* ═══════════════════════════════════════════
-   ACADEMIC CALENDAR SECTION
-═══════════════════════════════════════════ */
-.cal-layout { display: grid; grid-template-columns: 1fr 280px; gap: 48px; align-items: flex-start; }
-.cal-months { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
-.cal-month { border: 1px solid var(--border); border-radius: 14px; padding: 24px; background: var(--card); }
-.cal-month-name { font-family: var(--ff-s); font-size: 1.05rem; font-weight: 400; color: var(--text); margin-bottom: 18px; letter-spacing: -0.01em; }
-.cal-day-headers { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; margin-bottom: 4px; }
-.cal-day-hdr { font-family: var(--ff-m); font-size: 9px; text-align: center; color: var(--text3); padding: 4px 0; letter-spacing: 0.06em; }
-.cal-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
-.cal-day { position: relative; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 5px; cursor: pointer; transition: background .14s; font-size: 11.5px; font-weight: 300; color: var(--text2); }
-.cal-day:hover { background: rgba(255,255,255,0.04); }
-.cal-day { cursor: default; }
-.cal-day.has-event { color: var(--text); font-weight: 500; cursor: pointer; }
-.cal-day.has-event:hover { background: rgba(75,115,255,0.08); }
-.cal-day-dots { position: absolute; bottom: 1px; left: 50%; transform: translateX(-50%); display: flex; gap: 2px; }
-.cal-dot { width: 3px; height: 3px; border-radius: 50%; }
-.cal-sidebar { display: flex; flex-direction: column; gap: 16px; }
-.cal-panel { border: 1px solid var(--border); border-radius: 14px; padding: 20px; background: var(--card); }
-.cal-panel-title { font-family: var(--ff-m); font-size: 9.5px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text3); margin-bottom: 16px; display: block; }
-.legend-list { list-style: none; }
-.legend-item { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--border); }
-.legend-item:last-child { border-bottom: none; }
-.legend-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-.legend-label { font-size: 12.5px; font-weight: 300; color: var(--text2); }
-.sel-date-label { font-family: var(--ff-s); font-size: 1rem; font-weight: 400; color: var(--text); margin-bottom: 14px; line-height: 1.3; }
-.sel-event-list { list-style: none; }
-.sel-event { padding: 10px 0; border-bottom: 1px solid var(--border); }
-.sel-event:last-child { border-bottom: none; }
-.sel-event-type { font-family: var(--ff-m); font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text3); margin-bottom: 3px; display: block; }
-.sel-event-name { font-size: 12.5px; font-weight: 400; color: var(--text); line-height: 1.5; }
-.sel-event-dates { font-size: 10.5px; color: var(--text2); margin-top: 3px; font-family: var(--ff-m); }
-.upcoming-list { list-style: none; }
-.upcoming-item { padding: 10px 0; border-bottom: 1px solid var(--border); }
-.upcoming-item:last-child { border-bottom: none; }
-.upcoming-name { font-size: 12.5px; font-weight: 300; color: var(--text2); line-height: 1.5; margin-bottom: 3px; }
-.upcoming-date { font-family: var(--ff-m); font-size: 10px; color: var(--text3); }
-
-/* ═══════════════════════════════════════════
-   PLATFORM FEATURES
-═══════════════════════════════════════════ */
-.features-list { border-top: 1px solid var(--border); margin-top: 52px; }
-.feat { display: grid; grid-template-columns: 1fr 1.4fr; gap: 80px; align-items: start; padding: 28px 0; border-bottom: 1px solid var(--border); transition: background .2s; }
-.feat:hover { background: rgba(75,115,255,0.02); border-radius: 10px; }
-.feat-name { font-size: 15px; font-weight: 500; color: var(--text); letter-spacing: -0.01em; line-height: 1.4; }
-.feat-desc { font-size: 13.5px; font-weight: 300; color: var(--text2); line-height: 1.75; }
-
-/* ═══════════════════════════════════════════
-   STATS
-═══════════════════════════════════════════ */
-.stats-container { border: 1px solid var(--border); border-radius: 20px; overflow: hidden; display: grid; grid-template-columns: repeat(4, 1fr); }
-.stat { padding: 52px 40px; border-right: 1px solid var(--border); }
-.stat:last-child { border-right: none; }
-.stat-n { font-family: var(--ff-s); font-size: 4rem; font-weight: 400; color: var(--text); line-height: 1; letter-spacing: -0.04em; display: block; margin-bottom: 10px; }
-.stat-l { font-size: 13px; font-weight: 300; color: var(--text2); line-height: 1.55; max-width: 140px; }
-
-/* ═══════════════════════════════════════════
-   CTA
-═══════════════════════════════════════════ */
-.cta-section { text-align: center; padding: 118px 24px 112px; position: relative; overflow: hidden; }
-.cta-glow { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 640px; height: 360px; background: radial-gradient(ellipse at 50% 100%, rgba(75,115,255,0.06), transparent 72%); pointer-events: none; }
-.cta-overline { font-size: 10.5px; font-family: var(--ff-m); color: var(--text3); letter-spacing: 0.16em; text-transform: uppercase; margin-bottom: 28px; display: block; }
-.cta-h { font-family: var(--ff-s); font-size: clamp(3.2rem, 7vw, 6rem); font-weight: 400; letter-spacing: -0.04em; line-height: .97; color: var(--text); margin-bottom: 24px; position: relative; }
-.cta-h em { font-style: italic; }
-.cta-sub { font-size: 16px; font-weight: 300; color: var(--text2); max-width: 360px; margin: 0 auto 48px; line-height: 1.75; }
-
-/* ═══════════════════════════════════════════
-   FOOTER
-═══════════════════════════════════════════ */
-.footer { border-top: 1px solid var(--border); padding: 64px 0 44px; }
-.footer-grid { display: grid; grid-template-columns: 2.4fr 1fr 1fr 1fr; gap: 64px; margin-bottom: 52px; }
-.footer-brand-name { font-size: 12.5px; font-weight: 600; color: var(--text); letter-spacing: 0.06em; display: block; margin-bottom: 14px; }
-.footer-brand-desc { font-size: 13.5px; font-weight: 300; color: var(--text2); line-height: 1.75; max-width: 270px; margin-bottom: 28px; }
-.footer-col-title { font-size: 11px; font-weight: 500; color: var(--text); letter-spacing: 0.1em; text-transform: uppercase; display: block; margin-bottom: 20px; }
-.footer-links { list-style: none; display: flex; flex-direction: column; gap: 12px; }
-.footer-link { color: var(--text2); text-decoration: none; font-size: 13.5px; font-weight: 300; transition: color .18s; }
-.footer-link:hover { color: var(--text); }
-.footer-bottom { border-top: 1px solid var(--border); padding-top: 28px; display: flex; justify-content: space-between; align-items: center; }
-.footer-copy { font-size: 12px; color: var(--text3); font-weight: 300; }
-.footer-legal { display: flex; gap: 24px; }
-.footer-legal a { font-size: 12px; color: var(--text3); text-decoration: none; transition: color .18s; }
-.footer-legal a:hover { color: var(--text2); }
-
-/* ═══════════════════════════════════════════
-   RESPONSIVE
-═══════════════════════════════════════════ */
-@media (max-width: 1024px) {
-  .oc-grid { grid-template-columns: 1fr; gap: 52px; }
-  .roles-grid { grid-template-columns: repeat(3, 1fr); }
-  .semesters { grid-template-columns: repeat(4, 1fr); }
-  .vm-grid { grid-template-columns: 1fr; gap: 52px; }
-  .cal-layout { grid-template-columns: 1fr; }
-  .footer-grid { grid-template-columns: 1fr 1fr; gap: 44px; }
-}
-@media (max-width: 768px) {
-  .w { padding: 0 24px; }
-  .sec { padding: 84px 0; }
-  .hero-h1 { font-size: clamp(3.2rem, 10vw, 5rem); }
-  .hero-actions { flex-direction: column; align-items: flex-start; gap: 14px; }
-  .roles-grid { grid-template-columns: 1fr 1fr; }
-  .semesters { grid-template-columns: repeat(4, 1fr); }
-  .curr-header { flex-direction: column; align-items: flex-start; }
-  .feat { grid-template-columns: 1fr; gap: 8px; }
-  .feat:hover { margin: 0; padding: 28px 0; }
-  .stats-container { grid-template-columns: 1fr 1fr; }
-  .stat { border-bottom: 1px solid var(--border); }
-  .stat:nth-child(odd) { border-right: 1px solid var(--border); }
-  .stat:nth-child(even) { border-right: none; }
-  .stat:nth-last-child(-n+2) { border-bottom: none; }
-  .vm-content-grid { grid-template-columns: 1fr; gap: 52px; }
-  .cal-months { grid-template-columns: 1fr; }
-}
-@media (max-width: 580px) {
-  .nav { left: 12px; right: 12px; transform: none; width: auto; }
-  .nav-brand { display: none; }
-  .nav-link { display: none; }
-  .nav-enter { margin-left: 0; }
-  .roles-grid { grid-template-columns: 1fr; }
-  .semesters { grid-template-columns: repeat(2, 1fr); }
-  .stats-container { grid-template-columns: 1fr; }
-  .stat { border-right: none; border-bottom: 1px solid var(--border); }
-  .stat:last-child { border-bottom: none; }
-  .footer-grid { grid-template-columns: 1fr; }
-  .footer-bottom { flex-direction: column; gap: 16px; text-align: center; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .rv, .fade-in, .hero-badge, .hero-h1, .hero-sub, .hero-actions, .hero-scroll, .badge-pulse, .hero-scan, .hero-scroll-line {
-    animation: none !important;
-    transition: none !important;
-    transform: none !important;
-    opacity: 1 !important;
-  }
-}
-`
-
-/* ─────────────────────────────────────────────────────────────────
-   DATA
-───────────────────────────────────────────────────────────────── */
-const roles = [
-  { idx: '01', name: 'Mahasiswa',   desc: 'Full access to courses, tasks, and campus social feed.',         access: ['Materi & Tugas', 'Absensi QR', 'Feed Kampus', 'Pembayaran UKT'] },
-  { idx: '02', name: 'Dosen',       desc: 'Teaching management with deep class control.',                   access: ['Upload Materi', 'Kelola Nilai', 'Monitor Absensi', 'Chat Mahasiswa'] },
-  { idx: '03', name: 'Admin / BAK', desc: 'Institutional administration and financial oversight.',          access: ['Manajemen Akun', 'Pantau Pembayaran', 'Kontrol Akses', 'Laporan Sistem'] },
-  { idx: '04', name: 'Orang Tua',   desc: 'Read-only monitoring for student performance.',                  access: ['Nilai & Absensi', 'Status UKT', 'Info Kampus'] },
-  { idx: '05', name: 'UKM / Ormawa',desc: 'Campus organization tools and event publishing.',               access: ['Post Kegiatan', 'Feed Filter', 'Kolaborasi'] },
-]
-
-const semesters = [
-  { n: 'SEM 01', credits: 21, courses: 8 },
-  { n: 'SEM 02', credits: 21, courses: 8 },
-  { n: 'SEM 03', credits: 21, courses: 8 },
-  { n: 'SEM 04', credits: 21, courses: 8 },
-  { n: 'SEM 05', credits: 21, courses: 7 },
-  { n: 'SEM 06', credits: 20, courses: 6 },
-  { n: 'SEM 07', credits: 20, courses: 6 },
-  { n: 'SEM 08', credits: 4,  courses: 1 },
-]
-
-const visiData = {
-  statement: 'Pada tahun 2045 menjadi sekolah tinggi yang unggul di Indonesia, berbudaya inovasi, berjiwa teknopreneur, dan berkarakter religius.',
-  source: 'Sekolah Tinggi Teknologi Terpadu Nurul Fikri',
-  misi: [
-    'Menyelenggarakan pendidikan tinggi berkualitas berlandaskan iman dan takwa.',
-    'Melaksanakan penelitian inovatif berorientasi teknologi masa depan.',
-    'Pengabdian masyarakat dengan teknologi tepat guna.',
-    'Membangun lingkungan akademik kondusif dan berbudaya inovasi.',
-  ],
-}
-
-const features = [
-  { name: 'OpenClaw Automation Engine',  desc: 'Automated notifications, reminders, and reporting delivered via Telegram. Zero manual intervention required from faculty.' },
-  { name: 'QR-based Attendance',         desc: 'Students scan unique session QR codes. Attendance data syncs to faculty dashboards in real time.' },
-  { name: 'Role-based Access Control',   desc: "JWT-secured endpoints with middleware validation. Every user sees only what they're authorized to access." },
-  { name: 'Academic Social Feed',        desc: 'Campus-wide information channel with filtering by organization, department, or event type.' },
-  { name: 'UKT Payment Tracking',        desc: 'Students view invoices, payment history, and outstanding balances. Parents get read-only visibility.' },
-  { name: 'Transcript & Grade Archive',  desc: 'Full semester-by-semester academic record accessible to students and viewable by authorized staff.' },
-  { name: 'Integrated Chat System',      desc: 'Direct messaging between students, faculty, and administration within the platform ecosystem.' },
-  { name: 'Multi-platform Architecture', desc: 'React + Vite frontend, Golang REST backend, JWT auth layer. Built for stability, speed, and extensibility.' },
-]
-
-const stats = [
-  { n: '5', label: 'Distinct user roles with granular access control' },
-  { n: '8', label: 'Semesters of structured curriculum content' },
-  { n: '∞', label: 'Automated workflows via OpenClaw engine' },
-  { n: '1', label: 'Unified platform for every campus need' },
-]
-
-const footerLinks = {
-  Platform: [
-    { label: 'Kurikulum',        href: '#kurikulum'  },
-    { label: 'Visi & Misi',      href: '#visi-misi'  },
-    { label: 'Kalender Akademik',href: '#kalender'   },
-    { label: 'Masuk',            href: '/login'      },
-  ],
-  Institusi: [
-    { label: 'Tentang STT-NF',    href: '#' },
-    { label: 'Teknik Informatika',href: '#' },
-    { label: 'Sistem Informasi',  href: '#' },
-    { label: 'Bisnis Digital',    href: '#' },
-  ],
-  Perusahaan: [
-    { label: 'Tentang Kami', href: '#' },
-    { label: 'Karir',        href: '#' },
-    { label: 'Blog',         href: '#' },
-    { label: 'Kontak',       href: '#' },
-  ],
-}
-
-/* ── CURRICULUM DATA ── */
-const programs = {
-  ti: {
-    abbr: 'TI', label: 'Teknik Informatika',
-    fullName: 'Program Studi Teknik Informatika',
-    totalSks: 149,
-    courses: [
-      { sem: 1, name: 'Kalkulus',                     type: 'Wajib',   sks: 3 },
-      { sem: 1, name: 'Fisika Dasar',                  type: 'Wajib',   sks: 3 },
-      { sem: 1, name: 'Algoritma & Pemrograman',       type: 'Wajib',   sks: 4 },
-      { sem: 1, name: 'Logika Matematika',             type: 'Wajib',   sks: 3 },
-      { sem: 1, name: 'Bahasa Indonesia',              type: 'Umum',    sks: 2 },
-      { sem: 1, name: 'Pendidikan Agama',              type: 'Umum',    sks: 2 },
-      { sem: 1, name: 'Bahasa Inggris I',              type: 'Umum',    sks: 2 },
-      { sem: 1, name: 'Pancasila & Kewarganegaraan',   type: 'Umum',    sks: 2 },
-      { sem: 2, name: 'Struktur Data',                 type: 'Wajib',   sks: 4 },
-      { sem: 2, name: 'Pemrograman Berorientasi Objek',type: 'Wajib',   sks: 4 },
-      { sem: 2, name: 'Matematika Diskret',            type: 'Wajib',   sks: 3 },
-      { sem: 2, name: 'Basis Data',                    type: 'Wajib',   sks: 3 },
-      { sem: 2, name: 'Statistika Dasar',              type: 'Wajib',   sks: 3 },
-      { sem: 2, name: 'Bahasa Inggris II',             type: 'Umum',    sks: 2 },
-      { sem: 2, name: 'Kewirausahaan',                 type: 'Umum',    sks: 2 },
-      { sem: 3, name: 'Rekayasa Perangkat Lunak',      type: 'Wajib',   sks: 3 },
-      { sem: 3, name: 'Jaringan Komputer',             type: 'Wajib',   sks: 3 },
-      { sem: 3, name: 'Sistem Operasi',                type: 'Wajib',   sks: 3 },
-      { sem: 3, name: 'Pemrograman Web',               type: 'Wajib',   sks: 4 },
-      { sem: 3, name: 'Analisis & Desain Sistem',      type: 'Wajib',   sks: 3 },
-      { sem: 3, name: 'Aljabar Linear',                type: 'Wajib',   sks: 3 },
-      { sem: 4, name: 'Arsitektur & Organisasi Komputer', type: 'Wajib', sks: 3 },
-      { sem: 4, name: 'Pemrograman Mobile',            type: 'Wajib',   sks: 4 },
-      { sem: 4, name: 'Keamanan Siber',                type: 'Wajib',   sks: 3 },
-      { sem: 4, name: 'Kecerdasan Buatan',             type: 'Wajib',   sks: 3 },
-      { sem: 4, name: 'Manajemen Proyek TI',           type: 'Wajib',   sks: 3 },
-      { sem: 4, name: 'Etika Profesi',                 type: 'Umum',    sks: 2 },
-      { sem: 5, name: 'Machine Learning',              type: 'Wajib',   sks: 4 },
-      { sem: 5, name: 'Cloud Computing',               type: 'Wajib',   sks: 3 },
-      { sem: 5, name: 'Pengembangan Aplikasi Enterprise', type: 'Wajib', sks: 4 },
-      { sem: 5, name: 'Metodologi Penelitian',         type: 'Wajib',   sks: 3 },
-      { sem: 5, name: 'Mata Kuliah Pilihan I',         type: 'Pilihan', sks: 3 },
-      { sem: 5, name: 'Mata Kuliah Pilihan II',        type: 'Pilihan', sks: 3 },
-      { sem: 6, name: 'Big Data & Analytics',          type: 'Wajib',   sks: 3 },
-      { sem: 6, name: 'DevOps & Automation',           type: 'Wajib',   sks: 3 },
-      { sem: 6, name: 'Mata Kuliah Pilihan III',       type: 'Pilihan', sks: 3 },
-      { sem: 6, name: 'Mata Kuliah Pilihan IV',        type: 'Pilihan', sks: 3 },
-      { sem: 6, name: 'Kerja Praktik',                 type: 'Wajib',   sks: 3 },
-      { sem: 7, name: 'Seminar Tugas Akhir',           type: 'Wajib',   sks: 2 },
-      { sem: 7, name: 'Mata Kuliah Pilihan V',         type: 'Pilihan', sks: 3 },
-      { sem: 7, name: 'Mata Kuliah Pilihan VI',        type: 'Pilihan', sks: 3 },
-      { sem: 7, name: 'Pengabdian Masyarakat',         type: 'Wajib',   sks: 3 },
-      { sem: 8, name: 'Tugas Akhir',                   type: 'Wajib',   sks: 4 },
-    ],
-  },
-  si: {
-    abbr: 'SI', label: 'Sistem Informasi',
-    fullName: 'Program Studi Sistem Informasi',
-    totalSks: 144,
-    courses: [
-      { sem: 1, name: 'Pengantar Sistem Informasi',    type: 'Wajib',   sks: 3 },
-      { sem: 1, name: 'Algoritma & Pemrograman',       type: 'Wajib',   sks: 4 },
-      { sem: 1, name: 'Matematika Bisnis',             type: 'Wajib',   sks: 3 },
-      { sem: 1, name: 'Bahasa Indonesia',              type: 'Umum',    sks: 2 },
-      { sem: 1, name: 'Pendidikan Agama',              type: 'Umum',    sks: 2 },
-      { sem: 1, name: 'Bahasa Inggris I',              type: 'Umum',    sks: 2 },
-      { sem: 2, name: 'Basis Data',                    type: 'Wajib',   sks: 4 },
-      { sem: 2, name: 'Pemrograman Web',               type: 'Wajib',   sks: 4 },
-      { sem: 2, name: 'Analisis Proses Bisnis',        type: 'Wajib',   sks: 3 },
-      { sem: 2, name: 'Statistika',                    type: 'Wajib',   sks: 3 },
-      { sem: 3, name: 'Analisis & Desain Sistem',      type: 'Wajib',   sks: 3 },
-      { sem: 3, name: 'ERP & Sistem Bisnis',           type: 'Wajib',   sks: 3 },
-      { sem: 3, name: 'Manajemen Data',                type: 'Wajib',   sks: 3 },
-      { sem: 4, name: 'Keamanan Sistem Informasi',     type: 'Wajib',   sks: 3 },
-      { sem: 4, name: 'Business Intelligence',         type: 'Wajib',   sks: 3 },
-      { sem: 4, name: 'Manajemen Proyek SI',           type: 'Wajib',   sks: 3 },
-      { sem: 5, name: 'Data Warehouse',                type: 'Wajib',   sks: 3 },
-      { sem: 5, name: 'Mata Kuliah Pilihan I',         type: 'Pilihan', sks: 3 },
-      { sem: 6, name: 'Kerja Praktik',                 type: 'Wajib',   sks: 3 },
-      { sem: 6, name: 'Mata Kuliah Pilihan II',        type: 'Pilihan', sks: 3 },
-      { sem: 7, name: 'Seminar Tugas Akhir',           type: 'Wajib',   sks: 2 },
-      { sem: 8, name: 'Tugas Akhir',                   type: 'Wajib',   sks: 4 },
-    ],
-  },
-  bd: {
-    abbr: 'BD', label: 'Bisnis Digital',
-    fullName: 'Program Studi Bisnis Digital',
-    totalSks: 144,
-    courses: [
-      { sem: 1, name: 'Pengantar Bisnis Digital',      type: 'Wajib',   sks: 3 },
-      { sem: 1, name: 'Dasar Pemrograman',             type: 'Wajib',   sks: 3 },
-      { sem: 1, name: 'Ekonomi Mikro',                 type: 'Wajib',   sks: 3 },
-      { sem: 1, name: 'Bahasa Indonesia',              type: 'Umum',    sks: 2 },
-      { sem: 2, name: 'Digital Marketing',             type: 'Wajib',   sks: 3 },
-      { sem: 2, name: 'E-Commerce',                    type: 'Wajib',   sks: 3 },
-      { sem: 2, name: 'Basis Data Bisnis',             type: 'Wajib',   sks: 3 },
-      { sem: 3, name: 'Manajemen Platform Digital',    type: 'Wajib',   sks: 3 },
-      { sem: 3, name: 'Analitik Bisnis',               type: 'Wajib',   sks: 3 },
-      { sem: 4, name: 'Strategi Transformasi Digital', type: 'Wajib',   sks: 3 },
-      { sem: 4, name: 'UI/UX Design',                  type: 'Wajib',   sks: 3 },
-      { sem: 5, name: 'Startup & Inovasi',             type: 'Wajib',   sks: 3 },
-      { sem: 5, name: 'Mata Kuliah Pilihan I',         type: 'Pilihan', sks: 3 },
-      { sem: 6, name: 'Kerja Praktik',                 type: 'Wajib',   sks: 3 },
-      { sem: 7, name: 'Seminar Tugas Akhir',           type: 'Wajib',   sks: 2 },
-      { sem: 8, name: 'Tugas Akhir',                   type: 'Wajib',   sks: 4 },
-    ],
-  },
-}
-
-/* ── VISI-MISI DATA ── */
-const institutions = {
-  'stt-nf': {
-    key: 'stt-nf', abbr: 'STT-NF',
-    fullName: 'Sekolah Tinggi Teknologi Terpadu Nurul Fikri',
-    visi: 'Pada tahun 2045 menjadi sekolah tinggi yang unggul di Indonesia, berbudaya inovasi, berjiwa teknopreneur, dan berkarakter religius.',
-    misi: [
-      'Menyelenggarakan pendidikan tinggi berkualitas berlandaskan iman dan takwa.',
-      'Melaksanakan penelitian inovatif berorientasi teknologi masa depan.',
-      'Pengabdian masyarakat dengan teknologi tepat guna.',
-      'Membangun lingkungan akademik kondusif dan berbudaya inovasi.',
-    ],
-    tujuan: [
-      'Menghasilkan sarjana kompeten, profesional, dan berakhlak mulia.',
-      'Menghasilkan karya ilmiah inovatif dan terbuka (open source & open access).',
-      'Menerapkan IPTEK tepat guna bagi masyarakat.',
-      'Membangun kultur akademik inovatif dan kompetitif.',
-    ],
-  },
-  ti: {
-    key: 'ti', abbr: 'TI',
-    fullName: 'Program Studi Teknik Informatika',
-    visi: 'Pada tahun 2045 menjadi program studi teknik informatika yang unggul, berbudaya inovasi, dan berkarakter religius.',
-    misi: [
-      'Menyelenggarakan pendidikan teknik informatika berkualitas.',
-      'Melaksanakan penelitian berorientasi teknologi masa depan.',
-      'Pengabdian masyarakat berbasis teknologi tepat guna.',
-      'Membangun budaya akademik inovatif dan mandiri.',
-    ],
-    tujuan: [
-      'Menghasilkan sarjana TI profesional dan berakhlak mulia.',
-      'Melahirkan karya ilmiah terbuka & inovatif di bidang TI.',
-      'Menerapkan teknologi tepat guna bagi masyarakat.',
-    ],
-  },
-  si: {
-    key: 'si', abbr: 'SI',
-    fullName: 'Program Studi Sistem Informasi',
-    visi: 'Pada tahun 2045 menjadi program studi sistem informasi yang unggul, inovatif, dan religius.',
-    misi: [
-      'Pendidikan berkualitas bidang Sistem Informasi.',
-      'Penelitian inovatif dan berorientasi masa depan.',
-      'Pengabdian masyarakat berbasis teknologi tepat guna.',
-      'Membangun budaya akademik inovatif dan mandiri.',
-    ],
-    tujuan: [
-      'Lulusan kompeten & profesional di bidang Sistem Informasi.',
-      'Karya ilmiah terbuka dan inovatif.',
-      'Implementasi teknologi tepat guna bagi masyarakat.',
-    ],
-  },
-  bd: {
-    key: 'bd', abbr: 'BD',
-    fullName: 'Program Studi Bisnis Digital',
-    visi: 'Pada tahun 2045 menjadi program studi bisnis digital yang unggul, inovatif, dan berkarakter religius.',
-    misi: [
-      'Pendidikan berkualitas bidang bisnis digital.',
-      'Penelitian inovatif berorientasi masa depan.',
-      'Pengabdian masyarakat berbasis teknologi bisnis.',
-      'Membangun budaya akademik inovatif.',
-    ],
-    tujuan: [
-      'Lulusan profesional & berakhlak mulia.',
-      'Karya ilmiah di bidang bisnis digital.',
-      'Penerapan teknologi tepat guna untuk masyarakat.',
-    ],
-  },
-}
-
-/* ── CALENDAR DATA ── */
-const academicCalendar = [
-  { date: '2025-08-13',                        event: 'Dies Natalis STT NF',                              type: 'event'     },
-  { date: '2025-09-08', endDate: '2025-09-13', event: 'Bimbingan Akademik (PA) 1',                       type: 'academic'  },
-  { date: '2025-09-15', endDate: '2025-09-20', event: 'Orientasi Akademik Mahasiswa Baru 2025',          type: 'important' },
-  { date: '2025-09-15', endDate: '2025-09-20', event: 'Isi KRS Mahasiswa Semester Ganjil',               type: 'academic'  },
-  { date: '2025-09-15', endDate: '2025-09-30', event: 'Pengajuan Cuti Kuliah',                           type: 'academic'  },
-  { date: '2025-09-22',                        event: 'Kuliah Perdana Semester Ganjil',                   type: 'important' },
-  { date: '2025-09-22', endDate: '2025-11-08', event: 'Perkuliahan Pekan Ke-1 s.d Ke-7',                type: 'academic'  },
-  { date: '2025-10-07',                        event: 'Kuliah Umum',                                      type: 'event'     },
-  { date: '2025-10-15',                        event: 'Pengumuman Dosen Pembimbing Tugas Akhir',          type: 'academic'  },
-  { date: '2025-11-10', endDate: '2025-11-15', event: 'Pelaksanaan UTS dan Ujian Tugas Akhir',           type: 'exam'      },
-  { date: '2026-01-12', endDate: '2026-01-17', event: 'Pelaksanaan UAS',                                  type: 'exam'      },
-  { date: '2026-01-19', endDate: '2026-01-24', event: 'Pelaksanaan Sidang TA Ganjil',                    type: 'exam'      },
-  { date: '2026-02-06',                        event: 'Pengumuman Yudisium',                              type: 'important' },
-]
-
-const calendarMonths = [
-  { name: 'Agustus 2025',   year: 2025, month: 7  },
-  { name: 'September 2025', year: 2025, month: 8  },
-  { name: 'Oktober 2025',   year: 2025, month: 9  },
-  { name: 'November 2025',  year: 2025, month: 10 },
-  { name: 'Desember 2025',  year: 2025, month: 11 },
-  { name: 'Januari 2026',   year: 2026, month: 0  },
-  { name: 'Februari 2026',  year: 2026, month: 1  },
-]
-
-const EVENT_COLORS = { important: '#4B73FF', exam: '#F97316', event: '#A78BFA', academic: '#8BA4FF' }
-const EVENT_LABELS = { important: 'Penting', exam: 'Ujian', event: 'Acara', academic: 'Akademik' }
-
-/* ── CALENDAR HELPER ── */
-function getEventsForDate(date) {
-  return academicCalendar.filter(ev => {
-    const start = new Date(ev.date)
-    if (ev.endDate) return date >= start && date <= new Date(ev.endDate)
-    return date.toDateString() === start.toDateString()
-  })
-}
-function fmtDate(str) {
-  return new Date(str).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
-}
-
-/* ─────────────────────────────────────────────────────────────────
-   MAIN COMPONENT
-───────────────────────────────────────────────────────────────── */
 export default function LandingPage() {
-  /* Scroll reveal */
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   useEffect(() => {
     const obs = new IntersectionObserver(
-      (entries) => entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); obs.unobserve(e.target) } }),
+      (entries) => entries.forEach(e => {
+        if (e.isIntersecting) {
+          e.target.classList.remove('opacity-0', 'translate-y-4')
+          e.target.classList.add('opacity-100', 'translate-y-0')
+          obs.unobserve(e.target)
+        }
+      }),
       { threshold: 0.1, rootMargin: '0px 0px -48px 0px' }
     )
     document.querySelectorAll('.rv').forEach(el => obs.observe(el))
     return () => obs.disconnect()
   }, [])
 
-  /* Curriculum state */
   const [activeProg, setActiveProg] = useState('ti')
-
-  /* Visi-Misi state */
   const [activeInst, setActiveInst] = useState('stt-nf')
-  const inst = institutions[activeInst]
-
-  /* Calendar state */
   const [selectedDate, setSelectedDate] = useState(null)
 
-  /* Curriculum helpers */
+  const inst = institutions[activeInst]
   const prog = programs[activeProg]
   const semNumbers = [...new Set(prog.courses.map(c => c.sem))].sort((a, b) => a - b)
 
+  const rvBase = 'rv opacity-0 translate-y-4 transition-all duration-700 ease-in-out'
+  const rvDelays = ['', 'delay-100', 'delay-200', 'delay-300', 'delay-400', 'delay-500']
+
   return (
-    <>
-      <style>{CSS}</style>
-      <div className="lp">
-
-        {/* ═════════ NAV ═════════ */}
-        <nav className="nav">
-          <span className="nav-brand">NF STUDENTHUB</span>
-          <a href="#platform"    className="nav-link">Platform</a>
-          <a href="#kurikulum"   className="nav-link">Kurikulum</a>
-          <a href="#visi-misi"   className="nav-link">Visi Misi</a>
-          <a href="#kalender"    className="nav-link">Kalender</a>
-          <Link to="/login" className="nav-enter">Masuk</Link>
-        </nav>
-
-        {/* ═════════ HERO ═════════ */}
-        <section className="hero">
-          <div className="hero-grid" />
-          <div className="hero-fog" />
-          <div className="hero-bottom" />
-          <div className="hero-scan" />
-          <div className="hero-inner w" style={{ width: '100%' }}>
-            <div className="hero-badge">
-              <span className="badge-pulse" />
-              Academic Management Platform · Powered by OpenClaw
+    <div className="bg-lp-bg text-lp-text font-sans font-light overflow-x-hidden leading-relaxed min-h-screen relative z-0">
+      {/* GLOBAL GRID BACKGROUND */}
+      <div className="fixed inset-0 pointer-events-none z-[-1] bg-lp-surface">
+        {/* Grid pattern with clearer opacity (0.08) */}
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.08)_1px,transparent_1px)] bg-[size:64px_64px]" />
+        {/* Edges mask so grid fades nicely toward the sides/bottom */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,transparent_0%,rgba(255,255,255,0.85)_70%,#ffffff_100%)]" />
+      </div>
+      {/* HEADER / NAV */}
+      <div className="fixed top-5 left-0 right-0 z-50 flex justify-center px-4 sm:px-5 pointer-events-none">
+        <div className={`pointer-events-auto transition-all duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)] relative ${isMobileMenuOpen ? 'w-full sm:w-max' : 'w-max max-w-full'}`}>
+          <nav className="flex items-center justify-between bg-lp-bg/50 backdrop-blur-xl border border-lp-border/60 rounded-full py-1 px-1.5 pl-4 sm:pl-5 whitespace-nowrap gap-0.5 shadow-[0_12px_32px_rgba(0,0,0,0.08)]">
+            <span className="text-[11.5px] font-semibold text-lp-text tracking-[0.07em] mr-2.5 sm:mr-4">STUDENT-HUB</span>
+            
+            <div className="hidden sm:flex items-center gap-0.5">
+              <a href="#features" className="text-lp-text2 text-[12.5px] px-4 py-2 rounded-full transition-all hover:text-lp-text hover:bg-black/5">Features</a>
+              <a href="#platform" className="text-lp-text2 text-[12.5px] px-4 py-2 rounded-full transition-all hover:text-lp-text hover:bg-black/5">Platform</a>
+              <a href="#kurikulum" className="text-lp-text2 text-[12.5px] px-4 py-2 rounded-full transition-all hover:text-lp-text hover:bg-black/5">Kurikulum</a>
+              <a href="#visi-misi" className="text-lp-text2 text-[12.5px] px-4 py-2 rounded-full transition-all hover:text-lp-text hover:bg-black/5">Visi Misi</a>
+              <a href="#kalender" className="text-lp-text2 text-[12.5px] px-4 py-2 rounded-full transition-all hover:text-lp-text hover:bg-black/5">Kalender</a>
             </div>
-            <h1 className="hero-h1">
-              Academic intelligence,<br />
-              <em>automated.</em>
-            </h1>
-            <p className="hero-sub">
-              NF StudentHub brings learning, administration, and communication
-              together — with OpenClaw handling everything in between.
+
+            <div className="flex items-center gap-1.5 ml-auto pl-2 sm:pl-0">
+              <button onClick={() => setIsLoginModalOpen(true)} className="bg-lp-text text-lp-bg text-[12px] sm:text-[12.5px] font-semibold px-4 sm:px-5 py-2 rounded-full transition-all hover:bg-lp-atext tracking-[0.01em]">Masuk</button>
+              <button 
+                className="sm:hidden w-8 h-8 flex flex-col justify-center items-center gap-[4px] bg-lp-surface border border-lp-border/50 rounded-full"
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                aria-label="Toggle mobile menu"
+              >
+                <span className={`w-[13px] h-[1.5px] bg-lp-text transition-transform ${isMobileMenuOpen ? 'translate-y-[5.5px] rotate-45' : ''}`} />
+                <span className={`w-[13px] h-[1.5px] bg-lp-text transition-opacity ${isMobileMenuOpen ? 'opacity-0' : ''}`} />
+                <span className={`w-[13px] h-[1.5px] bg-lp-text transition-transform ${isMobileMenuOpen ? '-translate-y-[5.5px] -rotate-45' : ''}`} />
+              </button>
+            </div>
+          </nav>
+
+          <div className={`sm:hidden absolute top-[calc(100%+8px)] left-0 right-0 bg-lp-surface/80 backdrop-blur-2xl border border-lp-border/60 rounded-[20px] p-2 shadow-[0_24px_48px_rgba(0,0,0,0.1)] transition-all duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)] origin-top overflow-hidden ${isMobileMenuOpen ? 'opacity-100 scale-y-100 translate-y-0' : 'opacity-0 scale-y-95 -translate-y-4 pointer-events-none'}`}>
+            <div className="flex flex-col gap-1">
+              <a href="#features" onClick={() => setIsMobileMenuOpen(false)} className="px-4 py-3 text-[13.5px] font-medium text-lp-text2 hover:text-lp-text hover:bg-black/5 rounded-xl transition-colors">Features</a>
+              <a href="#platform" onClick={() => setIsMobileMenuOpen(false)} className="px-4 py-3 text-[13.5px] font-medium text-lp-text2 hover:text-lp-text hover:bg-black/5 rounded-xl transition-colors">Platform</a>
+              <a href="#kurikulum" onClick={() => setIsMobileMenuOpen(false)} className="px-4 py-3 text-[13.5px] font-medium text-lp-text2 hover:text-lp-text hover:bg-black/5 rounded-xl transition-colors">Kurikulum</a>
+              <a href="#visi-misi" onClick={() => setIsMobileMenuOpen(false)} className="px-4 py-3 text-[13.5px] font-medium text-lp-text2 hover:text-lp-text hover:bg-black/5 rounded-xl transition-colors">Visi Misi</a>
+              <a href="#kalender" onClick={() => setIsMobileMenuOpen(false)} className="px-4 py-3 text-[13.5px] font-medium text-lp-text2 hover:text-lp-text hover:bg-black/5 rounded-xl transition-colors">Kalender</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <section className="relative min-h-screen flex items-end pb-24 overflow-hidden">
+        <div className="absolute left-0 right-0 h-[160px] animate-scanAnim bg-[linear-gradient(180deg,transparent,rgba(75,115,255,0.03)_35%,rgba(75,115,255,0.06)_50%,rgba(75,115,255,0.03)_65%,transparent)] pointer-events-none" />
+        <div className="relative z-10 w-full max-w-[1120px] mx-auto px-7">
+          <div className="inline-flex items-center gap-2 border border-black/10 rounded-full py-1.5 pl-2.5 pr-4 text-[11.5px] text-lp-text2 tracking-wide mb-10 animate-slideUp delay-100 fill-mode-both">
+            <span className="w-1.5 h-1.5 rounded-full bg-lp-accent animate-pulse" />
+            E-Learning Reminder Openclaw · By Andromeda 
+          </div>
+          <h1 className="font-sans text-[clamp(3.8rem,7.4vw,6.6rem)] font-normal leading-[0.96] tracking-[-0.035em] text-lp-text mb-8 animate-slideUp delay-300 fill-mode-both">
+            Openclaw Reminder<br />
+            <em className="italic text-lp-text/40">Student Hub</em>
+          </h1>
+          <p className="text-[17px] font-light text-lp-text2 max-w-[560px] leading-relaxed mb-11 animate-slideUp delay-500 fill-mode-both">
+            Student Hub automatically reminds you about classes, assignments, 
+            attendance, and deadlines delivered straight to your Telegram.
+            Powered by the OpenClaw automation engine.
+          </p>
+          <div className="flex items-center gap-4 flex-wrap animate-slideUp delay-[650ms] fill-mode-both">
+            <button onClick={() => setIsLoginModalOpen(true)} className="inline-flex items-center gap-2 bg-lp-text text-lp-bg font-sans text-[13px] font-semibold py-3 px-6 rounded-full transition-all hover:bg-lp-atext hover:-translate-y-px">Start Learning →</button>
+            <a href="#features" className="inline-flex items-center gap-2 text-lp-text2 font-sans text-[13px] hover:text-lp-text group transition-colors">
+              Explore features <span className="transition-transform group-hover:translate-x-1 inline-block">→</span>
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* 01 - FEATURES */}
+      <hr className="border-0 border-t border-lp-border" />
+      <section id="features" className="py-24">
+        <div className="max-w-[1120px] mx-auto px-7">
+          <div className={`${rvBase} flex items-center gap-4 text-[10.5px] font-medium tracking-[0.16em] uppercase text-lp-text3 mb-10 after:content-[''] after:flex-1 after:h-px after:bg-lp-border`}>
+            <span className="font-mono">01</span> Core Features
+          </div>
+          <div className={`${rvBase} ${rvDelays[1]} flex flex-col md:flex-row md:justify-between md:items-end gap-6 mb-14`}>
+            <h2 className="font-sans text-[clamp(2.8rem,5.5vw,4.5rem)] leading-[1.06] tracking-tight text-lp-text">Everything you need<br /><em className="italic text-lp-text/40">to stay on track.</em></h2>
+            <p className="text-[14px] font-light text-lp-text2 max-w-[320px] pb-2">
+              Smart reminders, automated tracking, and seamless Telegram integration — built for the modern student.
             </p>
-            <div className="hero-actions">
-              <Link to="/login" className="btn-prim">Enter Platform →</Link>
-              <a href="#platform" className="btn-ghost">See how it works <span className="arr">→</span></a>
-            </div>
           </div>
-          <div className="hero-scroll"><div className="hero-scroll-line" /></div>
-        </section>
-
-        {/* ═════════ 01 — OPENCLAW ═════════ */}
-        <hr className="sep" />
-        <section id="platform" className="sec">
-          <div className="w">
-            <div className="sec-eyebrow rv"><span>01</span> Automation Engine</div>
-            <div className="oc-grid">
-              <div className="oc-text rv d1">
-                <h2 className="t-display" style={{ marginBottom: '20px' }}>
-                  OpenClaw handles<br /><em>the repetitive.</em>
-                </h2>
-                <p className="t-body" style={{ marginBottom: '28px', maxWidth: '380px' }}>
-                  OpenClaw is the automation layer beneath NF StudentHub. It synchronizes
-                  assignments, dispatches Telegram reminders, monitors attendance, and
-                  generates reports — automatically, every session.
-                </p>
-                <p className="oc-detail">RUNS ON GOLANG · REST API · TELEGRAM GATEWAY</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {featureCards.map((f, i) => (
+              <div key={f.title} className={`${rvBase} ${rvDelays[Math.min(i+1, 5)]} border border-lp-border rounded-2xl p-8 relative overflow-hidden transition-all duration-300 hover:border-lp-borderA hover:bg-lp-borderA/5 hover:-translate-y-0.5 group`}>
+                <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-lp-accent/30 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                {f.icon === '⚡' && <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-5 text-xl bg-lp-accentS text-lp-atext">{f.icon}</div>}
+                {f.icon === '✈️' && <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-5 text-xl bg-lp-tg/10 text-lp-tg">{f.icon}</div>}
+                {f.icon === '📊' && <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-5 text-xl bg-lp-green/10 text-lp-green">{f.icon}</div>}
+                {f.icon === '📝' && <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-5 text-xl bg-lp-amber/10 text-lp-amber">{f.icon}</div>}
+                {f.icon === '📈' && <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-5 text-xl bg-purple-500/10 text-purple-400">{f.icon}</div>}
+                {f.icon === '🔄' && <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-5 text-xl bg-lp-red/10 text-lp-red">{f.icon}</div>}
+                <div className="text-[15px] font-semibold text-lp-text mb-2.5 tracking-tight leading-snug">{f.title}</div>
+                <div className="text-[13.5px] font-light text-lp-text2 leading-relaxed">{f.desc}</div>
               </div>
-              <div className="rv d2">
-                <div className="terminal">
-                  <div className="terminal-bar">
-                    <span className="t-dot t-dot-r" /><span className="t-dot t-dot-y" /><span className="t-dot t-dot-g" />
-                    <span className="terminal-path">~ / openclaw / automation</span>
-                  </div>
-                  <div className="terminal-body">
-                    <span className="t-line"><span className="t-prompt">$ </span><span className="t-cmd">openclaw run --session morning-sync</span></span>
-                    <span className="t-spacer" />
-                    <span className="t-line"><span className="t-ok">✓ </span><span className="t-val">247 students notified via Telegram</span></span>
-                    <span className="t-line"><span className="t-ok">✓ </span><span className="t-val">12 new assignments synced to feed</span></span>
-                    <span className="t-line"><span className="t-ok">✓ </span><span className="t-val">Attendance QR codes generated (18 classes)</span></span>
-                    <span className="t-line"><span className="t-ok">✓ </span><span className="t-val">UKT reminders dispatched (34 students)</span></span>
-                    <span className="t-line"><span className="t-ok">✓ </span><span className="t-val">Daily digest compiled and sent</span></span>
-                    <span className="t-spacer" />
-                    <span className="t-divider">───────────────────────────────</span>
-                    <span className="t-line"><span className="t-time">completed in 0.84s · 0 errors · next run in 6h</span></span>
-                  </div>
-                </div>
-              </div>
-            </div>
+            ))}
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* ═════════ 02 — ECOSYSTEM ═════════ */}
-        <hr className="sep" />
-        <section className="sec">
-          <div className="w">
-            <div className="sec-eyebrow rv"><span>02</span> Academic Ecosystem</div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: '32px' }} className="rv d1">
-              <h2 className="t-display">Built for<br /><em>everyone on campus.</em></h2>
-              <p className="t-body" style={{ maxWidth: '320px', fontSize: '14px', paddingBottom: '8px' }}>
-                Five distinct roles. One shared platform. Every access level precisely controlled at the backend.
+      {/* 02 - HOW IT WORKS */}
+      <hr className="border-0 border-t border-lp-border" />
+      <section className="py-24">
+        <div className="max-w-[1120px] mx-auto px-7">
+          <div className={`${rvBase} flex items-center gap-4 text-[10.5px] font-medium tracking-[0.16em] uppercase text-lp-text3 mb-10 after:content-[''] after:flex-1 after:h-px after:bg-lp-border`}>
+            <span className="font-mono">02</span> How It Works
+          </div>
+          <div className={`${rvBase} ${rvDelays[1]} text-center mb-14`}>
+            <h2 className="font-sans text-[clamp(2.8rem,5.5vw,4.5rem)] leading-[1.06] tracking-tight text-lp-text max-w-[600px] mx-auto">Three steps to<br /><em className="italic text-lp-text/40">academic clarity.</em></h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-0 relative">
+            <div className="hidden md:block absolute top-11 left-[15%] right-[15%] h-px bg-gradient-to-r from-transparent via-lp-borderA to-transparent" />
+            {howItWorks.map((step, i) => (
+              <div key={step.num} className={`${rvBase} ${rvDelays[i+1]} text-center relative px-6`}>
+                <div className="w-14 h-14 rounded-full border border-lp-borderA bg-lp-surface flex items-center justify-center font-mono text-base text-lp-atext mx-auto mb-7 relative z-10">{step.num}</div>
+                <div className="text-base font-semibold text-lp-text mb-2.5 tracking-tight">{step.title}</div>
+                <div className="text-[13.5px] font-light text-lp-text2 leading-relaxed max-w-[260px] mx-auto">{step.desc}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 03 - TERMINAL */}
+      <hr className="border-0 border-t border-lp-border" />
+      <section id="platform" className="py-24">
+        <div className="max-w-[1120px] mx-auto px-7">
+          <div className={`${rvBase} flex items-center gap-4 text-[10.5px] font-medium tracking-[0.16em] uppercase text-lp-text3 mb-10 after:content-[''] after:flex-1 after:h-px after:bg-lp-border`}>
+            <span className="font-mono">03</span> Automation Engine
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-[5fr_7fr] gap-12 lg:gap-24 items-center">
+            <div className={`${rvBase} ${rvDelays[1]}`}>
+              <h2 className="font-sans text-[clamp(2.8rem,5.5vw,4.5rem)] leading-[1.06] tracking-tight text-lp-text mb-5">OpenClaw handles<br /><em className="italic text-lp-text/40">the repetitive.</em></h2>
+              <p className="text-[16px] font-light text-lp-text2 max-w-[380px] leading-relaxed mb-7">
+                OpenClaw is the automation layer beneath Student Hub. It synchronizes
+                assignments, dispatches Telegram reminders, monitors attendance, and
+                generates reports — automatically, every session.
               </p>
+              <p className="text-xs font-mono tracking-wider text-lp-text3">RUNS ON GOLANG · REST API · TELEGRAM GATEWAY</p>
             </div>
-            <div className="roles-grid">
-              {roles.map((r, i) => (
-                <div key={r.idx} className={`role-card rv d${Math.min(i + 1, 3)}`}>
-                  <span className="role-idx">{r.idx}</span>
-                  <div className="role-name">{r.name}</div>
-                  <div className="role-desc">{r.desc}</div>
-                  <div className="role-access">
-                    {r.access.map(a => <span key={a} className="role-access-item">{a}</span>)}
+            <div className={`${rvBase} ${rvDelays[2]}`}>
+              <div className="bg-lp-surface border border-lp-border rounded-xl overflow-hidden">
+                <div className="flex items-center gap-2 px-4 py-3 border-b border-lp-border bg-lp-card">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#FF5F57]" /><span className="w-2.5 h-2.5 rounded-full bg-[#FEBC2E]" /><span className="w-2.5 h-2.5 rounded-full bg-[#28C840]" />
+                  <span className="font-mono text-[11px] text-lp-text3 ml-2.5 tracking-wide">~ / openclaw / automation</span>
+                </div>
+                <div className="p-6 pb-7 font-mono text-[12.5px] font-light leading-loose">
+                  <span className="block"><span className="text-lp-text3">$ </span><span className="text-lp-atext">openclaw run --session morning-sync</span></span>
+                  <span className="block h-2" />
+                  <span className="block"><span className="text-lp-green">✓ </span><span className="text-lp-text2">247 students notified via Telegram</span></span>
+                  <span className="block"><span className="text-lp-green">✓ </span><span className="text-lp-text2">12 new assignments synced to feed</span></span>
+                  <span className="block"><span className="text-lp-green">✓ </span><span className="text-lp-text2">Attendance QR codes generated (18 classes)</span></span>
+                  <span className="block"><span className="text-lp-green">✓ </span><span className="text-lp-text2">UKT reminders dispatched (34 students)</span></span>
+                  <span className="block"><span className="text-lp-green">✓ </span><span className="text-lp-text2">Daily digest compiled and sent</span></span>
+                  <span className="block h-2" />
+                  <span className="block text-lp-text3 my-1">───────────────────────────────</span>
+                  <span className="block text-lp-text3 text-[11.5px]">completed in 0.84s · 0 errors · next run in 6h</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 04 - TELEGRAM PREVIEW */}
+      <hr className="border-0 border-t border-lp-border" />
+      <section className="py-24">
+        <div className="max-w-[1120px] mx-auto px-7">
+          <div className={`${rvBase} flex items-center gap-4 text-[10.5px] font-medium tracking-[0.16em] uppercase text-lp-text3 mb-10 after:content-[''] after:flex-1 after:h-px after:bg-lp-border`}>
+            <span className="font-mono">04</span> Telegram Integration
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-[7fr_5fr] gap-12 lg:gap-24 items-center">
+            <div className={`${rvBase} ${rvDelays[1]} order-2 lg:order-1`}>
+              <div className="bg-lp-card border border-lp-border rounded-[24px] w-[310px] mx-auto overflow-hidden shadow-[0_24px_64px_rgba(0,0,0,0.4)]">
+                <div className="bg-gradient-to-br from-[#1b9ad6] to-lp-tg pt-4 px-5 pb-3 flex items-center gap-3">
+                  <span className="text-white/70 text-sm">←</span>
+                  <div className="w-9 h-9 rounded-full bg-lp-surface/20 flex items-center justify-center text-sm">🎓</div>
+                  <div className="flex-1">
+                    <div className="text-sm font-semibold text-white">Student Hub Bot</div>
+                    <div className="text-[11px] text-white/70">online</div>
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* ═════════ 03 — CURRICULUM OVERVIEW ═════════ */}
-        <hr className="sep" />
-        <section className="sec">
-          <div className="w">
-            <div className="sec-eyebrow rv"><span>03</span> Curriculum Structure</div>
-            <div className="curr-header rv d1">
-              <div className="curr-header-left">
-                <h2 className="t-display">8 semesters.<br /><em>One clear path.</em></h2>
-              </div>
-              <div className="curr-header-right">
-                <p className="t-body" style={{ fontSize: '14px' }}>
-                  Teknik Informatika curriculum — structured from fundamentals to capstone project.
-                </p>
-              </div>
-            </div>
-            <div className="semesters rv d2">
-              {semesters.map(s => (
-                <div key={s.n} className="sem">
-                  <span className="sem-n">{s.n}</span>
-                  <span className="sem-credits">{s.credits}</span>
-                  <span className="sem-label">SKS · {s.courses} MK</span>
+                <div className="p-4 flex flex-col gap-2 bg-lp-surface min-h-[320px]">
+                  <div className="max-w-[85%] p-3 rounded-2xl text-[12.5px] leading-relaxed bg-lp-accent/10 text-lp-text rounded-bl-sm self-start">
+                    📅 <strong className="font-semibold">Reminder:</strong> "Pemrograman Web" starts in 30 minutes.<br />
+                    📍 Room B-204 · Dosen: Pak Arief
+                    <div className="text-[9px] text-lp-text3 mt-1 text-right font-mono">08:30</div>
+                  </div>
+                  <div className="max-w-[85%] p-3 rounded-2xl text-[12.5px] leading-relaxed bg-lp-accent/10 text-lp-text rounded-bl-sm self-start">
+                    ⚠️ <strong className="font-semibold">Deadline Alert:</strong> Assignment "REST API Implementation" is due in 6 hours.<br />
+                    📝 Submit via StudentHub portal.
+                    <div className="text-[9px] text-lp-text3 mt-1 text-right font-mono">09:15</div>
+                  </div>
+                  <div className="max-w-[85%] p-3 rounded-2xl text-[12.5px] leading-relaxed bg-lp-accent/10 text-lp-text rounded-bl-sm self-start">
+                    ✅ <strong className="font-semibold">Attendance Confirmed:</strong> "Basis Data" — Session 12/14.<br />
+                    📊 Your attendance rate: 92%
+                    <div className="text-[9px] text-lp-text3 mt-1 text-right font-mono">10:00</div>
+                  </div>
                 </div>
-              ))}
-            </div>
-            <div className="curr-footer rv d3">
-              <div className="curr-total">
-                <span className="curr-total-n">149</span>
-                <span className="curr-total-l">Total SKS</span>
               </div>
-              <a href="#kurikulum" className="btn-ghost" style={{ color: 'var(--atext)', fontWeight: 500 }}>
-                View full curriculum <span className="arr">→</span>
-              </a>
+            </div>
+            <div className={`${rvBase} ${rvDelays[2]} order-1 lg:order-2`}>
+              <h2 className="font-sans text-[clamp(2.8rem,5.5vw,4.5rem)] leading-[1.06] tracking-tight text-lp-text mb-5">Reminders<br /><em className="italic text-lp-text/40">where you are.</em></h2>
+              <p className="text-[16px] font-light text-lp-text2 max-w-[380px] leading-relaxed mb-7">
+                No need to open another app. Student Hub sends smart, 
+                contextual reminders directly to your Telegram — classes, 
+                deadlines, attendance confirmations, and daily digests.
+              </p>
+              <p className="text-xs font-mono tracking-wider text-lp-text3 mb-6">TELEGRAM BOT API · END-TO-END ENCRYPTED · INSTANT DELIVERY</p>
+              <a href="#" className="inline-flex items-center gap-2 bg-lp-tg text-white font-sans text-[13px] font-semibold py-3 px-6 rounded-full transition-all hover:bg-[#1e96d3] hover:-translate-y-px">Connect Telegram ✈️</a>
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* ═════════ 04 — FULL CURRICULUM ═════════ */}
-        <hr className="sep" />
-        <section id="kurikulum" className="sec">
-          <div className="w">
-            <div className="sec-eyebrow rv"><span>04</span> Kurikulum Lengkap</div>
-            <div className="rv d1" style={{ marginBottom: '48px' }}>
-              <h2 className="t-display" style={{ marginBottom: '16px' }}>
-                Struktur mata kuliah<br /><em>per program studi.</em>
-              </h2>
-              <p className="t-body" style={{ fontSize: '14px', maxWidth: '480px' }}>
-                Kurikulum terstruktur dari semester 1 hingga tugas akhir, mencakup mata kuliah wajib, umum, dan pilihan.
-              </p>
-            </div>
+      {/* 05 - BENEFITS */}
+      <hr className="border-0 border-t border-lp-border" />
+      <section className="py-24">
+        <div className="max-w-[1120px] mx-auto px-7">
+          <div className={`${rvBase} flex items-center gap-4 text-[10.5px] font-medium tracking-[0.16em] uppercase text-lp-text3 mb-10 after:content-[''] after:flex-1 after:h-px after:bg-lp-border`}>
+            <span className="font-mono">05</span> Why Students Love It
+          </div>
+          <div className={`${rvBase} ${rvDelays[1]} text-center mb-14`}>
+            <h2 className="font-sans text-[clamp(2.8rem,5.5vw,4.5rem)] leading-[1.06] tracking-tight text-lp-text max-w-[600px] mx-auto">Your unfair<br /><em className="italic text-lp-text/40">academic advantage.</em></h2>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {benefits.map((b, i) => (
+              <div key={b.title} className={`${rvBase} ${rvDelays[i+1]} border border-lp-border rounded-2xl px-7 py-9 transition-all duration-300 hover:border-lp-borderA hover:bg-lp-accent/5`}>
+                <span className="text-[32px] block mb-5">{b.icon}</span>
+                <div className="text-lg font-semibold text-lp-text mb-2.5 tracking-tight">{b.title}</div>
+                <div className="text-[13.5px] font-light text-lp-text2 leading-relaxed">{b.desc}</div>
+                <span className="block font-mono text-[10px] text-lp-atext tracking-wider mt-4">{b.stat}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
-            {/* Program tabs */}
-            <div className="prog-tabs rv d2">
-              {Object.values(programs).map(p => (
-                <button
-                  key={p.abbr}
-                  className={`prog-tab${activeProg === p.abbr.toLowerCase() ? ' active' : ''}`}
-                  onClick={() => setActiveProg(p.abbr.toLowerCase())}
-                >
-                  <span className="prog-tab-label">{p.abbr}</span>
-                  <span className="prog-tab-name">{p.label}</span>
+      {/* 06 - KURIKULUM */}
+      <hr className="border-0 border-t border-lp-border" />
+      <section id="kurikulum" className="py-24">
+        <div className="max-w-[1120px] mx-auto px-7">
+          <div className={`${rvBase} flex items-center gap-4 text-[10.5px] font-medium tracking-[0.16em] uppercase text-lp-text3 mb-10 after:content-[''] after:flex-1 after:h-px after:bg-lp-border`}>
+            <span className="font-mono">06</span> Kurikulum
+          </div>
+          <div className={`${rvBase} ${rvDelays[1]} mb-10`}>
+            <h2 className="font-sans text-[clamp(2.8rem,5.5vw,4.5rem)] leading-[1.06] tracking-tight text-lp-text mb-6">Program Studi</h2>
+            <div className="flex gap-4 flex-wrap">
+              {Object.keys(programs).map(k => (
+                <button key={k} onClick={() => setActiveProg(k)} className={`px-5 py-2.5 rounded-full text-[13px] font-medium transition-all ${activeProg === k ? 'bg-lp-text text-lp-bg' : 'bg-lp-surface border border-lp-border text-lp-text2 hover:text-lp-text'}`}>
+                  {programs[k].label}
                 </button>
               ))}
             </div>
-
-            {/* Program detail */}
-            <div key={activeProg} className="fade-in">
-              <div className="curr-prog-title">{prog.fullName}</div>
-              <span className="curr-prog-meta">Total {prog.totalSks} SKS · {prog.courses.length} Mata Kuliah</span>
-
-              <table className="curr-table">
-                <thead>
-                  <tr>
-                    <th style={{ width: '80px' }}>Sem</th>
-                    <th>Mata Kuliah</th>
-                    <th>SKS</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {semNumbers.map(sem => (
-                    <>
-                      <tr key={`sem-hdr-${sem}`} className="curr-sem-header">
-                        <td colSpan={3}>
-                          <span className="curr-sem-label">SEMESTER {sem}</span>
-                        </td>
-                      </tr>
-                      {prog.courses.filter(c => c.sem === sem).map((c, i) => (
-                        <tr key={`${sem}-${i}`}>
-                          <td className="curr-td-sem">–</td>
-                          <td>
-                            <div className="curr-td-name">{c.name}</div>
-                            <div className="curr-td-type">{c.type}</div>
-                          </td>
-                          <td className="curr-td-sks">{c.sks}<span>SKS</span></td>
-                        </tr>
-                      ))}
-                    </>
-                  ))}
-                </tbody>
-              </table>
-            </div>
           </div>
-        </section>
-
-        {/* ═════════ 05 — VISION & MISSION PREVIEW ═════════ */}
-        <hr className="sep" />
-        <section className="sec">
-          <div className="w">
-            <div className="sec-eyebrow rv"><span>05</span> Vision & Mission</div>
-            <div className="vm-grid">
-              <div className="rv d1">
-                <p className="visi-statement">"{visiData.statement}"</p>
-                <p className="visi-source">{visiData.source}</p>
-              </div>
-              <div className="rv d2">
-                <ul className="misi-list">
-                  {visiData.misi.map((m, i) => (
-                    <li key={i} className="misi-item">
-                      <span className="misi-idx">0{i + 1}</span>
-                      <span className="misi-text">{m}</span>
+          <div className={`${rvBase} ${rvDelays[2]} grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6`}>
+            {semNumbers.map(sem => (
+              <div key={sem} className="bg-lp-surface border border-lp-border rounded-xl p-5 transition-transform hover:-translate-y-1">
+                <div className="text-[11px] font-mono tracking-widest text-lp-text3 mb-4 uppercase">Semester {sem}</div>
+                <ul className="flex flex-col gap-2.5">
+                  {prog.courses.filter(c => c.sem === sem).map((c, idx) => (
+                    <li key={idx} className="text-[13px] font-light text-lp-text2 flex justify-between items-start gap-2">
+                      <span className="leading-snug pt-0.5">{c.name}</span>
+                      <span className="bg-lp-bg border border-lp-border text-[10px] px-1.5 py-0.5 rounded text-lp-text3 min-w-[24px] text-center flex-shrink-0">{c.sks}</span>
                     </li>
                   ))}
                 </ul>
-                <div style={{ marginTop: '28px' }}>
-                  <a href="#visi-misi" className="btn-ghost" style={{ color: 'var(--atext)', fontWeight: 500 }}>
-                    See all institutional vision <span className="arr">→</span>
-                  </a>
-                </div>
               </div>
-            </div>
+            ))}
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* ═════════ 06 — FULL VISI MISI ═════════ */}
-        <hr className="sep" />
-        <section id="visi-misi" className="sec">
-          <div className="w">
-            <div className="sec-eyebrow rv"><span>06</span> Visi &amp; Misi Lengkap</div>
-            <div className="rv d1" style={{ marginBottom: '48px' }}>
-              <h2 className="t-display" style={{ marginBottom: '16px' }}>
-                Institusi &amp; <em>program studi.</em>
-              </h2>
-              <p className="t-body" style={{ fontSize: '14px', maxWidth: '480px' }}>
-                Integritas, inovasi, dan karakter religius sebagai fondasi membangun generasi teknologi unggul Indonesia 2045.
-              </p>
-            </div>
-
-            {/* Institution selector */}
-            <div className="inst-selector rv d2">
-              {Object.values(institutions).map(i => (
-                <button
-                  key={i.key}
-                  className={`inst-btn${activeInst === i.key ? ' active' : ''}`}
-                  onClick={() => setActiveInst(i.key)}
-                >
-                  <span className="inst-btn-label">{i.abbr}</span>
-                  <span className="inst-btn-name">{i.fullName.split(' ').slice(0, 3).join(' ')}</span>
+      {/* 07 - VISI & MISI */}
+      <hr className="border-0 border-t border-lp-border" />
+      <section id="visi-misi" className="py-24 bg-lp-surface/50">
+        <div className="max-w-[1120px] mx-auto px-7">
+          <div className={`${rvBase} flex items-center gap-4 text-[10.5px] font-medium tracking-[0.16em] uppercase text-lp-text3 mb-10 after:content-[''] after:flex-1 after:h-px after:bg-lp-border`}>
+            <span className="font-mono">07</span> Visi & Misi
+          </div>
+          <div className={`${rvBase} ${rvDelays[1]} mb-14 text-center`}>
+            <h2 className="font-sans text-[clamp(2.5rem,5vw,4rem)] leading-[1.06] tracking-tight text-lp-text mb-6">{inst.fullName}</h2>
+            <div className="flex justify-center gap-4 flex-wrap mb-10">
+              {Object.keys(institutions).map(k => (
+                <button key={k} onClick={() => setActiveInst(k)} className={`px-4 py-2 rounded-full text-[13px] font-medium transition-all ${activeInst === k ? 'bg-lp-text text-lp-bg' : 'bg-lp-surface border border-lp-border text-lp-text2 hover:text-lp-text'}`}>
+                  {institutions[k].abbr}
                 </button>
               ))}
             </div>
-
-            {/* Institution content */}
-            <div key={activeInst} className="fade-in">
-              <span className="inst-fn-label">Institusi / Program Studi</span>
-              <div className="inst-fn-name">{inst.fullName}</div>
-
-              <div className="visi-block">
-                <span className="block-label">Visi</span>
-                <blockquote className="visi-quote">{inst.visi}</blockquote>
-              </div>
-
-              <div className="vm-content-grid">
-                <div>
-                  <span className="vm-block-title">Misi</span>
-                  <ul className="misi-list">
-                    {inst.misi.map((m, i) => (
-                      <li key={i} className="misi-item">
-                        <span className="misi-idx">0{i + 1}</span>
-                        <span className="misi-text">{m}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                <div>
-                  <span className="vm-block-title">Tujuan</span>
-                  <ul className="tujuan-list">
-                    {inst.tujuan.map((t, i) => (
-                      <li key={i} className="tujuan-item">
-                        <span className="tujuan-arrow">→</span>
-                        <span className="tujuan-text">{t}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
+            <p className="text-[17px] font-light text-lp-text2 max-w-[700px] mx-auto leading-relaxed border-l-2 border-lp-accent/50 pl-6 italic text-left md:text-center md:border-l-0">
+              "{inst.visi}"
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+            <div className={`${rvBase} ${rvDelays[2]} bg-lp-card border border-lp-border rounded-2xl p-8 transition-colors hover:border-lp-borderA`}>
+              <h3 className="text-lg font-semibold mb-6 text-lp-text">Misi</h3>
+              <ul className="flex flex-col gap-4">
+                {inst.misi.map((m, i) => (
+                  <li key={i} className="flex gap-4 text-[14.5px] font-light text-lp-text2 leading-relaxed">
+                    <span className="text-lp-accent mt-1 flex-shrink-0">✦</span> {m}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className={`${rvBase} ${rvDelays[3]} bg-lp-card border border-lp-border rounded-2xl p-8 transition-colors hover:border-lp-borderA`}>
+              <h3 className="text-lg font-semibold mb-6 text-lp-text">Tujuan</h3>
+              <ul className="flex flex-col gap-4">
+                {inst.tujuan.map((t, i) => (
+                  <li key={i} className="flex gap-4 text-[14.5px] font-light text-lp-text2 leading-relaxed">
+                    <span className="text-lp-accent mt-1 flex-shrink-0">✦</span> {t}
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
-        </section>
-
-        {/* ═════════ 07 — ACADEMIC CALENDAR ═════════ */}
-        <hr className="sep" />
-        <section id="kalender" className="sec">
-          <div className="w">
-            <div className="sec-eyebrow rv"><span>07</span> Kalender Akademik</div>
-            <div className="rv d1" style={{ marginBottom: '52px' }}>
-              <h2 className="t-display" style={{ marginBottom: '16px' }}>
-                Semester Ganjil<br /><em>2025 / 2026.</em>
-              </h2>
-              <p className="t-body" style={{ fontSize: '14px', maxWidth: '480px' }}>
-                Jadwal lengkap kegiatan akademik. Klik tanggal untuk melihat detail kegiatan.
-              </p>
-            </div>
-
-            <div className="cal-layout rv d2">
-              {/* Calendar months */}
-              <div className="cal-months">
-                {calendarMonths.map(m => {
-                  const firstDay = new Date(m.year, m.month, 1).getDay()
-                  const daysInMonth = new Date(m.year, m.month + 1, 0).getDate()
-                  const cells = [...Array(firstDay).fill(null), ...Array.from({ length: daysInMonth }, (_, i) => i + 1)]
-                  return (
-                    <div key={m.name} className="cal-month">
-                      <div className="cal-month-name">{m.name}</div>
-                      <div className="cal-day-headers">
-                        {['M','S','S','R','K','J','S'].map((d, i) => <div key={i} className="cal-day-hdr">{d}</div>)}
-                      </div>
-                      <div className="cal-days">
-                        {cells.map((day, i) => {
-                          if (day === null) return <div key={i} />
-                          const date = new Date(m.year, m.month, day)
-                          const evs  = getEventsForDate(date)
-                          return (
-                            <div
-                              key={i}
-                              className={`cal-day${evs.length ? ' has-event' : ''}`}
-                              onClick={() => evs.length && setSelectedDate({ date, events: evs })}
-                              title={evs.map(e => e.event).join(', ') || undefined}
-                            >
-                              {day}
-                              {evs.length > 0 && (
-                                <div className="cal-day-dots">
-                                  {evs.slice(0, 3).map((ev, j) => (
-                                    <div key={j} className="cal-dot" style={{ background: EVENT_COLORS[ev.type] }} />
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-
-              {/* Sidebar */}
-              <div className="cal-sidebar">
-                {/* Legend */}
-                <div className="cal-panel">
-                  <span className="cal-panel-title">Keterangan</span>
-                  <ul className="legend-list">
-                    {Object.entries(EVENT_LABELS).map(([type, label]) => (
-                      <li key={type} className="legend-item">
-                        <div className="legend-dot" style={{ background: EVENT_COLORS[type] }} />
-                        <span className="legend-label">{label}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                {/* Selected date detail */}
-                {selectedDate && (
-                  <div className="cal-panel">
-                    <span className="cal-panel-title">Detail</span>
-                    <div className="sel-date-label">
-                      {selectedDate.date.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-                    </div>
-                    <ul className="sel-event-list">
-                      {selectedDate.events.map((ev, i) => (
-                        <li key={i} className="sel-event">
-                          <span className="sel-event-type">{EVENT_LABELS[ev.type]}</span>
-                          <div className="sel-event-name">{ev.event}</div>
-                          <div className="sel-event-dates">
-                            {ev.endDate ? `${fmtDate(ev.date)} — ${fmtDate(ev.endDate)}` : fmtDate(ev.date)}
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {/* Upcoming */}
-                <div className="cal-panel">
-                  <span className="cal-panel-title">Agenda</span>
-                  <ul className="upcoming-list">
-                    {academicCalendar.slice(0, 6).map((ev, i) => (
-                      <li key={i} className="upcoming-item">
-                        <div className="upcoming-name">{ev.event}</div>
-                        <div className="upcoming-date">
-                          {ev.endDate ? `${fmtDate(ev.date)} — ${fmtDate(ev.endDate)}` : fmtDate(ev.date)}
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ═════════ 08 — PLATFORM FEATURES ═════════ */}
-        <hr className="sep" />
-        <section className="sec">
-          <div className="w">
-            <div className="sec-eyebrow rv"><span>08</span> Platform Features</div>
-            <div className="rv d1">
-              <h2 className="t-display" style={{ maxWidth: '480px' }}>
-                Everything your campus needs.<br /><em>Nothing it doesn't.</em>
-              </h2>
-            </div>
-            <div className="features-list rv d2">
-              {features.map(f => (
-                <div key={f.name} className="feat">
-                  <div className="feat-name">{f.name}</div>
-                  <div className="feat-desc">{f.desc}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* ═════════ 09 — STATS ═════════ */}
-        <hr className="sep" />
-        <section className="sec">
-          <div className="w">
-            <div className="stats-container rv">
-              {stats.map(s => (
-                <div key={s.n} className="stat">
-                  <span className="stat-n">{s.n}</span>
-                  <p className="stat-l">{s.label}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* ═════════ CTA ═════════ */}
-        <hr className="sep" />
-        <div className="cta-section rv">
-          <div className="cta-glow" />
-          <span className="cta-overline">NF StudentHub · Academic Platform</span>
-          <h2 className="cta-h">Start with your<br />campus <em>today.</em></h2>
-          <p className="cta-sub">Join institutions already running on NF StudentHub. Setup takes minutes, not months.</p>
-          <Link to="/login" className="btn-prim" style={{ fontSize: '14px', padding: '13px 28px' }}>
-            Enter Platform →
-          </Link>
         </div>
+      </section>
 
-        {/* ═════════ FOOTER ═════════ */}
-        <footer className="footer">
-          <div className="w">
-            <div className="footer-grid">
-              <div>
-                <span className="footer-brand-name">NF STUDENTHUB</span>
-                <p className="footer-brand-desc">
-                  Academic infrastructure for the modern campus. Powered by OpenClaw automation.
-                  Built for institutions that take education seriously.
-                </p>
-                <div style={{ display: 'flex', gap: '16px' }}>
-                  <a href="#" className="footer-link" style={{ fontSize: '12px' }}>Twitter</a>
-                  <a href="#" className="footer-link" style={{ fontSize: '12px' }}>Instagram</a>
-                  <a href="#" className="footer-link" style={{ fontSize: '12px' }}>LinkedIn</a>
-                </div>
+      {/* 08 - KALENDER */}
+      <hr className="border-0 border-t border-lp-border" />
+      <section id="kalender" className="py-24">
+        <div className="max-w-[1120px] mx-auto px-7">
+          <div className={`${rvBase} flex items-center gap-4 text-[10.5px] font-medium tracking-[0.16em] uppercase text-lp-text3 mb-10 after:content-[''] after:flex-1 after:h-px after:bg-lp-border`}>
+            <span className="font-mono">08</span> Kalender Akademik
+          </div>
+          <div className={`${rvBase} ${rvDelays[1]} mb-10`}>
+             <h2 className="font-sans text-[clamp(2.8rem,5.5vw,4.5rem)] leading-[1.06] tracking-tight text-lp-text">Jadwal<br /><em className="italic text-lp-text/40">Kegiatan.</em></h2>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-[2.5fr_1fr] gap-10">
+            <div className={`${rvBase} ${rvDelays[2]}`}>
+              <div className="bg-lp-surface border border-lp-border rounded-2xl overflow-hidden">
+                 {calendarMonths.map((m, i) => {
+                   const eventsInMonth = academicCalendar.filter(ev => {
+                      const d = new Date(ev.date)
+                      return d.getFullYear() === m.year && d.getMonth() === m.month
+                   })
+                   if (eventsInMonth.length === 0) return null
+                   return (
+                     <div key={m.name} className="border-b border-lp-border last:border-0 p-6 md:p-8 hover:bg-lp-card transition-colors">
+                        <div className="font-semibold text-[16px] mb-5 text-lp-text">{m.name}</div>
+                        <div className="flex flex-col gap-4">
+                           {eventsInMonth.map((ev, ei) => (
+                              <div key={ei} className="flex gap-4 items-start">
+                                 <div className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0 shadow-sm" style={{ backgroundColor: EVENT_COLORS[ev.type] }} />
+                                 <div>
+                                    <div className="text-[14px] font-medium text-lp-text mb-0.5">{ev.event}</div>
+                                    <div className="text-[12.5px] text-lp-text2 font-light">
+                                      {fmtDate(ev.date)} {ev.endDate && <span className="opacity-70">hingga {fmtDate(ev.endDate)}</span>}
+                                    </div>
+                                 </div>
+                              </div>
+                           ))}
+                        </div>
+                     </div>
+                   )
+                 })}
               </div>
-              {Object.entries(footerLinks).map(([col, links]) => (
-                <div key={col}>
-                  <span className="footer-col-title">{col}</span>
-                  <ul className="footer-links">
-                    {links.map(l => <li key={l.label}><a href={l.href} className="footer-link">{l.label}</a></li>)}
-                  </ul>
-                </div>
-              ))}
             </div>
-            <div className="footer-bottom">
-              <span className="footer-copy">© {new Date().getFullYear()} NF StudentHub. All rights reserved.</span>
-              <div className="footer-legal">
-                <a href="#">Privacy Policy</a>
-                <a href="#">Terms of Service</a>
+            <div className={`${rvBase} ${rvDelays[3]}`}>
+              <div className="sticky top-28 bg-lp-card border border-lp-border rounded-2xl p-6">
+                 <h3 className="font-semibold text-[14px] text-lp-text mb-5 tracking-tight">Keterangan</h3>
+                 <div className="flex flex-col gap-3.5">
+                    {Object.entries(EVENT_LABELS).map(([k, label]) => (
+                       <div key={k} className="flex items-center gap-3.5 text-[13px] text-lp-text2">
+                          <span className="w-3 h-3 rounded-[3px] shadow-sm flex-shrink-0" style={{ backgroundColor: EVENT_COLORS[k] }} />
+                          {label}
+                       </div>
+                    ))}
+                 </div>
               </div>
             </div>
           </div>
-        </footer>
+        </div>
+      </section>
 
+      {/* 09 - PLATFORM FEATURES */}
+      <hr className="border-0 border-t border-lp-border" />
+      <section className="py-24">
+        <div className="max-w-[1120px] mx-auto px-7">
+          <div className={`${rvBase} flex items-center gap-4 text-[10.5px] font-medium tracking-[0.16em] uppercase text-lp-text3 mb-10 after:content-[''] after:flex-1 after:h-px after:bg-lp-border`}>
+            <span className="font-mono">09</span> Platform Features
+          </div>
+          <div className={`${rvBase} ${rvDelays[1]}`}>
+            <h2 className="font-sans text-[clamp(2.8rem,5.5vw,4.5rem)] leading-[1.06] tracking-tight text-lp-text max-w-[480px]">Everything your campus needs.<br /><em className="italic text-lp-text/40">Nothing it doesn't.</em></h2>
+          </div>
+          <div className={`${rvBase} ${rvDelays[2]} border-t border-lp-border mt-14`}>
+            {platformFeatures.map(f => (
+              <div key={f.name} className="grid grid-cols-1 sm:grid-cols-[1fr_1.4fr] gap-6 sm:gap-20 items-start py-7 border-b border-lp-border transition-colors hover:bg-lp-accent/5 hover:rounded-xl px-2">
+                <div className="text-[15px] font-medium text-lp-text tracking-tight leading-snug">{f.name}</div>
+                <div className="text-[13.5px] font-light text-lp-text2 leading-relaxed">{f.desc}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 14 - STATS */}
+      <hr className="border-0 border-t border-lp-border" />
+      <section className="py-24">
+        <div className="max-w-[1120px] mx-auto px-7">
+          <div className={`${rvBase} border border-lp-border rounded-[20px] overflow-hidden grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4`}>
+            {stats.map((s, i) => (
+              <div key={s.n} className="p-10 lg:py-14 sm:border-r border-lp-border last:border-r-0 border-b lg:border-b-0 last:border-b-0">
+                <span className="font-sans text-[4rem] font-normal text-lp-text leading-none tracking-tight block mb-2.5">{s.n}</span>
+                <p className="text-[13px] font-light text-lp-text2 leading-relaxed max-w-[140px]">{s.label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <hr className="border-0 border-t border-lp-border" />
+      <div className={`${rvBase} text-center pt-[118px] pb-[112px] px-6 relative overflow-hidden`}>
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[640px] h-[360px] bg-[radial-gradient(ellipse_at_50%_100%,rgba(75,115,255,0.06),transparent_72%)] pointer-events-none" />
+        <span className="text-[10.5px] font-mono text-lp-text3 tracking-[0.16em] uppercase mb-7 block">Student Hub · E-Learning Reminder Platform</span>
+        <h2 className="font-sans text-[clamp(3.2rem,7vw,6rem)] font-normal tracking-[-0.04em] leading-[0.97] text-lp-text mb-6 relative">
+          Start with your<br />campus <em className="italic text-lp-text/40">today.</em>
+        </h2>
+        <p className="text-base font-light text-lp-text2 max-w-[360px] mx-auto mb-12 leading-relaxed">
+          Join institutions already running on Student Hub. Setup takes minutes, not months.
+        </p>
+        <div className="flex items-center justify-center gap-4 flex-wrap">
+          <button onClick={() => setIsLoginModalOpen(true)} className="inline-flex items-center gap-2 bg-lp-text text-lp-bg font-sans text-[14px] font-semibold py-[13px] px-7 rounded-full transition-all hover:bg-lp-atext hover:-translate-y-px">Enter Platform →</button>
+          <a href="#" className="inline-flex items-center gap-2 bg-lp-tg text-white font-sans text-[14px] font-semibold py-[13px] px-7 rounded-full transition-all hover:bg-[#1e96d3] hover:-translate-y-px">Connect Telegram ✈️</a>
+        </div>
       </div>
-    </>
+
+      {/* FOOTER */}
+      <footer className="border-t border-lp-border pt-16 pb-11">
+        <div className="max-w-[1120px] mx-auto px-7">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[2.4fr_1fr_1fr_1fr] gap-10 lg:gap-16 mb-14">
+            <div>
+              <span className="text-[12.5px] font-semibold text-lp-text tracking-wide block mb-3.5">STUDENT HUB</span>
+              <p className="text-[13.5px] font-light text-lp-text2 leading-relaxed max-w-[270px] mb-7">
+                E-Learning Reminder Platform for the modern campus. Powered by OpenClaw automation 
+                and Telegram integration. Built for institutions that take education seriously.
+              </p>
+              <div className="flex gap-4">
+                <a href="#" className="text-lp-text2 hover:text-lp-text transition-colors text-xs">Twitter</a>
+                <a href="#" className="text-lp-text2 hover:text-lp-text transition-colors text-xs">Instagram</a>
+                <a href="#" className="text-lp-text2 hover:text-lp-text transition-colors text-xs">Telegram</a>
+              </div>
+            </div>
+            {Object.entries(footerLinks).map(([col, links]) => (
+              <div key={col}>
+                <span className="text-[11px] font-medium text-lp-text tracking-wider uppercase block mb-5">{col}</span>
+                <ul className="flex flex-col gap-3">
+                  {links.map(l => (
+                    <li key={l.label}>
+                      {l.href === '/' ? (
+                        <button onClick={() => setIsLoginModalOpen(true)} className="text-lp-text2 text-[13.5px] font-light transition-colors hover:text-lp-text block bg-transparent outline-none p-0 text-left cursor-pointer">{l.label}</button>
+                      ) : (
+                        <a href={l.href} className="text-lp-text2 text-[13.5px] font-light transition-colors hover:text-lp-text block cursor-pointer">{l.label}</a>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+          <div className="border-t border-lp-border pt-7 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <span className="text-xs text-lp-text3 font-light">© {new Date().getFullYear()} Student Hub. All rights reserved.</span>
+            <div className="flex gap-6">
+              <a href="#" className="text-xs text-lp-text3 transition-colors hover:text-lp-text2">Privacy Policy</a>
+              <a href="#" className="text-xs text-lp-text3 transition-colors hover:text-lp-text2">Terms of Service</a>
+            </div>
+          </div>
+        </div>
+      </footer>
+      <LoginModal isOpen={isLoginModalOpen} onClose={() => setIsLoginModalOpen(false)} />
+    </div>
   )
 }

@@ -1,4 +1,4 @@
-// src/components/DashboardLayout.jsx - DIUPDATE DENGAN DROPDOWN MOBILE
+// src/components/DashboardLayout.jsx
 import React, { Suspense, lazy, useState } from 'react'
 import { useQuery } from "@tanstack/react-query"
 import { useNavigate, Link } from 'react-router-dom'
@@ -7,13 +7,11 @@ import Sidebar from './Sidebar'
 import useAuth from '../hooks/useAuth'
 import PostCard from './PostCard'
 import { 
-  FaSearch, FaRegHeart, FaBars, FaSignOutAlt, FaPlus, 
-  FaInstagram, FaChevronDown, FaChevronUp, FaUsers, FaUniversity, FaClock, FaPaperclip
+  FaBars, FaSignOutAlt, FaClock, FaPaperclip,
+  FaChevronDown, FaChevronUp, FaUsers
 } from 'react-icons/fa'
-import { RiHome7Line, RiHome7Fill } from 'react-icons/ri'
-import { FiHome, FiSearch, FiPlusSquare, FiHeart, FiUsers } from 'react-icons/fi'
-import { BsInstagram, BsPeopleFill } from 'react-icons/bs'
 import { MdOutlineSchool } from 'react-icons/md'
+import { BsPeopleFill } from 'react-icons/bs'
 import { getProfilePhotoUrl, getInitials, cleanUsername } from '../utils/profileUtils'
 import { resolveBackendAssetUrl } from '../utils/assetUrl'
 
@@ -123,7 +121,7 @@ const DashboardLayout = ({
   const handleLogout = async () => {
     try {
       await logout()
-      navigate('/login')
+      navigate('/')
     } catch (error) {
       console.error('Logout error:', error)
     }
@@ -133,10 +131,11 @@ const DashboardLayout = ({
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-screen bg-white font-sans">
+      <div className="flex justify-center items-center h-screen bg-lp-bg font-sans font-light">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-pink-500 border-t-transparent mx-auto mb-4"></div>
-          <p className="text-gray-700 font-medium">Loading feed...</p>
+          <div className="w-10 h-10 border-2 border-lp-border border-t-lp-accent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-lp-text2 text-sm font-light">Loading feed...</p>
+          <p className="text-[10px] font-mono text-lp-text3 tracking-widest uppercase mt-2">STUDENT HUB</p>
         </div>
       </div>
     )
@@ -165,428 +164,401 @@ const DashboardLayout = ({
   const profileEmail = profile?.email || user?.email || ''
 
   return (
-    <div className="flex min-h-screen bg-white font-sans antialiased">
-      {/* Sidebar */}
-      <Sidebar 
-        role={role} 
-        isOpen={sidebarOpen} 
-        onClose={() => setSidebarOpen(false)}
-        profile={profile}
-      />
+    <div className="bg-lp-bg text-lp-text font-sans font-light min-h-screen relative z-0">
+      {/* GLOBAL GRID BACKGROUND */}
+      <div className="fixed inset-0 pointer-events-none z-[-1] bg-white">
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.08)_1px,transparent_1px)] bg-[size:64px_64px]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,transparent_0%,rgba(255,255,255,0.85)_70%,#ffffff_100%)]" />
+      </div>
 
-      {/* Main Content - FIXED CENTER ALIGNMENT */}
-      <div className="flex-1 md:max-w-2xl lg:max-w-2xl mx-auto min-h-screen w-full">
-        {/* Header */}
-        <div className="sticky top-0 bg-white/95 backdrop-blur-md border-b border-gray-100 z-20">
-          <div className="px-4 py-3 flex items-center justify-between">
-            {/* Mobile Menu Button */}
-            <button 
-              onClick={() => setSidebarOpen(true)}
-              className="lg:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <FaBars className="text-xl text-gray-700" />
-            </button>
+      <div className="flex min-h-screen">
+        {/* Sidebar */}
+        <Sidebar 
+          role={role} 
+          isOpen={sidebarOpen} 
+          onClose={() => setSidebarOpen(false)}
+          profile={profile}
+        />
 
-            {/* Logo */}
-            <Link to="/" className="flex items-center">
-              <h1 className="text-xl font-bold bg-gradient-to-r from-pink-500 to-orange-500 bg-clip-text text-transparent md:text-2xl flex items-center font-logo">
-                NF StudentHub
-              </h1>
-            </Link>
-          </div>
-
-          {/* Role Filter Tabs */}
-          <div className="flex overflow-x-auto scrollbar-hide border-b border-gray-100">
-            {tabs.map(tab => (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                className={`flex-shrink-0 px-6 py-3 font-medium text-sm transition-all duration-200 relative flex items-center space-x-2 ${activeTab === tab.key ? 'text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
+        {/* Main Content */}
+        <div className="flex-1 md:max-w-2xl lg:max-w-2xl mx-auto min-h-screen w-full">
+          {/* Header */}
+          <div className="sticky top-0 bg-white/80 backdrop-blur-2xl border-b border-lp-border z-20">
+            <div className="px-5 py-3.5 flex items-center justify-between">
+              {/* Mobile Menu Button */}
+              <button 
+                onClick={() => setSidebarOpen(true)}
+                className="lg:hidden p-2 hover:bg-lp-surface rounded-xl transition-colors"
               >
-                <span>{tab.label}</span>
-                {activeTab === tab.key && (
-                  <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-12 h-0.5 bg-gray-900 rounded-full animate-pulse"></div>
+                <FaBars className="text-lg text-lp-text2" />
+              </button>
+
+              {/* Logo */}
+              <Link to="/" className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-lp-accentS border border-lp-borderA flex items-center justify-center">
+                  <svg className="w-3.5 h-3.5 stroke-lp-accent fill-none stroke-2 [stroke-linecap:round]" viewBox="0 0 24 24">
+                    <path d="M22 10v6M2 10l10-5 10 5-10 5-10-5z" />
+                    <path d="M6 12v5c3.33 1.67 8.67 1.67 12 0v-5" />
+                  </svg>
+                </div>
+                <span className="text-[13px] font-bold text-lp-text tracking-[0.05em] hidden sm:inline">STUDENT-HUB</span>
+              </Link>
+            </div>
+
+            {/* Role Filter Tabs */}
+            <div className="flex overflow-x-auto scrollbar-hide">
+              {tabs.map(tab => (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  className={`flex-shrink-0 px-5 py-3 text-[12.5px] transition-all duration-200 relative ${
+                    activeTab === tab.key 
+                      ? 'text-lp-text font-semibold' 
+                      : 'text-lp-text3 hover:text-lp-text2 font-light'
+                  }`}
+                >
+                  <span>{tab.label}</span>
+                  {activeTab === tab.key && (
+                    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-[2px] bg-lp-accent rounded-full" />
+                  )}
+                </button>
+              ))}
+            </div>
+
+            {/* Mobile Accounts Dropdown Toggle */}
+            <div className="lg:hidden border-t border-lp-border">
+              <button
+                onClick={() => setShowAccountsDropdown(!showAccountsDropdown)}
+                className="w-full flex items-center justify-between px-5 py-3 text-lp-text2 hover:bg-lp-surface/50 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-lp-accentS flex items-center justify-center">
+                    <FaUsers className="text-lp-accent text-xs" />
+                  </div>
+                  <div className="text-left">
+                    <div className="font-semibold text-[13px] text-lp-text">Rekomendasi Akun</div>
+                    <div className="text-[11px] text-lp-text3 font-light">Temukan ormawa & UKM</div>
+                  </div>
+                </div>
+                {showAccountsDropdown ? (
+                  <FaChevronUp className="text-lp-text3 text-xs" />
+                ) : (
+                  <FaChevronDown className="text-lp-text3 text-xs" />
                 )}
               </button>
-            ))}
+
+              {/* Mobile Accounts Dropdown Content */}
+              {showAccountsDropdown && (
+                <div className="bg-white border-t border-lp-border animate-slideUp">
+                  {/* Account Type Tabs */}
+                  <div className="flex border-b border-lp-border">
+                    <button
+                      onClick={() => setActiveAccountTab('ormawa')}
+                      className={`flex-1 py-3 text-[12px] font-medium flex items-center justify-center gap-1.5 transition-colors ${activeAccountTab === 'ormawa' ? 'text-lp-atext border-b-2 border-lp-accent' : 'text-lp-text3'}`}
+                    >
+                      <MdOutlineSchool />
+                      <span>Organisasi</span>
+                    </button>
+                    <button
+                      onClick={() => setActiveAccountTab('ukm')}
+                      className={`flex-1 py-3 text-[12px] font-medium flex items-center justify-center gap-1.5 transition-colors ${activeAccountTab === 'ukm' ? 'text-lp-atext border-b-2 border-lp-accent' : 'text-lp-text3'}`}
+                    >
+                      <BsPeopleFill />
+                      <span>UKM</span>
+                    </button>
+                  </div>
+
+                  {/* Accounts List */}
+                  <div className="max-h-[300px] overflow-y-auto p-3 space-y-1">
+                    {(activeAccountTab === 'ormawa' ? organizations : suggestedUKM).map((org) => (
+                      <Link
+                        key={org.id}
+                        to={`/profile/${org.type}/${cleanUsername(org.username || org.name)}`}
+                        className="flex items-center gap-3 p-3 rounded-xl hover:bg-lp-surface transition-all"
+                        onClick={() => setShowAccountsDropdown(false)}
+                      >
+                        <div className="w-10 h-10 bg-lp-accentS border border-lp-borderA rounded-xl flex items-center justify-center text-lp-atext font-bold text-sm">
+                          {org.name?.[0]?.toUpperCase() || 'O'}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-semibold text-lp-text text-[13px] truncate">{org.name}</div>
+                          <div className="text-lp-text3 text-[11px] font-light">{activeAccountTab === 'ormawa' ? 'Organisasi Mahasiswa' : 'Unit Kegiatan Mahasiswa'}</div>
+                        </div>
+                        <span className="text-[11px] font-semibold text-lp-accent bg-lp-accentS px-3 py-1 rounded-full transition-all hover:-translate-y-px">
+                          Detail
+                        </span>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* Mobile Accounts Dropdown Toggle */}
-          <div className="lg:hidden border-b border-gray-100">
-            <button
-              onClick={() => setShowAccountsDropdown(!showAccountsDropdown)}
-              className="w-full flex items-center justify-between px-4 py-3 text-gray-700 hover:bg-gray-50 transition-colors"
-            >
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-gradient-to-r from-pink-100 to-orange-100 rounded-lg">
-                  <FaUsers className="text-pink-500" />
-                </div>
-                <div className="text-left">
-                  <div className="font-semibold text-sm">Rekomendasi Akun</div>
-                  <div className="text-xs text-gray-500">Temukan ormawa & UKM</div>
-                </div>
+          {/* Feed Content */}
+          <div className="pb-20">
+            {showTaskTabContent ? (
+              <div className="animate-fadeIn px-5 py-5 space-y-3">
+                {tasksLoading ? (
+                  <div className="py-20 text-center">
+                    <div className="w-8 h-8 border-2 border-lp-border border-t-lp-accent rounded-full animate-spin mx-auto mb-4" />
+                    <p className="text-lp-text2 text-sm font-light">Memuat list tugas...</p>
+                  </div>
+                ) : tugasList.length > 0 ? (
+                  tugasList.map((task) => {
+                    const dueDate = task.due_date ? formatDateTime(task.due_date) : 'Tidak ditentukan'
+                    const uploadDate = formatDateTime(task.created_at)
+                    const fileUrl = getFileUrl(task.file_tugas)
+
+                    return (
+                      <button
+                        key={task.id}
+                        type="button"
+                        onClick={() => navigate(`/mahasiswa/matkul/${task.course_id}/pertemuan/${task.pertemuan || 1}/tugas?taskId=${task.id}`)}
+                        className="w-full text-left bg-white border border-lp-border rounded-2xl p-5 hover:border-lp-borderA hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] hover:-translate-y-0.5 transition-all duration-300 group"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <h3 className="text-[15px] font-semibold text-lp-text tracking-tight">{task.title}</h3>
+                            <p className="text-[13px] text-lp-text2 font-light mt-1">{task.course_name} • Pertemuan {task.pertemuan}</p>
+                          </div>
+                          {task.is_overdue ? (
+                            <span className="text-[10px] font-mono font-medium px-3 py-1 rounded-full bg-lp-red/8 text-lp-red tracking-wider uppercase">Terlambat</span>
+                          ) : (
+                            <span className="text-[10px] font-mono font-medium px-3 py-1 rounded-full bg-lp-green/8 text-lp-green tracking-wider uppercase">Aktif</span>
+                          )}
+                        </div>
+
+                        <div className="mt-4 grid gap-2 text-[13px] text-lp-text2 font-light">
+                          <div className="flex items-center gap-2">
+                            <FaClock className="text-lp-amber text-xs" />
+                            <span>Deadline: {dueDate}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <FaClock className="text-lp-accent text-xs" />
+                            <span>Tanggal upload: {uploadDate}</span>
+                          </div>
+                        </div>
+
+                        {task.description && (
+                          <p className="mt-4 text-[13px] text-lp-text2 font-light leading-relaxed">
+                            {task.description}
+                          </p>
+                        )}
+
+                        {fileUrl && (
+                          <div className="mt-4">
+                            <a
+                              href={fileUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="inline-flex items-center gap-2 text-[12px] text-lp-atext hover:text-lp-accent font-semibold transition-colors"
+                            >
+                              <FaPaperclip className="text-xs" />
+                              <span>Lihat file tugas</span>
+                            </a>
+                          </div>
+                        )}
+                      </button>
+                    )
+                  })
+                ) : (
+                  <div className="text-center py-16 px-4">
+                    <div className="w-16 h-16 mx-auto mb-5 bg-lp-accentS rounded-2xl flex items-center justify-center">
+                      <span className="text-3xl">📚</span>
+                    </div>
+                    <h3 className="text-lg font-semibold text-lp-text mb-2 tracking-tight">Belum ada tugas</h3>
+                    <p className="text-[13px] text-lp-text2 font-light max-w-sm mx-auto">
+                      Tugas dari dosen akan tampil otomatis di sini saat dosen upload tugas baru.
+                    </p>
+                  </div>
+                )}
               </div>
-              {showAccountsDropdown ? (
-                <FaChevronUp className="text-gray-400" />
-              ) : (
-                <FaChevronDown className="text-gray-400" />
-              )}
-            </button>
-
-            {/* Mobile Accounts Dropdown Content */}
-            {showAccountsDropdown && (
-              <div className="bg-white border-t border-gray-100 animate-slideDown">
-                {/* Account Type Tabs */}
-                <div className="flex border-b">
-                  <button
-                    onClick={() => setActiveAccountTab('ormawa')}
-                    className={`flex-1 py-3 text-sm font-medium flex items-center justify-center space-x-2 ${activeAccountTab === 'ormawa' ? 'text-pink-600 border-b-2 border-pink-500' : 'text-gray-500'}`}
-                  >
-                    <MdOutlineSchool />
-                    <span>Organisasi</span>
-                  </button>
-                  <button
-                    onClick={() => setActiveAccountTab('ukm')}
-                    className={`flex-1 py-3 text-sm font-medium flex items-center justify-center space-x-2 ${activeAccountTab === 'ukm' ? 'text-blue-600 border-b-2 border-blue-500' : 'text-gray-500'}`}
-                  >
-                    <BsPeopleFill />
-                    <span>UKM</span>
-                  </button>
+            ) : filteredPosts.length > 0 ? (
+              <div className="animate-fadeIn">
+                {filteredPosts.map(post => (
+                  <PostCard key={post.id} post={post} getRelativeTime={getRelativeTime} />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-16 px-4 animate-fadeIn">
+                <div className="w-16 h-16 mx-auto mb-5 bg-lp-accentS rounded-2xl flex items-center justify-center">
+                  <span className="text-3xl">📝</span>
                 </div>
-
-                {/* Accounts List */}
-                <div className="max-h-[300px] overflow-y-auto p-3">
-                  {activeAccountTab === 'ormawa' ? (
-                    <div className="space-y-3">
-                      {organizations.map((org) => (
-                        <Link
-                          key={org.id}
-                          to={`/profile/${org.type}/${cleanUsername(org.username || org.name)}`}
-                          className="flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-50 transition-colors"
-                          onClick={() => setShowAccountsDropdown(false)}
-                        >
-                          <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl flex items-center justify-center text-white font-bold shadow-md">
-                            {org.name?.[0]?.toUpperCase() || 'O'}
-                          </div>
-                          <div className="flex-1">
-                            <div className="font-semibold text-gray-900 text-sm">
-                              {org.name}
-                            </div>
-                            <div className="text-gray-500 text-xs">
-                              Organisasi Mahasiswa
-                            </div>
-                          </div>
-                          <button className="px-4 py-1.5 bg-gradient-to-r from-pink-500 to-orange-500 text-white rounded-full text-xs font-semibold hover:opacity-90 transition-opacity">
-                            Detail
-                          </button>
-                        </Link>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {suggestedUKM.map((ukm) => (
-                        <Link
-                          key={ukm.id}
-                          to={`/profile/${ukm.type}/${cleanUsername(ukm.username || ukm.name)}`}
-                          className="flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-50 transition-colors"
-                          onClick={() => setShowAccountsDropdown(false)}
-                        >
-                          <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-teal-500 rounded-xl flex items-center justify-center text-white font-bold shadow-md">
-                            {ukm.name?.[0]?.toUpperCase() || 'U'}
-                          </div>
-                          <div className="flex-1">
-                            <div className="font-semibold text-gray-900 text-sm">
-                              {ukm.name}
-                            </div>
-                            <div className="text-gray-500 text-xs">
-                              Unit Kegiatan Mahasiswa
-                            </div>
-                          </div>
-                          <button className="px-4 py-1.5 border border-blue-500 text-blue-500 rounded-full text-xs font-semibold hover:bg-blue-50 transition-colors">
-                            Detail
-                          </button>
-                        </Link>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                <h3 className="text-lg font-semibold text-lp-text mb-2 tracking-tight">Belum ada postingan</h3>
+                <p className="text-[13px] text-lp-text2 font-light mb-6 max-w-sm mx-auto">
+                  {activeTab === 'all' 
+                    ? 'Jadilah yang pertama berbagi dengan komunitas!'
+                    : `Belum ada postingan dari ${activeTab}.`
+                  }
+                </p>
               </div>
             )}
           </div>
         </div>
 
-        {/* Feed Content */}
-        <div className="pb-20">
-          {showTaskTabContent ? (
-            <div className="animate-fadeIn px-4 py-5 space-y-4">
-              {tasksLoading ? (
-                <div className="py-20 text-center">
-                  <div className="animate-spin rounded-full h-10 w-10 border-4 border-pink-500 border-t-transparent mx-auto mb-4"></div>
-                  <p className="text-gray-600">Memuat list tugas...</p>
-                </div>
-              ) : tugasList.length > 0 ? (
-                tugasList.map((task) => {
-                  const dueDate = task.due_date ? formatDateTime(task.due_date) : 'Tidak ditentukan'
-                  const uploadDate = formatDateTime(task.created_at)
-                  const fileUrl = getFileUrl(task.file_tugas)
-
-                  return (
-                    <button
-                      key={task.id}
-                      type="button"
-                      onClick={() => navigate(`/mahasiswa/matkul/${task.course_id}/pertemuan/${task.pertemuan || 1}/tugas?taskId=${task.id}`)}
-                      className="w-full text-left bg-white border border-gray-200 rounded-2xl p-5 hover:border-pink-300 hover:shadow-md transition-all duration-200"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <h3 className="text-lg font-bold text-gray-900">{task.title}</h3>
-                          <p className="text-sm text-gray-600 mt-1">{task.course_name} • Pertemuan {task.pertemuan}</p>
-                        </div>
-                        {task.is_overdue ? (
-                          <span className="text-xs font-semibold px-3 py-1 rounded-full bg-red-100 text-red-700">Terlambat</span>
-                        ) : (
-                          <span className="text-xs font-semibold px-3 py-1 rounded-full bg-green-100 text-green-700">Aktif</span>
-                        )}
-                      </div>
-
-                      <div className="mt-4 grid gap-2 text-sm text-gray-700">
-                        <div className="flex items-center gap-2">
-                          <FaClock className="text-orange-500" />
-                          <span>Deadline: {dueDate}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <FaClock className="text-blue-500" />
-                          <span>Tanggal upload: {uploadDate}</span>
-                        </div>
-                      </div>
-
-                      {task.description && (
-                        <p className="mt-4 text-sm text-gray-600 leading-relaxed">
-                          {task.description}
-                        </p>
-                      )}
-
-                      {fileUrl && (
-                        <div className="mt-4">
-                          <a
-                            href={fileUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={(e) => e.stopPropagation()}
-                            className="inline-flex items-center gap-2 text-sm text-pink-600 hover:text-pink-700 font-semibold"
-                          >
-                            <FaPaperclip />
-                            <span>Lihat file tugas</span>
-                          </a>
-                        </div>
-                      )}
-                    </button>
-                  )
-                })
-              ) : (
-                <div className="text-center py-16 px-4">
-                  <div className="w-24 h-24 mx-auto mb-6 bg-gradient-to-r from-pink-100 to-orange-100 rounded-full flex items-center justify-center">
-                    <span className="text-4xl">📚</span>
-                  </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">Belum ada tugas</h3>
-                  <p className="text-gray-600 max-w-sm mx-auto">
-                    Tugas dari dosen akan tampil otomatis di sini saat dosen upload tugas baru.
-                  </p>
-                </div>
-              )}
-            </div>
-          ) : filteredPosts.length > 0 ? (
-            <div className="animate-fadeIn">
-              {filteredPosts.map(post => (
-                <PostCard key={post.id} post={post} getRelativeTime={getRelativeTime} />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-16 px-4 animate-fadeIn">
-              <div className="w-24 h-24 mx-auto mb-6 bg-gradient-to-r from-pink-100 to-orange-100 rounded-full flex items-center justify-center">
-                <span className="text-4xl">📝</span>
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Belum ada postingan</h3>
-              <p className="text-gray-600 mb-6 max-w-sm mx-auto">
-                {activeTab === 'all' 
-                  ? 'Jadilah yang pertama berbagi dengan komunitas!'
-                  : `Belum ada postingan dari ${activeTab}.`
-                }
-              </p>
-
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Right Sidebar - Desktop Only */}
-      <div className="hidden lg:block flex-1 max-w-sm sticky top-0 h-screen overflow-y-auto p-6 custom-scrollbar">
-        {/* User Profile with Logout */}
-        <div className="mb-8 animate-fadeIn">
-          <div className="flex items-center space-x-4 mb-6 p-4 bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-            <Link 
-              to={`/mahasiswa/profile`}
-              className="w-16 h-16 rounded-full flex items-center justify-center text-white font-bold text-lg hover:opacity-90 transition-all hover:scale-105 overflow-hidden border-2 border-pink-300"
-            >
-              {profile?.photo ? (
-                <img 
-                  src={getProfilePhotoUrl(profile.photo)} 
-                  alt="Profile" 
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    e.target.style.display = 'none';
-                    e.target.nextSibling.style.display = 'flex';
-                  }}
-                />
-              ) : null}
-              <div 
-                className={`w-full h-full bg-gradient-to-r from-pink-500 to-orange-500 rounded-full flex items-center justify-center ${profile?.photo ? 'hidden' : 'flex'}`}
-              >
-                {getInitials(profileName)}
-              </div>
-            </Link>
-            
-            <div className="flex-1 min-w-0">
+        {/* Right Sidebar - Desktop Only */}
+        <div className="hidden lg:block flex-1 max-w-sm sticky top-0 h-screen overflow-y-auto p-6 custom-scrollbar">
+          {/* User Profile with Logout */}
+          <div className="mb-6 animate-fadeIn">
+            <div className="flex items-center gap-4 p-4 bg-white border border-lp-border rounded-2xl hover:border-lp-borderA hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] transition-all duration-300">
               <Link 
                 to={`/mahasiswa/profile`}
-                className="hover:opacity-80 transition-opacity block"
+                className="w-14 h-14 rounded-2xl flex items-center justify-center text-white font-bold text-base hover:scale-105 transition-transform overflow-hidden border border-lp-border"
               >
-                <div className="font-bold text-gray-900 truncate hover:underline">{profileName}</div>
-                <div className="text-gray-500 text-sm truncate">@{profileUsername}</div>
+                {profile?.photo ? (
+                  <img 
+                    src={getProfilePhotoUrl(profile.photo)} 
+                    alt="Profile" 
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      e.target.nextSibling.style.display = 'flex';
+                    }}
+                  />
+                ) : null}
+                <div 
+                  className={`w-full h-full bg-lp-accentS rounded-2xl flex items-center justify-center text-lp-atext font-bold ${profile?.photo ? 'hidden' : 'flex'}`}
+                >
+                  {getInitials(profileName)}
+                </div>
               </Link>
               
-              {/* Logout Button */}
-              <button 
-                onClick={() => setShowLogoutConfirm(true)}
-                className="flex items-center space-x-2 text-gray-500 hover:text-red-500 mt-4 text-sm font-medium transition-all duration-200 hover:scale-105"
-              >
-                <FaSignOutAlt className="text-xs" />
-                <span>Logout</span>
-              </button>
+              <div className="flex-1 min-w-0">
+                <Link 
+                  to={`/mahasiswa/profile`}
+                  className="hover:opacity-80 transition-opacity block"
+                >
+                  <div className="font-semibold text-lp-text text-[14px] truncate tracking-tight">{profileName}</div>
+                  <div className="text-lp-text3 text-[12px] font-mono truncate">@{profileUsername}</div>
+                </Link>
+                
+                {/* Logout Button */}
+                <button 
+                  onClick={() => setShowLogoutConfirm(true)}
+                  className="flex items-center gap-1.5 text-lp-text3 hover:text-lp-red mt-3 text-[11px] font-mono tracking-wider uppercase transition-colors"
+                >
+                  <FaSignOutAlt className="text-[10px]" />
+                  <span>Logout</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Organizations Suggestions - Ormawa */}
+          <div className="bg-white border border-lp-border rounded-2xl p-4 mb-4 hover:border-lp-borderA hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] transition-all duration-300 animate-slideInRight">
+            <div className="flex items-center gap-3 mb-4">
+              <span className="text-[10px] font-mono font-medium tracking-[0.14em] uppercase text-lp-text3">Akun Ormawa</span>
+              <div className="flex-1 h-px bg-lp-border" />
+            </div>
+            <div className="space-y-1.5">
+              {organizations.slice(0, 6).map((org) => (
+                <div key={org.id} className="flex items-center justify-between p-2.5 hover:bg-lp-surface rounded-xl transition-all duration-200 group">
+                  <Link 
+                    to={`/profile/${org.type}/${cleanUsername(org.username || org.name)}`}
+                    className="flex items-center gap-3 flex-1 min-w-0"
+                  >
+                    <div className="w-9 h-9 bg-lp-accentS border border-lp-borderA rounded-xl flex items-center justify-center text-lp-atext font-bold text-xs">
+                      {org.name?.[0]?.toUpperCase() || 'O'}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-semibold text-lp-text text-[12px] truncate tracking-tight">{org.name}</div>
+                      <div className="text-lp-text3 text-[10px] font-light">Organisasi</div>
+                    </div>
+                  </Link>
+
+                  <Link
+                    to={`/profile/${org.type}/${cleanUsername(org.username || org.name)}`}
+                    className="text-[10px] font-semibold text-lp-text bg-lp-surface px-3 py-1.5 rounded-full transition-all hover:bg-lp-text hover:text-white hover:-translate-y-px"
+                  >
+                    Detail
+                  </Link>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* UKM Suggestions */}
+          <div className="bg-white border border-lp-border rounded-2xl p-4 hover:border-lp-borderA hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] transition-all duration-300 animate-slideInRight">
+            <div className="flex items-center gap-3 mb-4">
+              <span className="text-[10px] font-mono font-medium tracking-[0.14em] uppercase text-lp-text3">Akun UKM</span>
+              <div className="flex-1 h-px bg-lp-border" />
+            </div>
+            <div className="space-y-1.5">
+              {suggestedUKM.slice(0, 6).map((ukm) => (
+                <div key={ukm.id} className="flex items-center justify-between p-2.5 hover:bg-lp-surface rounded-xl transition-all duration-200 group">
+                  <Link 
+                    to={`/profile/${ukm.type}/${cleanUsername(ukm.username || ukm.name)}`}
+                    className="flex items-center gap-3 flex-1 min-w-0"
+                  >
+                    <div className="w-9 h-9 bg-lp-green/10 border border-lp-green/20 rounded-xl flex items-center justify-center text-lp-green font-bold text-xs">
+                      {ukm.name?.[0]?.toUpperCase() || 'U'}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-semibold text-lp-text text-[12px] truncate tracking-tight">{ukm.name}</div>
+                      <div className="text-lp-text3 text-[10px] font-light">UKM</div>
+                    </div>
+                  </Link>
+                  <Link
+                    to={`/profile/${ukm.type}/${cleanUsername(ukm.username || ukm.name)}`}
+                    className="text-[10px] font-semibold text-lp-text bg-lp-surface px-3 py-1.5 rounded-full transition-all hover:bg-lp-text hover:text-white hover:-translate-y-px"
+                  >
+                    Detail
+                  </Link>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Footer Links */}
+          <div className="mt-6 text-center animate-fadeIn">
+            <div className="flex flex-wrap items-center justify-center gap-2 text-[10px] text-lp-text3 font-light">
+              <a href="#" className="hover:text-lp-text2 transition-colors">Terms</a>
+              <span>·</span>
+              <a href="#" className="hover:text-lp-text2 transition-colors">Privacy</a>
+              <span>·</span>
+              <a href="#" className="hover:text-lp-text2 transition-colors">Cookie</a>
+            </div>
+            <div className="flex items-center justify-center gap-1.5 mt-3">
+              <div className="w-1 h-1 rounded-full bg-lp-accent/40" />
+              <span className="text-[9px] font-mono text-lp-text3 tracking-[0.06em]">© 2025 Student Hub</span>
+              <div className="w-1 h-1 rounded-full bg-lp-accent/40" />
             </div>
           </div>
         </div>
 
-        {/* Organizations Suggestions - Ormawa */}
-        <div className="bg-gray-50 rounded-2xl p-4 border border-gray-200 mb-6 hover:shadow-sm transition-shadow animate-slideInRight">
-          <div className="flex items-center space-x-2 mb-4">
-    
-            <h3 className="font-bold text-gray-900">AKUN ORMAWA</h3>
-          </div>
-          <div className="space-y-3">
-            {organizations.slice(0, 6).map((org) => (
-              <div key={org.id} className="flex items-center justify-between p-3 hover:bg-white rounded-xl transition-all duration-200 hover:scale-[1.02]">
-                <Link 
-                  to={`/profile/${org.type}/${cleanUsername(org.username || org.name)}`}
-                  className="flex items-center space-x-3 flex-1 hover:opacity-80 transition-opacity min-w-0"
-                >
-                  <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl flex items-center justify-center text-white font-bold shadow-md">
-                    {org.name?.[0]?.toUpperCase() || 'O'}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-gray-900 text-sm truncate">
-                      {org.name}
-                    </div>
-                    <div className="text-gray-500 text-xs truncate">
-                      Organisasi
-                    </div>
-                  </div>
-                </Link>
+        {/* CHATBOT COMPONENT */}
+        <Suspense fallback={null}>
+          <Chatbot />
+        </Suspense>
 
-                <Link
-                  to={`/profile/${org.type}/${cleanUsername(org.username || org.name)}`}
-                  className="text-white bg-gradient-to-r from-pink-500 to-orange-500 hover:from-pink-600 hover:to-orange-600 px-4 py-2 rounded-full text-xs font-semibold transition-all duration-200 hover:scale-105 active:scale-95"
+        {/* Logout Confirmation Modal */}
+        {showLogoutConfirm && (
+          <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
+            <div className="bg-white border border-lp-border rounded-2xl p-7 max-w-sm w-full shadow-[0_24px_64px_rgba(0,0,0,0.1)] animate-scaleIn">
+              <h3 className="text-lg font-semibold text-lp-text tracking-tight mb-2">Konfirmasi Logout</h3>
+              <p className="text-[13px] text-lp-text2 font-light mb-6 leading-relaxed">
+                Apakah Anda yakin ingin keluar dari akun Anda?
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowLogoutConfirm(false)}
+                  className="flex-1 py-3 px-4 border border-lp-border text-lp-text2 rounded-full hover:bg-lp-surface transition-all font-medium text-[13px]"
                 >
-                  Detail
-                </Link>
+                  Batal
+                </button>
+                <button
+                  onClick={handleLogout}
+                  className="flex-1 py-3 px-4 bg-lp-red text-white rounded-full hover:bg-red-700 hover:-translate-y-px transition-all font-semibold text-[13px] shadow-[0_4px_12px_rgba(220,38,38,0.2)]"
+                >
+                  Logout
+                </button>
               </div>
-            ))}
-          </div>
-        </div>
-
-        {/* UKM Suggestions */}
-        <div className="bg-gray-50 rounded-2xl p-4 border border-gray-200 hover:shadow-sm transition-shadow animate-slideInRight">
-          <div className="flex items-center space-x-2 mb-4">
-            <div className="p-2 bg-gradient-to-r from-green-100 to-teal-100 rounded-lg">
-              <FaUsers className="text-green-500" />
             </div>
-            <h3 className="font-bold text-gray-900">AKUN UKM</h3>
           </div>
-          <div className="space-y-3">
-            {suggestedUKM.slice(0, 6).map((ukm) => (
-              <div key={ukm.id} className="flex items-center justify-between p-3 hover:bg-white rounded-xl transition-all duration-200 hover:scale-[1.02]">
-                <Link 
-                  to={`/profile/${ukm.type}/${cleanUsername(ukm.username || ukm.name)}`}
-                  className="flex items-center space-x-3 flex-1 hover:opacity-80 transition-opacity min-w-0"
-                >
-                  <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-teal-500 rounded-xl flex items-center justify-center text-white font-bold shadow-md">
-                    {ukm.name?.[0]?.toUpperCase() || 'U'}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-gray-900 text-sm truncate">
-                      {ukm.name}
-                    </div>
-                    <div className="text-gray-500 text-xs truncate">
-                      UKM
-                    </div>
-                  </div>
-                </Link>
-                <Link
-                  to={`/profile/${ukm.type}/${cleanUsername(ukm.username || ukm.name)}`}
-                  className="text-blue-500 font-semibold text-sm hover:text-blue-600 px-4 py-2 border border-blue-500 hover:bg-blue-50 rounded-full transition-all duration-200 hover:scale-105"
-                >
-                  Detail
-                </Link>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Footer Links */}
-        <div className="mt-6 text-xs text-gray-500 space-y-2 animate-fadeIn">
-          <div className="flex flex-wrap gap-2">
-            <a href="#" className="hover:text-gray-700 transition-colors">Terms of Service</a>
-            <span>·</span>
-            <a href="#" className="hover:text-gray-700 transition-colors">Privacy Policy</a>
-            <span>·</span>
-            <a href="#" className="hover:text-gray-700 transition-colors">Cookie Policy</a>
-            <span>·</span>
-            <a href="#" className="hover:text-gray-700 transition-colors">Accessibility</a>
-          </div>
-          <div>© 2024 NF StudentHub, Inc.</div>
-        </div>
+        )}
       </div>
-
-      {/* CHATBOT COMPONENT */}
-      <Suspense fallback={null}>
-        <Chatbot />
-      </Suspense>
-
-      {/* Logout Confirmation Modal */}
-      {showLogoutConfirm && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
-          <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl animate-scaleIn">
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Konfirmasi Logout</h3>
-            <p className="text-gray-600 mb-6">
-              Apakah Anda yakin ingin keluar dari akun Anda?
-            </p>
-            <div className="flex space-x-3">
-              <button
-                onClick={() => setShowLogoutConfirm(false)}
-                className="flex-1 py-3 px-4 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-all duration-200 font-medium hover:scale-105"
-              >
-                Batal
-              </button>
-              <button
-                onClick={handleLogout}
-                className="flex-1 py-3 px-4 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-xl hover:from-red-600 hover:to-pink-600 transition-all duration-200 font-medium shadow-lg hover:scale-105"
-              >
-                Logout
-              </button>
-            </div>
-          </div>
-        </div>
-      )}  
     </div>
   )
 }

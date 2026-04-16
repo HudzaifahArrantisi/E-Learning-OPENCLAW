@@ -76,13 +76,13 @@ func GetSisaUKT(c *gin.Context) {
 	role, _ := c.Get("role")
 	
 	if role == "orangtua" {
-		err := config.DB.QueryRow("SELECT child_id FROM ortu WHERE user_id = ?", userID).Scan(&mahasiswaID)
+		err := config.DB.QueryRow("SELECT child_id FROM ortu WHERE user_id = $1", userID).Scan(&mahasiswaID)
 		if err != nil {
 			utils.ErrorResponse(c, http.StatusNotFound, "Data orangtua tidak ditemukan")
 			return
 		}
 	} else {
-		err := config.DB.QueryRow("SELECT id FROM mahasiswa WHERE user_id = ?", userID).Scan(&mahasiswaID)
+		err := config.DB.QueryRow("SELECT id FROM mahasiswa WHERE user_id = $1", userID).Scan(&mahasiswaID)
 		if err != nil {
 			utils.ErrorResponse(c, http.StatusNotFound, "Mahasiswa not found")
 			return
@@ -90,7 +90,7 @@ func GetSisaUKT(c *gin.Context) {
 	}
 
 	var sisaUKT float64
-	err := config.DB.QueryRow("SELECT COALESCE(sisa_ukt, 7000000) FROM mahasiswa WHERE id = ?", mahasiswaID).Scan(&sisaUKT)
+	err := config.DB.QueryRow("SELECT COALESCE(sisa_ukt, 7000000) FROM mahasiswa WHERE id = $1", mahasiswaID).Scan(&sisaUKT)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, "Gagal mengambil sisa UKT")
 		return
@@ -117,13 +117,13 @@ func GetRiwayatPembayaran(c *gin.Context) {
 	role, _ := c.Get("role")
 	
 	if role == "orangtua" {
-		err := config.DB.QueryRow("SELECT child_id FROM ortu WHERE user_id = ?", userID).Scan(&mahasiswaID)
+		err := config.DB.QueryRow("SELECT child_id FROM ortu WHERE user_id = $1", userID).Scan(&mahasiswaID)
 		if err != nil {
 			utils.ErrorResponse(c, http.StatusNotFound, "Data orangtua tidak ditemukan")
 			return
 		}
 	} else {
-		err := config.DB.QueryRow("SELECT id FROM mahasiswa WHERE user_id = ?", userID).Scan(&mahasiswaID)
+		err := config.DB.QueryRow("SELECT id FROM mahasiswa WHERE user_id = $1", userID).Scan(&mahasiswaID)
 		if err != nil {
 			utils.ErrorResponse(c, http.StatusNotFound, "Mahasiswa not found")
 			return
@@ -135,12 +135,12 @@ func GetRiwayatPembayaran(c *gin.Context) {
 		SELECT id, invoice_uuid, metode, nominal, biaya_admin, total_dibayar, status, tanggal, invoice_url, expired_at,
 		       payment_method, payment_number, pakasir_order_id
 		FROM riwayat_pembayaran
-		WHERE mahasiswa_id = ?
+		WHERE mahasiswa_id = $1
 	`
 	params := []interface{}{mahasiswaID}
 
 	if statusFilter != "all" {
-		query += " AND status = ?"
+		query += " AND status = $2"
 		params = append(params, statusFilter)
 	}
 
@@ -355,7 +355,7 @@ func CreatePayment(c *gin.Context) {
 			SELECT o.child_id, COALESCE(m.sisa_ukt, 7000000), m.name, m.nim
 			FROM ortu o 
 			JOIN mahasiswa m ON o.child_id = m.id 
-			WHERE o.user_id = ?
+			WHERE o.user_id = $1
 		`, userID).Scan(&mahasiswaID, &sisaUKT, &studentName, &nim)
 		if err != nil {
 			utils.ErrorResponse(c, http.StatusNotFound, "Data orangtua tidak ditemukan")
@@ -365,7 +365,7 @@ func CreatePayment(c *gin.Context) {
 		err := config.DB.QueryRow(`
 			SELECT id, COALESCE(sisa_ukt, 7000000), name, nim
 			FROM mahasiswa 
-			WHERE user_id = ?
+			WHERE user_id = $1
 		`, userID).Scan(&mahasiswaID, &sisaUKT, &studentName, &nim)
 		if err != nil {
 			utils.ErrorResponse(c, http.StatusNotFound, "Mahasiswa not found")
@@ -390,23 +390,23 @@ func CreatePayment(c *gin.Context) {
 
 	// Simpan ke riwayat_pembayaran dengan status pending (biaya admin sementara 0)
 	expiredAt := time.Now().Add(24 * time.Hour)
-	result, err := config.DB.Exec(`
+	var lastID int64
+	err := config.DB.QueryRow(`
 		INSERT INTO riwayat_pembayaran 
 		(mahasiswa_id, invoice_uuid, metode, nominal, biaya_admin, total_dibayar, status, tanggal, expired_at, payment_method)
-		VALUES (?, ?, ?, ?, 0, ?, 'pending', NOW(), ?, ?)
-	`, mahasiswaID, invoiceUUID, metode, input.Nominal, input.Nominal, expiredAt, input.Metode)
+		VALUES ($1, $2, $3, $4, 0, $5, 'pending', NOW(), $6, $7)
+		RETURNING id
+	`, mahasiswaID, invoiceUUID, metode, input.Nominal, input.Nominal, expiredAt, input.Metode).Scan(&lastID)
 	
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, "Gagal menyimpan riwayat pembayaran: "+err.Error())
 		return
 	}
 
-	lastID, _ := result.LastInsertId()
-
 	// Simpan ke ukt_invoices
 	_, err = config.DB.Exec(`
 		INSERT INTO ukt_invoices (student_id, uuid, amount, status, created_at, expired_at, payment_method)
-		VALUES (?, ?, ?, 'pending', NOW(), ?, ?)
+		VALUES ($1, $2, $3, 'pending', NOW(), $4, $5)
 	`, mahasiswaID, invoiceUUID, input.Nominal, expiredAt, input.Metode)
 	
 	if err != nil {
@@ -420,8 +420,8 @@ func CreatePayment(c *gin.Context) {
 	pakasirResp, err := createPakasirTransaction(invoiceUUID, amountInt, pakasirMethod)
 	if err != nil {
 		// Update status menjadi failed
-		config.DB.Exec(`UPDATE riwayat_pembayaran SET status = 'failed' WHERE id = ?`, lastID)
-		config.DB.Exec(`UPDATE ukt_invoices SET status = 'cancelled' WHERE uuid = ?`, invoiceUUID)
+		config.DB.Exec(`UPDATE riwayat_pembayaran SET status = 'failed' WHERE id = $1`, lastID)
+		config.DB.Exec(`UPDATE ukt_invoices SET status = 'cancelled' WHERE uuid = $1`, invoiceUUID)
 		
 		utils.ErrorResponse(c, http.StatusInternalServerError, "Gagal membuat pembayaran di Pakasir.com: "+err.Error())
 		return
@@ -456,8 +456,8 @@ func CreatePayment(c *gin.Context) {
 	// Update riwayat_pembayaran dengan data dari Pakasir
 	_, err = config.DB.Exec(`
 		UPDATE riwayat_pembayaran 
-		SET biaya_admin = ?, total_dibayar = ?, invoice_url = ?, payment_number = ?, pakasir_order_id = ?, expired_at = ?
-		WHERE id = ?
+		SET biaya_admin = $1, total_dibayar = $2, invoice_url = $3, payment_number = $4, pakasir_order_id = $5, expired_at = $6
+		WHERE id = $7
 	`, pakasirResp.Payment.Fee, pakasirResp.Payment.TotalPayment, paymentURL, pakasirResp.Payment.PaymentNumber, 
 		invoiceUUID, pakasirExpired, lastID)
 	
@@ -513,14 +513,14 @@ func CancelPayment(c *gin.Context) {
 			SELECT r.mahasiswa_id, r.status, r.total_dibayar, r.pakasir_order_id, r.nominal
 			FROM riwayat_pembayaran r
 			JOIN ortu o ON r.mahasiswa_id = o.child_id
-			WHERE r.invoice_uuid = ? AND o.user_id = ?
+			WHERE r.invoice_uuid = $1 AND o.user_id = $2
 		`, invoiceUUID, userID).Scan(&mahasiswaID, &status, &totalDibayar, &pakasirOrderID, &amount)
 	} else {
 		err = config.DB.QueryRow(`
 			SELECT r.mahasiswa_id, r.status, r.total_dibayar, r.pakasir_order_id, r.nominal
 			FROM riwayat_pembayaran r
 			JOIN mahasiswa m ON r.mahasiswa_id = m.id
-			WHERE r.invoice_uuid = ? AND m.user_id = ?
+			WHERE r.invoice_uuid = $1 AND m.user_id = $2
 		`, invoiceUUID, userID).Scan(&mahasiswaID, &status, &totalDibayar, &pakasirOrderID, &amount)
 	}
 	
@@ -539,7 +539,7 @@ func CancelPayment(c *gin.Context) {
 	_, err = config.DB.Exec(`
 		UPDATE riwayat_pembayaran 
 		SET status = 'failed', updated_at = NOW()
-		WHERE invoice_uuid = ?
+		WHERE invoice_uuid = $1
 	`, invoiceUUID)
 	
 	if err != nil {
@@ -548,7 +548,7 @@ func CancelPayment(c *gin.Context) {
 	}
 
 	// Update ukt_invoices menjadi cancelled
-	config.DB.Exec(`UPDATE ukt_invoices SET status = 'cancelled', updated_at = NOW() WHERE uuid = ?`, invoiceUUID)
+	config.DB.Exec(`UPDATE ukt_invoices SET status = 'cancelled', updated_at = NOW() WHERE uuid = $1`, invoiceUUID)
 
 	utils.SuccessResponse(c, gin.H{
 		"invoice_uuid": invoiceUUID,
@@ -622,7 +622,7 @@ func PakasirWebhook(c *gin.Context) {
 	query := `
 		SELECT id, mahasiswa_id, nominal, status, total_dibayar, invoice_uuid, payment_method
 		FROM riwayat_pembayaran
-		WHERE invoice_uuid = ? OR pakasir_order_id = ?
+		WHERE invoice_uuid = $1 OR pakasir_order_id = $2
 		LIMIT 1
 	`
 	
@@ -637,7 +637,7 @@ func PakasirWebhook(c *gin.Context) {
 		err2 := config.DB.QueryRow(`
 			SELECT student_id, amount
 			FROM ukt_invoices
-			WHERE uuid = ?
+			WHERE uuid = $1
 		`, payload.OrderID).Scan(&studentID, &amount)
 		
 		if err2 != nil {
@@ -646,20 +646,21 @@ func PakasirWebhook(c *gin.Context) {
 		}
 		
 		// Buat record di riwayat_pembayaran jika tidak ada
-		result, err := config.DB.Exec(`
+		var lastID int64
+		err = config.DB.QueryRow(`
 			INSERT INTO riwayat_pembayaran 
 			(mahasiswa_id, invoice_uuid, metode, nominal, biaya_admin, total_dibayar, status, tanggal, 
 			 payment_method, pakasir_order_id, invoice_url)
-			VALUES (?, ?, 'transfer', ?, 0, ?, ?, NOW(), ?, ?, ?)
+			VALUES ($1, $2, 'transfer', $3, 0, $4, $5, NOW(), $6, $7, $8)
+			RETURNING id
 		`, studentID, payload.OrderID, amount, amount, "pending", 
-		   payload.PaymentMethod, payload.OrderID, "")
+		   payload.PaymentMethod, payload.OrderID, "").Scan(&lastID)
 		
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create payment record"})
 			return
 		}
 		
-		lastID, _ := result.LastInsertId()
 		riwayat.ID = int(lastID)
 		riwayat.MahasiswaID = studentID
 		riwayat.Nominal = amount
@@ -683,10 +684,10 @@ func PakasirWebhook(c *gin.Context) {
 		// Update sisa UKT di database
 		_, err := config.DB.Exec(`
 			UPDATE mahasiswa 
-			SET sisa_ukt = GREATEST(0, COALESCE(sisa_ukt, 7000000) - ?), 
+			SET sisa_ukt = GREATEST(0, COALESCE(sisa_ukt, 7000000) - $1), 
 			    updated_at = NOW(),
-			    total_ukt_dibayar = COALESCE(total_ukt_dibayar, 0) + ?
-			WHERE id = ?
+			    total_ukt_dibayar = COALESCE(total_ukt_dibayar, 0) + $2
+			WHERE id = $3
 		`, riwayat.Nominal, riwayat.Nominal, riwayat.MahasiswaID)
 		
 		if err != nil {
@@ -706,10 +707,10 @@ func PakasirWebhook(c *gin.Context) {
 	// Update riwayat_pembayaran
 	_, err = config.DB.Exec(`
 		UPDATE riwayat_pembayaran 
-		SET status = ?, updated_at = NOW(), 
-			payment_method = COALESCE(?, payment_method), 
-			pakasir_order_id = COALESCE(?, pakasir_order_id)
-		WHERE id = ?
+		SET status = $1, updated_at = NOW(), 
+			payment_method = COALESCE($2, payment_method), 
+			pakasir_order_id = COALESCE($3, pakasir_order_id)
+		WHERE id = $4
 	`, newStatus, payload.PaymentMethod, payload.OrderID, riwayat.ID)
 	
 	if err != nil {
@@ -727,7 +728,7 @@ func PakasirWebhook(c *gin.Context) {
 		invoiceStatus = "expired"
 	}
 	
-	config.DB.Exec(`UPDATE ukt_invoices SET status = ?, updated_at = NOW() WHERE uuid = ?`, 
+	config.DB.Exec(`UPDATE ukt_invoices SET status = $1, updated_at = NOW() WHERE uuid = $2`, 
 		invoiceStatus, riwayat.InvoiceUUID)
 
 	c.JSON(http.StatusOK, gin.H{
@@ -764,7 +765,7 @@ func CheckPaymentStatus(c *gin.Context) {
 		SELECT id, status, nominal, metode, total_dibayar, tanggal, invoice_url, expired_at,
 		       pakasir_order_id, payment_method, mahasiswa_id
 		FROM riwayat_pembayaran
-		WHERE invoice_uuid = ?
+		WHERE invoice_uuid = $1
 	`, invoiceUUID).Scan(&riwayat.ID, &riwayat.Status, &riwayat.Nominal, &riwayat.Metode, 
 		&riwayat.TotalDibayar, &riwayat.Tanggal, &riwayat.InvoiceURL, &riwayat.ExpiredAt,
 		&riwayat.PakasirOrderID, &riwayat.PaymentMethod, &riwayat.MahasiswaID)
@@ -777,8 +778,8 @@ func CheckPaymentStatus(c *gin.Context) {
 	// Cek apakah sudah expired
 	if riwayat.Status == "pending" && riwayat.ExpiredAt != nil && time.Now().After(*riwayat.ExpiredAt) {
 		riwayat.Status = "expired"
-		config.DB.Exec(`UPDATE riwayat_pembayaran SET status = 'expired' WHERE id = ?`, riwayat.ID)
-		config.DB.Exec(`UPDATE ukt_invoices SET status = 'expired' WHERE uuid = ?`, invoiceUUID)
+		config.DB.Exec(`UPDATE riwayat_pembayaran SET status = 'expired' WHERE id = $1`, riwayat.ID)
+		config.DB.Exec(`UPDATE ukt_invoices SET status = 'expired' WHERE uuid = $1`, invoiceUUID)
 	}
 
 	utils.SuccessResponse(c, gin.H{
@@ -823,7 +824,7 @@ func ManualPaymentConfirmation(c *gin.Context) {
 	err := config.DB.QueryRow(`
 		SELECT id, mahasiswa_id, nominal, status
 		FROM riwayat_pembayaran
-		WHERE invoice_uuid = ?
+		WHERE invoice_uuid = $1
 	`, input.InvoiceUUID).Scan(&riwayat.ID, &riwayat.MahasiswaID, &riwayat.Nominal, &riwayat.Status)
 	
 	if err != nil {
@@ -840,8 +841,8 @@ func ManualPaymentConfirmation(c *gin.Context) {
 	// Update riwayat_pembayaran
 	_, err = config.DB.Exec(`
 		UPDATE riwayat_pembayaran 
-		SET status = ?, updated_at = NOW()
-		WHERE id = ?
+		SET status = $1, updated_at = NOW()
+		WHERE id = $2
 	`, input.Status, riwayat.ID)
 	
 	if err != nil {
@@ -857,11 +858,11 @@ func ManualPaymentConfirmation(c *gin.Context) {
 		invoiceStatus = "cancelled"
 	}
 	
-	config.DB.Exec(`UPDATE ukt_invoices SET status = ?, updated_at = NOW() WHERE uuid = ?`, invoiceStatus, input.InvoiceUUID)
+	config.DB.Exec(`UPDATE ukt_invoices SET status = $1, updated_at = NOW() WHERE uuid = $2`, invoiceStatus, input.InvoiceUUID)
 
 	// Jika success, kurangi sisa UKT
 	if input.Status == "success" {
-		config.DB.Exec(`UPDATE mahasiswa SET sisa_ukt = sisa_ukt - ? WHERE id = ?`, riwayat.Nominal, riwayat.MahasiswaID)
+		config.DB.Exec(`UPDATE mahasiswa SET sisa_ukt = sisa_ukt - $1 WHERE id = $2`, riwayat.Nominal, riwayat.MahasiswaID)
 	}
 
 	utils.SuccessResponse(c, gin.H{
@@ -917,7 +918,7 @@ func GetInvoiceURL(c *gin.Context) {
 	invoiceUUID := c.Param("uuid")
 
 	var invoiceURL string
-	err := config.DB.QueryRow(`SELECT invoice_url FROM riwayat_pembayaran WHERE invoice_uuid = ? AND status = 'pending'`, invoiceUUID).Scan(&invoiceURL)
+	err := config.DB.QueryRow(`SELECT invoice_url FROM riwayat_pembayaran WHERE invoice_uuid = $1 AND status = 'pending'`, invoiceUUID).Scan(&invoiceURL)
 
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusNotFound, "Invoice tidak ditemukan atau sudah diproses")
@@ -947,7 +948,7 @@ func GetChildUKTInfo(c *gin.Context) {
         SELECT m.id, m.name, m.nim, COALESCE(m.sisa_ukt, 7000000), 7000000 as total_ukt
         FROM ortu o
         JOIN mahasiswa m ON o.child_id = m.id
-        WHERE o.user_id = ?
+        WHERE o.user_id = $1
     `, userID).Scan(&childInfo.ID, &childInfo.Name, &childInfo.NIM, &childInfo.SisaUKT, &childInfo.TotalUKT)
 
     if err != nil {
@@ -988,7 +989,7 @@ func CreatePaymentForChild(c *gin.Context) {
 		SELECT o.child_id, COALESCE(m.sisa_ukt, 7000000), m.name, m.nim
 		FROM ortu o 
 		JOIN mahasiswa m ON o.child_id = m.id 
-		WHERE o.user_id = ?
+		WHERE o.user_id = $1
 	`, userID).Scan(&mahasiswaID, &sisaUKT, &studentName, &nim)
 	
 	if err != nil {
@@ -1013,23 +1014,23 @@ func CreatePaymentForChild(c *gin.Context) {
 
 	// Simpan ke riwayat_pembayaran dengan status pending (biaya admin sementara 0)
 	expiredAt := time.Now().Add(24 * time.Hour)
-	result, err := config.DB.Exec(`
+	var lastID int64
+	err = config.DB.QueryRow(`
 		INSERT INTO riwayat_pembayaran 
 		(mahasiswa_id, invoice_uuid, metode, nominal, biaya_admin, total_dibayar, status, tanggal, expired_at, payment_method)
-		VALUES (?, ?, ?, ?, 0, ?, 'pending', NOW(), ?, ?)
-	`, mahasiswaID, invoiceUUID, metode, input.Nominal, input.Nominal, expiredAt, input.Metode)
+		VALUES ($1, $2, $3, $4, 0, $5, 'pending', NOW(), $6, $7)
+		RETURNING id
+	`, mahasiswaID, invoiceUUID, metode, input.Nominal, input.Nominal, expiredAt, input.Metode).Scan(&lastID)
 	
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, "Gagal menyimpan riwayat pembayaran")
 		return
 	}
 
-	lastID, _ := result.LastInsertId()
-
 	// Simpan ke ukt_invoices
 	_, err = config.DB.Exec(`
 		INSERT INTO ukt_invoices (student_id, uuid, amount, status, created_at, expired_at, payment_method)
-		VALUES (?, ?, ?, 'pending', NOW(), ?, ?)
+		VALUES ($1, $2, $3, 'pending', NOW(), $4, $5)
 	`, mahasiswaID, invoiceUUID, input.Nominal, expiredAt, input.Metode)
 	
 	if err != nil {
@@ -1040,8 +1041,8 @@ func CreatePaymentForChild(c *gin.Context) {
 	amountInt := int64(input.Nominal)
 	pakasirResp, err := createPakasirTransaction(invoiceUUID, amountInt, input.Metode)
 	if err != nil {
-		config.DB.Exec(`UPDATE riwayat_pembayaran SET status = 'failed' WHERE id = ?`, lastID)
-		config.DB.Exec(`UPDATE ukt_invoices SET status = 'cancelled' WHERE uuid = ?`, invoiceUUID)
+		config.DB.Exec(`UPDATE riwayat_pembayaran SET status = 'failed' WHERE id = $1`, lastID)
+		config.DB.Exec(`UPDATE ukt_invoices SET status = 'cancelled' WHERE uuid = $1`, invoiceUUID)
 		
 		utils.ErrorResponse(c, http.StatusInternalServerError, "Gagal membuat pembayaran di Pakasir.com")
 		return
@@ -1064,8 +1065,8 @@ func CreatePaymentForChild(c *gin.Context) {
 	// Update riwayat_pembayaran dengan data dari Pakasir
 	_, err = config.DB.Exec(`
 		UPDATE riwayat_pembayaran 
-		SET biaya_admin = ?, total_dibayar = ?, invoice_url = ?, payment_number = ?, pakasir_order_id = ?
-		WHERE id = ?
+		SET biaya_admin = $1, total_dibayar = $2, invoice_url = $3, payment_number = $4, pakasir_order_id = $5
+		WHERE id = $6
 	`, pakasirResp.Payment.Fee, pakasirResp.Payment.TotalPayment, paymentURL, paymentNumber, invoiceUUID, lastID)
 	
 	if err != nil {
@@ -1123,7 +1124,7 @@ func GetPaymentDetails(c *gin.Context) {
 		       pakasir_order_id, mahasiswa_id,
 		       CASE WHEN payment_method = 'qris' THEN payment_number ELSE '' END as qrcode
 		FROM riwayat_pembayaran
-		WHERE invoice_uuid = ?
+		WHERE invoice_uuid = $1
 	`
 
 	err := config.DB.QueryRow(query, invoiceUUID).Scan(

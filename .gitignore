@@ -33,6 +33,7 @@ openclaw_manual.sql
 schema.sql
 seed.sql
 nf_student_hub3_lengkap2.sql
+postgre.sql
 
 
 

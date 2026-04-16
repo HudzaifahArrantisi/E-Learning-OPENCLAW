@@ -87,7 +87,7 @@ const VisiMisiPage = () => {
     <footer className="bg-gray-900/80 backdrop-blur-md text-gray-400 py-12 border-t border-white/10">
       <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-8">
         <div className="col-span-1 md:col-span-2">
-          <h3 className="text-white text-2xl font-bold mb-4">NF StudentHub</h3>
+          <h3 className="text-white text-2xl font-bold mb-4">Student Hub</h3>
           <p className="mb-4 max-w-md">
             Platform akademik modern yang mengintegrasikan pembelajaran dengan pengalaman sosial media untuk mahasiswa, dosen, dan orang tua.
           </p>
@@ -129,7 +129,7 @@ const VisiMisiPage = () => {
         </div>
       </div>
       <div className="max-w-7xl mx-auto px-6 mt-8 pt-8 border-t border-gray-800 text-center">
-        <p>&copy; {new Date().getFullYear()} NF StudentHub. All rights reserved.</p>
+        <p>&copy; {new Date().getFullYear()} Student Hub. All rights reserved.</p>
       </div>
     </footer>
   );
@@ -141,12 +141,12 @@ const VisiMisiPage = () => {
       {/* Navigation */}
       <PillNav
         logo={logoDataURL}
-        logoAlt="NF StudentHub Logo"
+        logoAlt="Student Hub Logo"
         items={[
           { label: 'Home', href: '/' },
           { label: 'Kurikulum', href: '/kurikulum' },
           { label: 'Kalender', href: '/kalender-akademik' },
-          { label: 'Login', href: '/login' }
+          { label: 'Login', href: '/' }
         ]}
         activeHref="/visi-misi"
         className="custom-nav"
@@ -170,7 +170,7 @@ const VisiMisiPage = () => {
             Kembali ke Beranda
           </Link>
 
-          <h1 className="font-bold text-5xl md:text-6xl text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400 mb-6">
+          <h1 className="font-bold text-5xl md:text-6xl text-transparent bg-clip-text bg-lp-bg mb-6">
             Visi & Misi
           </h1>
           <p className="text-xl text-purple-200 max-w-3xl mx-auto">
@@ -208,7 +208,7 @@ const VisiMisiPage = () => {
                 <h2 className={`text-3xl font-bold ${currentInstitution.textColor} mb-4`}>
                   {currentInstitution.name}
                 </h2>
-                <div className="w-24 h-1 bg-gradient-to-r from-purple-500 to-pink-500 mx-auto rounded-full"></div>
+                <div className="w-24 h-1 bg-lp-bg mx-auto rounded-full"></div>
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

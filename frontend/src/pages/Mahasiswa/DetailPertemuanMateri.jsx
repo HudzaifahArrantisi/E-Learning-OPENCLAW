@@ -47,14 +47,14 @@ const DetailPertemuanMateri = () => {
 
   if (loading) {
     return (
-      <div className="flex h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="flex h-screen bg-lp-bg">
         <Sidebar role="mahasiswa" isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
         <div className="flex-1 flex flex-col overflow-hidden">
           <Navbar user={user} onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">Memuat materi...</p>
+              <p className="text-lp-text2 font-light">Memuat materi...</p>
             </div>
           </div>
         </div>
@@ -63,7 +63,7 @@ const DetailPertemuanMateri = () => {
   }
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="flex h-screen bg-lp-bg">
       <Sidebar role="mahasiswa" isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -77,26 +77,26 @@ const DetailPertemuanMateri = () => {
                 <Link 
                   to={`/mahasiswa/matkul/${courseId}`}
                   className="
-                    inline-flex items-center space-x-2 text-blue-600 hover:text-blue-700 
+                    inline-flex items-center space-x-2 text-lp-atext hover:text-lp-accent 
                     mb-4 transition-colors
                   "
                 >
                   <FaArrowLeft />
                   <span>Kembali ke Mata Kuliah</span>
                 </Link>
-                <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
+                <h1 className="text-2xl md:text-3xl font-bold text-lp-text font-semibold tracking-tight">
                   {matkulData[courseId] || courseId}
                 </h1>
-                <p className="text-gray-600 mt-1">Pertemuan {pertemuan} - Materi Pembelajaran</p>
+                <p className="text-lp-text2 font-light mt-1">Pertemuan {pertemuan} - Materi Pembelajaran</p>
               </div>
               
               <div className="flex space-x-2">
                 <Link 
                   to={`/mahasiswa/matkul/${courseId}/pertemuan/${pertemuan}/tugas`}
                   className="
-                    flex items-center space-x-2 bg-green-500 text-white 
-                    py-2 px-4 rounded-xl hover:bg-green-600 
-                    transition-all duration-300 shadow-lg hover:shadow-xl
+                    flex items-center space-x-2 bg-lp-green text-white 
+                    py-2 px-4 rounded-xl hover:bg-lp-green 
+                    transition-all duration-300 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl
                   "
                 >
                   <FaTasks />
@@ -106,28 +106,28 @@ const DetailPertemuanMateri = () => {
             </div>
 
             {/* Materi List */}
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+            <div className="bg-lp-surface rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border border border-lp-border border overflow-hidden">
               {materiList.length > 0 ? (
                 <div className="divide-y divide-gray-100">
                   {materiList.map((materi, index) => (
                     <div 
                       key={index}
-                      className="p-6 hover:bg-gray-50 transition-colors duration-300"
+                      className="p-6 hover:bg-lp-bg transition-colors duration-300"
                     >
                       <div className="flex flex-col md:flex-row md:items-start md:justify-between space-y-4 md:space-y-0">
                         <div className="flex-1">
                           <div className="flex items-center space-x-3 mb-3">
                             <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
-                              <FaBook className="text-blue-600 text-lg" />
+                              <FaBook className="text-lp-atext text-lg" />
                             </div>
-                            <h3 className="font-bold text-lg text-gray-800">{materi.title}</h3>
+                            <h3 className="font-bold text-lg text-lp-text font-semibold tracking-tight">{materi.title}</h3>
                           </div>
                           
                           {materi.desc && (
-                            <p className="text-gray-600 mb-4 leading-relaxed">{materi.desc}</p>
+                            <p className="text-lp-text2 font-light mb-4 leading-relaxed">{materi.desc}</p>
                           )}
                           
-                          <div className="flex items-center space-x-4 text-sm text-gray-500">
+                          <div className="flex items-center space-x-4 text-sm text-lp-text3 font-light">
                             <span>
                               Diupload: {materi.created_at ? new Date(materi.created_at).toLocaleDateString('id-ID', {
                                 day: 'numeric',
@@ -145,9 +145,9 @@ const DetailPertemuanMateri = () => {
                               target="_blank"
                               rel="noopener noreferrer"
                               className="
-                                flex items-center space-x-2 bg-blue-500 text-white
-                                py-2 px-4 rounded-lg hover:bg-blue-600
-                                transition-all duration-300 shadow-lg hover:shadow-xl
+                                flex items-center space-x-2 bg-lp-accent text-white
+                                py-2 px-4 rounded-lg hover:bg-lp-accent
+                                transition-all duration-300 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl
                                 transform hover:scale-105
                               "
                             >
@@ -155,7 +155,7 @@ const DetailPertemuanMateri = () => {
                               <span>Lihat</span>
                             </a>
                             <span className="
-                              px-2 py-1 bg-gray-100 text-gray-600 
+                              px-2 py-1 bg-gray-100 text-lp-text2 font-light 
                               rounded-lg text-xs font-medium
                             ">
                               {materi.file_path.split('.').pop().toUpperCase()}
@@ -169,8 +169,8 @@ const DetailPertemuanMateri = () => {
               ) : (
                 <div className="text-center py-12">
                   <div className="text-6xl mb-4">📚</div>
-                  <h3 className="text-xl font-semibold text-gray-800 mb-2">Belum ada materi</h3>
-                  <p className="text-gray-600 max-w-md mx-auto">
+                  <h3 className="text-xl font-semibold text-lp-text font-semibold tracking-tight mb-2">Belum ada materi</h3>
+                  <p className="text-lp-text2 font-light max-w-md mx-auto">
                     Materi untuk pertemuan ini belum diupload oleh dosen.
                   </p>
                 </div>

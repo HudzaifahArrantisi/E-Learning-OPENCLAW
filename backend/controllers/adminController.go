@@ -24,7 +24,7 @@ func GetAdminProfile(c *gin.Context) {
 
 	// Cek apakah user adalah admin
 	var role string
-	err := config.DB.QueryRow("SELECT role FROM users WHERE id = ?", userID).Scan(&role)
+	err := config.DB.QueryRow("SELECT role FROM users WHERE id = $1", userID).Scan(&role)
 	if err != nil || role != "admin" {
 		utils.ErrorResponse(c, http.StatusForbidden, "Hanya admin yang dapat mengakses!")
 		return
@@ -47,7 +47,7 @@ func GetAdminProfile(c *gin.Context) {
 		       a.profile_picture, a.website, a.phone
 		FROM admin a
 		JOIN users u ON a.user_id = u.id
-		WHERE a.user_id = ?
+		WHERE a.user_id = $1
 	`
 
 	err = config.DB.QueryRow(query, userID).Scan(
@@ -64,7 +64,7 @@ func GetAdminProfile(c *gin.Context) {
 	if err != nil {
 		// Fallback: jika tidak ada di tabel admin, ambil dari users
 		var email string
-		config.DB.QueryRow("SELECT email FROM users WHERE id = ?", userID).Scan(&email)
+		config.DB.QueryRow("SELECT email FROM users WHERE id = $1", userID).Scan(&email)
 		
 		parts := strings.Split(email, "@")
 		adminName := "Admin"
@@ -109,7 +109,7 @@ func CreateAdminPost(c *gin.Context) {
 
 	// Cek apakah user adalah admin
 	var role string
-	err := config.DB.QueryRow("SELECT role FROM users WHERE id = ?", userID).Scan(&role)
+	err := config.DB.QueryRow("SELECT role FROM users WHERE id = $1", userID).Scan(&role)
 	if err != nil || role != "admin" {
 		utils.ErrorResponse(c, http.StatusForbidden, "Hanya admin yang dapat membuat postingan!")
 		return
@@ -117,11 +117,11 @@ func CreateAdminPost(c *gin.Context) {
 
 	// Ambil name dan username dari tabel admin
 	var authorName, authorUsername string
-	err = config.DB.QueryRow("SELECT name, username FROM admin WHERE user_id = ?", userID).Scan(&authorName, &authorUsername)
+	err = config.DB.QueryRow("SELECT name, username FROM admin WHERE user_id = $1", userID).Scan(&authorName, &authorUsername)
 	if err != nil || authorName == "" || authorUsername == "" {
 		// Fallback ke email
 		var email string
-		config.DB.QueryRow("SELECT email FROM users WHERE id = ?", userID).Scan(&email)
+		config.DB.QueryRow("SELECT email FROM users WHERE id = $1", userID).Scan(&email)
 		parts := strings.Split(email, "@")
 		authorName = "Admin " + strings.Title(parts[0])
 		authorUsername = strings.ToLower(parts[0])
@@ -149,15 +149,15 @@ func CreateAdminPost(c *gin.Context) {
 
 	query := `
 		INSERT INTO posts (user_id, role, title, content, media_url, author_name, author_username, likes_count, comments_count, created_at)
-		VALUES (?, 'admin', ?, ?, ?, ?, ?, 0, 0, NOW())
+		VALUES ($1, 'admin', $2, $3, $4, $5, $6, 0, 0, NOW())
+		RETURNING id
 	`
-	result, err := config.DB.Exec(query, userID, title, content, mediaURL, authorName, authorUsername)
+	var postID int64
+	err = config.DB.QueryRow(query, userID, title, content, mediaURL, authorName, authorUsername).Scan(&postID)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, "Gagal simpan ke database: "+err.Error())
 		return
 	}
-
-	postID, _ := result.LastInsertId()
 
 	utils.SuccessResponse(c, gin.H{
 		"id":              postID,
@@ -228,7 +228,7 @@ func GetAllMahasiswaUKTStatus(c *gin.Context) {
 	// Cek apakah user adalah admin
 	var role string
 	var userEmail string
-	err := config.DB.QueryRow("SELECT role, email FROM users WHERE id = ?", userID).Scan(&role, &userEmail)
+	err := config.DB.QueryRow("SELECT role, email FROM users WHERE id = $1", userID).Scan(&role, &userEmail)
 	if err != nil || role != "admin" {
 		utils.ErrorResponse(c, http.StatusForbidden, "Hanya admin yang dapat mengakses!")
 		return
@@ -354,7 +354,7 @@ func GetRiwayatPembayaranByMahasiswaID(c *gin.Context) {
 	// Cek apakah user adalah admin
 	var role string
 	var userEmail string
-	err := config.DB.QueryRow("SELECT role, email FROM users WHERE id = ?", userID).Scan(&role, &userEmail)
+	err := config.DB.QueryRow("SELECT role, email FROM users WHERE id = $1", userID).Scan(&role, &userEmail)
 	if err != nil || role != "admin" {
 		utils.ErrorResponse(c, http.StatusForbidden, "Hanya admin yang dapat mengakses!")
 		return
@@ -371,7 +371,7 @@ func GetRiwayatPembayaranByMahasiswaID(c *gin.Context) {
 		       m.name as mahasiswa_name, m.nim
 		FROM riwayat_pembayaran rp
 		JOIN mahasiswa m ON rp.mahasiswa_id = m.id
-		WHERE rp.mahasiswa_id = ?
+		WHERE rp.mahasiswa_id = $1
 		ORDER BY rp.tanggal DESC
 	`, mahasiswaID)
 	if err != nil {
@@ -423,7 +423,7 @@ func SendReminder(c *gin.Context) {
 	// Cek apakah user adalah admin
 	var role string
 	var userEmail string
-	err := config.DB.QueryRow("SELECT role, email FROM users WHERE id = ?", userID).Scan(&role, &userEmail)
+	err := config.DB.QueryRow("SELECT role, email FROM users WHERE id = $1", userID).Scan(&role, &userEmail)
 	if err != nil || role != "admin" {
 		utils.ErrorResponse(c, http.StatusForbidden, "Hanya admin yang dapat mengirim reminder!")
 		return
@@ -445,7 +445,7 @@ func SendReminder(c *gin.Context) {
 		SELECT m.name, u.email, COALESCE(m.sisa_ukt, 7000000)
 		FROM mahasiswa m
 		JOIN users u ON m.user_id = u.id
-		WHERE m.id = ?
+		WHERE m.id = $1
 	`, mahasiswaID).Scan(&mahasiswa.Name, &mahasiswa.Email, &mahasiswa.SisaUKT)
 
 	if err != nil {

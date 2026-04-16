@@ -39,8 +39,8 @@ func GetFeed(c *gin.Context) {
             p.role,
             COALESCE(p.likes_count, 0) AS likes_count,
             COALESCE(p.comments_count, 0) AS comments_count,
-            EXISTS(SELECT 1 FROM likes l WHERE l.post_id = p.id AND l.user_id = ? AND l.deleted_at IS NULL) as user_has_liked,
-            EXISTS(SELECT 1 FROM saved_posts sp WHERE sp.post_id = p.id AND sp.user_id = ? AND sp.deleted_at IS NULL) as user_has_saved
+            EXISTS(SELECT 1 FROM likes l WHERE l.post_id = p.id AND l.user_id = $1 AND l.deleted_at IS NULL) as user_has_liked,
+            EXISTS(SELECT 1 FROM saved_posts sp WHERE sp.post_id = p.id AND sp.user_id = $2 AND sp.deleted_at IS NULL) as user_has_saved
         FROM posts p
         WHERE p.role IN ('admin', 'ukm', 'ormawa', 'dosen', 'mahasiswa', 'orangtua') AND p.deleted_at IS NULL
         ORDER BY p.created_at DESC
@@ -110,7 +110,7 @@ func getPostComments(postID int) ([]map[string]interface{}, error) {
             c.author_name,
             c.user_role
         FROM comments c
-        WHERE c.post_id = ? AND c.deleted_at IS NULL
+        WHERE c.post_id = $1 AND c.deleted_at IS NULL
         ORDER BY 
             CASE WHEN c.parent_id IS NULL THEN c.id ELSE c.parent_id END,
             c.created_at ASC
@@ -216,14 +216,14 @@ func CreatePost(c *gin.Context) {
 	}
 
 	err := config.DB.QueryRow(
-		"SELECT name, username FROM "+table+" WHERE user_id = ? AND deleted_at IS NULL",
+		"SELECT name, username FROM "+table+" WHERE user_id = $1 AND deleted_at IS NULL",
 		userID,
 	).Scan(&authorName, &authorUsername)
 
 	if err != nil {
 		// Fallback ke user email jika tidak ada di tabel spesifik
 		err = config.DB.QueryRow(
-			"SELECT email, email FROM users WHERE id = ?",
+			"SELECT email, email FROM users WHERE id = $2",
 			userID,
 		).Scan(&authorName, &authorUsername)
 		if err != nil {
@@ -239,16 +239,16 @@ func CreatePost(c *gin.Context) {
 	query := `
         INSERT INTO posts 
         (user_id, role, title, content, media_url, author_name, author_username, likes_count, comments_count, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0, NOW())
+        VALUES ($1, $2, $3, $4, $5, $6, $7, 0, 0, NOW())
+        RETURNING id
     `
 
-	result, err := config.DB.Exec(query, userID, role, input.Title, input.Content, input.MediaURL, authorName, authorUsername)
+	var postID int64
+	err = config.DB.QueryRow(query, userID, role, input.Title, input.Content, input.MediaURL, authorName, authorUsername).Scan(&postID)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, "Gagal membuat post: "+err.Error())
 		return
 	}
-
-	postID, _ := result.LastInsertId()
 
 	utils.SuccessResponse(c, gin.H{
 		"id":              postID,
@@ -272,7 +272,7 @@ func LikePost(c *gin.Context) {
 	// Cek apakah post exists
 	var postExistsInt int
 	err := config.DB.QueryRow(
-		"SELECT COUNT(*) FROM posts WHERE id = ? AND deleted_at IS NULL",
+		"SELECT COUNT(*) FROM posts WHERE id = $1 AND deleted_at IS NULL",
 		postID,
 	).Scan(&postExistsInt)
 
@@ -284,7 +284,7 @@ func LikePost(c *gin.Context) {
 	// Cek apakah user sudah like post ini
 	var existingLike int
 	err = config.DB.QueryRow(
-		"SELECT COUNT(*) FROM likes WHERE post_id = ? AND user_id = ? AND deleted_at IS NULL",
+		"SELECT COUNT(*) FROM likes WHERE post_id = $1 AND user_id = $2 AND deleted_at IS NULL",
 		postID, userID,
 	).Scan(&existingLike)
 
@@ -296,7 +296,7 @@ func LikePost(c *gin.Context) {
 	if existingLike > 0 {
 		// Unlike
 		_, err = config.DB.Exec(
-			"UPDATE likes SET deleted_at = NOW() WHERE post_id = ? AND user_id = ?",
+			"UPDATE likes SET deleted_at = NOW() WHERE post_id = $1 AND user_id = $2",
 			postID, userID,
 		)
 		if err != nil {
@@ -306,7 +306,7 @@ func LikePost(c *gin.Context) {
 
 		// Update likes count
 		_, err = config.DB.Exec(
-			"UPDATE posts SET likes_count = GREATEST(likes_count - 1, 0) WHERE id = ?",
+			"UPDATE posts SET likes_count = GREATEST(likes_count - 1, 0) WHERE id = $1",
 			postID,
 		)
 		if err != nil {
@@ -318,7 +318,7 @@ func LikePost(c *gin.Context) {
 	} else {
 		// Like
 		_, err = config.DB.Exec(
-			"INSERT INTO likes (post_id, user_id, created_at) VALUES (?, ?, NOW())",
+			"INSERT INTO likes (post_id, user_id, created_at) VALUES ($1, $2, NOW())",
 			postID, userID,
 		)
 		if err != nil {
@@ -328,7 +328,7 @@ func LikePost(c *gin.Context) {
 
 		// Update likes count
 		_, err = config.DB.Exec(
-			"UPDATE posts SET likes_count = likes_count + 1 WHERE id = ?",
+			"UPDATE posts SET likes_count = likes_count + 1 WHERE id = $1",
 			postID,
 		)
 		if err != nil {
@@ -361,7 +361,7 @@ func CommentPost(c *gin.Context) {
 	// Cek apakah post exists
 	var postExistsInt int
 	err := config.DB.QueryRow(
-		"SELECT COUNT(*) FROM posts WHERE id = ? AND deleted_at IS NULL",
+		"SELECT COUNT(*) FROM posts WHERE id = $1 AND deleted_at IS NULL",
 		postID,
 	).Scan(&postExistsInt)
 
@@ -374,7 +374,7 @@ func CommentPost(c *gin.Context) {
 	if input.ParentID != nil {
 		var parentExists int
 		err := config.DB.QueryRow(
-			"SELECT COUNT(*) FROM comments WHERE id = ? AND post_id = ? AND deleted_at IS NULL",
+			"SELECT COUNT(*) FROM comments WHERE id = $1 AND post_id = $2 AND deleted_at IS NULL",
 			input.ParentID, postID,
 		).Scan(&parentExists)
 		
@@ -392,24 +392,24 @@ func CommentPost(c *gin.Context) {
 	if exists {
 		switch role {
 		case "mahasiswa":
-			config.DB.QueryRow("SELECT name FROM mahasiswa WHERE user_id = ?", userID).Scan(&userName)
+			config.DB.QueryRow("SELECT name FROM mahasiswa WHERE user_id = $1", userID).Scan(&userName)
 		case "dosen":
-			config.DB.QueryRow("SELECT name FROM dosen WHERE user_id = ?", userID).Scan(&userName)
+			config.DB.QueryRow("SELECT name FROM dosen WHERE user_id = $1", userID).Scan(&userName)
 		case "admin":
-			config.DB.QueryRow("SELECT name FROM admin WHERE user_id = ?", userID).Scan(&userName)
+			config.DB.QueryRow("SELECT name FROM admin WHERE user_id = $1", userID).Scan(&userName)
 		case "ukm":
-			config.DB.QueryRow("SELECT name FROM ukm WHERE user_id = ?", userID).Scan(&userName)
+			config.DB.QueryRow("SELECT name FROM ukm WHERE user_id = $1", userID).Scan(&userName)
 		case "ormawa":
-			config.DB.QueryRow("SELECT name FROM ormawa WHERE user_id = ?", userID).Scan(&userName)
+			config.DB.QueryRow("SELECT name FROM ormawa WHERE user_id = $1", userID).Scan(&userName)
 		case "orangtua":
-			config.DB.QueryRow("SELECT name FROM ortu WHERE user_id = ?", userID).Scan(&userName)
+			config.DB.QueryRow("SELECT name FROM ortu WHERE user_id = $1", userID).Scan(&userName)
 		}
 	}
 
 	// Fallback ke users table jika tidak ditemukan
 	if userName == "" {
 		err = config.DB.QueryRow(
-			"SELECT email FROM users WHERE id = ?",
+			"SELECT email FROM users WHERE id = $1",
 			userID,
 		).Scan(&userName)
 		if err != nil {
@@ -419,7 +419,7 @@ func CommentPost(c *gin.Context) {
 
 	// Dapatkan user_role
 	err = config.DB.QueryRow(
-		"SELECT role FROM users WHERE id = ?",
+		"SELECT role FROM users WHERE id = $1",
 		userID,
 	).Scan(&userRole)
 	if err != nil {
@@ -429,19 +429,19 @@ func CommentPost(c *gin.Context) {
 	query := `
         INSERT INTO comments 
         (post_id, user_id, content, author_name, user_role, parent_id, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, NOW())
+        VALUES ($1, $2, $3, $4, $5, $6, NOW())
+        RETURNING id
     `
-	result, err := config.DB.Exec(query, postID, userID, input.Content, userName, userRole, input.ParentID)
+	var commentID int64
+	err = config.DB.QueryRow(query, postID, userID, input.Content, userName, userRole, input.ParentID).Scan(&commentID)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, "Gagal menyimpan komentar: "+err.Error())
 		return
 	}
 
-	commentID, _ := result.LastInsertId()
-
 	// Update comment count di post (hanya untuk komentar tingkat atas)
 	if input.ParentID == nil {
-		_, err = config.DB.Exec("UPDATE posts SET comments_count = comments_count + 1 WHERE id = ?", postID)
+		_, err = config.DB.Exec("UPDATE posts SET comments_count = comments_count + 1 WHERE id = $1", postID)
 		if err != nil {
 			utils.ErrorResponse(c, http.StatusInternalServerError, "Gagal update comment count: "+err.Error())
 			return
@@ -473,10 +473,10 @@ func GetPost(c *gin.Context) {
             p.role,
             COALESCE(p.likes_count, 0) AS likes_count,
             COALESCE(p.comments_count, 0) AS comments_count,
-            EXISTS(SELECT 1 FROM likes l WHERE l.post_id = p.id AND l.user_id = ? AND l.deleted_at IS NULL) as user_has_liked,
-            EXISTS(SELECT 1 FROM saved_posts sp WHERE sp.post_id = p.id AND sp.user_id = ? AND sp.deleted_at IS NULL) as user_has_saved
+            EXISTS(SELECT 1 FROM likes l WHERE l.post_id = p.id AND l.user_id = $1 AND l.deleted_at IS NULL) as user_has_liked,
+            EXISTS(SELECT 1 FROM saved_posts sp WHERE sp.post_id = p.id AND sp.user_id = $2 AND sp.deleted_at IS NULL) as user_has_saved
         FROM posts p
-        WHERE p.id = ? AND p.deleted_at IS NULL
+        WHERE p.id = $3 AND p.deleted_at IS NULL
     `
 
     var post struct {
@@ -542,7 +542,7 @@ func SavePost(c *gin.Context) {
     // Cek apakah post exists
     var postExistsInt int
     err := config.DB.QueryRow(
-        "SELECT COUNT(*) FROM posts WHERE id = ? AND deleted_at IS NULL",
+        "SELECT COUNT(*) FROM posts WHERE id = $1 AND deleted_at IS NULL",
         postID,
     ).Scan(&postExistsInt)
 
@@ -554,7 +554,7 @@ func SavePost(c *gin.Context) {
     // Cek apakah sudah disimpan
     var existingSave int
     err = config.DB.QueryRow(
-        "SELECT COUNT(*) FROM saved_posts WHERE post_id = ? AND user_id = ? AND deleted_at IS NULL",
+        "SELECT COUNT(*) FROM saved_posts WHERE post_id = $1 AND user_id = $2 AND deleted_at IS NULL",
         postID, userID,
     ).Scan(&existingSave)
 
@@ -566,7 +566,7 @@ func SavePost(c *gin.Context) {
     if existingSave > 0 {
         // Unsave
         _, err = config.DB.Exec(
-            "UPDATE saved_posts SET deleted_at = NOW() WHERE post_id = ? AND user_id = ?",
+            "UPDATE saved_posts SET deleted_at = NOW() WHERE post_id = $1 AND user_id = $2",
             postID, userID,
         )
         if err != nil {
@@ -577,7 +577,7 @@ func SavePost(c *gin.Context) {
     } else {
         // Save
         _, err = config.DB.Exec(
-            "INSERT INTO saved_posts (post_id, user_id, created_at) VALUES (?, ?, NOW())",
+            "INSERT INTO saved_posts (post_id, user_id, created_at) VALUES ($1, $2, NOW())",
             postID, userID,
         )
         if err != nil {

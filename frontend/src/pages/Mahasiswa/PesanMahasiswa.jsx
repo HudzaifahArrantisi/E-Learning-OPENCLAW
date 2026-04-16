@@ -380,7 +380,7 @@ const ChatMahasiswa = () => {
           <div className="flex items-center justify-center h-[calc(100vh-80px)]">
             <div className="text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
-              <p className="mt-4 text-gray-600">Memuat percakapan...</p>
+              <p className="mt-4 text-lp-text2 font-light">Memuat percakapan...</p>
             </div>
           </div>
         </div>
@@ -396,13 +396,13 @@ const ChatMahasiswa = () => {
         
         <div className="flex h-[calc(100vh-80px)]">
           {/* Sidebar - Daftar Percakapan */}
-          <div className="w-1/3 border-r border-gray-200 bg-white">
+          <div className="w-1/3 border-r border-lp-border border bg-lp-surface">
             <div className="p-4 border-b">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-bold">Pesan</h2>
                 <button
                   onClick={() => setShowContacts(true)}
-                  className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center"
+                  className="bg-lp-accent hover:bg-lp-accent text-white px-4 py-2 rounded-lg flex items-center"
                 >
                   <span className="mr-2">+</span> Chat Baru
                 </button>
@@ -420,12 +420,12 @@ const ChatMahasiswa = () => {
             
             <div className="overflow-y-auto h-[calc(100vh-180px)]">
               {conversations.length === 0 ? (
-                <div className="p-8 text-center text-gray-500">
+                <div className="p-8 text-center text-lp-text3 font-light">
                   <i className="fas fa-comments text-4xl mb-4 text-gray-300"></i>
                   <p>Belum ada percakapan</p>
                   <button
                     onClick={() => setShowContacts(true)}
-                    className="mt-4 text-blue-500 hover:text-blue-600"
+                    className="mt-4 text-lp-atext hover:text-lp-atext"
                   >
                     Mulai percakapan baru
                   </button>
@@ -434,7 +434,7 @@ const ChatMahasiswa = () => {
                 conversations.map(conv => (
                   <div
                     key={conv.id}
-                    className={`p-4 border-b cursor-pointer hover:bg-gray-50 transition-colors ${
+                    className={`p-4 border-b cursor-pointer hover:bg-lp-bg transition-colors ${
                       selectedConversation?.id === conv.id ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''
                     }`}
                     onClick={() => selectConversation(conv)}
@@ -443,39 +443,39 @@ const ChatMahasiswa = () => {
                       <div className="flex-shrink-0">
                         <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
                           {conv.type === 'group' ? (
-                            <i className="fas fa-users text-blue-500"></i>
+                            <i className="fas fa-users text-lp-atext"></i>
                           ) : conv.mata_kuliah ? (
-                            <i className="fas fa-book text-green-500"></i>
+                            <i className="fas fa-book text-lp-green"></i>
                           ) : (
-                            <i className="fas fa-user text-gray-500"></i>
+                            <i className="fas fa-user text-lp-text3 font-light"></i>
                           )}
                         </div>
                       </div>
                       
                       <div className="ml-3 flex-1 min-w-0">
                         <div className="flex justify-between items-start">
-                          <h3 className="font-semibold text-gray-900 truncate">
+                          <h3 className="font-semibold text-lp-text font-bold tracking-tight truncate">
                             {conv.name}
                             {conv.is_pinned && (
                               <i className="fas fa-thumbtack ml-2 text-yellow-500 text-xs"></i>
                             )}
                           </h3>
                           {conv.last_message && (
-                            <span className="text-xs text-gray-500">
+                            <span className="text-xs text-lp-text3 font-light">
                               {formatTime(conv.last_message.created_at)}
                             </span>
                           )}
                         </div>
                         
                         {conv.last_message ? (
-                          <p className="text-sm text-gray-600 truncate mt-1">
+                          <p className="text-sm text-lp-text2 font-light truncate mt-1">
                             <span className="font-medium">
                               {conv.last_message.sender.id === user.id ? 'Anda' : conv.last_message.sender.name}:
                             </span>{' '}
                             {conv.last_message.content}
                           </p>
                         ) : (
-                          <p className="text-sm text-gray-500 italic mt-1">Belum ada pesan</p>
+                          <p className="text-sm text-lp-text3 font-light italic mt-1">Belum ada pesan</p>
                         )}
                         
                         <div className="flex justify-between items-center mt-2">
@@ -486,7 +486,7 @@ const ChatMahasiswa = () => {
                           )}
                           
                           {conv.unread_count > 0 && (
-                            <span className="bg-blue-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                            <span className="bg-lp-accent text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
                               {conv.unread_count}
                             </span>
                           )}
@@ -504,26 +504,26 @@ const ChatMahasiswa = () => {
             {selectedConversation ? (
               <>
                 {/* Chat Header */}
-                <div className="p-4 border-b bg-white flex items-center justify-between">
+                <div className="p-4 border-b bg-lp-surface flex items-center justify-between">
                   <div className="flex items-center">
                     <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center mr-3">
                       {selectedConversation.type === 'group' ? (
-                        <i className="fas fa-users text-blue-500"></i>
+                        <i className="fas fa-users text-lp-atext"></i>
                       ) : selectedConversation.mata_kuliah ? (
-                        <i className="fas fa-book text-green-500"></i>
+                        <i className="fas fa-book text-lp-green"></i>
                       ) : (
-                        <i className="fas fa-user text-gray-500"></i>
+                        <i className="fas fa-user text-lp-text3 font-light"></i>
                       )}
                     </div>
                     <div>
                       <h2 className="font-bold text-lg">{selectedConversation.name}</h2>
                       {selectedConversation.mata_kuliah && (
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-lp-text2 font-light">
                           {selectedConversation.mata_kuliah.kode} - {selectedConversation.mata_kuliah.nama}
                         </p>
                       )}
                       {selectedConversation.type === 'group' && (
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-lp-text2 font-light">
                           {selectedConversation.participants.length} peserta
                         </p>
                       )}
@@ -531,7 +531,7 @@ const ChatMahasiswa = () => {
                   </div>
                   
                   <div className="flex items-center space-x-2">
-                    <div className={`w-3 h-3 rounded-full ${isWebSocketConnected ? 'bg-green-500' : 'bg-red-500'}`} 
+                    <div className={`w-3 h-3 rounded-full ${isWebSocketConnected ? 'bg-lp-green' : 'bg-red-500'}`} 
                          title={isWebSocketConnected ? 'Terhubung' : 'Terputus'} />
                     
                     {selectedConversation.type === 'group' && (
@@ -542,7 +542,7 @@ const ChatMahasiswa = () => {
                         className="p-2 hover:bg-gray-100 rounded-lg"
                         title="Info Grup"
                       >
-                        <i className="fas fa-info-circle text-gray-600"></i>
+                        <i className="fas fa-info-circle text-lp-text2 font-light"></i>
                       </button>
                     )}
                     
@@ -573,13 +573,13 @@ const ChatMahasiswa = () => {
                       className="p-2 hover:bg-gray-100 rounded-lg"
                       title={selectedConversation.is_pinned ? "Unpin percakapan" : "Pin percakapan"}
                     >
-                      <i className={`fas fa-thumbtack ${selectedConversation.is_pinned ? 'text-yellow-500' : 'text-gray-600'}`}></i>
+                      <i className={`fas fa-thumbtack ${selectedConversation.is_pinned ? 'text-yellow-500' : 'text-lp-text2 font-light'}`}></i>
                     </button>
                   </div>
                 </div>
 
                 {/* Messages */}
-                <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
+                <div className="flex-1 overflow-y-auto p-4 bg-lp-bg">
                   {messages.map((msg, index) => {
                     const showDate = index === 0 || 
                       formatDate(messages[index-1].created_at) !== formatDate(msg.created_at)
@@ -588,7 +588,7 @@ const ChatMahasiswa = () => {
                       <React.Fragment key={msg.id}>
                         {showDate && (
                           <div className="text-center my-4">
-                            <span className="bg-gray-200 text-gray-700 text-xs px-3 py-1 rounded-full">
+                            <span className="bg-gray-200 text-lp-text2 text-xs px-3 py-1 rounded-full">
                               {formatDate(msg.created_at)}
                             </span>
                           </div>
@@ -600,8 +600,8 @@ const ChatMahasiswa = () => {
                           <div
                             className={`max-w-[70%] rounded-lg p-3 ${
                               msg.sender.id === user.id
-                                ? 'bg-blue-500 text-white rounded-br-none'
-                                : 'bg-white text-gray-800 rounded-bl-none border border-gray-200'
+                                ? 'bg-lp-accent text-white rounded-br-none'
+                                : 'bg-lp-surface text-lp-text font-semibold tracking-tight rounded-bl-none border border-lp-border border'
                             }`}
                           >
                             {msg.sender.id !== user.id && (
@@ -633,23 +633,23 @@ const ChatMahasiswa = () => {
                                 rel="noopener noreferrer"
                                 className="flex items-center p-2 bg-gray-100 rounded hover:bg-gray-200"
                               >
-                                <i className="fas fa-file text-gray-600 mr-2"></i>
+                                <i className="fas fa-file text-lp-text2 font-light mr-2"></i>
                                 <div>
                                   <p className="font-medium">{msg.file_name}</p>
-                                  <p className="text-xs text-gray-500">
+                                  <p className="text-xs text-lp-text3 font-light">
                                     {(msg.file_size / 1024).toFixed(1)} KB
                                   </p>
                                 </div>
                               </a>
                             ) : msg.message_type === 'system' ? (
-                              <div className="text-center italic text-gray-600">
+                              <div className="text-center italic text-lp-text2 font-light">
                                 {msg.content}
                               </div>
                             ) : (
                               <div className="whitespace-pre-wrap">{msg.content}</div>
                             )}
                             
-                            <div className={`text-xs mt-2 flex items-center justify-end ${msg.sender.id === user.id ? 'text-blue-200' : 'text-gray-500'}`}>
+                            <div className={`text-xs mt-2 flex items-center justify-end ${msg.sender.id === user.id ? 'text-blue-200' : 'text-lp-text3 font-light'}`}>
                               <span>{formatTime(msg.created_at)}</span>
                               {msg.sender.id === user.id && (
                                 <span className="ml-2">
@@ -670,14 +670,14 @@ const ChatMahasiswa = () => {
                   {/* Typing Indicator */}
                   {getTypingIndicatorText() && (
                     <div className="flex justify-start mb-4">
-                      <div className="bg-white border border-gray-200 rounded-lg rounded-bl-none p-3">
+                      <div className="bg-lp-surface border border-lp-border border rounded-lg rounded-bl-none p-3">
                         <div className="flex items-center">
                           <div className="flex space-x-1 mr-2">
                             <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
                             <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                             <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
                           </div>
-                          <span className="text-sm text-gray-600">{getTypingIndicatorText()}</span>
+                          <span className="text-sm text-lp-text2 font-light">{getTypingIndicatorText()}</span>
                         </div>
                       </div>
                     </div>
@@ -687,7 +687,7 @@ const ChatMahasiswa = () => {
                 </div>
 
                 {/* Message Input */}
-                <form onSubmit={sendMessage} className="p-4 border-t bg-white">
+                <form onSubmit={sendMessage} className="p-4 border-t bg-lp-surface">
                   <div className="flex items-end">
                     <div className="flex-1">
                       <textarea
@@ -704,7 +704,7 @@ const ChatMahasiswa = () => {
                         <div className="flex space-x-2">
                           <button
                             type="button"
-                            className="text-gray-500 hover:text-gray-700"
+                            className="text-lp-text3 font-light hover:text-lp-text2"
                             title="Emoji"
                           >
                             <i className="fas fa-smile"></i>
@@ -716,8 +716,8 @@ const ChatMahasiswa = () => {
                           disabled={!newMessage.trim() || sending}
                           className={`px-6 py-2 rounded-lg font-medium ${
                             newMessage.trim() && !sending
-                              ? 'bg-blue-500 hover:bg-blue-600 text-white'
-                              : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                              ? 'bg-lp-accent hover:bg-lp-accent text-white'
+                              : 'bg-gray-200 text-lp-text3 font-light cursor-not-allowed'
                           }`}
                         >
                           {sending ? (
@@ -737,10 +737,10 @@ const ChatMahasiswa = () => {
                   <div className="text-6xl mb-4 text-gray-300">
                     <i className="fas fa-comments"></i>
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-700 mb-2">
+                  <h3 className="text-xl font-semibold text-lp-text2 mb-2">
                     Pilih percakapan
                   </h3>
-                  <p className="text-gray-500">
+                  <p className="text-lp-text3 font-light">
                     Pilih percakapan dari daftar atau mulai percakapan baru
                   </p>
                 </div>
@@ -752,13 +752,13 @@ const ChatMahasiswa = () => {
         {/* Contacts Modal */}
         {showContacts && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg w-full max-w-md max-h-[80vh] flex flex-col">
+            <div className="bg-lp-surface rounded-lg w-full max-w-md max-h-[80vh] flex flex-col">
               <div className="p-6 border-b">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-lg font-bold">Pilih Kontak</h3>
                   <button
                     onClick={() => setShowContacts(false)}
-                    className="text-gray-500 hover:text-gray-700"
+                    className="text-lp-text3 font-light hover:text-lp-text2"
                   >
                     <i className="fas fa-times"></i>
                   </button>
@@ -778,7 +778,7 @@ const ChatMahasiswa = () => {
               
               <div className="flex-1 overflow-y-auto p-2">
                 {filteredContacts.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
+                  <div className="text-center py-8 text-lp-text3 font-light">
                     <i className="fas fa-users text-4xl mb-4 text-gray-300"></i>
                     <p>Tidak ada kontak ditemukan</p>
                   </div>
@@ -786,29 +786,29 @@ const ChatMahasiswa = () => {
                   filteredContacts.map(contact => (
                     <div
                       key={contact.id}
-                      className="flex items-center p-3 hover:bg-gray-50 rounded-lg cursor-pointer"
+                      className="flex items-center p-3 hover:bg-lp-bg rounded-lg cursor-pointer"
                       onClick={() => startNewChat(contact.id)}
                     >
                       <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
                         {contact.role === 'dosen' ? (
-                          <i className="fas fa-user-tie text-blue-500"></i>
+                          <i className="fas fa-user-tie text-lp-atext"></i>
                         ) : contact.role === 'admin' ? (
                           <i className="fas fa-cog text-red-500"></i>
                         ) : (
-                          <span className="font-medium text-blue-500">
+                          <span className="font-medium text-lp-atext">
                             {contact.name.charAt(0)}
                           </span>
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
                         <h4 className="font-semibold truncate">{contact.name}</h4>
-                        <p className="text-sm text-gray-600 truncate">
+                        <p className="text-sm text-lp-text2 font-light truncate">
                           {contact.role === 'mahasiswa' && contact.nim && `NIM: ${contact.nim}`}
                           {contact.role === 'dosen' && contact.nip && `NIP: ${contact.nip}`}
                           {contact.role === 'admin' && 'Administrator'}
                         </p>
                       </div>
-                      <button className="text-blue-500 hover:text-blue-600">
+                      <button className="text-lp-atext hover:text-lp-atext">
                         <i className="fas fa-comment"></i>
                       </button>
                     </div>
@@ -819,7 +819,7 @@ const ChatMahasiswa = () => {
               <div className="p-4 border-t">
                 <button
                   onClick={() => setShowContacts(false)}
-                  className="w-full py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                  className="w-full py-2 border border-lp-border border rounded-lg text-lp-text2 hover:bg-lp-bg"
                 >
                   Batal
                 </button>

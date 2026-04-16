@@ -1,5 +1,5 @@
 /**
- * NF StudentHub — Visi & Misi Page
+ * Student Hub — Visi & Misi Page
  * Design System: Editorial Noir (shared)
  */
 
@@ -403,11 +403,11 @@ export default function VisiMisiPage() {
       <div className="vp">
 
         <nav className="nav">
-          <span className="nav-brand">NF STUDENTHUB</span>
+          <span className="nav-brand">STUDENT HUB</span>
           <a href="/" className="nav-link">Home</a>
           <a href="/kurikulum" className="nav-link">Kurikulum</a>
           <a href="/kalender-akademik" className="nav-link">Kalender</a>
-          <Link to="/login" className="nav-enter">Masuk</Link>
+          <Link to="/" className="nav-enter">Masuk</Link>
         </nav>
 
         <header className="vp-header">
@@ -495,15 +495,15 @@ export default function VisiMisiPage() {
         <footer className="footer">
           <div className="w">
             <div className="footer-inner">
-              <span className="footer-brand">NF STUDENTHUB</span>
+              <span className="footer-brand">STUDENT HUB</span>
               <nav className="footer-nav">
                 <a href="/">Home</a>
                 <a href="/kurikulum">Kurikulum</a>
                 <a href="/kalender-akademik">Kalender</a>
-                <a href="/login">Login</a>
+                <a href="/">Login</a>
               </nav>
               <span className="footer-copy">
-                © {new Date().getFullYear()} NF StudentHub
+                © {new Date().getFullYear()} Student Hub
               </span>
             </div>
           </div>

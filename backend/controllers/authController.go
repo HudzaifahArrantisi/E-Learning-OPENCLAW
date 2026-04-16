@@ -30,7 +30,7 @@ func Verify(c *gin.Context) {
 		SELECT u.email, COALESCE(m.name, ''), COALESCE(m.nim, '')
 		FROM users u
 		LEFT JOIN mahasiswa m ON u.id = m.user_id
-		WHERE u.id = ?
+		WHERE u.id = $1
 	`, userID).Scan(&email, &name, &nim)
 
 	if err != nil {
@@ -53,9 +53,9 @@ func Verify(c *gin.Context) {
 	var nameFromTable sql.NullString
 	switch role.(string) {
 	case "mahasiswa":
-		config.DB.QueryRow("SELECT name FROM mahasiswa WHERE user_id = ?", userID).Scan(&nameFromTable)
+		config.DB.QueryRow("SELECT name FROM mahasiswa WHERE user_id = $1", userID).Scan(&nameFromTable)
 	case "dosen":
-		config.DB.QueryRow("SELECT name FROM dosen WHERE user_id = ?", userID).Scan(&nameFromTable)
+		config.DB.QueryRow("SELECT name FROM dosen WHERE user_id = $1", userID).Scan(&nameFromTable)
 	case "admin":
 		name = sql.NullString{String: email, Valid: true}
 	case "ukm":
@@ -63,7 +63,7 @@ func Verify(c *gin.Context) {
 	case "ormawa":
 		name = sql.NullString{String: email, Valid: true}
 	case "orangtua":
-		config.DB.QueryRow("SELECT name FROM ortu WHERE user_id = ?", userID).Scan(&nameFromTable)
+		config.DB.QueryRow("SELECT name FROM ortu WHERE user_id = $1", userID).Scan(&nameFromTable)
 	}
 
 	if nameFromTable.Valid {
@@ -119,7 +119,7 @@ func Login(c *gin.Context) {
 		LEFT JOIN ukm uk ON u.id = uk.user_id
 		LEFT JOIN ormawa o ON u.id = o.user_id
 		LEFT JOIN ortu ot ON u.id = ot.user_id
-		WHERE u.email = ? OR m.nim = ?
+		WHERE u.email = $1 OR m.nim = $2
 	`
 
 	var user struct {
@@ -216,25 +216,24 @@ func Register(c *gin.Context) {
 	}
 	defer tx.Rollback()
 
-	result, err := tx.Exec("INSERT INTO users (email, password, role) VALUES (?, ?, ?)",
-		input.Email, hashedPassword, input.Role)
+	// PostgreSQL: use RETURNING id instead of LastInsertId
+	var userID int
+	err = tx.QueryRow("INSERT INTO users (email, password, role) VALUES ($1, $2, $3) RETURNING id",
+		input.Email, hashedPassword, input.Role).Scan(&userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "Failed to create user"})
 		return
 	}
 
-	userID, _ := result.LastInsertId()
-	userIDInt := int(userID)
-
 	var redirect string
 	switch input.Role {
 	case "mahasiswa":
-		_, err = tx.Exec("INSERT INTO mahasiswa (user_id, name, nim) VALUES (?, ?, ?)",
-			userIDInt, input.Name, input.NIM)
+		_, err = tx.Exec("INSERT INTO mahasiswa (user_id, name, nim) VALUES ($1, $2, $3)",
+			userID, input.Name, input.NIM)
 		redirect = "/mahasiswa"
 	case "orangtua":
-		_, err = tx.Exec("INSERT INTO ortu (user_id, name) VALUES (?, ?)",
-			userIDInt, input.Name)
+		_, err = tx.Exec("INSERT INTO ortu (user_id, name) VALUES ($1, $2)",
+			userID, input.Name)
 		redirect = "/ortu"
 	}
 
@@ -248,7 +247,7 @@ func Register(c *gin.Context) {
 		return
 	}
 
-	token, _ := utils.GenerateToken(userIDInt, input.Role)
+	token, _ := utils.GenerateToken(userID, input.Role)
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
@@ -257,7 +256,7 @@ func Register(c *gin.Context) {
 			"role":     input.Role,
 			"redirect": redirect,
 			"user": gin.H{
-				"id":    userIDInt,
+				"id":    userID,
 				"email": input.Email,
 				"role":  input.Role,
 				"name":  input.Name,
@@ -287,4 +286,3 @@ func getRedirectPath(role string) string {
 		return "/"
 	}
 }
-

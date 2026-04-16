@@ -49,8 +49,8 @@ const AcademicCalendarPage = () => {
       case 'important': return 'bg-red-500';
       case 'exam': return 'bg-orange-500';
       case 'event': return 'bg-purple-500';
-      case 'academic': return 'bg-blue-500';
-      default: return 'bg-gray-500';
+      case 'academic': return 'bg-lp-accent';
+      default: return 'bg-lp-bg0';
     }
   };
 
@@ -123,7 +123,7 @@ const AcademicCalendarPage = () => {
     <footer className="bg-gray-900/80 backdrop-blur-md text-gray-400 py-12 border-t border-white/10">
       <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-8">
         <div className="col-span-1 md:col-span-2">
-          <h3 className="text-white text-2xl font-bold mb-4">NF StudentHub</h3>
+          <h3 className="text-white text-2xl font-bold mb-4">Student Hub</h3>
           <p className="mb-4 max-w-md">
             Platform akademik modern yang mengintegrasikan pembelajaran dengan pengalaman sosial media untuk mahasiswa, dosen, dan orang tua.
           </p>
@@ -165,7 +165,7 @@ const AcademicCalendarPage = () => {
         </div>
       </div>
       <div className="max-w-7xl mx-auto px-6 mt-8 pt-8 border-t border-gray-800 text-center">
-        <p>&copy; {new Date().getFullYear()} NF StudentHub. All rights reserved.</p>
+        <p>&copy; {new Date().getFullYear()} Student Hub. All rights reserved.</p>
       </div>
     </footer>
   );
@@ -175,12 +175,12 @@ const AcademicCalendarPage = () => {
       {/* Navigation */}
       <PillNav
         logo={logoDataURL}
-        logoAlt="NF StudentHub Logo"
+        logoAlt="Student Hub Logo"
         items={[
           { label: 'Home', href: '/' },
           { label: 'Visi Misi', href: '/visi-misi' },
           { label: 'Kurikulum', href: '/kurikulum' },
-          { label: 'Login', href: '/login' }
+          { label: 'Login', href: '/' }
         ]}
         activeHref="/kalender-akademik"
         className="custom-nav"
@@ -205,7 +205,7 @@ const AcademicCalendarPage = () => {
           </Link>
           
           <div className="text-center">
-            <h1 className="font-bold text-5xl md:text-6xl text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400 mb-6">
+            <h1 className="font-bold text-5xl md:text-6xl text-transparent bg-clip-text bg-lp-bg mb-6">
               Kalender Akademik 2025-1
             </h1>
             <p className="text-xl text-purple-200 max-w-3xl mx-auto">
@@ -252,7 +252,7 @@ const AcademicCalendarPage = () => {
                     <span className="text-gray-200 text-sm">Acara</span>
                   </div>
                   <div className="flex items-center gap-3">
-                    <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                    <div className="w-3 h-3 rounded-full bg-lp-accent"></div>
                     <span className="text-gray-200 text-sm">Akademik</span>
                   </div>
                 </div>

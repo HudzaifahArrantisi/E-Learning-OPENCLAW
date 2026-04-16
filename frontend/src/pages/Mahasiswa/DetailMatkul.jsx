@@ -41,14 +41,14 @@ const DetailMatkul = () => {
 
   if (loading) {
     return (
-      <div className="flex h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="flex h-screen bg-lp-bg">
         <Sidebar role="mahasiswa" isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
         <div className="flex-1 flex flex-col overflow-hidden">
           <Navbar user={user} onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">Memuat pertemuan...</p>
+              <p className="text-lp-text2 font-light">Memuat pertemuan...</p>
             </div>
           </div>
         </div>
@@ -57,7 +57,7 @@ const DetailMatkul = () => {
   }
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="flex h-screen bg-lp-bg">
       <Sidebar role="mahasiswa" isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -71,17 +71,17 @@ const DetailMatkul = () => {
                 <Link 
                   to="/mahasiswa/matkul"
                   className="
-                    inline-flex items-center space-x-2 text-blue-600 hover:text-blue-700 
+                    inline-flex items-center space-x-2 text-lp-atext hover:text-lp-accent 
                     mb-4 transition-colors
                   "
                 >
                   <FaArrowLeft />
                   <span>Kembali ke Daftar Matkul</span>
                 </Link>
-                <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
+                <h1 className="text-2xl md:text-3xl font-bold text-lp-text font-semibold tracking-tight">
                   {matkulData[courseId] || courseId}
                 </h1>
-                <p className="text-gray-600 mt-1">Kode: {courseId}</p>
+                <p className="text-lp-text2 font-light mt-1">Kode: {courseId}</p>
               </div>
             </div>
 
@@ -91,20 +91,20 @@ const DetailMatkul = () => {
                 <div 
                   key={index} 
                   className="
-                    bg-white rounded-2xl p-6 shadow-lg border border-gray-100
+                    bg-lp-surface rounded-2xl p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border border border-lp-border border
                     hover:shadow-xl transform hover:scale-105
                     transition-all duration-300
                   "
                 >
                   <div className="text-center mb-4">
                     <div className="
-                      w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 
+                      w-16 h-16 bg-lp-bg 
                       rounded-2xl flex items-center justify-center text-white 
                       font-bold text-xl mx-auto mb-3
                     ">
                       {pertemuan.pertemuan}
                     </div>
-                    <h3 className="font-bold text-lg text-gray-800">
+                    <h3 className="font-bold text-lg text-lp-text font-semibold tracking-tight">
                       Pertemuan {pertemuan.pertemuan}
                     </h3>
                   </div>
@@ -115,9 +115,9 @@ const DetailMatkul = () => {
                         to={`/mahasiswa/matkul/${courseId}/pertemuan/${pertemuan.pertemuan}/materi`}
                         className="
                           flex items-center justify-center space-x-2 
-                          bg-blue-500 text-white py-3 px-4 rounded-xl
-                          hover:bg-blue-600 transform hover:scale-105
-                          transition-all duration-300 shadow-lg hover:shadow-xl
+                          bg-lp-accent text-white py-3 px-4 rounded-xl
+                          hover:bg-lp-accent transform hover:scale-105
+                          transition-all duration-300 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl
                           w-full
                         "
                       >
@@ -131,9 +131,9 @@ const DetailMatkul = () => {
                         to={`/mahasiswa/matkul/${courseId}/pertemuan/${pertemuan.pertemuan}/tugas`}
                         className="
                           flex items-center justify-center space-x-2 
-                          bg-green-500 text-white py-3 px-4 rounded-xl
-                          hover:bg-green-600 transform hover:scale-105
-                          transition-all duration-300 shadow-lg hover:shadow-xl
+                          bg-lp-green text-white py-3 px-4 rounded-xl
+                          hover:bg-lp-green transform hover:scale-105
+                          transition-all duration-300 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl
                           w-full
                         "
                       >
@@ -144,7 +144,7 @@ const DetailMatkul = () => {
                     
                     {!pertemuan.has_materi && !pertemuan.has_tugas && (
                       <div className="text-center py-4">
-                        <p className="text-gray-500 text-sm">Belum ada konten</p>
+                        <p className="text-lp-text3 font-light text-sm">Belum ada konten</p>
                       </div>
                     )}
                   </div>
@@ -154,10 +154,10 @@ const DetailMatkul = () => {
 
             {/* Empty State */}
             {pertemuanList.length === 0 && (
-              <div className="bg-white rounded-2xl p-8 text-center shadow-lg border border-gray-100">
+              <div className="bg-lp-surface rounded-2xl p-8 text-center shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border border border-lp-border border">
                 <div className="text-6xl mb-4">📚</div>
-                <h3 className="text-xl font-semibold text-gray-800 mb-2">Belum ada pertemuan</h3>
-                <p className="text-gray-600">Pertemuan untuk mata kuliah ini belum tersedia.</p>
+                <h3 className="text-xl font-semibold text-lp-text font-semibold tracking-tight mb-2">Belum ada pertemuan</h3>
+                <p className="text-lp-text2 font-light">Pertemuan untuk mata kuliah ini belum tersedia.</p>
               </div>
             )}
           </div>

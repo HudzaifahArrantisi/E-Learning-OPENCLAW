@@ -80,8 +80,8 @@ func InsertOutboxEvent(db *sql.DB, event TugasCreatedEvent) {
 
 	query := `
 		INSERT INTO openclaw_event_outbox (event_id, event_type, payload, status, attempts, next_retry_at, created_at)
-		VALUES (?, 'tugas_created', ?, 'pending', 0, NOW(), NOW())
-		ON DUPLICATE KEY UPDATE updated_at = NOW()
+		VALUES ($1, 'tugas_created', $2, 'pending', 0, NOW(), NOW())
+		ON CONFLICT (event_id) DO UPDATE SET updated_at = NOW()
 	`
 	_, err = db.Exec(query, event.EventID, string(payload))
 	if err != nil {

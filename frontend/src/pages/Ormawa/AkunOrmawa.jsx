@@ -107,7 +107,7 @@ const AkunOrmawa = () => {
       <div className="flex min-h-screen bg-gray-100">
         <Sidebar role="ormawa" />
         <div className="flex-1 flex justify-center items-center">
-          <div className="text-xl text-gray-600">Loading...</div>
+          <div className="text-xl text-lp-text2 font-light">Loading...</div>
         </div>
       </div>
     )
@@ -120,7 +120,7 @@ const AkunOrmawa = () => {
         <Navbar user={user} />
 
         {/* Profile Header */}
-        <div className="bg-white rounded-lg shadow-sm border mb-6">
+        <div className="bg-lp-surface rounded-lg shadow-sm border mb-6">
           <div className="p-6">
             <div className="flex flex-col md:flex-row items-start space-y-6 md:space-y-0 md:space-x-8">
               
@@ -136,7 +136,7 @@ const AkunOrmawa = () => {
                     }}
                   />
                 ) : (
-                  <div className="w-32 h-32 rounded-full bg-gradient-to-r from-purple-500 to-purple-700 flex items-center justify-center text-white text-4xl font-bold">
+                  <div className="w-32 h-32 rounded-full bg-lp-bg flex items-center justify-center text-white text-4xl font-bold">
                     {profile?.name?.[0]?.toUpperCase() || 'O'}
                   </div>
                 )}
@@ -145,23 +145,23 @@ const AkunOrmawa = () => {
               {/* Profile Info */}
               <div className="flex-1">
                 <div className="flex flex-col md:flex-row md:items-center gap-3 md:space-x-6 mb-4">
-                  <h1 className="text-2xl font-bold text-gray-900">{profile?.name || 'Ormawa'}</h1>
+                  <h1 className="text-2xl font-bold text-lp-text font-bold tracking-tight">{profile?.name || 'Ormawa'}</h1>
                   <div className="flex flex-wrap gap-2">
                     <Link 
                       to="/ormawa/setting-profile"
-                      className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-200"
+                      className="bg-gray-100 text-lp-text2 px-4 py-2 rounded-lg text-sm hover:bg-gray-200"
                     >
                       ✏️ Edit Profile
                     </Link>
                     <Link 
                       to="/ormawa/posting"
-                      className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700"
+                      className="bg-lp-accent text-white px-4 py-2 rounded-lg text-sm hover:bg-lp-atext"
                     >
                       📝 Buat Postingan
                     </Link>
                     <button
                       onClick={addSamplePost}
-                      className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-700"
+                      className="bg-lp-green text-white px-4 py-2 rounded-lg text-sm hover:bg-[rgb(21,128,61)]"
                     >
                       ➕ Sample Post
                     </button>
@@ -172,28 +172,28 @@ const AkunOrmawa = () => {
                 <div className="flex space-x-8 mb-6">
                   <div className="text-center">
                     <div className="font-bold text-lg">{posts.length}</div>
-                    <div className="text-gray-500 text-sm">Postingan</div>
+                    <div className="text-lp-text3 font-light text-sm">Postingan</div>
                   </div>
                   <div className="text-center">
                     <div className="font-bold text-lg">{profile?.followers_count || 0}</div>
-                    <div className="text-gray-500 text-sm">Pengikut</div>
+                    <div className="text-lp-text3 font-light text-sm">Pengikut</div>
                   </div>
                   <div className="text-center">
                     <div className="font-bold text-lg">{profile?.following_count || 0}</div>
-                    <div className="text-gray-500 text-sm">Mengikuti</div>
+                    <div className="text-lp-text3 font-light text-sm">Mengikuti</div>
                   </div>
                 </div>
 
                 {/* Bio & Info */}
                 <div className="space-y-2">
-                  <p className="text-gray-800 font-medium">@{profile?.username || 'username'}</p>
+                  <p className="text-lp-text font-semibold tracking-tight font-medium">@{profile?.username || 'username'}</p>
                   {profile?.bio && (
-                    <p className="text-gray-600">{profile.bio}</p>
+                    <p className="text-lp-text2 font-light">{profile.bio}</p>
                   )}
                   
-                  <div className="flex flex-wrap gap-4 text-sm text-gray-500">
+                  <div className="flex flex-wrap gap-4 text-sm text-lp-text3 font-light">
                     {profile?.website && (
-                      <a href={profile.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800">
+                      <a href={profile.website} target="_blank" rel="noopener noreferrer" className="text-lp-atext hover:text-blue-800">
                         🌐 {profile.website}
                       </a>
                     )}
@@ -222,21 +222,21 @@ const AkunOrmawa = () => {
             href={`/profile/ormawa/${profile?.username || 'username'}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="bg-white p-4 rounded-lg shadow-sm border text-center hover:bg-gray-50"
+            className="bg-lp-surface p-4 rounded-lg shadow-sm border text-center hover:bg-lp-bg"
           >
             <div className="text-2xl mb-2">👁️</div>
             <div className="font-medium">Lihat sebagai Publik</div>
           </a>
           <Link
             to="/ormawa/setting-profile"
-            className="bg-white p-4 rounded-lg shadow-sm border text-center hover:bg-gray-50"
+            className="bg-lp-surface p-4 rounded-lg shadow-sm border text-center hover:bg-lp-bg"
           >
             <div className="text-2xl mb-2">⚙️</div>
             <div className="font-medium">Edit Profile</div>
           </Link>
           <Link
             to="/ormawa/posting"
-            className="bg-white p-4 rounded-lg shadow-sm border text-center hover:bg-gray-50"
+            className="bg-lp-surface p-4 rounded-lg shadow-sm border text-center hover:bg-lp-bg"
           >
             <div className="text-2xl mb-2">📝</div>
             <div className="font-medium">Buat Postingan</div>
@@ -244,17 +244,17 @@ const AkunOrmawa = () => {
         </div>
 
         {/* Posts Section */}
-        <div className="bg-white rounded-lg shadow-sm border">
+        <div className="bg-lp-surface rounded-lg shadow-sm border">
           <div className="p-6 border-b">
             <h2 className="text-xl font-bold">Postingan Ormawa</h2>
-            <p className="text-gray-600 text-sm">Kelola semua postingan Ormawa Anda</p>
+            <p className="text-lp-text2 font-light text-sm">Kelola semua postingan Ormawa Anda</p>
           </div>
 
           {/* Posts Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-6">
             {posts.length > 0 ? (
               posts.map(post => (
-                <div key={post.id} className="bg-gray-50 rounded-lg border overflow-hidden">
+                <div key={post.id} className="bg-lp-bg rounded-lg border overflow-hidden">
                   {post.media_url && (
                     <img 
                       src={resolveBackendAssetUrl(post.media_url)} 
@@ -271,14 +271,14 @@ const AkunOrmawa = () => {
                         <textarea
                           value={editContent}
                           onChange={(e) => setEditContent(e.target.value)}
-                          className="w-full border border-gray-300 rounded-lg p-3 text-sm resize-none"
+                          className="w-full border border-lp-border border rounded-lg p-3 text-sm resize-none"
                           rows="3"
                           placeholder="Edit caption..."
                         />
                         <div className="flex space-x-2">
                           <button
                             onClick={() => handleUpdate(post.id)}
-                            className="bg-green-600 text-white px-3 py-2 rounded text-sm flex-1"
+                            className="bg-lp-green text-white px-3 py-2 rounded text-sm flex-1"
                           >
                             💾 Simpan
                           </button>
@@ -292,8 +292,8 @@ const AkunOrmawa = () => {
                       </div>
                     ) : (
                       <>
-                        <p className="text-gray-700 text-sm mb-3">{post.content}</p>
-                        <div className="flex justify-between items-center text-xs text-gray-500">
+                        <p className="text-lp-text2 text-sm mb-3">{post.content}</p>
+                        <div className="flex justify-between items-center text-xs text-lp-text3 font-light">
                           <span>{new Date(post.created_at).toLocaleDateString('id-ID')}</span>
                           <div className="flex space-x-2">
                             <span>❤️ {post.likes_count}</span>
@@ -303,7 +303,7 @@ const AkunOrmawa = () => {
                         <div className="flex justify-between mt-3 pt-3 border-t">
                           <button
                             onClick={() => handleEdit(post)}
-                            className="text-blue-600 text-sm hover:text-blue-800"
+                            className="text-lp-atext text-sm hover:text-blue-800"
                           >
                             ✏️ Edit
                           </button>
@@ -320,14 +320,14 @@ const AkunOrmawa = () => {
                 </div>
               ))
             ) : (
-              <div className="col-span-3 text-center py-12 text-gray-500">
+              <div className="col-span-3 text-center py-12 text-lp-text3 font-light">
                 <div className="text-4xl mb-4">📝</div>
                 <div className="text-lg font-medium">Belum ada postingan</div>
                 <p className="text-sm mt-2">Mulai bagikan kegiatan Ormawa Anda</p>
                 <div className="mt-4 space-x-4">
                   <Link 
                     to="/ormawa/posting"
-                    className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 inline-block"
+                    className="bg-lp-accent text-white px-4 py-2 rounded-lg text-sm hover:bg-lp-atext inline-block"
                   >
                     Buat Postingan Pertama
                   </Link>

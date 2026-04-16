@@ -1,9 +1,11 @@
 {
   "dependencies": {
+    "@supabase/ssr": "^0.10.2",
+    "@supabase/supabase-js": "^2.103.0",
     "@types/three": "^0.182.0",
     "three": "^0.182.0"
   },
- "scripts": {
-  "test": "echo \"No tests yet\""
-}
+  "scripts": {
+    "test": "echo \"No tests yet\""
+  }
 }

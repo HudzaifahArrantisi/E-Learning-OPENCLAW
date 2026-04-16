@@ -26,7 +26,7 @@ func IsDuplicate(db *sql.DB, tugasID int, reminderType, recipientID string, sent
 	var count int
 	err := db.QueryRow(`
 		SELECT COUNT(*) FROM openclaw_notification_log 
-		WHERE tugas_id = ? AND reminder_type = ? AND recipient_id = ? AND sent_on = ? AND status = 'success'
+		WHERE tugas_id = $1 AND reminder_type = $2 AND recipient_id = $3 AND sent_on = $4 AND status = 'success'
 	`, tugasID, reminderType, recipientID, sentOn.Format("2006-01-02")).Scan(&count)
 
 	if err != nil {
@@ -51,11 +51,11 @@ func InsertLog(db *sql.DB, tugasID int, reminderType, recipientType, recipientID
 	query := `
 		INSERT INTO openclaw_notification_log 
 			(tugas_id, reminder_type, recipient_type, recipient_id, status, sent_on, message_text, error_message, attempts, created_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, NOW())
-		ON DUPLICATE KEY UPDATE 
-			status = VALUES(status),
-			error_message = VALUES(error_message),
-			attempts = attempts + 1,
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 1, NOW())
+		ON CONFLICT (tugas_id, reminder_type, recipient_id, sent_on) DO UPDATE SET 
+			status = EXCLUDED.status,
+			error_message = EXCLUDED.error_message,
+			attempts = openclaw_notification_log.attempts + 1,
 			updated_at = NOW()
 	`
 
@@ -75,8 +75,8 @@ func UpdateLogStatus(db *sql.DB, tugasID int, reminderType, recipientID, status,
 
 	query := `
 		UPDATE openclaw_notification_log 
-		SET status = ?, error_message = ?, attempts = attempts + 1, updated_at = NOW()
-		WHERE tugas_id = ? AND reminder_type = ? AND recipient_id = ? AND sent_on = ?
+		SET status = $1, error_message = $2, attempts = attempts + 1, updated_at = NOW()
+		WHERE tugas_id = $3 AND reminder_type = $4 AND recipient_id = $5 AND sent_on = $6
 	`
 
 	_, err := db.Exec(query, status, errorMessage, tugasID, reminderType, recipientID, sentOn)
@@ -92,7 +92,7 @@ func GetFailedLogs(db *sql.DB, maxAttempts int) ([]NotificationLog, error) {
 		SELECT id, tugas_id, reminder_type, recipient_type, recipient_id, status, sent_on, 
 		       COALESCE(message_text, '') as message_text, COALESCE(error_message, '') as error_message, attempts
 		FROM openclaw_notification_log 
-		WHERE status = 'failed' AND attempts < ? AND sent_on = CURDATE()
+		WHERE status = 'failed' AND attempts < $1 AND sent_on = CURRENT_DATE
 		ORDER BY created_at ASC
 		LIMIT 50
 	`, maxAttempts)

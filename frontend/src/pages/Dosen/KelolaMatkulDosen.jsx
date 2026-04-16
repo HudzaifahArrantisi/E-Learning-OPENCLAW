@@ -173,18 +173,18 @@ const KelolaMatkulDosen = () => {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      <div className="flex min-h-screen bg-lp-bg">
         <Sidebar role="dosen" isOpen={sidebarOpen} onClose={toggleSidebar} />
         <div className="flex-1 lg:ml-0 transition-all duration-300">
           <div className="p-6 lg:p-8">
             {/* Skeleton Header */}
             <div className="flex items-center justify-between mb-8">
               <div className="flex items-center gap-4">
-                <div className="lg:hidden p-3 rounded-xl bg-white/50 backdrop-blur-sm shadow-lg animate-pulse">
+                <div className="lg:hidden p-3 rounded-xl bg-lp-surface/50 backdrop-blur-sm shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border animate-pulse">
                   <div className="w-6 h-6 bg-gray-200 rounded"></div>
                 </div>
                 <div>
-                  <div className="h-8 w-64 bg-gradient-to-r from-gray-200 to-gray-300 rounded-lg animate-pulse mb-2"></div>
+                  <div className="h-8 w-64 bg-lp-bg rounded-lg animate-pulse mb-2"></div>
                   <div className="h-4 w-48 bg-gray-200 rounded animate-pulse"></div>
                 </div>
               </div>
@@ -197,7 +197,7 @@ const KelolaMatkulDosen = () => {
             {/* Skeleton Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {[1,2,3,4,5,6,7,8].map(item => (
-                <div key={item} className="bg-white/50 backdrop-blur-sm rounded-2xl p-6 shadow-lg animate-pulse">
+                <div key={item} className="bg-lp-surface/50 backdrop-blur-sm rounded-2xl p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border animate-pulse">
                   <div className="flex justify-between items-center mb-4">
                     <div className="h-6 w-24 bg-gray-200 rounded"></div>
                     <div className="w-8 h-8 bg-gray-200 rounded-full"></div>
@@ -216,7 +216,7 @@ const KelolaMatkulDosen = () => {
   }
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="flex min-h-screen bg-lp-bg">
       <Sidebar role="dosen" isOpen={sidebarOpen} onClose={toggleSidebar} />
       
       {/* Main Content */}
@@ -227,28 +227,28 @@ const KelolaMatkulDosen = () => {
             <div className="flex items-center gap-4">
               <button 
                 onClick={toggleSidebar}
-                className="lg:hidden p-3 rounded-xl bg-white/80 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+                className="lg:hidden p-3 rounded-xl bg-lp-surface/80 backdrop-blur-sm shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl transition-all duration-300 hover:scale-105"
               >
-                <FiChevronRight className="text-xl text-gray-700" />
+                <FiChevronRight className="text-xl text-lp-text2" />
               </button>
               <div>
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="p-3 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl shadow-lg">
+                  <div className="p-3 bg-lp-bg rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border">
                     <FiBookOpen className="text-2xl text-white" />
                   </div>
-                  <h1 className="text-3xl lg:text-4xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
+                  <h1 className="text-3xl lg:text-4xl font-bold bg-lp-bg bg-clip-text text-transparent">
                     {matkulData[courseId] || courseId}
                   </h1>
                 </div>
-                <p className="text-gray-600 ml-16">Kelola materi dan tugas untuk setiap pertemuan</p>
+                <p className="text-lp-text2 font-light ml-16">Kelola materi dan tugas untuk setiap pertemuan</p>
               </div>
             </div>
             <div className="flex flex-wrap gap-3">
               <Link 
                 to={`/dosen/penilaian/${courseId}`}
-                className="group relative overflow-hidden px-6 py-3 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-3"
+                className="group relative overflow-hidden px-6 py-3 bg-lp-bg text-white rounded-xl font-medium shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-3"
               >
-                <div className="absolute inset-0 bg-white/10 translate-x-[-100%] group-hover:translate-x-full transition-transform duration-1000"></div>
+                <div className="absolute inset-0 bg-lp-surface/10 translate-x-[-100%] group-hover:translate-x-full transition-transform duration-1000"></div>
                 <FiEye className="relative z-10" />
                 <span className="relative z-10">Lihat Penilaian</span>
               </Link>
@@ -258,22 +258,22 @@ const KelolaMatkulDosen = () => {
 
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-gray-100">
+            <div className="bg-lp-surface/80 backdrop-blur-sm rounded-2xl p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border border border-lp-border border">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-gray-600 text-sm mb-1">Total Pertemuan</p>
-                  <h3 className="text-3xl font-bold text-gray-800">{pertemuanList.length}</h3>
+                  <p className="text-lp-text2 font-light text-sm mb-1">Total Pertemuan</p>
+                  <h3 className="text-3xl font-bold text-lp-text font-semibold tracking-tight">{pertemuanList.length}</h3>
                 </div>
                 <div className="p-3 bg-blue-100 rounded-xl">
-                  <FiGrid className="text-2xl text-blue-600" />
+                  <FiGrid className="text-2xl text-lp-atext" />
                 </div>
               </div>
             </div>
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-gray-100">
+            <div className="bg-lp-surface/80 backdrop-blur-sm rounded-2xl p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border border border-lp-border border">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-gray-600 text-sm mb-1">Materi Tersedia</p>
-                  <h3 className="text-3xl font-bold text-gray-800">
+                  <p className="text-lp-text2 font-light text-sm mb-1">Materi Tersedia</p>
+                  <h3 className="text-3xl font-bold text-lp-text font-semibold tracking-tight">
                     {pertemuanList.filter(p => p.has_materi).length}
                   </h3>
                 </div>
@@ -282,11 +282,11 @@ const KelolaMatkulDosen = () => {
                 </div>
               </div>
             </div>
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-gray-100">
+            <div className="bg-lp-surface/80 backdrop-blur-sm rounded-2xl p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border border border-lp-border border">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-gray-600 text-sm mb-1">Tugas Tersedia</p>
-                  <h3 className="text-3xl font-bold text-gray-800">
+                  <p className="text-lp-text2 font-light text-sm mb-1">Tugas Tersedia</p>
+                  <h3 className="text-3xl font-bold text-lp-text font-semibold tracking-tight">
                     {pertemuanList.filter(p => p.has_tugas).length}
                   </h3>
                 </div>
@@ -295,11 +295,11 @@ const KelolaMatkulDosen = () => {
                 </div>
               </div>
             </div>
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-gray-100">
+            <div className="bg-lp-surface/80 backdrop-blur-sm rounded-2xl p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border border border-lp-border border">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-gray-600 text-sm mb-1">Status Aktif</p>
-                  <h3 className="text-3xl font-bold text-gray-800">
+                  <p className="text-lp-text2 font-light text-sm mb-1">Status Aktif</p>
+                  <h3 className="text-3xl font-bold text-lp-text font-semibold tracking-tight">
                     {pertemuanList.filter(p => p.has_materi || p.has_tugas).length}
                   </h3>
                 </div>
@@ -311,16 +311,16 @@ const KelolaMatkulDosen = () => {
           </div>
 
           {/* Action Buttons */}
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 shadow-lg border border-gray-100 mb-8">
-            <h3 className="text-xl font-semibold text-gray-800 mb-6">Aksi Cepat</h3>
+          <div className="bg-lp-surface/80 backdrop-blur-sm rounded-2xl p-8 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border border border-lp-border border mb-8">
+            <h3 className="text-xl font-semibold text-lp-text font-semibold tracking-tight mb-6">Aksi Cepat</h3>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <button
                 onClick={() => setShowUploadMateri(true)}
-                className="group relative overflow-hidden bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-2xl p-6 text-left shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+                className="group relative overflow-hidden bg-lp-bg text-white rounded-2xl p-6 text-left shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
               >
-                <div className="absolute inset-0 bg-white/10 translate-x-[-100%] group-hover:translate-x-full transition-transform duration-1000"></div>
+                <div className="absolute inset-0 bg-lp-surface/10 translate-x-[-100%] group-hover:translate-x-full transition-transform duration-1000"></div>
                 <div className="relative flex items-start gap-4">
-                  <div className="p-3 bg-white/20 rounded-xl">
+                  <div className="p-3 bg-lp-surface/20 rounded-xl">
                     <FiUpload className="text-2xl" />
                   </div>
                   <div>
@@ -331,11 +331,11 @@ const KelolaMatkulDosen = () => {
               </button>
               <button
                 onClick={() => setShowCreateTugas(true)}
-                className="group relative overflow-hidden bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-2xl p-6 text-left shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+                className="group relative overflow-hidden bg-lp-bg text-white rounded-2xl p-6 text-left shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
               >
-                <div className="absolute inset-0 bg-white/10 translate-x-[-100%] group-hover:translate-x-full transition-transform duration-1000"></div>
+                <div className="absolute inset-0 bg-lp-surface/10 translate-x-[-100%] group-hover:translate-x-full transition-transform duration-1000"></div>
                 <div className="relative flex items-start gap-4">
-                  <div className="p-3 bg-white/20 rounded-xl">
+                  <div className="p-3 bg-lp-surface/20 rounded-xl">
                     <FiFileText className="text-2xl" />
                   </div>
                   <div>
@@ -349,29 +349,29 @@ const KelolaMatkulDosen = () => {
 
           {/* Daftar Pertemuan Header */}
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
+            <h2 className="text-2xl font-bold bg-lp-bg bg-clip-text text-transparent">
               Daftar Pertemuan
             </h2>
             <div className="flex items-center gap-3">
-              <div className="bg-white/80 backdrop-blur-sm rounded-xl p-2 flex items-center gap-1">
+              <div className="bg-lp-surface/80 backdrop-blur-sm rounded-xl p-2 flex items-center gap-1">
                 <button
                   onClick={() => setViewMode('grid')}
-                  className={`p-2 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-blue-100 text-blue-600' : 'text-gray-500 hover:bg-gray-100'}`}
+                  className={`p-2 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-blue-100 text-lp-atext' : 'text-lp-text3 font-light hover:bg-gray-100'}`}
                 >
                   <FiGrid className="text-lg" />
                 </button>
                 <button
                   onClick={() => setViewMode('list')}
-                  className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-blue-100 text-blue-600' : 'text-gray-500 hover:bg-gray-100'}`}
+                  className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-blue-100 text-lp-atext' : 'text-lp-text3 font-light hover:bg-gray-100'}`}
                 >
                   <FiList className="text-lg" />
                 </button>
               </div>
               <button
                 onClick={fetchPertemuanList}
-                className="p-3 bg-white/80 backdrop-blur-sm rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:rotate-180"
+                className="p-3 bg-lp-surface/80 backdrop-blur-sm rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl transition-all duration-300 hover:rotate-180"
               >
-                <FiClock className="text-lg text-gray-700" />
+                <FiClock className="text-lg text-lp-text2" />
               </button>
             </div>
           </div>
@@ -381,45 +381,45 @@ const KelolaMatkulDosen = () => {
             {pertemuanList.map((pertemuan, index) => (
               <div 
                 key={index}
-                className="group bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 hover:border-blue-200 cursor-pointer"
+                className="group bg-lp-surface/80 backdrop-blur-sm rounded-2xl p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border border border-lp-border border hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 hover:border-blue-200 cursor-pointer"
                 onClick={() => fetchPertemuanDetail(pertemuan.pertemuan)}
               >
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
                     <div className={`w-3 h-3 rounded-full ${pertemuan.has_materi && pertemuan.has_tugas ? 'bg-emerald-500' : pertemuan.has_materi || pertemuan.has_tugas ? 'bg-amber-500' : 'bg-gray-300'}`}></div>
-                    <h3 className="font-bold text-lg text-gray-800">Pertemuan {pertemuan.pertemuan}</h3>
+                    <h3 className="font-bold text-lg text-lp-text font-semibold tracking-tight">Pertemuan {pertemuan.pertemuan}</h3>
                   </div>
-                  <FiChevronRight className="text-gray-400 group-hover:text-blue-500 transition-colors" />
+                  <FiChevronRight className="text-gray-400 group-hover:text-lp-atext transition-colors" />
                 </div>
                 
                 <div className="space-y-4 mb-6">
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-600 text-sm flex items-center gap-2">
+                    <span className="text-lp-text2 font-light text-sm flex items-center gap-2">
                       <FiFileText className="text-gray-400" /> Materi
                     </span>
-                    <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${pertemuan.has_materi ? "bg-emerald-100 text-emerald-800 border border-emerald-200" : "bg-gray-100 text-gray-800 border border-gray-200"}`}>
+                    <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${pertemuan.has_materi ? "bg-emerald-100 text-emerald-800 border border-emerald-200" : "bg-gray-100 text-lp-text font-semibold tracking-tight border border-lp-border border"}`}>
                       {pertemuan.has_materi ? <FiCheckCircle /> : <FiXCircle />}
                       {pertemuan.has_materi ? "Tersedia" : "Belum"}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-600 text-sm flex items-center gap-2">
+                    <span className="text-lp-text2 font-light text-sm flex items-center gap-2">
                       <FiCalendar className="text-gray-400" /> Tugas
                     </span>
-                    <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${pertemuan.has_tugas ? "bg-amber-100 text-amber-800 border border-amber-200" : "bg-gray-100 text-gray-800 border border-gray-200"}`}>
+                    <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${pertemuan.has_tugas ? "bg-amber-100 text-amber-800 border border-amber-200" : "bg-gray-100 text-lp-text font-semibold tracking-tight border border-lp-border border"}`}>
                       {pertemuan.has_tugas ? <FiCheckCircle /> : <FiXCircle />}
                       {pertemuan.has_tugas ? "Tersedia" : "Belum"}
                     </span>
                   </div>
                 </div>
                 
-                <div className="pt-4 border-t border-gray-100">
+                <div className="pt-4 border-t border-lp-border border">
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       fetchPertemuanDetail(pertemuan.pertemuan);
                     }}
-                    className="w-full py-3 bg-gradient-to-r from-gray-50 to-white text-gray-700 rounded-xl font-medium shadow-sm hover:shadow-md transition-all duration-300 hover:text-blue-600 flex items-center justify-center gap-2 border border-gray-200 hover:border-blue-300"
+                    className="w-full py-3 bg-lp-bg text-lp-text2 rounded-xl font-medium shadow-sm hover:shadow-sm border border-lp-border transition-all duration-300 hover:text-lp-atext flex items-center justify-center gap-2 border border-lp-border border hover:border-blue-300"
                   >
                     <FiEye />
                     Lihat Detail
@@ -432,34 +432,34 @@ const KelolaMatkulDosen = () => {
           {/* Modal Upload Materi */}
           {showUploadMateri && (
             <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fadeIn">
-              <div className="bg-white rounded-2xl p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl animate-slideUp">
+              <div className="bg-lp-surface rounded-2xl p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl animate-slideUp">
                 <div className="flex items-center justify-between mb-8">
                   <div className="flex items-center gap-4">
-                    <div className="p-3 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl">
+                    <div className="p-3 bg-lp-bg rounded-xl">
                       <FiUpload className="text-2xl text-white" />
                     </div>
                     <div>
-                      <h3 className="text-2xl font-bold text-gray-800">Upload Materi Baru</h3>
-                      <p className="text-gray-600">Tambahkan materi pembelajaran untuk mahasiswa</p>
+                      <h3 className="text-2xl font-bold text-lp-text font-semibold tracking-tight">Upload Materi Baru</h3>
+                      <p className="text-lp-text2 font-light">Tambahkan materi pembelajaran untuk mahasiswa</p>
                     </div>
                   </div>
                   <button
                     onClick={() => setShowUploadMateri(false)}
                     className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
                   >
-                    <FiXCircle className="text-2xl text-gray-400 hover:text-gray-600" />
+                    <FiXCircle className="text-2xl text-gray-400 hover:text-lp-text2 font-light" />
                   </button>
                 </div>
                 
                 <form onSubmit={handleUploadMateri} className="space-y-6">
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">Pertemuan *</label>
+                      <label className="block text-sm font-semibold text-lp-text2 mb-2">Pertemuan *</label>
                       <div className="relative">
                         <select
                           value={formData.pertemuan}
                           onChange={(e) => setFormData(prev => ({ ...prev, pertemuan: e.target.value }))}
-                          className="w-full border border-gray-200 rounded-xl px-4 py-3.5 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white/50 backdrop-blur-sm"
+                          className="w-full border border-lp-border border rounded-xl px-4 py-3.5 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-lp-surface/50 backdrop-blur-sm"
                           required
                         >
                           <option value="">Pilih Pertemuan</option>
@@ -473,12 +473,12 @@ const KelolaMatkulDosen = () => {
                     </div>
                     
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">Judul Materi *</label>
+                      <label className="block text-sm font-semibold text-lp-text2 mb-2">Judul Materi *</label>
                       <input
                         type="text"
                         value={formData.title}
                         onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                        className="w-full border border-gray-200 rounded-xl px-4 py-3.5 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white/50 backdrop-blur-sm"
+                        className="w-full border border-lp-border border rounded-xl px-4 py-3.5 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-lp-surface/50 backdrop-blur-sm"
                         placeholder="Contoh: Pengenalan Python"
                         required
                       />
@@ -486,19 +486,19 @@ const KelolaMatkulDosen = () => {
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Deskripsi</label>
+                    <label className="block text-sm font-semibold text-lp-text2 mb-2">Deskripsi</label>
                     <textarea
                       value={formData.desc}
                       onChange={(e) => setFormData(prev => ({ ...prev, desc: e.target.value }))}
-                      className="w-full border border-gray-200 rounded-xl px-4 py-3.5 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white/50 backdrop-blur-sm"
+                      className="w-full border border-lp-border border rounded-xl px-4 py-3.5 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-lp-surface/50 backdrop-blur-sm"
                       rows="4"
                       placeholder="Deskripsi materi..."
                     />
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">File Materi *</label>
-                    <div className="border-2 border-dashed border-gray-300 rounded-2xl p-8 text-center bg-gray-50/50 hover:border-blue-400 transition-colors cursor-pointer">
+                    <label className="block text-sm font-semibold text-lp-text2 mb-2">File Materi *</label>
+                    <div className="border-2 border-dashed border-lp-border border rounded-2xl p-8 text-center bg-lp-bg/50 hover:border-blue-400 transition-colors cursor-pointer">
                       <input
                         type="file"
                         onChange={(e) => handleFileChange(e, 'file')}
@@ -509,23 +509,23 @@ const KelolaMatkulDosen = () => {
                       />
                       <label htmlFor="file-upload" className="cursor-pointer">
                         <div className="p-4 bg-blue-100 rounded-full w-20 h-20 mx-auto mb-4 flex items-center justify-center">
-                          <FiUpload className="text-3xl text-blue-600" />
+                          <FiUpload className="text-3xl text-lp-atext" />
                         </div>
-                        <div className="text-gray-700 font-medium mb-2">Klik untuk upload file</div>
-                        <div className="text-sm text-gray-500">
+                        <div className="text-lp-text2 font-medium mb-2">Klik untuk upload file</div>
+                        <div className="text-sm text-lp-text3 font-light">
                           PDF, PPT, DOC, ZIP, JPG, PNG (Max: 32MB)
                         </div>
                       </label>
                     </div>
                     {formData.file && (
-                      <div className="mt-4 p-4 bg-gradient-to-r from-emerald-50 to-white rounded-xl border border-emerald-200 shadow-sm">
+                      <div className="mt-4 p-4 bg-lp-bg rounded-xl border border-emerald-200 shadow-sm">
                         <div className="flex items-center gap-3">
                           <div className="p-2 bg-emerald-100 rounded-lg">
                             <FiFile className="text-emerald-600" />
                           </div>
                           <div className="flex-1">
-                            <div className="font-medium text-gray-800">{formData.file.name}</div>
-                            <div className="text-sm text-gray-500">
+                            <div className="font-medium text-lp-text font-semibold tracking-tight">{formData.file.name}</div>
+                            <div className="text-sm text-lp-text3 font-light">
                               {(formData.file.size / (1024 * 1024)).toFixed(2)} MB
                             </div>
                           </div>
@@ -541,20 +541,20 @@ const KelolaMatkulDosen = () => {
                     )}
                   </div>
                   
-                  <div className="flex justify-end gap-3 pt-6 border-t border-gray-200">
+                  <div className="flex justify-end gap-3 pt-6 border-t border-lp-border border">
                     <button
                       type="button"
                       onClick={() => setShowUploadMateri(false)}
-                      className="px-8 py-3 bg-white border border-gray-200 text-gray-700 rounded-xl font-medium shadow-sm hover:shadow-md transition-all duration-300 hover:bg-gray-50"
+                      className="px-8 py-3 bg-lp-surface border border-lp-border border text-lp-text2 rounded-xl font-medium shadow-sm hover:shadow-sm border border-lp-border transition-all duration-300 hover:bg-lp-bg"
                     >
                       Batal
                     </button>
                     <button
                       type="submit"
                       disabled={submitting}
-                      className="group relative overflow-hidden px-8 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2"
+                      className="group relative overflow-hidden px-8 py-3 bg-lp-bg text-white rounded-xl font-medium shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2"
                     >
-                      <div className="absolute inset-0 bg-white/10 translate-x-[-100%] group-hover:translate-x-full transition-transform duration-1000"></div>
+                      <div className="absolute inset-0 bg-lp-surface/10 translate-x-[-100%] group-hover:translate-x-full transition-transform duration-1000"></div>
                       {submitting ? (
                         <>
                           <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -576,34 +576,34 @@ const KelolaMatkulDosen = () => {
           {/* Modal Buat Tugas */}
           {showCreateTugas && (
             <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fadeIn">
-              <div className="bg-white rounded-2xl p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl animate-slideUp">
+              <div className="bg-lp-surface rounded-2xl p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl animate-slideUp">
                 <div className="flex items-center justify-between mb-8">
                   <div className="flex items-center gap-4">
-                    <div className="p-3 bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-xl">
+                    <div className="p-3 bg-lp-bg rounded-xl">
                       <FiFileText className="text-2xl text-white" />
                     </div>
                     <div>
-                      <h3 className="text-2xl font-bold text-gray-800">Buat Tugas Baru</h3>
-                      <p className="text-gray-600">Buat tugas dan tentukan deadline pengumpulan</p>
+                      <h3 className="text-2xl font-bold text-lp-text font-semibold tracking-tight">Buat Tugas Baru</h3>
+                      <p className="text-lp-text2 font-light">Buat tugas dan tentukan deadline pengumpulan</p>
                     </div>
                   </div>
                   <button
                     onClick={() => setShowCreateTugas(false)}
                     className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
                   >
-                    <FiXCircle className="text-2xl text-gray-400 hover:text-gray-600" />
+                    <FiXCircle className="text-2xl text-gray-400 hover:text-lp-text2 font-light" />
                   </button>
                 </div>
                 
                 <form onSubmit={handleCreateTugas} className="space-y-6">
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">Pertemuan *</label>
+                      <label className="block text-sm font-semibold text-lp-text2 mb-2">Pertemuan *</label>
                       <div className="relative">
                         <select
                           value={formData.pertemuan}
                           onChange={(e) => setFormData(prev => ({ ...prev, pertemuan: e.target.value }))}
-                          className="w-full border border-gray-200 rounded-xl px-4 py-3.5 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white/50 backdrop-blur-sm"
+                          className="w-full border border-lp-border border rounded-xl px-4 py-3.5 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-lp-surface/50 backdrop-blur-sm"
                           required
                         >
                           <option value="">Pilih Pertemuan</option>
@@ -617,12 +617,12 @@ const KelolaMatkulDosen = () => {
                     </div>
                     
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">Judul Tugas *</label>
+                      <label className="block text-sm font-semibold text-lp-text2 mb-2">Judul Tugas *</label>
                       <input
                         type="text"
                         value={formData.title}
                         onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                        className="w-full border border-gray-200 rounded-xl px-4 py-3.5 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white/50 backdrop-blur-sm"
+                        className="w-full border border-lp-border border rounded-xl px-4 py-3.5 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-lp-surface/50 backdrop-blur-sm"
                         placeholder="Contoh: Tugas Pemrograman 1"
                         required
                       />
@@ -630,11 +630,11 @@ const KelolaMatkulDosen = () => {
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Deskripsi Tugas *</label>
+                    <label className="block text-sm font-semibold text-lp-text2 mb-2">Deskripsi Tugas *</label>
                     <textarea
                       value={formData.desc}
                       onChange={(e) => setFormData(prev => ({ ...prev, desc: e.target.value }))}
-                      className="w-full border border-gray-200 rounded-xl px-4 py-3.5 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white/50 backdrop-blur-sm"
+                      className="w-full border border-lp-border border rounded-xl px-4 py-3.5 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-lp-surface/50 backdrop-blur-sm"
                       rows="4"
                       placeholder="Instruksi dan ketentuan tugas..."
                       required
@@ -643,21 +643,21 @@ const KelolaMatkulDosen = () => {
                   
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">Batas Pengumpulan</label>
+                      <label className="block text-sm font-semibold text-lp-text2 mb-2">Batas Pengumpulan</label>
                       <div className="relative">
                         <FiCalendar className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
                         <input
                           type="datetime-local"
                           value={formData.due_date}
                           onChange={(e) => setFormData(prev => ({ ...prev, due_date: e.target.value }))}
-                          className="w-full border border-gray-200 rounded-xl pl-12 pr-4 py-3.5 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white/50 backdrop-blur-sm"
+                          className="w-full border border-lp-border border rounded-xl pl-12 pr-4 py-3.5 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-lp-surface/50 backdrop-blur-sm"
                         />
                       </div>
                     </div>
                     
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">File Tugas (Opsional)</label>
-                      <div className="border-2 border-dashed border-gray-300 rounded-2xl p-6 text-center bg-gray-50/50 hover:border-blue-400 transition-colors cursor-pointer">
+                      <label className="block text-sm font-semibold text-lp-text2 mb-2">File Tugas (Opsional)</label>
+                      <div className="border-2 border-dashed border-lp-border border rounded-2xl p-6 text-center bg-lp-bg/50 hover:border-blue-400 transition-colors cursor-pointer">
                         <input
                           type="file"
                           onChange={(e) => handleFileChange(e, 'file_tugas')}
@@ -669,8 +669,8 @@ const KelolaMatkulDosen = () => {
                           <div className="p-3 bg-emerald-100 rounded-full w-16 h-16 mx-auto mb-3 flex items-center justify-center">
                             <FiUpload className="text-xl text-emerald-600" />
                           </div>
-                          <div className="text-gray-700 font-medium mb-1">Klik untuk upload file tugas</div>
-                          <div className="text-sm text-gray-500">
+                          <div className="text-lp-text2 font-medium mb-1">Klik untuk upload file tugas</div>
+                          <div className="text-sm text-lp-text3 font-light">
                             PDF, DOC, ZIP, JPG, PNG (Max: 32MB)
                           </div>
                         </label>
@@ -679,14 +679,14 @@ const KelolaMatkulDosen = () => {
                   </div>
                   
                   {formData.file_tugas && (
-                    <div className="p-4 bg-gradient-to-r from-emerald-50 to-white rounded-xl border border-emerald-200 shadow-sm">
+                    <div className="p-4 bg-lp-bg rounded-xl border border-emerald-200 shadow-sm">
                       <div className="flex items-center gap-3">
                         <div className="p-2 bg-emerald-100 rounded-lg">
                           <FiFile className="text-emerald-600" />
                         </div>
                         <div className="flex-1">
-                          <div className="font-medium text-gray-800">{formData.file_tugas.name}</div>
-                          <div className="text-sm text-gray-500">
+                          <div className="font-medium text-lp-text font-semibold tracking-tight">{formData.file_tugas.name}</div>
+                          <div className="text-sm text-lp-text3 font-light">
                             {(formData.file_tugas.size / (1024 * 1024)).toFixed(2)} MB
                           </div>
                         </div>
@@ -701,20 +701,20 @@ const KelolaMatkulDosen = () => {
                     </div>
                   )}
                   
-                  <div className="flex justify-end gap-3 pt-6 border-t border-gray-200">
+                  <div className="flex justify-end gap-3 pt-6 border-t border-lp-border border">
                     <button
                       type="button"
                       onClick={() => setShowCreateTugas(false)}
-                      className="px-8 py-3 bg-white border border-gray-200 text-gray-700 rounded-xl font-medium shadow-sm hover:shadow-md transition-all duration-300 hover:bg-gray-50"
+                      className="px-8 py-3 bg-lp-surface border border-lp-border border text-lp-text2 rounded-xl font-medium shadow-sm hover:shadow-sm border border-lp-border transition-all duration-300 hover:bg-lp-bg"
                     >
                       Batal
                     </button>
                     <button
                       type="submit"
                       disabled={submitting}
-                      className="group relative overflow-hidden px-8 py-3 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2"
+                      className="group relative overflow-hidden px-8 py-3 bg-lp-bg text-white rounded-xl font-medium shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2"
                     >
-                      <div className="absolute inset-0 bg-white/10 translate-x-[-100%] group-hover:translate-x-full transition-transform duration-1000"></div>
+                      <div className="absolute inset-0 bg-lp-surface/10 translate-x-[-100%] group-hover:translate-x-full transition-transform duration-1000"></div>
                       {submitting ? (
                         <>
                           <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -736,31 +736,31 @@ const KelolaMatkulDosen = () => {
           {/* Modal Detail Pertemuan */}
           {showDetailPertemuan && (
             <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fadeIn">
-              <div className="bg-white rounded-2xl p-8 w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl animate-slideUp">
+              <div className="bg-lp-surface rounded-2xl p-8 w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl animate-slideUp">
                 <div className="flex items-center justify-between mb-8">
                   <div className="flex items-center gap-4">
-                    <div className="p-3 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl">
+                    <div className="p-3 bg-lp-bg rounded-xl">
                       <FiBookOpen className="text-2xl text-white" />
                     </div>
                     <div>
-                      <h3 className="text-2xl font-bold text-gray-800">
+                      <h3 className="text-2xl font-bold text-lp-text font-semibold tracking-tight">
                         Pertemuan {selectedPertemuan}
                       </h3>
-                      <p className="text-gray-600">{matkulData[courseId] || courseId}</p>
+                      <p className="text-lp-text2 font-light">{matkulData[courseId] || courseId}</p>
                     </div>
                   </div>
                   <button
                     onClick={() => setShowDetailPertemuan(false)}
                     className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
                   >
-                    <FiXCircle className="text-2xl text-gray-400 hover:text-gray-600" />
+                    <FiXCircle className="text-2xl text-gray-400 hover:text-lp-text2 font-light" />
                   </button>
                 </div>
                 
                 {detailLoading ? (
                   <div className="flex flex-col items-center justify-center py-12">
                     <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4"></div>
-                    <p className="text-gray-600">Memuat detail pertemuan...</p>
+                    <p className="text-lp-text2 font-light">Memuat detail pertemuan...</p>
                   </div>
                 ) : (
                   <div className="space-y-8">
@@ -769,16 +769,16 @@ const KelolaMatkulDosen = () => {
                       <div className="flex items-center justify-between mb-6">
                         <div className="flex items-center gap-3">
                           <div className="p-2 bg-blue-100 rounded-lg">
-                            <FiFileText className="text-xl text-blue-600" />
+                            <FiFileText className="text-xl text-lp-atext" />
                           </div>
-                          <h4 className="text-xl font-semibold text-gray-800">Materi</h4>
+                          <h4 className="text-xl font-semibold text-lp-text font-semibold tracking-tight">Materi</h4>
                           <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
                             {pertemuanDetail.materi?.length || 0} item
                           </span>
                         </div>
                         <button
                           onClick={() => setShowUploadMateri(true)}
-                          className="px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg font-medium hover:shadow-lg transition-all duration-300 flex items-center gap-2"
+                          className="px-4 py-2 bg-lp-bg text-white rounded-lg font-medium hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border transition-all duration-300 flex items-center gap-2"
                         >
                           <FiPlus />
                           Tambah Materi
@@ -788,11 +788,11 @@ const KelolaMatkulDosen = () => {
                       {pertemuanDetail.materi && pertemuanDetail.materi.length > 0 ? (
                         <div className="grid gap-4">
                           {pertemuanDetail.materi.map((materi, index) => (
-                            <div key={index} className="bg-gradient-to-r from-white to-gray-50 border border-gray-200 rounded-2xl p-6 hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5">
+                            <div key={index} className="bg-lp-bg border border-lp-border border rounded-2xl p-6 hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5">
                               <div className="flex justify-between items-start mb-4">
                                 <div className="flex-1">
-                                  <h5 className="font-bold text-gray-800 text-lg mb-2">{materi.title}</h5>
-                                  {materi.desc && <p className="text-gray-600 mb-3">{materi.desc}</p>}
+                                  <h5 className="font-bold text-lp-text font-semibold tracking-tight text-lg mb-2">{materi.title}</h5>
+                                  {materi.desc && <p className="text-lp-text2 font-light mb-3">{materi.desc}</p>}
                                 </div>
                                 <div className="flex gap-2">
                                   {materi.file_path && (
@@ -800,7 +800,7 @@ const KelolaMatkulDosen = () => {
                                       href={resolveBackendAssetUrl(materi.file_path)}
                                       target="_blank"
                                       rel="noopener noreferrer"
-                                      className="p-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition-colors"
+                                      className="p-2 bg-blue-100 text-lp-atext rounded-lg hover:bg-blue-200 transition-colors"
                                       title="Download"
                                     >
                                       <FiDownload />
@@ -815,7 +815,7 @@ const KelolaMatkulDosen = () => {
                                   </button>
                                 </div>
                               </div>
-                              <div className="flex items-center justify-between text-sm text-gray-500 pt-4 border-t border-gray-100">
+                              <div className="flex items-center justify-between text-sm text-lp-text3 font-light pt-4 border-t border-lp-border border">
                                 <span className="flex items-center gap-2">
                                   <FiClock />
                                   Diupload: {new Date(materi.created_at).toLocaleString('id-ID')}
@@ -828,17 +828,17 @@ const KelolaMatkulDosen = () => {
                           ))}
                         </div>
                       ) : (
-                        <div className="text-center py-12 border-2 border-dashed border-gray-200 rounded-2xl bg-gray-50/50">
+                        <div className="text-center py-12 border-2 border-dashed border-lp-border border rounded-2xl bg-lp-bg/50">
                           <div className="p-4 bg-blue-100 rounded-full w-20 h-20 mx-auto mb-4 flex items-center justify-center">
-                            <FiFileText className="text-3xl text-blue-600" />
+                            <FiFileText className="text-3xl text-lp-atext" />
                           </div>
-                          <p className="text-gray-500">Belum ada materi untuk pertemuan ini.</p>
+                          <p className="text-lp-text3 font-light">Belum ada materi untuk pertemuan ini.</p>
                           <button
                             onClick={() => {
                               setShowDetailPertemuan(false)
                               setShowUploadMateri(true)
                             }}
-                            className="mt-4 px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg font-medium hover:shadow-lg transition-all duration-300 flex items-center gap-2 mx-auto"
+                            className="mt-4 px-4 py-2 bg-lp-bg text-white rounded-lg font-medium hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border transition-all duration-300 flex items-center gap-2 mx-auto"
                           >
                             <FiPlus />
                             Tambah Materi Pertama
@@ -854,14 +854,14 @@ const KelolaMatkulDosen = () => {
                           <div className="p-2 bg-emerald-100 rounded-lg">
                             <FiCalendar className="text-xl text-emerald-600" />
                           </div>
-                          <h4 className="text-xl font-semibold text-gray-800">Tugas</h4>
+                          <h4 className="text-xl font-semibold text-lp-text font-semibold tracking-tight">Tugas</h4>
                           <span className="bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full text-sm font-medium">
                             {pertemuanDetail.tugas?.length || 0} item
                           </span>
                         </div>
                         <button
                           onClick={() => setShowCreateTugas(true)}
-                          className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-lg font-medium hover:shadow-lg transition-all duration-300 flex items-center gap-2"
+                          className="px-4 py-2 bg-lp-bg text-white rounded-lg font-medium hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border transition-all duration-300 flex items-center gap-2"
                         >
                           <FiPlus />
                           Buat Tugas
@@ -871,11 +871,11 @@ const KelolaMatkulDosen = () => {
                       {pertemuanDetail.tugas && pertemuanDetail.tugas.length > 0 ? (
                         <div className="grid gap-4">
                           {pertemuanDetail.tugas.map((tugas, index) => (
-                            <div key={index} className="bg-gradient-to-r from-white to-gray-50 border border-gray-200 rounded-2xl p-6 hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5">
+                            <div key={index} className="bg-lp-bg border border-lp-border border rounded-2xl p-6 hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5">
                               <div className="flex justify-between items-start mb-4">
                                 <div className="flex-1">
-                                  <h5 className="font-bold text-gray-800 text-lg mb-2">{tugas.title}</h5>
-                                  {tugas.desc && <p className="text-gray-600 mb-3">{tugas.desc}</p>}
+                                  <h5 className="font-bold text-lp-text font-semibold tracking-tight text-lg mb-2">{tugas.title}</h5>
+                                  {tugas.desc && <p className="text-lp-text2 font-light mb-3">{tugas.desc}</p>}
                                 </div>
                                 <div className="flex gap-2">
                                   {tugas.file_path && (
@@ -891,7 +891,7 @@ const KelolaMatkulDosen = () => {
                                   )}
                                   <Link
                                     to={`/dosen/penilaian/${courseId}?pertemuan=${selectedPertemuan}`}
-                                    className="p-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition-colors"
+                                    className="p-2 bg-blue-100 text-lp-atext rounded-lg hover:bg-blue-200 transition-colors"
                                     title="Lihat Pengumpulan"
                                   >
                                     <FiEye />
@@ -907,7 +907,7 @@ const KelolaMatkulDosen = () => {
                               </div>
                               
                               {tugas.due_date && (
-                                <div className="flex items-center gap-2 mb-3 px-3 py-2 bg-gradient-to-r from-amber-50 to-white border border-amber-200 rounded-lg">
+                                <div className="flex items-center gap-2 mb-3 px-3 py-2 bg-lp-bg border border-amber-200 rounded-lg">
                                   <FiClock className="text-amber-600" />
                                   <span className="text-sm font-medium text-amber-800">
                                     Batas: {new Date(tugas.due_date).toLocaleString('id-ID')}
@@ -915,14 +915,14 @@ const KelolaMatkulDosen = () => {
                                 </div>
                               )}
                               
-                              <div className="flex items-center justify-between text-sm text-gray-500 pt-4 border-t border-gray-100">
+                              <div className="flex items-center justify-between text-sm text-lp-text3 font-light pt-4 border-t border-lp-border border">
                                 <span className="flex items-center gap-2">
                                   <FiClock />
                                   Dibuat: {new Date(tugas.created_at).toLocaleString('id-ID')}
                                 </span>
                                 <Link
                                   to={`/dosen/penilaian/${courseId}?pertemuan=${selectedPertemuan}`}
-                                  className="px-3 py-1.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg text-sm font-medium hover:shadow-lg transition-all duration-300 flex items-center gap-2"
+                                  className="px-3 py-1.5 bg-lp-bg text-white rounded-lg text-sm font-medium hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border transition-all duration-300 flex items-center gap-2"
                                 >
                                   <FiEye />
                                   Lihat Pengumpulan
@@ -932,17 +932,17 @@ const KelolaMatkulDosen = () => {
                           ))}
                         </div>
                       ) : (
-                        <div className="text-center py-12 border-2 border-dashed border-gray-200 rounded-2xl bg-gray-50/50">
+                        <div className="text-center py-12 border-2 border-dashed border-lp-border border rounded-2xl bg-lp-bg/50">
                           <div className="p-4 bg-emerald-100 rounded-full w-20 h-20 mx-auto mb-4 flex items-center justify-center">
                             <FiCalendar className="text-3xl text-emerald-600" />
                           </div>
-                          <p className="text-gray-500">Belum ada tugas untuk pertemuan ini.</p>
+                          <p className="text-lp-text3 font-light">Belum ada tugas untuk pertemuan ini.</p>
                           <button
                             onClick={() => {
                               setShowDetailPertemuan(false)
                               setShowCreateTugas(true)
                             }}
-                            className="mt-4 px-4 py-2 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-lg font-medium hover:shadow-lg transition-all duration-300 flex items-center gap-2 mx-auto"
+                            className="mt-4 px-4 py-2 bg-lp-bg text-white rounded-lg font-medium hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border transition-all duration-300 flex items-center gap-2 mx-auto"
                           >
                             <FiPlus />
                             Buat Tugas Pertama

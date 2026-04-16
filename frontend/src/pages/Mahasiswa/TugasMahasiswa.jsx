@@ -37,67 +37,67 @@ const TugasMahasiswa = () => {
   }
 
   return (
-    <div className="flex bg-gray-50 min-h-screen">
+    <div className="flex bg-lp-bg min-h-screen">
       <Sidebar role="mahasiswa" />
       <div className="main-content w-full">
         <Navbar user={user} />
         <div className="p-8">
           <div className="flex justify-between items-center mb-6">
             <div>
-              <h1 className="text-2xl font-bold text-gray-800">Daftar Tugas</h1>
-              <p className="text-gray-600">Daftar semua tugas dari mata kuliah Anda.</p>
+              <h1 className="text-2xl font-bold text-lp-text font-semibold tracking-tight">Daftar Tugas</h1>
+              <p className="text-lp-text2 font-light">Daftar semua tugas dari mata kuliah Anda.</p>
             </div>
 
             <Link
               to="/mahasiswa/materi"
-              className="px-4 py-2 rounded-lg font-medium border bg-white text-gray-600 hover:bg-gray-50 transition"
+              className="px-4 py-2 rounded-lg font-medium border bg-lp-surface text-lp-text2 font-light hover:bg-lp-bg transition"
             >
               Lihat Materi
             </Link>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="bg-lp-surface rounded-xl shadow-sm border border-lp-border border overflow-hidden">
             {loading ? (
               <div className="p-8 text-center">
-                <i className="fas fa-spinner fa-spin text-3xl text-blue-500 mb-2"></i>
-                <p className="text-gray-500">Memuat data...</p>
+                <i className="fas fa-spinner fa-spin text-3xl text-lp-atext mb-2"></i>
+                <p className="text-lp-text3 font-light">Memuat data...</p>
               </div>
             ) : tugasList.length === 0 ? (
               <div className="p-10 text-center">
                 <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <i className="fas fa-folder-open text-2xl text-blue-500"></i>
+                  <i className="fas fa-folder-open text-2xl text-lp-atext"></i>
                 </div>
-                <h3 className="text-lg font-bold text-gray-800 mb-1">Tidak ada data</h3>
-                <p className="text-gray-500">Belum ada tugas untuk Anda.</p>
+                <h3 className="text-lg font-bold text-lp-text font-semibold tracking-tight mb-1">Tidak ada data</h3>
+                <p className="text-lp-text3 font-light">Belum ada tugas untuk Anda.</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="bg-gray-50 border-b border-gray-100">
-                      <th className="p-4 font-semibold text-gray-600">Judul</th>
-                      <th className="p-4 font-semibold text-gray-600">Mata Kuliah / Pertemuan</th>
-                      <th className="p-4 font-semibold text-gray-600">Tenggat Waktu</th>
-                      <th className="p-4 font-semibold text-gray-600">Status</th>
-                      <th className="p-4 font-semibold text-gray-600 text-center">Aksi</th>
+                    <tr className="bg-lp-bg border-b border-lp-border border">
+                      <th className="p-4 font-semibold text-lp-text2 font-light">Judul</th>
+                      <th className="p-4 font-semibold text-lp-text2 font-light">Mata Kuliah / Pertemuan</th>
+                      <th className="p-4 font-semibold text-lp-text2 font-light">Tenggat Waktu</th>
+                      <th className="p-4 font-semibold text-lp-text2 font-light">Status</th>
+                      <th className="p-4 font-semibold text-lp-text2 font-light text-center">Aksi</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {tugasList.map((task) => (
-                      <tr key={task.id} className="hover:bg-gray-50 transition-colors">
+                      <tr key={task.id} className="hover:bg-lp-bg transition-colors">
                         <td className="p-4">
-                          <p className="font-semibold text-gray-800">{task.title}</p>
-                          <p className="text-sm text-gray-500 truncate max-w-xs" title={task.description}>
+                          <p className="font-semibold text-lp-text font-semibold tracking-tight">{task.title}</p>
+                          <p className="text-sm text-lp-text3 font-light truncate max-w-xs" title={task.description}>
                             {task.description || '-'}
                           </p>
                         </td>
                         <td className="p-4">
-                          <p className="font-medium text-gray-700">{task.course_name}</p>
-                          <p className="text-sm text-gray-500">Pertemuan {task.pertemuan}</p>
+                          <p className="font-medium text-lp-text2">{task.course_name}</p>
+                          <p className="text-sm text-lp-text3 font-light">Pertemuan {task.pertemuan}</p>
                         </td>
                         <td className="p-4">
                           <div>
-                            <p className={`font-medium ${task.is_overdue ? 'text-red-600' : 'text-gray-700'}`}>
+                            <p className={`font-medium ${task.is_overdue ? 'text-red-600' : 'text-lp-text2'}`}>
                               {formatDate(task.due_date)}
                             </p>
                             <p className={`text-xs mt-1 ${task.is_overdue ? 'text-red-500 font-semibold' : 'text-orange-500'}`}>
@@ -111,7 +111,7 @@ const TugasMahasiswa = () => {
                         </td>
                         <td className="p-4">
                           {task.has_submission ? (
-                            <div className="flex items-center text-green-600 font-medium">
+                            <div className="flex items-center text-lp-green font-medium">
                               <i className="fas fa-check-circle mr-2"></i> Dikumpulkan
                             </div>
                           ) : (
@@ -123,7 +123,7 @@ const TugasMahasiswa = () => {
                         <td className="p-4 text-center">
                           <Link
                             to={`/mahasiswa/matkul/${task.course_id}/pertemuan/${task.pertemuan || 1}/tugas?taskId=${task.id}`}
-                            className="inline-block px-4 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg font-medium transition"
+                            className="inline-block px-4 py-2 bg-blue-50 text-lp-atext hover:bg-blue-100 rounded-lg font-medium transition"
                           >
                             Detail
                           </Link>

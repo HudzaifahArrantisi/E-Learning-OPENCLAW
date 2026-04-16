@@ -34,7 +34,7 @@ func GetOrtuProfile(c *gin.Context) {
 		FROM ortu o
 		JOIN users u ON o.user_id = u.id
 		JOIN mahasiswa m ON o.child_id = m.id
-		WHERE o.user_id = ?
+		WHERE o.user_id = $1
 	`, userID).Scan(&ortu.ID, &ortu.Name, &ortu.Email, &ortu.ChildID, &ortu.ChildName, &ortu.ChildNIM)
 
 	if err != nil {
@@ -74,7 +74,7 @@ func GetChildAttendance(c *gin.Context) {
 
 	// Check if this parent is associated with the student
 	var childID int
-	query := `SELECT child_id FROM ortu WHERE user_id = ?`
+	query := `SELECT child_id FROM ortu WHERE user_id = $1`
 	err = config.DB.QueryRow(query, userID.(int)).Scan(&childID)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to verify parent-student relationship")
@@ -93,8 +93,8 @@ func GetChildAttendance(c *gin.Context) {
 			mk.nama as mata_kuliah,
 			d.name as dosen,
 			a.status, 
-			DATE_FORMAT(a.created_at, '%d %M %Y') as tanggal,
-			DATE_FORMAT(a.created_at, '%H:%i') as jam,
+			TO_CHAR(a.created_at, 'DD Month YYYY') as tanggal,
+			TO_CHAR(a.created_at, 'HH24:MI') as jam,
 			CASE 
 				WHEN a.status = 'hadir' THEN 'Hadir'
 				WHEN a.status = 'izin' THEN 'Izin'
@@ -109,7 +109,7 @@ func GetChildAttendance(c *gin.Context) {
 		JOIN attendance_sessions ases ON a.session_id = ases.id
 		JOIN mata_kuliah mk ON ases.course_id = mk.kode
 		JOIN dosen d ON mk.dosen_id = d.id
-		WHERE a.student_id = ?
+		WHERE a.student_id = $1
 		ORDER BY a.created_at DESC
 		LIMIT 100
 	`
@@ -179,7 +179,7 @@ func GetChildAttendance(c *gin.Context) {
 	}
 
 	config.DB.QueryRow(`
-		SELECT name, nim FROM mahasiswa WHERE id = ?
+		SELECT name, nim FROM mahasiswa WHERE id = $1
 	`, studentID).Scan(&childInfo.Name, &childInfo.NIM)
 
 	utils.SuccessResponse(c, gin.H{
@@ -199,7 +199,7 @@ func GetChildAttendanceToday(c *gin.Context) {
 
 	// Get child ID
 	var childID int
-	err := config.DB.QueryRow("SELECT child_id FROM ortu WHERE user_id = ?", userID).Scan(&childID)
+	err := config.DB.QueryRow("SELECT child_id FROM ortu WHERE user_id = $1", userID).Scan(&childID)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusNotFound, "Data anak tidak ditemukan")
 		return
@@ -234,7 +234,7 @@ func GetChildAttendanceToday(c *gin.Context) {
 			mk.jam_selesai,
 			d.name as dosen,
 			COALESCE(a.status, 'belum_absen') as status_absen,
-			COALESCE(DATE_FORMAT(a.created_at, '%H:%i'), '') as waktu_absen
+			COALESCE(TO_CHAR(a.created_at, 'HH24:MI'), '') as waktu_absen
 		FROM mata_kuliah mk
 		JOIN dosen d ON mk.dosen_id = d.id
 		JOIN mahasiswa_mata_kuliah mmk ON mk.kode = mmk.mata_kuliah_kode
@@ -242,9 +242,9 @@ func GetChildAttendanceToday(c *gin.Context) {
 			SELECT a.student_id, ases.course_id, a.status, a.created_at
 			FROM attendance a
 			JOIN attendance_sessions ases ON a.session_id = ases.id
-			WHERE DATE(a.created_at) = CURDATE()
+			WHERE (a.created_at)::date = CURRENT_DATE
 		) a ON mk.kode = a.course_id AND mmk.mahasiswa_id = a.student_id
-		WHERE mmk.mahasiswa_id = ? AND mk.hari = ?
+		WHERE mmk.mahasiswa_id = $1 AND mk.hari = $2
 		ORDER BY mk.jam_mulai
 	`
 
@@ -283,7 +283,7 @@ func GetChildAttendanceToday(c *gin.Context) {
 	}
 
 	config.DB.QueryRow(`
-		SELECT name, nim FROM mahasiswa WHERE id = ?
+		SELECT name, nim FROM mahasiswa WHERE id = $1
 	`, childID).Scan(&childInfo.Name, &childInfo.NIM)
 
 	utils.SuccessResponse(c, gin.H{
@@ -323,7 +323,7 @@ func GetChildProfile(c *gin.Context) {
 		FROM ortu o
 		JOIN mahasiswa m ON o.child_id = m.id
 		JOIN users u ON m.user_id = u.id
-		WHERE o.user_id = ?
+		WHERE o.user_id = $1
 	`, userID).Scan(&child.ID, &child.Name, &child.NIM, &child.Email, &child.Phone, 
 		&child.Address, &child.Faculty, &child.Major, &child.Semester, &child.Photo)
 
@@ -345,7 +345,7 @@ func GetChildAcademicInfo(c *gin.Context) {
 
 	// Get child ID
 	var childID int
-	err := config.DB.QueryRow("SELECT child_id FROM ortu WHERE user_id = ?", userID).Scan(&childID)
+	err := config.DB.QueryRow("SELECT child_id FROM ortu WHERE user_id = $1", userID).Scan(&childID)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusNotFound, "Data anak tidak ditemukan")
 		return
@@ -360,7 +360,7 @@ func GetChildAcademicInfo(c *gin.Context) {
 		WHERE mk.kode IN (
 			SELECT mata_kuliah_kode 
 			FROM mahasiswa_mata_kuliah 
-			WHERE mahasiswa_id = ?
+			WHERE mahasiswa_id = $1
 		)
 		ORDER BY 
 			CASE mk.hari

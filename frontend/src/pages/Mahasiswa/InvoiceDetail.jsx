@@ -73,9 +73,9 @@ const InvoiceDetail = () => {
 
   const getStatusIcon = (status) => {
     switch (status) {
-      case 'success': return <FaCheckCircle className="text-green-500 text-xl" />
+      case 'success': return <FaCheckCircle className="text-lp-green text-xl" />
       case 'pending': return <FaClock className="text-yellow-500 text-xl" />
-      case 'failed': return <FaBan className="text-gray-500 text-xl" />
+      case 'failed': return <FaBan className="text-lp-text3 font-light text-xl" />
       case 'expired': return <FaTimesCircle className="text-red-500 text-xl" />
       default: return <FaTimesCircle className="text-red-500 text-xl" />
     }
@@ -85,9 +85,9 @@ const InvoiceDetail = () => {
     switch (status) {
       case 'success': return 'bg-green-100 text-green-800 border-green-200'
       case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-200'
-      case 'failed': return 'bg-gray-100 text-gray-800 border-gray-200'
+      case 'failed': return 'bg-gray-100 text-lp-text font-semibold tracking-tight border-lp-border border'
       case 'expired': return 'bg-red-100 text-red-800 border-red-200'
-      default: return 'bg-gray-100 text-gray-800 border-gray-200'
+      default: return 'bg-gray-100 text-lp-text font-semibold tracking-tight border-lp-border border'
     }
   }
 
@@ -112,7 +112,7 @@ const InvoiceDetail = () => {
     <div className="flex h-screen items-center justify-center">
       <div className="text-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-        <p className="text-gray-600">Loading invoice...</p>
+        <p className="text-lp-text2 font-light">Loading invoice...</p>
       </div>
     </div>
   )
@@ -121,11 +121,11 @@ const InvoiceDetail = () => {
     <div className="flex h-screen items-center justify-center">
       <div className="text-center">
         <div className="text-6xl mb-4">❌</div>
-        <h3 className="text-xl font-bold text-gray-800 mb-2">Error loading invoice</h3>
-        <p className="text-gray-600 mb-4">Invoice tidak ditemukan atau terjadi kesalahan</p>
+        <h3 className="text-xl font-bold text-lp-text font-semibold tracking-tight mb-2">Error loading invoice</h3>
+        <p className="text-lp-text2 font-light mb-4">Invoice tidak ditemukan atau terjadi kesalahan</p>
         <button
           onClick={() => navigate('/mahasiswa/pembayaran-ukt')}
-          className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
+          className="bg-lp-accent text-white px-4 py-2 rounded-lg hover:bg-lp-accent"
         >
           Kembali ke Pembayaran
         </button>
@@ -134,7 +134,7 @@ const InvoiceDetail = () => {
   )
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-lp-bg">
       <Sidebar role={user?.role} />
       <div className="flex-1">
         <Navbar user={user} />
@@ -143,21 +143,21 @@ const InvoiceDetail = () => {
           <div className="mb-6">
             <button
               onClick={() => navigate('/mahasiswa/pembayaran-ukt')}
-              className="flex items-center text-blue-600 hover:text-blue-800 mb-4"
+              className="flex items-center text-lp-atext hover:text-blue-800 mb-4"
             >
               <FaArrowLeft className="mr-2" />
               Kembali ke Pembayaran UKT
             </button>
-            <h1 className="text-2xl font-bold text-gray-800">Detail Invoice</h1>
-            <p className="text-gray-600">ID: {uuid}</p>
+            <h1 className="text-2xl font-bold text-lp-text font-semibold tracking-tight">Detail Invoice</h1>
+            <p className="text-lp-text2 font-light">ID: {uuid}</p>
           </div>
           
           {invoice ? (
             <div className="max-w-4xl mx-auto">
               {/* Invoice Card */}
-              <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+              <div className="bg-lp-surface rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border border border-lp-border border overflow-hidden">
                 {/* Header */}
-                <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-6">
+                <div className="bg-lp-bg p-6">
                   <div className="flex justify-between items-center">
                     <div>
                       <h2 className="text-2xl font-bold text-white">Invoice #{uuid.substring(0, 8).toUpperCase()}</h2>
@@ -174,44 +174,44 @@ const InvoiceDetail = () => {
                 <div className="p-6">
                   {/* Invoice Details */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <h3 className="font-bold text-gray-800 mb-3">Informasi Invoice</h3>
+                    <div className="bg-lp-bg p-4 rounded-lg">
+                      <h3 className="font-bold text-lp-text font-semibold tracking-tight mb-3">Informasi Invoice</h3>
                       <div className="space-y-2">
                         <div className="flex justify-between">
-                          <span className="text-gray-600">Tanggal</span>
+                          <span className="text-lp-text2 font-light">Tanggal</span>
                           <span className="font-medium">{formatDate(invoice.tanggal)}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-gray-600">Metode</span>
+                          <span className="text-lp-text2 font-light">Metode</span>
                           <span className="font-medium capitalize">{invoice.metode}</span>
                         </div>
                         {invoice.expired_at && (
                           <div className="flex justify-between">
-                            <span className="text-gray-600">Kadaluarsa</span>
+                            <span className="text-lp-text2 font-light">Kadaluarsa</span>
                             <span className="font-medium">{formatDate(invoice.expired_at)}</span>
                           </div>
                         )}
                       </div>
                     </div>
 
-                    <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-5 rounded-lg border border-blue-200">
-                      <h3 className="font-bold text-gray-800 mb-4 flex items-center">
-                        <FaCalculator className="mr-2 text-blue-600" />
+                    <div className="bg-lp-bg p-5 rounded-lg border border-blue-200">
+                      <h3 className="font-bold text-lp-text font-semibold tracking-tight mb-4 flex items-center">
+                        <FaCalculator className="mr-2 text-lp-atext" />
                         Rincian Pembayaran
                       </h3>
                       <div className="space-y-3">
                         <div className="flex justify-between items-center">
-                          <span className="text-gray-600">Nominal UKT</span>
+                          <span className="text-lp-text2 font-light">Nominal UKT</span>
                           <span className="font-medium">{formatRupiah(invoice.nominal)}</span>
                         </div>
                         <div className="flex justify-between items-center">
-                          <span className="text-gray-600">Biaya Admin</span>
+                          <span className="text-lp-text2 font-light">Biaya Admin</span>
                           <span className="font-medium text-yellow-600">{formatRupiah(invoice.biaya_admin)}</span>
                         </div>
                         <div className="pt-3 border-t border-blue-200">
                           <div className="flex justify-between items-center">
-                            <span className="text-gray-800 font-bold">Total Bayar</span>
-                            <span className="text-blue-600 font-bold text-lg">{formatRupiah(invoice.total_dibayar)}</span>
+                            <span className="text-lp-text font-semibold tracking-tight font-bold">Total Bayar</span>
+                            <span className="text-lp-atext font-bold text-lg">{formatRupiah(invoice.total_dibayar)}</span>
                           </div>
                         </div>
                       </div>
@@ -222,11 +222,11 @@ const InvoiceDetail = () => {
                   {invoice.payment_method === 'qris' && invoice.status === 'pending' && !invoice.is_expired && (
                     <div className="mb-8">
                       <div className="flex items-center mb-4">
-                        <FaQrcode className="text-green-500 text-xl mr-2" />
-                        <h3 className="text-xl font-bold text-gray-800">QRIS Pembayaran</h3>
+                        <FaQrcode className="text-lp-green text-xl mr-2" />
+                        <h3 className="text-xl font-bold text-lp-text font-semibold tracking-tight">QRIS Pembayaran</h3>
                       </div>
                       <div className="flex flex-col lg:flex-row items-center gap-8">
-                        <div className="bg-white p-6 rounded-xl border-2 border-green-200 shadow-lg">
+                        <div className="bg-lp-surface p-6 rounded-xl border-2 border-green-200 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border">
                           {invoice.qrcode ? (
                             <QRCode
                               value={invoice.qrcode}
@@ -235,7 +235,7 @@ const InvoiceDetail = () => {
                             />
                           ) : (
                             <div className="w-56 h-56 flex items-center justify-center bg-gray-100 rounded">
-                              <p className="text-gray-500">QR Code tidak tersedia</p>
+                              <p className="text-lp-text3 font-light">QR Code tidak tersedia</p>
                             </div>
                           )}
                         </div>
@@ -264,7 +264,7 @@ const InvoiceDetail = () => {
                                   href={invoice.payment_url}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="inline-flex items-center space-x-2 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors"
+                                  className="inline-flex items-center space-x-2 bg-lp-green text-white px-4 py-2 rounded-lg hover:bg-lp-green transition-colors"
                                 >
                                   <FaExternalLinkAlt />
                                   <span>Buka Halaman Pembayaran Pakasir</span>
@@ -281,36 +281,36 @@ const InvoiceDetail = () => {
                   {invoice.payment_method !== 'qris' && invoice.status === 'pending' && !invoice.is_expired && (
                     <div className="mb-8">
                       <div className="flex items-center mb-4">
-                        <FaBuilding className="text-blue-500 text-xl mr-2" />
-                        <h3 className="text-xl font-bold text-gray-800">Transfer Bank</h3>
+                        <FaBuilding className="text-lp-atext text-xl mr-2" />
+                        <h3 className="text-xl font-bold text-lp-text font-semibold tracking-tight">Transfer Bank</h3>
                       </div>
                       <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                          <div className="bg-white p-4 rounded-lg border border-blue-100">
-                            <p className="text-gray-600 text-sm">Bank</p>
-                            <p className="font-bold text-gray-800 text-lg">{invoice.bank_name || getBankName(invoice.payment_method)}</p>
+                          <div className="bg-lp-surface p-4 rounded-lg border border-blue-100">
+                            <p className="text-lp-text2 font-light text-sm">Bank</p>
+                            <p className="font-bold text-lp-text font-semibold tracking-tight text-lg">{invoice.bank_name || getBankName(invoice.payment_method)}</p>
                           </div>
-                          <div className="bg-white p-4 rounded-lg border border-blue-100">
-                            <p className="text-gray-600 text-sm">Nomor Virtual Account</p>
+                          <div className="bg-lp-surface p-4 rounded-lg border border-blue-100">
+                            <p className="text-lp-text2 font-light text-sm">Nomor Virtual Account</p>
                             <div className="flex items-center justify-between">
-                              <p className="font-bold text-gray-800 text-lg font-mono">
+                              <p className="font-bold text-lp-text font-semibold tracking-tight text-lg font-mono">
                                 {invoice.account_number || 'Sedang diproses...'}
                               </p>
                               <button
                                 onClick={() => copyToClipboard(invoice.account_number || '')}
-                                className="text-blue-600 hover:text-blue-800 ml-2"
+                                className="text-lp-atext hover:text-blue-800 ml-2"
                               >
                                 <FaCopy />
                               </button>
                             </div>
                           </div>
-                          <div className="bg-white p-4 rounded-lg border border-blue-100">
-                            <p className="text-gray-600 text-sm">Nama Penerima</p>
-                            <p className="font-bold text-gray-800 text-lg">NF Student Hub</p>
+                          <div className="bg-lp-surface p-4 rounded-lg border border-blue-100">
+                            <p className="text-lp-text2 font-light text-sm">Nama Penerima</p>
+                            <p className="font-bold text-lp-text font-semibold tracking-tight text-lg">Student Hub</p>
                           </div>
-                          <div className="bg-white p-4 rounded-lg border border-blue-100">
-                            <p className="text-gray-600 text-sm">Total Transfer</p>
-                            <p className="font-bold text-blue-600 text-lg">{formatRupiah(invoice.total_dibayar)}</p>
+                          <div className="bg-lp-surface p-4 rounded-lg border border-blue-100">
+                            <p className="text-lp-text2 font-light text-sm">Total Transfer</p>
+                            <p className="font-bold text-lp-atext text-lg">{formatRupiah(invoice.total_dibayar)}</p>
                           </div>
                         </div>
                         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
@@ -331,7 +331,7 @@ const InvoiceDetail = () => {
                               href={invoice.payment_url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center space-x-2 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
+                              className="inline-flex items-center space-x-2 bg-lp-accent text-white px-4 py-2 rounded-lg hover:bg-lp-accent transition-colors"
                             >
                               <FaExternalLinkAlt />
                               <span>Buka Halaman Pembayaran Pakasir</span>
@@ -374,8 +374,8 @@ const InvoiceDetail = () => {
                   )}
 
                   {invoice.status === 'failed' && (
-                    <div className="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-xl">
-                      <div className="flex items-center space-x-3 text-gray-800">
+                    <div className="mb-6 p-4 bg-lp-bg border border-lp-border border rounded-xl">
+                      <div className="flex items-center space-x-3 text-lp-text font-semibold tracking-tight">
                         <FaBan className="flex-shrink-0 text-xl" />
                         <div>
                           <h4 className="font-bold">Pembayaran Dibatalkan</h4>
@@ -390,7 +390,7 @@ const InvoiceDetail = () => {
                   {/* Note */}
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
                     <div className="flex items-start space-x-3">
-                      <FaShieldAlt className="text-blue-600 text-xl flex-shrink-0 mt-1" />
+                      <FaShieldAlt className="text-lp-atext text-xl flex-shrink-0 mt-1" />
                       <div>
                         <h4 className="font-bold text-blue-800 mb-1">Keamanan Transaksi</h4>
                         <p className="text-sm text-blue-700">
@@ -402,33 +402,33 @@ const InvoiceDetail = () => {
                   </div>
 
                   {/* Invoice UUID */}
-                  <div className="bg-gray-50 p-4 rounded-lg mb-6">
-                    <p className="text-gray-600 text-sm mb-2">ID Transaksi</p>
+                  <div className="bg-lp-bg p-4 rounded-lg mb-6">
+                    <p className="text-lp-text2 font-light text-sm mb-2">ID Transaksi</p>
                     <div className="flex items-center justify-between">
-                      <code className="font-mono text-gray-800 break-all">{uuid}</code>
+                      <code className="font-mono text-lp-text font-semibold tracking-tight break-all">{uuid}</code>
                       <button
                         onClick={() => copyToClipboard(uuid)}
-                        className="text-blue-600 hover:text-blue-800 ml-4 flex-shrink-0"
+                        className="text-lp-atext hover:text-blue-800 ml-4 flex-shrink-0"
                         title="Copy to clipboard"
                       >
                         <FaCopy />
                       </button>
                     </div>
-                    {copied && <span className="text-green-600 text-xs mt-1">Disalin!</span>}
+                    {copied && <span className="text-lp-green text-xs mt-1">Disalin!</span>}
                   </div>
 
                   {/* Actions */}
                   <div className="flex flex-wrap gap-4">
                     <button
                       onClick={() => window.print()}
-                      className="flex items-center space-x-2 bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600"
+                      className="flex items-center space-x-2 bg-lp-bg0 text-white px-4 py-2 rounded-lg hover:bg-gray-600"
                     >
                       <FaPrint />
                       <span>Print Invoice</span>
                     </button>
                     <button
                       onClick={() => navigate('/mahasiswa/pembayaran-ukt')}
-                      className="flex items-center space-x-2 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
+                      className="flex items-center space-x-2 bg-lp-accent text-white px-4 py-2 rounded-lg hover:bg-lp-accent"
                     >
                       <FaArrowLeft />
                       <span>Kembali ke Pembayaran</span>
@@ -436,7 +436,7 @@ const InvoiceDetail = () => {
                     {invoice.status === 'pending' && !invoice.is_expired && (
                       <button
                         onClick={() => refetch()}
-                        className="flex items-center space-x-2 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600"
+                        className="flex items-center space-x-2 bg-lp-green text-white px-4 py-2 rounded-lg hover:bg-lp-green"
                       >
                         <FaSync />
                         <span>Cek Status</span>
@@ -449,11 +449,11 @@ const InvoiceDetail = () => {
           ) : (
             <div className="text-center py-12">
               <div className="text-6xl mb-4">📄</div>
-              <h3 className="text-xl font-bold text-gray-800 mb-2">Invoice tidak ditemukan</h3>
-              <p className="text-gray-600 mb-4">Invoice dengan ID tersebut tidak ditemukan</p>
+              <h3 className="text-xl font-bold text-lp-text font-semibold tracking-tight mb-2">Invoice tidak ditemukan</h3>
+              <p className="text-lp-text2 font-light mb-4">Invoice dengan ID tersebut tidak ditemukan</p>
               <button
                 onClick={() => navigate('/mahasiswa/pembayaran-ukt')}
-                className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
+                className="bg-lp-accent text-white px-4 py-2 rounded-lg hover:bg-lp-accent"
               >
                 Kembali ke Pembayaran
               </button>

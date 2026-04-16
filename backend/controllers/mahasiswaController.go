@@ -38,7 +38,7 @@ func GetMahasiswaProfile(c *gin.Context) {
 		SELECT m.id, m.name, m.nim, COALESCE(m.alamat, ''), COALESCE(m.photo, ''), u.email
 		FROM mahasiswa m
 		JOIN users u ON m.user_id = u.id
-		WHERE m.user_id = ?
+		WHERE m.user_id = $1
 	`, userID).Scan(&mahasiswa.ID, &mahasiswa.Name, &mahasiswa.NIM, &mahasiswa.Alamat, &mahasiswa.Photo, &mahasiswa.Email)
 
 	if err != nil {
@@ -123,15 +123,15 @@ func UpdateMahasiswaProfile(c *gin.Context) {
 		// Jika ada foto baru, update termasuk photo
 		_, errExec = config.DB.Exec(`
 			UPDATE mahasiswa 
-			SET name = ?, nim = ?, alamat = ?, photo = ?, updated_at = NOW() 
-			WHERE user_id = ?
+			SET name = $1, nim = $2, alamat = $3, photo = $4, updated_at = NOW() 
+			WHERE user_id = $5
 		`, name, nim, alamat, photoPath, userID)
 	} else {
 		// Jika tidak ada foto baru, update tanpa photo
 		_, errExec = config.DB.Exec(`
 			UPDATE mahasiswa 
-			SET name = ?, nim = ?, alamat = ?, updated_at = NOW() 
-			WHERE user_id = ?
+			SET name = $1, nim = $2, alamat = $3, updated_at = NOW() 
+			WHERE user_id = $4
 		`, name, nim, alamat, userID)
 	}
 
@@ -169,7 +169,7 @@ func GetMahasiswaCoursesByDay(c *gin.Context) {
 
 	// Get mahasiswa ID
 	var mahasiswaID int
-	err := config.DB.QueryRow("SELECT id FROM mahasiswa WHERE user_id = ?", userID).Scan(&mahasiswaID)
+	err := config.DB.QueryRow("SELECT id FROM mahasiswa WHERE user_id = $1", userID).Scan(&mahasiswaID)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusNotFound, "Mahasiswa not found")
 		return
@@ -186,7 +186,7 @@ func GetMahasiswaCoursesByDay(c *gin.Context) {
 			mk.jam_mulai, 
 			mk.jam_selesai,
 			COALESCE(a.status, 'belum_absen') as status_absen,
-			COALESCE(TIME_FORMAT(a.created_at, '%H:%i'), '') as waktu_absen,
+			COALESCE(TO_CHAR(a.created_at, 'HH24:MI'), '') as waktu_absen,
 			COUNT(DISTINCT mmk2.mahasiswa_id) as total_mahasiswa
 		FROM mata_kuliah mk
 		JOIN dosen d ON mk.dosen_id = d.id
@@ -196,10 +196,10 @@ func GetMahasiswaCoursesByDay(c *gin.Context) {
 			SELECT DISTINCT a.student_id, asess.course_id, a.status, a.created_at
 			FROM attendance a
 			JOIN attendance_sessions asess ON a.session_id = asess.id
-			WHERE DATE(a.created_at) = CURDATE()
+			WHERE (a.created_at)::date = CURRENT_DATE
 		) a ON mk.kode = a.course_id AND mmk.mahasiswa_id = a.student_id
-		WHERE mmk.mahasiswa_id = ? 
-			AND mk.hari = ? 
+		WHERE mmk.mahasiswa_id = $1 
+			AND mk.hari = $2 
 			AND mk.deleted_at IS NULL
 		GROUP BY mk.kode, mk.nama, d.name, mk.sks, mk.hari, mk.jam_mulai, mk.jam_selesai, a.status, a.created_at
 		ORDER BY mk.jam_mulai
@@ -232,10 +232,10 @@ func GetMahasiswaCoursesByDay(c *gin.Context) {
 		config.DB.QueryRow(`
 			SELECT EXISTS(
 				SELECT 1 FROM attendance_sessions 
-				WHERE course_id = ? 
+				WHERE course_id = $1 
 					AND status = 'active' 
 					AND expires_at > NOW()
-					AND DATE(created_at) = CURDATE()
+					AND (created_at)::date = CURRENT_DATE
 			)
 		`, kode).Scan(&activeSession)
 
@@ -275,7 +275,7 @@ func GetMahasiswaCourses(c *gin.Context) {
 
 	// Get mahasiswa ID
 	var mahasiswaID int
-	err := config.DB.QueryRow("SELECT id FROM mahasiswa WHERE user_id = ?", userID).Scan(&mahasiswaID)
+	err := config.DB.QueryRow("SELECT id FROM mahasiswa WHERE user_id = $1", userID).Scan(&mahasiswaID)
 	if err != nil {
 		fmt.Printf("Debug: Mahasiswa not found for user_id: %v, error: %v\n", userID, err)
 		utils.ErrorResponse(c, http.StatusNotFound, "Mahasiswa not found")
@@ -286,7 +286,7 @@ func GetMahasiswaCourses(c *gin.Context) {
 
 	// Debug: Hitung total mata kuliah yang diambil
 	var totalCourses int
-	config.DB.QueryRow("SELECT COUNT(*) FROM mahasiswa_mata_kuliah WHERE mahasiswa_id = ?", mahasiswaID).Scan(&totalCourses)
+	config.DB.QueryRow("SELECT COUNT(*) FROM mahasiswa_mata_kuliah WHERE mahasiswa_id = $1", mahasiswaID).Scan(&totalCourses)
 	fmt.Printf("Debug: Total courses for mahasiswa_id %d: %d\n", mahasiswaID, totalCourses)
 
 	rows, err := config.DB.Query(`
@@ -294,7 +294,7 @@ func GetMahasiswaCourses(c *gin.Context) {
 		FROM mata_kuliah mk
 		JOIN dosen d ON mk.dosen_id = d.id
 		JOIN mahasiswa_mata_kuliah mmk ON mk.kode = mmk.mata_kuliah_kode
-		WHERE mmk.mahasiswa_id = ? AND mk.deleted_at IS NULL
+		WHERE mmk.mahasiswa_id = $1 AND mk.deleted_at IS NULL
 		ORDER BY mk.nama
 	`, mahasiswaID)
 	
@@ -379,7 +379,7 @@ func GetMahasiswaJadwalHariIni(c *gin.Context) {
 
 	// Get mahasiswa ID
 	var mahasiswaID int
-	err := config.DB.QueryRow("SELECT id FROM mahasiswa WHERE user_id = ?", userID).Scan(&mahasiswaID)
+	err := config.DB.QueryRow("SELECT id FROM mahasiswa WHERE user_id = $1", userID).Scan(&mahasiswaID)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusNotFound, "Mahasiswa not found")
 		return
@@ -415,7 +415,7 @@ func GetMahasiswaJadwalHariIni(c *gin.Context) {
 			mk.jam_mulai, 
 			mk.jam_selesai,
 			COALESCE(a.status, 'belum_absen') as status_absen,
-			COALESCE(TIME_FORMAT(a.created_at, '%H:%i'), '') as waktu_absen,
+			COALESCE(TO_CHAR(a.created_at, 'HH24:MI'), '') as waktu_absen,
 			a.pertemuan_ke,
 			asess.session_code
 		FROM mata_kuliah mk
@@ -425,14 +425,14 @@ func GetMahasiswaJadwalHariIni(c *gin.Context) {
 			SELECT DISTINCT a.student_id, asess.course_id, a.status, a.created_at, a.pertemuan_ke
 			FROM attendance a
 			JOIN attendance_sessions asess ON a.session_id = asess.id
-			WHERE DATE(a.created_at) = CURDATE() AND a.student_id = ?
+			WHERE (a.created_at)::date = CURRENT_DATE AND a.student_id = $1
 		) a ON mk.kode = a.course_id AND mmk.mahasiswa_id = a.student_id
 		LEFT JOIN attendance_sessions asess ON mk.kode = asess.course_id 
 			AND asess.status = 'active' 
 			AND asess.expires_at > NOW()
-			AND DATE(asess.created_at) = CURDATE()
-		WHERE mmk.mahasiswa_id = ? 
-			AND mk.hari = ? 
+			AND (asess.created_at)::date = CURRENT_DATE
+		WHERE mmk.mahasiswa_id = $2 
+			AND mk.hari = $3 
 			AND mk.deleted_at IS NULL
 		ORDER BY mk.jam_mulai
 	`
@@ -525,7 +525,7 @@ func ScanAttendance(c *gin.Context) {
 
 	// Get mahasiswa ID
 	var mahasiswaID int
-	err := config.DB.QueryRow("SELECT id FROM mahasiswa WHERE user_id = ?", userID).Scan(&mahasiswaID)
+	err := config.DB.QueryRow("SELECT id FROM mahasiswa WHERE user_id = $1", userID).Scan(&mahasiswaID)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusNotFound, "Mahasiswa not found")
 		return
@@ -549,10 +549,10 @@ func ScanAttendance(c *gin.Context) {
 		       asess.expires_at, mk.hari, mk.jam_mulai, mk.jam_selesai, asess.status
 		FROM attendance_sessions asess
 		JOIN mata_kuliah mk ON asess.course_id = mk.kode
-		WHERE asess.session_token = ? 
+		WHERE asess.session_token = $1 
 			AND asess.status = 'active' 
 			AND asess.expires_at > NOW()
-			AND asess.course_id = ?
+			AND asess.course_id = $2
 	`, input.SessionToken, input.CourseID).Scan(
 		&session.ID, &session.CourseID, &session.DosenID, &session.PertemuanKe,
 		&session.ExpiresAt, &session.CourseDay, &session.CourseStart, &session.CourseEnd, &session.Status)
@@ -573,7 +573,7 @@ func ScanAttendance(c *gin.Context) {
 	err = config.DB.QueryRow(`
 		SELECT EXISTS(
 			SELECT 1 FROM mahasiswa_mata_kuliah 
-			WHERE mahasiswa_id = ? AND mata_kuliah_kode = ?
+			WHERE mahasiswa_id = $1 AND mata_kuliah_kode = $2
 		)
 	`, mahasiswaID, session.CourseID).Scan(&enrolled)
 
@@ -635,17 +635,17 @@ func ScanAttendance(c *gin.Context) {
 		SELECT EXISTS(
 			SELECT 1 FROM attendance a
 			JOIN attendance_sessions asess ON a.session_id = asess.id
-			WHERE a.student_id = ? 
-				AND asess.course_id = ? 
-				AND asess.pertemuan_ke = ?
-				AND DATE(a.created_at) = CURDATE()
+			WHERE a.student_id = $1 
+				AND asess.course_id = $2 
+				AND asess.pertemuan_ke = $3
+				AND (a.created_at)::date = CURRENT_DATE
 		), COALESCE(a.status, '')
 		FROM attendance a
 		JOIN attendance_sessions asess ON a.session_id = asess.id
-		WHERE a.student_id = ? 
-			AND asess.course_id = ? 
-			AND asess.pertemuan_ke = ?
-			AND DATE(a.created_at) = CURDATE()
+		WHERE a.student_id = $4 
+			AND asess.course_id = $5 
+			AND asess.pertemuan_ke = $6
+			AND (a.created_at)::date = CURRENT_DATE
 		LIMIT 1
 	`, mahasiswaID, session.CourseID, session.PertemuanKe,
 		mahasiswaID, session.CourseID, session.PertemuanKe).Scan(&alreadyAttended, &existingStatus)
@@ -659,7 +659,7 @@ func ScanAttendance(c *gin.Context) {
 
 	// Get student code (nim)
 	var studentCode string
-	err = config.DB.QueryRow("SELECT nim FROM mahasiswa WHERE id = ?", mahasiswaID).Scan(&studentCode)
+	err = config.DB.QueryRow("SELECT nim FROM mahasiswa WHERE id = $1", mahasiswaID).Scan(&studentCode)
 	if err != nil {
 		studentCode = fmt.Sprintf("MHS-%d", mahasiswaID)
 	}
@@ -667,7 +667,7 @@ func ScanAttendance(c *gin.Context) {
 	// Insert attendance dengan status hadir dan pertemuan_ke
 	_, err = config.DB.Exec(`
 		INSERT INTO attendance (student_id, session_id, student_code, status, pertemuan_ke, created_at)
-		VALUES (?, ?, ?, 'hadir', ?, NOW())
+		VALUES ($1, $2, $3, 'hadir', $4, NOW())
 	`, mahasiswaID, session.ID, studentCode, session.PertemuanKe)
 
 	if err != nil {
@@ -681,13 +681,13 @@ func ScanAttendance(c *gin.Context) {
 		(student_id, nim, student_name, session_id, course_id, course_name, status, 
 		 attendance_date, attendance_time, dosen_name, hari, jam_mulai, jam_selesai)
 		SELECT 
-			m.id, m.nim, m.name, ?, mk.kode, mk.nama, 'hadir',
-			CURDATE(), NOW(), d.name, mk.hari, mk.jam_mulai, mk.jam_selesai
+			m.id, m.nim, m.name, $1, mk.kode, mk.nama, 'hadir',
+			CURRENT_DATE, NOW(), d.name, mk.hari, mk.jam_mulai, mk.jam_selesai
 		FROM mahasiswa m
-		JOIN mata_kuliah mk ON mk.kode = ?
+		JOIN mata_kuliah mk ON mk.kode = $2
 		JOIN dosen d ON mk.dosen_id = d.id
-		WHERE m.id = ?
-		ON DUPLICATE KEY UPDATE
+		WHERE m.id = $3
+		ON CONFLICT (student_id, session_id) DO UPDATE SET
 			status = 'hadir',
 			attendance_time = NOW()
 	`, session.ID, session.CourseID, mahasiswaID)
@@ -698,7 +698,7 @@ func ScanAttendance(c *gin.Context) {
 		SELECT mk.nama, d.name 
 		FROM mata_kuliah mk
 		JOIN dosen d ON mk.dosen_id = d.id
-		WHERE mk.kode = ?
+		WHERE mk.kode = $1
 	`, session.CourseID).Scan(&courseName, &dosenName)
 
 	utils.SuccessResponse(c, gin.H{
@@ -730,7 +730,7 @@ func GetAttendanceHistoryByCourse(c *gin.Context) {
 
 	// Get mahasiswa ID
 	var mahasiswaID int
-	err := config.DB.QueryRow("SELECT id FROM mahasiswa WHERE user_id = ?", userID).Scan(&mahasiswaID)
+	err := config.DB.QueryRow("SELECT id FROM mahasiswa WHERE user_id = $1", userID).Scan(&mahasiswaID)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusNotFound, "Mahasiswa not found")
 		return
@@ -740,17 +740,17 @@ func GetAttendanceHistoryByCourse(c *gin.Context) {
 	query := `
 		SELECT 
 			a.id, mk.nama as mata_kuliah, d.name as dosen, a.status, a.pertemuan_ke,
-			DATE_FORMAT(a.created_at, '%d %M %Y') as tanggal,
-			TIME_FORMAT(a.created_at, '%H:%i') as jam,
+			TO_CHAR(a.created_at, 'DD Month YYYY') as tanggal,
+			TO_CHAR(a.created_at, 'HH24:MI') as jam,
 			mk.kode as course_code,
 			asess.session_code,
-			DATE(a.created_at) as tanggal_raw
+			(a.created_at)::date as tanggal_raw
 		FROM attendance a
 		JOIN attendance_sessions asess ON a.session_id = asess.id
 		JOIN mata_kuliah mk ON asess.course_id = mk.kode
 		JOIN dosen d ON mk.dosen_id = d.id
-		WHERE a.student_id = ? 
-			AND mk.kode = ?
+		WHERE a.student_id = $1 
+			AND mk.kode = $2
 		ORDER BY a.created_at DESC
 		LIMIT 50
 	`
@@ -798,7 +798,7 @@ func GetAttendanceHistoryByCourse(c *gin.Context) {
 			SUM(CASE WHEN a.status = 'alpa' THEN 1 ELSE 0 END) as alpa
 		FROM attendance a
 		JOIN attendance_sessions asess ON a.session_id = asess.id
-		WHERE a.student_id = ? AND asess.course_id = ?
+		WHERE a.student_id = $1 AND asess.course_id = $2
 	`, mahasiswaID, courseID).Scan(&totalSessions, &hadirCount, &izinCount, &sakitCount, &alpaCount)
 
 	if err != nil {
@@ -811,7 +811,7 @@ func GetAttendanceHistoryByCourse(c *gin.Context) {
 	err = config.DB.QueryRow(`
 		SELECT nama, hari, jam_mulai, jam_selesai 
 		FROM mata_kuliah 
-		WHERE kode = ?
+		WHERE kode = $1
 	`, courseID).Scan(&courseName, &hari, &jamMulai, &jamSelesai)
 	
 	if err != nil {
@@ -852,7 +852,7 @@ func GetAttendanceHistory(c *gin.Context) {
 
 	// Get mahasiswa ID
 	var mahasiswaID int
-	err := config.DB.QueryRow("SELECT id FROM mahasiswa WHERE user_id = ?", userID).Scan(&mahasiswaID)
+	err := config.DB.QueryRow("SELECT id FROM mahasiswa WHERE user_id = $1", userID).Scan(&mahasiswaID)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusNotFound, "Mahasiswa not found")
 		return
@@ -873,8 +873,8 @@ func GetAttendanceHistory(c *gin.Context) {
 			d.name as dosen,
 			a.status,
 			a.pertemuan_ke,
-			DATE_FORMAT(a.created_at, '%d %M %Y') as tanggal,
-			TIME_FORMAT(a.created_at, '%H:%i') as jam,
+			TO_CHAR(a.created_at, 'DD Month YYYY') as tanggal,
+			TO_CHAR(a.created_at, 'HH24:MI') as jam,
 			asess.session_code,
 			mk.hari,
 			mk.jam_mulai,
@@ -883,13 +883,13 @@ func GetAttendanceHistory(c *gin.Context) {
 		JOIN attendance_sessions asess ON a.session_id = asess.id
 		JOIN mata_kuliah mk ON asess.course_id = mk.kode
 		JOIN dosen d ON mk.dosen_id = d.id
-		WHERE a.student_id = ?
+		WHERE a.student_id = $1
 	`
 
 	args := []interface{}{mahasiswaID}
 	
 	if status != "all" {
-		query += " AND a.status = ?"
+		query += " AND a.status = $2"
 		args = append(args, status)
 	}
 
@@ -939,11 +939,11 @@ func GetAttendanceHistory(c *gin.Context) {
 			SUM(CASE WHEN a.status = 'sakit' THEN 1 ELSE 0 END) as sakit,
 			SUM(CASE WHEN a.status = 'alpa' THEN 1 ELSE 0 END) as alpa
 		FROM attendance a
-		WHERE a.student_id = ?
+		WHERE a.student_id = $1
 	`
 	
 	if status != "all" {
-		summaryQuery += " AND a.status = ?"
+		summaryQuery += " AND a.status = $2"
 		err = config.DB.QueryRow(summaryQuery, mahasiswaID, status).Scan(&totalSessions, &hadirCount, &izinCount, &sakitCount, &alpaCount)
 	} else {
 		err = config.DB.QueryRow(summaryQuery, mahasiswaID).Scan(&totalSessions, &hadirCount, &izinCount, &sakitCount, &alpaCount)
@@ -986,7 +986,7 @@ func GetAttendanceSummary(c *gin.Context) {
 
 	// Get mahasiswa ID
 	var mahasiswaID int
-	err := config.DB.QueryRow("SELECT id FROM mahasiswa WHERE user_id = ?", userID).Scan(&mahasiswaID)
+	err := config.DB.QueryRow("SELECT id FROM mahasiswa WHERE user_id = $1", userID).Scan(&mahasiswaID)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusNotFound, "Mahasiswa not found")
 		return
@@ -1010,8 +1010,8 @@ func GetAttendanceSummary(c *gin.Context) {
         ON mk.kode = asess.course_id
     LEFT JOIN attendance a 
         ON asess.id = a.session_id 
-        AND a.student_id = ?
-    WHERE mmk.mahasiswa_id = ?
+        AND a.student_id = $1
+    WHERE mmk.mahasiswa_id = $2
     GROUP BY mk.kode, mk.nama, d.name
     ORDER BY mk.nama
 `, mahasiswaID, mahasiswaID)
@@ -1066,7 +1066,7 @@ func GetAllPertemuanAttendance(c *gin.Context) {
 
 	// Get mahasiswa ID
 	var mahasiswaID int
-	err := config.DB.QueryRow("SELECT id FROM mahasiswa WHERE user_id = ?", userID).Scan(&mahasiswaID)
+	err := config.DB.QueryRow("SELECT id FROM mahasiswa WHERE user_id = $1", userID).Scan(&mahasiswaID)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusNotFound, "Mahasiswa not found")
 		return
@@ -1080,14 +1080,14 @@ func GetAllPertemuanAttendance(c *gin.Context) {
 			mk.nama as course_name,
 			asess.pertemuan_ke,
 			asess.session_code,
-			DATE_FORMAT(asess.created_at, '%Y-%m-%d') as tanggal,
+			TO_CHAR(asess.created_at, 'YYYY-MM-DD') as tanggal,
 			asess.status as session_status,
 			COALESCE(a.status, 'belum_absen') as my_status,
-			COALESCE(TIME_FORMAT(a.created_at, '%H:%i'), '') as my_time
+			COALESCE(TO_CHAR(a.created_at, 'HH24:MI'), '') as my_time
 		FROM attendance_sessions asess
 		JOIN mata_kuliah mk ON mk.kode = asess.course_id
 		WHERE asess.course_id IN (
-			SELECT mmk.mata_kuliah_kode FROM mahasiswa_mata_kuliah mmk WHERE mmk.mahasiswa_id = ?
+			SELECT mmk.mata_kuliah_kode FROM mahasiswa_mata_kuliah mmk WHERE mmk.mahasiswa_id = $1
 		)
 		ORDER BY asess.created_at DESC
 	`
@@ -1144,7 +1144,7 @@ func GetAttendanceByCoursePertemuan(c *gin.Context) {
 
 	// Get mahasiswa ID
 	var mahasiswaID int
-	err := config.DB.QueryRow("SELECT id FROM mahasiswa WHERE user_id = ?", userID).Scan(&mahasiswaID)
+	err := config.DB.QueryRow("SELECT id FROM mahasiswa WHERE user_id = $1", userID).Scan(&mahasiswaID)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusNotFound, "Mahasiswa not found")
 		return
@@ -1157,19 +1157,19 @@ func GetAttendanceByCoursePertemuan(c *gin.Context) {
 			mk.nama as course_name,
 			asess.pertemuan_ke,
 			asess.session_code,
-			DATE_FORMAT(asess.created_at, '%Y-%m-%d') as tanggal,
+			TO_CHAR(asess.created_at, 'YYYY-MM-DD') as tanggal,
 			asess.status as session_status,
 			COALESCE(a.status, 'belum_absen') as my_status,
-			COALESCE(TIME_FORMAT(a.created_at, '%H:%i'), '') as my_time
+			COALESCE(TO_CHAR(a.created_at, 'HH24:MI'), '') as my_time
 		FROM attendance_sessions asess
 		JOIN mata_kuliah mk ON mk.kode = asess.course_id
-		LEFT JOIN attendance a ON a.session_id = asess.id AND a.student_id = ?
-		WHERE asess.course_id = ?
+		LEFT JOIN attendance a ON a.session_id = asess.id AND a.student_id = $1
+		WHERE asess.course_id = $2
 	`
 
 	args := []interface{}{mahasiswaID, courseID}
 	if pertemuanKe != "" {
-		query += " AND asess.pertemuan_ke = ?"
+		query += " AND asess.pertemuan_ke = $3"
 		args = append(args, pertemuanKe)
 	}
 	query += " ORDER BY asess.pertemuan_ke DESC"
@@ -1218,7 +1218,7 @@ func GetUKTInvoices(c *gin.Context) {
 
 	// Get mahasiswa ID
 	var mahasiswaID int
-	err := config.DB.QueryRow("SELECT id FROM mahasiswa WHERE user_id = ?", userID).Scan(&mahasiswaID)
+	err := config.DB.QueryRow("SELECT id FROM mahasiswa WHERE user_id = $1", userID).Scan(&mahasiswaID)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusNotFound, "Mahasiswa not found")
 		return
@@ -1227,7 +1227,7 @@ func GetUKTInvoices(c *gin.Context) {
 	rows, err := config.DB.Query(`
 		SELECT id, amount, uuid, status, created_at
 		FROM ukt_invoices
-		WHERE student_id = ?
+		WHERE student_id = $1
 		ORDER BY created_at DESC
 	`, mahasiswaID)
 
@@ -1277,7 +1277,7 @@ func CreateUKTPayment(c *gin.Context) {
 
 	// Get mahasiswa ID
 	var mahasiswaID int
-	err := config.DB.QueryRow("SELECT id FROM mahasiswa WHERE user_id = ?", userID).Scan(&mahasiswaID)
+	err := config.DB.QueryRow("SELECT id FROM mahasiswa WHERE user_id = $1", userID).Scan(&mahasiswaID)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusNotFound, "Mahasiswa not found")
 		return
@@ -1288,7 +1288,7 @@ func CreateUKTPayment(c *gin.Context) {
 	err = config.DB.QueryRow(`
 		SELECT EXISTS(
 			SELECT 1 FROM ukt_invoices
-			WHERE id = ? AND student_id = ?
+			WHERE id = $1 AND student_id = $2
 		)
 	`, input.InvoiceID, mahasiswaID).Scan(&invoiceExists)
 
@@ -1301,7 +1301,7 @@ func CreateUKTPayment(c *gin.Context) {
 	_, err = config.DB.Exec(`
 		UPDATE ukt_invoices
 		SET status = 'paid', updated_at = NOW()
-		WHERE id = ?
+		WHERE id = $1
 	`, input.InvoiceID)
 
 	if err != nil {
@@ -1336,7 +1336,7 @@ func SubmitTugas(c *gin.Context) {
 
 	// Get mahasiswa ID
 	var mahasiswaID int
-	err = config.DB.QueryRow("SELECT id FROM mahasiswa WHERE user_id = ?", userID).Scan(&mahasiswaID)
+	err = config.DB.QueryRow("SELECT id FROM mahasiswa WHERE user_id = $1", userID).Scan(&mahasiswaID)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusNotFound, "Mahasiswa not found")
 		return
@@ -1379,14 +1379,14 @@ func SubmitTugas(c *gin.Context) {
 	// Periksa apakah submission sudah ada
 	var existingSubmissionID int
 	var existingFileURL string
-	checkQuery := `SELECT id, file_url FROM submissions WHERE task_id = ? AND student_id = ?`
+	checkQuery := `SELECT id, file_url FROM submissions WHERE task_id = $1 AND student_id = $2`
 	err = config.DB.QueryRow(checkQuery, taskID, mahasiswaID).Scan(&existingSubmissionID, &existingFileURL)
 
 	// Insert atau update submission
 	if err != nil {
 		// Insert baru
 		query := `INSERT INTO submissions (task_id, student_id, file_url, answer_text, created_at) 
-				  VALUES (?, ?, ?, ?, NOW())`
+				  VALUES ($1, $2, $3, $4, NOW())`
 		_, err = config.DB.Exec(query, taskID, mahasiswaID, fileURL, answerText)
 	} else {
 		// Update existing
@@ -1396,8 +1396,8 @@ func SubmitTugas(c *gin.Context) {
 			finalFileURL = existingFileURL
 		}
 
-		query := `UPDATE submissions SET file_url = ?, answer_text = ?, updated_at = NOW() 
-				  WHERE id = ?`
+		query := `UPDATE submissions SET file_url = $1, answer_text = $2, updated_at = NOW() 
+				  WHERE id = $3`
 		_, err = config.DB.Exec(query, finalFileURL, answerText, existingSubmissionID)
 	}
 
@@ -1421,7 +1421,7 @@ func GetSubmissionStatus(c *gin.Context) {
 
 	// Get mahasiswa ID
 	var mahasiswaID int
-	err := config.DB.QueryRow("SELECT id FROM mahasiswa WHERE user_id = ?", userID).Scan(&mahasiswaID)
+	err := config.DB.QueryRow("SELECT id FROM mahasiswa WHERE user_id = $1", userID).Scan(&mahasiswaID)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusNotFound, "Mahasiswa not found")
 		return
@@ -1438,7 +1438,7 @@ func GetSubmissionStatus(c *gin.Context) {
 	err = config.DB.QueryRow(`
 		SELECT id, COALESCE(file_url, ''), COALESCE(answer_text, ''), COALESCE(grade, 0), created_at
 		FROM submissions 
-		WHERE task_id = ? AND student_id = ?
+		WHERE task_id = $1 AND student_id = $2
 	`, taskID, mahasiswaID).Scan(&submission.ID, &submission.FileURL, &submission.AnswerText, &submission.Grade, &submission.CreatedAt)
 
 	if err != nil {
@@ -1463,7 +1463,7 @@ func GetPendingTugas(c *gin.Context) {
 
 	// Get mahasiswa ID
 	var mahasiswaID int
-	err := config.DB.QueryRow("SELECT id FROM mahasiswa WHERE user_id = ?", userID).Scan(&mahasiswaID)
+	err := config.DB.QueryRow("SELECT id FROM mahasiswa WHERE user_id = $1", userID).Scan(&mahasiswaID)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusNotFound, "Mahasiswa not found")
 		return
@@ -1479,19 +1479,19 @@ func GetPendingTugas(c *gin.Context) {
 			COALESCE(t.description, '') AS description,
 			COALESCE(t.file_tugas, '') AS file_tugas,
 			t.due_date,
-			DATEDIFF(t.due_date, NOW()) AS days_remaining,
+			((t.due_date)::date - CURRENT_DATE) AS days_remaining,
 			CASE WHEN t.due_date < NOW() THEN 1 ELSE 0 END AS is_overdue,
 			t.created_at
 		FROM tugas t
 		JOIN mata_kuliah mk ON t.course_id = mk.kode
 		JOIN mahasiswa_mata_kuliah mmk ON mmk.mata_kuliah_kode = t.course_id
-		WHERE mmk.mahasiswa_id = ?
+		WHERE mmk.mahasiswa_id = $1
 			AND t.type = 'tugas'
 			AND t.deleted_at IS NULL
 			AND t.due_date IS NOT NULL
 			AND NOT EXISTS (
 				SELECT 1 FROM submissions s 
-				WHERE s.task_id = t.id AND s.student_id = ?
+				WHERE s.task_id = t.id AND s.student_id = $2
 			)
 		ORDER BY t.due_date ASC
 	`
@@ -1552,7 +1552,7 @@ func GetMahasiswaTugasList(c *gin.Context) {
 
 	// Get mahasiswa ID
 	var mahasiswaID int
-	err := config.DB.QueryRow("SELECT id FROM mahasiswa WHERE user_id = ?", userID).Scan(&mahasiswaID)
+	err := config.DB.QueryRow("SELECT id FROM mahasiswa WHERE user_id = $1", userID).Scan(&mahasiswaID)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusNotFound, "Mahasiswa not found")
 		return
@@ -1575,8 +1575,8 @@ func GetMahasiswaTugasList(c *gin.Context) {
 		FROM tugas t
 		JOIN mata_kuliah mk ON t.course_id = mk.kode
 		JOIN mahasiswa_mata_kuliah mmk ON mmk.mata_kuliah_kode = t.course_id
-		LEFT JOIN submissions s ON s.task_id = t.id AND s.student_id = ?
-		WHERE mmk.mahasiswa_id = ?
+		LEFT JOIN submissions s ON s.task_id = t.id AND s.student_id = $1
+		WHERE mmk.mahasiswa_id = $2
 			AND t.deleted_at IS NULL
 		ORDER BY t.created_at DESC
 	`
@@ -1656,7 +1656,7 @@ func GetMahasiswaTugasByCourse(c *gin.Context) {
 
 	// Get mahasiswa ID
 	var mahasiswaID int
-	err := config.DB.QueryRow("SELECT id FROM mahasiswa WHERE user_id = ?", userID).Scan(&mahasiswaID)
+	err := config.DB.QueryRow("SELECT id FROM mahasiswa WHERE user_id = $1", userID).Scan(&mahasiswaID)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusNotFound, "Mahasiswa not found")
 		return
@@ -1664,7 +1664,7 @@ func GetMahasiswaTugasByCourse(c *gin.Context) {
 
 	// Verify enrollment
 	var enrolled bool
-	err = config.DB.QueryRow("SELECT EXISTS(SELECT 1 FROM mahasiswa_mata_kuliah WHERE mahasiswa_id = ? AND mata_kuliah_kode = ?)", mahasiswaID, courseID).Scan(&enrolled)
+	err = config.DB.QueryRow("SELECT EXISTS(SELECT 1 FROM mahasiswa_mata_kuliah WHERE mahasiswa_id = $1 AND mata_kuliah_kode = $2)", mahasiswaID, courseID).Scan(&enrolled)
 	if err != nil || !enrolled {
 		utils.ErrorResponse(c, http.StatusForbidden, "Not enrolled in this course")
 		return
@@ -1684,8 +1684,8 @@ func GetMahasiswaTugasByCourse(c *gin.Context) {
 			s.id AS submission_id,
 			s.grade
 		FROM tugas t
-		LEFT JOIN submissions s ON s.task_id = t.id AND s.student_id = ?
-		WHERE t.course_id = ?
+		LEFT JOIN submissions s ON s.task_id = t.id AND s.student_id = $1
+		WHERE t.course_id = $2
 			AND t.deleted_at IS NULL
 		ORDER BY t.created_at DESC
 	`

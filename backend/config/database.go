@@ -6,8 +6,8 @@ import (
 	"log"
 	"os"
 
-	_ "github.com/go-sql-driver/mysql"
-	"gorm.io/driver/mysql"
+	_ "github.com/jackc/pgx/v5/stdlib"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
@@ -18,15 +18,15 @@ var DB *sql.DB
 // GormDB is the GORM *gorm.DB instance for ORM usage
 var GormDB *gorm.DB
 
-// InitDB initializes both *sql.DB and *gorm.DB connections using MySQL
+// InitDB initializes both *sql.DB and *gorm.DB connections using PostgreSQL (Supabase)
 func InitDB() {
 	dsn := os.Getenv("DB_DSN")
 	if dsn == "" {
-		dsn = "root:@tcp(127.0.0.1:3306)/nf_student_hub3?parseTime=true"
+		log.Fatal("DB_DSN environment variable is required for PostgreSQL connection")
 	}
 
-	// Initialize GORM
-	gdb, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
+	// Initialize GORM with PostgreSQL driver
+	gdb, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Silent),
 	})
 	if err != nil {
@@ -48,5 +48,5 @@ func InitDB() {
 	GormDB = gdb
 	DB = sqlDB
 
-	fmt.Println("Database connected successfully")
+	fmt.Println("Database connected successfully (PostgreSQL/Supabase)")
 }

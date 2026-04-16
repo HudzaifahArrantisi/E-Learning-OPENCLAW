@@ -33,7 +33,7 @@ func DebugProfiles(c *gin.Context) {
         query := `
             SELECT COUNT(*) as count 
             FROM ` + table + ` 
-            WHERE user_id = ? AND deleted_at IS NULL
+            WHERE user_id = $1 AND deleted_at IS NULL
         `
         var count int
         err := config.DB.QueryRow(query, userID).Scan(&count)
@@ -47,7 +47,7 @@ func DebugProfiles(c *gin.Context) {
             detailQuery := `
                 SELECT id, user_id, name, username 
                 FROM ` + table + ` 
-                WHERE user_id = ? AND deleted_at IS NULL
+                WHERE user_id = $1 AND deleted_at IS NULL
             `
             var id, userID int
             var name, username string

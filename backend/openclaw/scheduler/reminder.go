@@ -97,7 +97,7 @@ func (s *Scheduler) getActiveTasks() ([]ReminderTask, error) {
 		WHERE t.type = 'tugas'
 			AND t.deleted_at IS NULL
 			AND t.due_date IS NOT NULL
-			AND t.due_date >= CURDATE()
+			AND t.due_date >= CURRENT_DATE
 		ORDER BY t.due_date ASC
 	`
 
@@ -198,9 +198,9 @@ func (s *Scheduler) getPendingStudentCount(tugasID int, courseID string) (int, e
 	err := s.DB.QueryRow(`
 		SELECT COUNT(DISTINCT mmk.mahasiswa_id)
 		FROM mahasiswa_mata_kuliah mmk
-		WHERE mmk.mata_kuliah_kode = ?
+		WHERE mmk.mata_kuliah_kode = $1
 			AND mmk.mahasiswa_id NOT IN (
-				SELECT s.student_id FROM submissions s WHERE s.task_id = ?
+				SELECT s.student_id FROM submissions s WHERE s.task_id = $2
 			)
 	`, courseID, tugasID).Scan(&count)
 

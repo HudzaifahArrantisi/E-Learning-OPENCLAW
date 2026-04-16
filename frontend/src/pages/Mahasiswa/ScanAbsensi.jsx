@@ -236,7 +236,7 @@ const ScanAbsensi = () => {
       'izin': { color: 'bg-yellow-100 text-yellow-800', label: 'Izin', icon: 'i' },
       'sakit': { color: 'bg-blue-100 text-blue-800', label: 'Sakit', icon: '⚕' },
       'alpa': { color: 'bg-red-100 text-red-800', label: 'Alpa', icon: '✗' },
-      'belum_absen': { color: 'bg-gray-100 text-gray-800', label: 'Belum Absen', icon: '...' }
+      'belum_absen': { color: 'bg-gray-100 text-lp-text font-semibold tracking-tight', label: 'Belum Absen', icon: '...' }
     }
     
     const config = statusConfig[status] || statusConfig['belum_absen']
@@ -260,17 +260,17 @@ const ScanAbsensi = () => {
     const sixtyAfter = new Date(endTime.getTime() + 60 * 60000)
     
     if (now < fifteenBefore) {
-      return <span className="text-xs text-gray-500 flex items-center gap-1"><FaClock /> Buka 15 menit sebelum kelas</span>
+      return <span className="text-xs text-lp-text3 font-light flex items-center gap-1"><FaClock /> Buka 15 menit sebelum kelas</span>
     } else if (now > sixtyAfter) {
       return <span className="text-xs text-red-500 flex items-center gap-1"><FaStopCircle /> Waktu absen habis</span>
     } else if (course.can_scan) {
-      return <span className="text-xs text-green-500 flex items-center gap-1"><FaCheckCircle /> Bisa absen sekarang</span>
+      return <span className="text-xs text-lp-green flex items-center gap-1"><FaCheckCircle /> Bisa absen sekarang</span>
     }
     return null
   }
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="flex h-screen bg-lp-bg">
       <Sidebar role="mahasiswa" isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -279,15 +279,15 @@ const ScanAbsensi = () => {
         <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
           <div className="max-w-7xl mx-auto">
             <div className="mb-8">
-              <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-2">Scan Absensi</h1>
-              <p className="text-gray-600">Lakukan absensi sesuai jadwal kuliah Anda</p>
+              <h1 className="text-2xl md:text-3xl font-bold text-lp-text font-semibold tracking-tight mb-2">Scan Absensi</h1>
+              <p className="text-lp-text2 font-light">Lakukan absensi sesuai jadwal kuliah Anda</p>
             </div>
 
             {/* Filter Hari */}
-            <div className="bg-white rounded-2xl p-4 mb-6 shadow-lg border border-gray-100">
+            <div className="bg-lp-surface rounded-2xl p-4 mb-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border border border-lp-border border">
               <div className="flex items-center gap-2 mb-4">
-                <FaFilter className="text-blue-600" />
-                <h3 className="text-lg font-semibold text-gray-800">Filter Hari</h3>
+                <FaFilter className="text-lp-atext" />
+                <h3 className="text-lg font-semibold text-lp-text font-semibold tracking-tight">Filter Hari</h3>
               </div>
               <div className="flex flex-wrap gap-2">
                 {days.map((day) => (
@@ -296,15 +296,15 @@ const ScanAbsensi = () => {
                     onClick={() => setSelectedDay(day)}
                     className={`px-4 py-2 rounded-lg font-medium transition-all ${
                       selectedDay === day 
-                        ? 'bg-blue-600 text-white shadow-md' 
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        ? 'bg-lp-accent text-white shadow-sm border border-lp-border' 
+                        : 'bg-gray-100 text-lp-text2 hover:bg-gray-200'
                     }`}
                   >
                     {day}
                   </button>
                 ))}
               </div>
-              <p className="text-sm text-gray-500 mt-3">
+              <p className="text-sm text-lp-text3 font-light mt-3">
                 Menampilkan mata kuliah untuk hari: <span className="font-semibold">{selectedDay}</span>
               </p>
             </div>
@@ -314,7 +314,7 @@ const ScanAbsensi = () => {
               <div className={`mb-6 p-4 rounded-xl ${scanResult.success ? 'bg-green-100 border border-green-200' : 'bg-red-100 border border-red-200'}`}>
                 <div className="flex items-center">
                   {scanResult.success ? (
-                    <FaCheckCircle className="text-green-600 text-xl mr-3" />
+                    <FaCheckCircle className="text-lp-green text-xl mr-3" />
                   ) : (
                     <FaTimesCircle className="text-red-600 text-xl mr-3" />
                   )}
@@ -338,15 +338,15 @@ const ScanAbsensi = () => {
             )}
 
             {/* Mata Kuliah List */}
-            <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 mb-8">
+            <div className="bg-lp-surface rounded-2xl p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border border border-lp-border border mb-8">
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center space-x-3">
                   <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
-                    <FaCalendarWeek className="text-blue-600 text-lg" />
+                    <FaCalendarWeek className="text-lp-atext text-lg" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-gray-800">Mata Kuliah {selectedDay}</h3>
-                    <p className="text-sm text-gray-600">
+                    <h3 className="text-xl font-bold text-lp-text font-semibold tracking-tight">Mata Kuliah {selectedDay}</h3>
+                    <p className="text-sm text-lp-text2 font-light">
                       {coursesByDay?.hari || selectedDay}, {coursesByDay?.date ? 
                         new Date(coursesByDay.date).toLocaleDateString('id-ID', { 
                           day: 'numeric', 
@@ -362,7 +362,7 @@ const ScanAbsensi = () => {
                 </div>
                 <button
                   onClick={() => refetchCoursesByDay()}
-                  className="text-blue-600 hover:text-blue-800 p-2 rounded-lg hover:bg-blue-50"
+                  className="text-lp-atext hover:text-blue-800 p-2 rounded-lg hover:bg-blue-50"
                 >
                   <FaClock className="text-lg" />
                 </button>
@@ -371,26 +371,26 @@ const ScanAbsensi = () => {
               {loadingCoursesByDay ? (
                 <div className="text-center py-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                  <p className="mt-2 text-gray-600">Memuat jadwal...</p>
+                  <p className="mt-2 text-lp-text2 font-light">Memuat jadwal...</p>
                 </div>
               ) : coursesByDay?.courses && coursesByDay.courses.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {coursesByDay.courses.map((course, index) => (
-                    <div key={index} className={`border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow ${
+                    <div key={index} className={`border border-lp-border border rounded-xl p-4 hover:shadow-sm border border-lp-border transition-shadow ${
                       selectedCourse?.kode === course.kode ? 'ring-2 ring-blue-500 bg-blue-50' : ''
                     }`}>
                       <div className="flex justify-between items-start mb-3">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
-                            <h4 className="font-bold text-gray-800">{course.nama}</h4>
+                            <h4 className="font-bold text-lp-text font-semibold tracking-tight">{course.nama}</h4>
                             {course.active_session && (
                               <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
                                 Sesi Aktif
                               </span>
                             )}
                           </div>
-                          <p className="text-sm text-gray-600">{course.dosen} • {course.sks} SKS</p>
-                          <div className="flex items-center mt-2 text-sm text-gray-500">
+                          <p className="text-sm text-lp-text2 font-light">{course.dosen} • {course.sks} SKS</p>
+                          <div className="flex items-center mt-2 text-sm text-lp-text3 font-light">
                             <FaClock className="mr-2" />
                             <span>{course.jam_mulai} - {course.jam_selesai}</span>
                           </div>
@@ -401,7 +401,7 @@ const ScanAbsensi = () => {
                         <div className="ml-4 flex flex-col items-end">
                           {renderStatusBadge(course.status_absen)}
                           {course.waktu_absen && (
-                            <p className="text-xs text-gray-500 mt-1">
+                            <p className="text-xs text-lp-text3 font-light mt-1">
                               {course.waktu_absen}
                             </p>
                           )}
@@ -413,7 +413,7 @@ const ScanAbsensi = () => {
                         onClick={() => handleCourseSelect(course)}
                         className={`w-full py-2 px-4 rounded-lg font-medium transition-colors ${
                           selectedCourse?.kode === course.kode 
-                            ? 'bg-blue-600 text-white' 
+                            ? 'bg-lp-accent text-white' 
                             : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
                         }`}
                       >
@@ -425,31 +425,31 @@ const ScanAbsensi = () => {
               ) : (
                 <div className="text-center py-8">
                   <div className="text-4xl text-gray-300 mb-4">📚</div>
-                  <h4 className="font-bold text-gray-700 mb-2">Tidak ada mata kuliah {selectedDay}</h4>
-                  <p className="text-gray-500">Pilih hari lain untuk melihat jadwal kuliah</p>
+                  <h4 className="font-bold text-lp-text2 mb-2">Tidak ada mata kuliah {selectedDay}</h4>
+                  <p className="text-lp-text3 font-light">Pilih hari lain untuk melihat jadwal kuliah</p>
                 </div>
               )}
             </div>
 
             {/* Manual Input Section */}
-            <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
+            <div className="bg-lp-surface rounded-2xl p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border border border-lp-border border">
               <div className="flex items-center space-x-3 mb-6">
                 <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
-                  <FaQrcode className="text-green-600 text-lg" />
+                  <FaQrcode className="text-lp-green text-lg" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-800">Input Manual Token</h3>
+                <h3 className="text-xl font-bold text-lp-text font-semibold tracking-tight">Input Manual Token</h3>
               </div>
 
               <form onSubmit={handleScanSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-lp-text2 mb-2">
                       Mata Kuliah
                     </label>
                     <select
                       value={manualInput.course_id}
                       onChange={(e) => setManualInput({...manualInput, course_id: e.target.value})}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
+                      className="w-full px-4 py-3 border border-lp-border border rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-300 bg-lp-bg focus:bg-lp-surface"
                       required
                       disabled={scanAttendanceMutation.isLoading}
                     >
@@ -463,14 +463,14 @@ const ScanAbsensi = () => {
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-lp-text2 mb-2">
                       Token dari QR Code
                     </label>
                     <input
                       type="text"
                       value={manualInput.session_token}
                       onChange={(e) => setManualInput({...manualInput, session_token: e.target.value})}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-300 bg-gray-50 focus:bg-white"
+                      className="w-full px-4 py-3 border border-lp-border border rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-300 bg-lp-bg focus:bg-lp-surface"
                       placeholder="Masukkan token dari QR code dosen"
                       required
                       disabled={scanAttendanceMutation.isLoading}
@@ -481,7 +481,7 @@ const ScanAbsensi = () => {
                 <button
                   type="submit"
                   disabled={scanAttendanceMutation.isLoading || !manualInput.course_id}
-                  className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white py-3 px-6 rounded-xl font-semibold hover:from-green-600 hover:to-green-700 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center space-x-2"
+                  className="w-full bg-lp-bg text-white py-3 px-6 rounded-xl font-semibold hover:from-green-600 hover:to-green-700 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none transition-all duration-300 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl flex items-center justify-center space-x-2"
                 >
                   {scanAttendanceMutation.isLoading ? (
                     <>
@@ -511,11 +511,11 @@ const ScanAbsensi = () => {
       {/* Modal Actions untuk Mata Kuliah Terpilih */}
       {showActionsModal && selectedCourse && (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-6 max-w-md w-full">
+          <div className="bg-lp-surface rounded-2xl p-6 max-w-md w-full">
             <div className="flex justify-between items-center mb-6">
               <div>
-                <h3 className="text-xl font-bold text-gray-800">Aksi untuk Mata Kuliah</h3>
-                <p className="text-sm text-gray-600">
+                <h3 className="text-xl font-bold text-lp-text font-semibold tracking-tight">Aksi untuk Mata Kuliah</h3>
+                <p className="text-sm text-lp-text2 font-light">
                   {selectedCourse.nama} ({selectedCourse.dosen})
                 </p>
               </div>
@@ -524,7 +524,7 @@ const ScanAbsensi = () => {
                   setShowActionsModal(false)
                   setSelectedCourse(null)
                 }}
-                className="text-gray-500 hover:text-gray-700 text-2xl"
+                className="text-lp-text3 font-light hover:text-lp-text2 text-2xl"
               >
                 ✕
               </button>
@@ -536,8 +536,8 @@ const ScanAbsensi = () => {
                 disabled={!selectedCourse.can_scan || isScanning}
                 className={`w-full py-3 px-6 rounded-xl font-semibold transition-all flex items-center justify-center gap-3 ${
                   selectedCourse.can_scan && !isScanning
-                    ? 'bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700'
-                    : 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                    ? 'bg-lp-bg text-white hover:from-green-600 hover:to-green-700'
+                    : 'bg-gray-300 text-lp-text2 font-light cursor-not-allowed'
                 }`}
               >
                 {isScanning ? (
@@ -558,7 +558,7 @@ const ScanAbsensi = () => {
                   setShowHistoryModal(true)
                   setShowActionsModal(false)
                 }}
-                className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 px-6 rounded-xl font-semibold hover:from-blue-600 hover:to-blue-700 transition-all flex items-center justify-center gap-3"
+                className="w-full bg-lp-bg text-white py-3 px-6 rounded-xl font-semibold hover:from-blue-600 hover:to-blue-700 transition-all flex items-center justify-center gap-3"
               >
                 <FaHistory />
                 <span>Lihat Riwayat Absen</span>
@@ -569,23 +569,23 @@ const ScanAbsensi = () => {
                   setShowActionsModal(false)
                   setSelectedCourse(null)
                 }}
-                className="w-full bg-gray-100 text-gray-700 py-3 px-6 rounded-xl font-semibold hover:bg-gray-200 transition-all flex items-center justify-center gap-3"
+                className="w-full bg-gray-100 text-lp-text2 py-3 px-6 rounded-xl font-semibold hover:bg-gray-200 transition-all flex items-center justify-center gap-3"
               >
                 <FaTimesCircle />
                 <span>Batal</span>
               </button>
             </div>
             
-            <div className="mt-6 pt-4 border-t border-gray-200">
-              <p className="text-sm text-gray-600">
+            <div className="mt-6 pt-4 border-t border-lp-border border">
+              <p className="text-sm text-lp-text2 font-light">
                 <strong>Status:</strong> {renderStatusBadge(selectedCourse.status_absen)}
               </p>
               {selectedCourse.waktu_absen && (
-                <p className="text-sm text-gray-600 mt-1">
+                <p className="text-sm text-lp-text2 font-light mt-1">
                   <strong>Waktu Absen:</strong> {selectedCourse.waktu_absen}
                 </p>
               )}
-              <p className="text-sm text-gray-600 mt-1">
+              <p className="text-sm text-lp-text2 font-light mt-1">
                 <strong>Waktu Kelas:</strong> {selectedCourse.jam_mulai} - {selectedCourse.jam_selesai}
               </p>
             </div>
@@ -596,17 +596,17 @@ const ScanAbsensi = () => {
       {/* QR Scanner Modal */}
       {showQRScanner && (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-6 max-w-2xl w-full">
+          <div className="bg-lp-surface rounded-2xl p-6 max-w-2xl w-full">
             <div className="flex justify-between items-center mb-6">
               <div>
-                <h3 className="text-xl font-bold text-gray-800">Scan QR Code</h3>
-                <p className="text-sm text-gray-600">
+                <h3 className="text-xl font-bold text-lp-text font-semibold tracking-tight">Scan QR Code</h3>
+                <p className="text-sm text-lp-text2 font-light">
                   Mata Kuliah: {selectedCourse?.nama} ({selectedCourse?.jam_mulai}-{selectedCourse?.jam_selesai})
                 </p>
               </div>
               <button
                 onClick={stopScanning}
-                className="text-gray-500 hover:text-gray-700 text-2xl"
+                className="text-lp-text3 font-light hover:text-lp-text2 text-2xl"
               >
                 ✕
               </button>
@@ -625,7 +625,7 @@ const ScanAbsensi = () => {
             </div>
             
             <div className="text-center space-y-4">
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-lp-text2 font-light">
                 Arahkan kamera ke QR Code dosen. Scanner akan otomatis mendeteksi.
               </p>
               
@@ -635,7 +635,7 @@ const ScanAbsensi = () => {
                     const token = prompt("Masukkan token QR Code secara manual:")
                     if (token) handleManualToken(token)
                   }}
-                  className="px-6 py-3 border-2 border-blue-600 text-blue-600 rounded-lg font-semibold hover:bg-blue-50 transition-colors"
+                  className="px-6 py-3 border-2 border-blue-600 text-lp-atext rounded-lg font-semibold hover:bg-blue-50 transition-colors"
                 >
                   Input Manual
                 </button>
@@ -649,8 +649,8 @@ const ScanAbsensi = () => {
                 </button>
               </div>
               
-              <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
-                <div className={`w-3 h-3 rounded-full ${isScanning ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
+              <div className="flex items-center justify-center gap-2 text-sm text-lp-text3 font-light">
+                <div className={`w-3 h-3 rounded-full ${isScanning ? 'bg-lp-green animate-pulse' : 'bg-red-500'}`}></div>
                 <span>{isScanning ? 'Scanning aktif' : 'Scanning berhenti'}</span>
               </div>
             </div>
@@ -661,17 +661,17 @@ const ScanAbsensi = () => {
       {/* History Modal */}
       {showHistoryModal && selectedCourse && (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-6 max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+          <div className="bg-lp-surface rounded-2xl p-6 max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
             <div className="flex justify-between items-center mb-6">
               <div>
-                <h3 className="text-xl font-bold text-gray-800">Riwayat Absensi</h3>
-                <p className="text-sm text-gray-600">
+                <h3 className="text-xl font-bold text-lp-text font-semibold tracking-tight">Riwayat Absensi</h3>
+                <p className="text-sm text-lp-text2 font-light">
                   {selectedCourse.nama} • {selectedCourse.dosen}
                 </p>
               </div>
               <button
                 onClick={() => setShowHistoryModal(false)}
-                className="text-gray-500 hover:text-gray-700 text-2xl"
+                className="text-lp-text3 font-light hover:text-lp-text2 text-2xl"
               >
                 ✕
               </button>
@@ -681,7 +681,7 @@ const ScanAbsensi = () => {
               {loadingHistory ? (
                 <div className="text-center py-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                  <p className="mt-2 text-gray-600">Memuat riwayat...</p>
+                  <p className="mt-2 text-lp-text2 font-light">Memuat riwayat...</p>
                 </div>
               ) : courseHistory ? (
                 <>
@@ -692,7 +692,7 @@ const ScanAbsensi = () => {
                       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                         <div className="text-center p-3 bg-green-100 rounded-lg">
                           <p className="text-2xl font-bold text-green-800">{courseHistory.summary.hadir || 0}</p>
-                          <p className="text-sm text-green-600">Hadir</p>
+                          <p className="text-sm text-lp-green">Hadir</p>
                         </div>
                         <div className="text-center p-3 bg-yellow-100 rounded-lg">
                           <p className="text-2xl font-bold text-yellow-800">{courseHistory.summary.izin || 0}</p>
@@ -700,7 +700,7 @@ const ScanAbsensi = () => {
                         </div>
                         <div className="text-center p-3 bg-blue-100 rounded-lg">
                           <p className="text-2xl font-bold text-blue-800">{courseHistory.summary.sakit || 0}</p>
-                          <p className="text-sm text-blue-600">Sakit</p>
+                          <p className="text-sm text-lp-atext">Sakit</p>
                         </div>
                         <div className="text-center p-3 bg-red-100 rounded-lg">
                           <p className="text-2xl font-bold text-red-800">{courseHistory.summary.alpa || 0}</p>
@@ -715,11 +715,11 @@ const ScanAbsensi = () => {
                         <div className="mt-3">
                           <div className="w-full bg-gray-200 rounded-full h-2">
                             <div 
-                              className="bg-green-600 h-2 rounded-full" 
+                              className="bg-lp-green h-2 rounded-full" 
                               style={{ width: `${courseHistory.summary.kehadiran_percent || 0}%` }}
                             ></div>
                           </div>
-                          <p className="text-xs text-gray-600 mt-1 text-center">
+                          <p className="text-xs text-lp-text2 font-light mt-1 text-center">
                             Kehadiran: {courseHistory.summary.kehadiran_percent?.toFixed(1) || 0}%
                           </p>
                         </div>
@@ -729,17 +729,17 @@ const ScanAbsensi = () => {
                   
                   {/* History List */}
                   <div className="space-y-3">
-                    <h4 className="font-bold text-gray-800 mb-3">Riwayat Detail</h4>
+                    <h4 className="font-bold text-lp-text font-semibold tracking-tight mb-3">Riwayat Detail</h4>
                     {courseHistory.history && courseHistory.history.length > 0 ? (
                       courseHistory.history.map((record, index) => (
-                        <div key={index} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
+                        <div key={index} className="border border-lp-border border rounded-lg p-4 hover:bg-lp-bg">
                           <div className="flex justify-between items-start">
                             <div>
-                              <p className="font-medium text-gray-800">Pertemuan {record.pertemuan_ke}</p>
-                              <p className="text-sm text-gray-600">
+                              <p className="font-medium text-lp-text font-semibold tracking-tight">Pertemuan {record.pertemuan_ke}</p>
+                              <p className="text-sm text-lp-text2 font-light">
                                 {record.tanggal} • {record.jam}
                               </p>
-                              <p className="text-xs text-gray-500 mt-1">
+                              <p className="text-xs text-lp-text3 font-light mt-1">
                                 {record.session_code}
                               </p>
                             </div>
@@ -750,7 +750,7 @@ const ScanAbsensi = () => {
                         </div>
                       ))
                     ) : (
-                      <div className="text-center py-8 text-gray-500">
+                      <div className="text-center py-8 text-lp-text3 font-light">
                         <div className="text-4xl mb-4">📝</div>
                         <p>Belum ada riwayat absensi untuk mata kuliah ini</p>
                       </div>
@@ -758,16 +758,16 @@ const ScanAbsensi = () => {
                   </div>
                 </>
               ) : (
-                <div className="text-center py-8 text-gray-500">
+                <div className="text-center py-8 text-lp-text3 font-light">
                   <p>Tidak ada data riwayat</p>
                 </div>
               )}
             </div>
             
-            <div className="mt-6 pt-4 border-t border-gray-200">
+            <div className="mt-6 pt-4 border-t border-lp-border border">
               <button
                 onClick={() => setShowHistoryModal(false)}
-                className="w-full bg-gray-100 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-200 transition-colors"
+                className="w-full bg-gray-100 text-lp-text2 py-3 rounded-lg font-semibold hover:bg-gray-200 transition-colors"
               >
                 Tutup
               </button>

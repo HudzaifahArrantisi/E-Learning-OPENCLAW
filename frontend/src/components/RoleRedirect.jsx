@@ -20,7 +20,7 @@ const RoleRedirect = () => {
         }
         navigate(roleRedirects[user.role] || '/')
       } else {
-        navigate('/login')
+        navigate('/')
       }
     }
   }, [user, loading, navigate])

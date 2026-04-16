@@ -32,26 +32,26 @@ const DashboardDosen = () => {
   ]
 
   const statsComponent = (dashboardStats) => (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-6">
-      <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-2xl border border-blue-200 shadow-sm">
-        <div className="text-3xl font-bold text-blue-600">{stats.matkul_diajar}</div>
-        <div className="text-sm text-blue-600 font-medium mt-2">Mata Kuliah</div>
-        <div className="text-xs text-blue-500 mt-1">Yang diampu</div>
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+      <div className="bg-lp-accentS border border-lp-borderA p-5 rounded-2xl transition-all hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] hover:-translate-y-0.5">
+        <div className="text-2xl font-bold text-lp-atext">{stats.matkul_diajar}</div>
+        <div className="text-[11px] text-lp-text2 font-semibold mt-2">Mata Kuliah</div>
+        <div className="text-[10px] text-lp-text3 font-light">Yang diampu</div>
       </div>
-      <div className="bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-2xl border border-green-200 shadow-sm">
-        <div className="text-3xl font-bold text-green-600">{stats.mahasiswa_bimbingan}</div>
-        <div className="text-sm text-green-600 font-medium mt-2">Mahasiswa</div>
-        <div className="text-xs text-green-500 mt-1">Total bimbingan</div>
+      <div className="bg-lp-green/8 border border-lp-green/15 p-5 rounded-2xl transition-all hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] hover:-translate-y-0.5">
+        <div className="text-2xl font-bold text-lp-green">{stats.mahasiswa_bimbingan}</div>
+        <div className="text-[11px] text-lp-text2 font-semibold mt-2">Mahasiswa</div>
+        <div className="text-[10px] text-lp-text3 font-light">Total bimbingan</div>
       </div>
-      <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-6 rounded-2xl border border-purple-200 shadow-sm">
-        <div className="text-3xl font-bold text-purple-600">{stats.tugas_perlu_dinilai}</div>
-        <div className="text-sm text-purple-600 font-medium mt-2">Perlu Dinilai</div>
-        <div className="text-xs text-purple-500 mt-1">Tugas menunggu</div>
+      <div className="bg-lp-amber/8 border border-lp-amber/15 p-5 rounded-2xl transition-all hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] hover:-translate-y-0.5">
+        <div className="text-2xl font-bold text-lp-amber">{stats.tugas_perlu_dinilai}</div>
+        <div className="text-[11px] text-lp-text2 font-semibold mt-2">Perlu Dinilai</div>
+        <div className="text-[10px] text-lp-text3 font-light">Tugas menunggu</div>
       </div>
-      <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-6 rounded-2xl border border-orange-200 shadow-sm">
-        <div className="text-3xl font-bold text-orange-600">{stats.sesi_absensi}</div>
-        <div className="text-sm text-orange-600 font-medium mt-2">Sesi Absensi</div>
-        <div className="text-xs text-orange-500 mt-1">Aktif</div>
+      <div className="bg-lp-red/8 border border-lp-red/15 p-5 rounded-2xl transition-all hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] hover:-translate-y-0.5">
+        <div className="text-2xl font-bold text-lp-red">{stats.sesi_absensi}</div>
+        <div className="text-[11px] text-lp-text2 font-semibold mt-2">Sesi Absensi</div>
+        <div className="text-[10px] text-lp-text3 font-light">Aktif</div>
       </div>
     </div>
   )

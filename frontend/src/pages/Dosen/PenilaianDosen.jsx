@@ -155,17 +155,17 @@ const PenilaianDosen = () => {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      <div className="flex min-h-screen bg-lp-bg">
         <Sidebar role="dosen" isOpen={sidebarOpen} onClose={toggleSidebar} />
         <div className="flex-1 lg:ml-0 transition-all duration-300">
           <div className="p-6 lg:p-8">
             <div className="flex items-center justify-between mb-8">
               <div className="flex items-center gap-4">
-                <div className="lg:hidden p-3 rounded-xl bg-white/50 backdrop-blur-sm shadow-lg animate-pulse">
+                <div className="lg:hidden p-3 rounded-xl bg-lp-surface/50 backdrop-blur-sm shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border animate-pulse">
                   <div className="w-6 h-6 bg-gray-200 rounded"></div>
                 </div>
                 <div>
-                  <div className="h-8 w-64 bg-gradient-to-r from-gray-200 to-gray-300 rounded-lg animate-pulse mb-2"></div>
+                  <div className="h-8 w-64 bg-lp-bg rounded-lg animate-pulse mb-2"></div>
                   <div className="h-4 w-48 bg-gray-200 rounded animate-pulse"></div>
                 </div>
               </div>
@@ -177,14 +177,14 @@ const PenilaianDosen = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
               {[1,2,3,4].map(item => (
-                <div key={item} className="bg-white/50 backdrop-blur-sm rounded-2xl p-6 shadow-lg animate-pulse">
+                <div key={item} className="bg-lp-surface/50 backdrop-blur-sm rounded-2xl p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border animate-pulse">
                   <div className="h-6 w-24 bg-gray-200 rounded mb-4"></div>
                   <div className="h-10 w-16 bg-gray-300 rounded"></div>
                 </div>
               ))}
             </div>
 
-            <div className="bg-white/50 backdrop-blur-sm rounded-2xl p-6 shadow-lg animate-pulse">
+            <div className="bg-lp-surface/50 backdrop-blur-sm rounded-2xl p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border animate-pulse">
               <div className="h-6 w-32 bg-gray-200 rounded mb-4"></div>
               {[1,2,3].map(item => (
                 <div key={item} className="h-20 bg-gray-200 rounded-xl mb-3"></div>
@@ -197,7 +197,7 @@ const PenilaianDosen = () => {
   }
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="flex min-h-screen bg-lp-bg">
       <Sidebar role="dosen" isOpen={sidebarOpen} onClose={toggleSidebar} />
       
       {/* Main Content */}
@@ -208,20 +208,20 @@ const PenilaianDosen = () => {
             <div className="flex items-center gap-4">
               <button 
                 onClick={toggleSidebar}
-                className="lg:hidden p-3 rounded-xl bg-white/80 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+                className="lg:hidden p-3 rounded-xl bg-lp-surface/80 backdrop-blur-sm shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl transition-all duration-300 hover:scale-105"
               >
-                <FiChevronRight className="text-xl text-gray-700" />
+                <FiChevronRight className="text-xl text-lp-text2" />
               </button>
               <div>
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="p-3 bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-xl shadow-lg">
+                  <div className="p-3 bg-lp-bg rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border">
                     <FiBarChart2 className="text-2xl text-white" />
                   </div>
                   <div>
-                    <h1 className="text-3xl lg:text-4xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
+                    <h1 className="text-3xl lg:text-4xl font-bold bg-lp-bg bg-clip-text text-transparent">
                       Penilaian Tugas
                     </h1>
-                    <p className="text-gray-600 ml-16">
+                    <p className="text-lp-text2 font-light ml-16">
                       {matkulData[courseId] || courseId} • {submissions.length} pengumpulan
                     </p>
                   </div>
@@ -231,15 +231,15 @@ const PenilaianDosen = () => {
             <div className="flex flex-wrap gap-3">
               <Link 
                 to={`/dosen/matkul/${courseId}`}
-                className="group relative overflow-hidden px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-3"
+                className="group relative overflow-hidden px-6 py-3 bg-lp-bg text-white rounded-xl font-medium shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-3"
               >
-                <div className="absolute inset-0 bg-white/10 translate-x-[-100%] group-hover:translate-x-full transition-transform duration-1000"></div>
+                <div className="absolute inset-0 bg-lp-surface/10 translate-x-[-100%] group-hover:translate-x-full transition-transform duration-1000"></div>
                 <FiBookOpen className="relative z-10" />
                 <span className="relative z-10">Kelola Matkul</span>
               </Link>
               <Link 
                 to="/dosen/course/"
-                className="px-6 py-3 bg-white/80 backdrop-blur-sm border border-gray-200 text-gray-700 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-300 hover:bg-white flex items-center gap-3"
+                className="px-6 py-3 bg-lp-surface/80 backdrop-blur-sm border border-lp-border border text-lp-text2 rounded-xl font-medium shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl transition-all duration-300 hover:bg-lp-surface flex items-center gap-3"
               >
                 <FiArrowLeft />
                 Daftar Matkul
@@ -250,46 +250,46 @@ const PenilaianDosen = () => {
           {/* Stats Cards */}
           {showStats && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-gray-100">
+              <div className="bg-lp-surface/80 backdrop-blur-sm rounded-2xl p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border border border-lp-border border">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-gray-600 text-sm mb-1">Total Pengumpulan</p>
-                    <h3 className="text-3xl font-bold text-gray-800">{submissions.length}</h3>
+                    <p className="text-lp-text2 font-light text-sm mb-1">Total Pengumpulan</p>
+                    <h3 className="text-3xl font-bold text-lp-text font-semibold tracking-tight">{submissions.length}</h3>
                   </div>
-                  <div className="p-3 bg-gradient-to-r from-blue-100 to-blue-50 rounded-xl">
-                    <FiFileText className="text-2xl text-blue-600" />
+                  <div className="p-3 bg-lp-bg rounded-xl">
+                    <FiFileText className="text-2xl text-lp-atext" />
                   </div>
                 </div>
               </div>
-              <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-gray-100">
+              <div className="bg-lp-surface/80 backdrop-blur-sm rounded-2xl p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border border border-lp-border border">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-gray-600 text-sm mb-1">Sudah Dinilai</p>
-                    <h3 className="text-3xl font-bold text-gray-800">{gradedCount}</h3>
+                    <p className="text-lp-text2 font-light text-sm mb-1">Sudah Dinilai</p>
+                    <h3 className="text-3xl font-bold text-lp-text font-semibold tracking-tight">{gradedCount}</h3>
                   </div>
-                  <div className="p-3 bg-gradient-to-r from-emerald-100 to-emerald-50 rounded-xl">
+                  <div className="p-3 bg-lp-bg rounded-xl">
                     <FiCheckCircle className="text-2xl text-emerald-600" />
                   </div>
                 </div>
               </div>
-              <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-gray-100">
+              <div className="bg-lp-surface/80 backdrop-blur-sm rounded-2xl p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border border border-lp-border border">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-gray-600 text-sm mb-1">Belum Dinilai</p>
-                    <h3 className="text-3xl font-bold text-gray-800">{submissions.length - gradedCount}</h3>
+                    <p className="text-lp-text2 font-light text-sm mb-1">Belum Dinilai</p>
+                    <h3 className="text-3xl font-bold text-lp-text font-semibold tracking-tight">{submissions.length - gradedCount}</h3>
                   </div>
-                  <div className="p-3 bg-gradient-to-r from-amber-100 to-amber-50 rounded-xl">
+                  <div className="p-3 bg-lp-bg rounded-xl">
                     <FiClock className="text-2xl text-amber-600" />
                   </div>
                 </div>
               </div>
-              <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-gray-100">
+              <div className="bg-lp-surface/80 backdrop-blur-sm rounded-2xl p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border border border-lp-border border">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-gray-600 text-sm mb-1">Rata-rata Nilai</p>
-                    <h3 className="text-3xl font-bold text-gray-800">{averageGrade}</h3>
+                    <p className="text-lp-text2 font-light text-sm mb-1">Rata-rata Nilai</p>
+                    <h3 className="text-3xl font-bold text-lp-text font-semibold tracking-tight">{averageGrade}</h3>
                   </div>
-                  <div className="p-3 bg-gradient-to-r from-purple-100 to-purple-50 rounded-xl">
+                  <div className="p-3 bg-lp-bg rounded-xl">
                     <FiPercent className="text-2xl text-purple-600" />
                   </div>
                 </div>
@@ -298,16 +298,16 @@ const PenilaianDosen = () => {
           )}
 
           {/* Control Panel */}
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-gray-100 mb-8">
+          <div className="bg-lp-surface/80 backdrop-blur-sm rounded-2xl p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border border border-lp-border border mb-8">
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Filter Pertemuan</label>
+                <label className="block text-sm font-semibold text-lp-text2 mb-2">Filter Pertemuan</label>
                 <div className="relative">
                   <FiFilter className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
                   <select
                     value={filterPertemuan}
                     onChange={(e) => setFilterPertemuan(e.target.value)}
-                    className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white/50 backdrop-blur-sm"
+                    className="w-full pl-12 pr-4 py-3 border border-lp-border border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-lp-surface/50 backdrop-blur-sm"
                   >
                     <option value="">Semua Pertemuan</option>
                     {Array.from({ length: 16 }, (_, i) => i + 1).map(pertemuan => (
@@ -320,7 +320,7 @@ const PenilaianDosen = () => {
               </div>
               
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Urutkan Berdasarkan</label>
+                <label className="block text-sm font-semibold text-lp-text2 mb-2">Urutkan Berdasarkan</label>
                 <div className="relative">
                   <FiTrendingUp className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
                   <select
@@ -329,7 +329,7 @@ const PenilaianDosen = () => {
                       setSortBy(e.target.value)
                       fetchSubmissions()
                     }}
-                    className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white/50 backdrop-blur-sm"
+                    className="w-full pl-12 pr-4 py-3 border border-lp-border border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-lp-surface/50 backdrop-blur-sm"
                   >
                     <option value="latest">Terbaru</option>
                     <option value="grade">Nilai Tertinggi</option>
@@ -339,14 +339,14 @@ const PenilaianDosen = () => {
               </div>
               
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Cari Mahasiswa/Tugas</label>
+                <label className="block text-sm font-semibold text-lp-text2 mb-2">Cari Mahasiswa/Tugas</label>
                 <div className="relative">
                   <FiSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
                   <input
                     type="text"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white/50 backdrop-blur-sm"
+                    className="w-full pl-12 pr-4 py-3 border border-lp-border border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-lp-surface/50 backdrop-blur-sm"
                     placeholder="Nama, NIM, atau judul tugas"
                   />
                 </div>
@@ -355,70 +355,70 @@ const PenilaianDosen = () => {
               <div className="flex items-end">
                 <button
                   onClick={fetchSubmissions}
-                  className="group relative overflow-hidden w-full px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 flex items-center justify-center gap-2"
+                  className="group relative overflow-hidden w-full px-6 py-3 bg-lp-bg text-white rounded-xl font-medium shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 flex items-center justify-center gap-2"
                 >
-                  <div className="absolute inset-0 bg-white/10 translate-x-[-100%] group-hover:translate-x-full transition-transform duration-1000"></div>
+                  <div className="absolute inset-0 bg-lp-surface/10 translate-x-[-100%] group-hover:translate-x-full transition-transform duration-1000"></div>
                   <FiRefreshCw className="relative z-10" />
                   <span className="relative z-10">Refresh Data</span>
                 </button>
               </div>
             </div>
             
-            <div className="flex items-center justify-between mt-6 pt-6 border-t border-gray-200">
+            <div className="flex items-center justify-between mt-6 pt-6 border-t border-lp-border border">
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setShowStats(!showStats)}
-                  className="px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                  className="px-4 py-2 text-sm bg-gray-100 text-lp-text2 rounded-lg hover:bg-gray-200 transition-colors"
                 >
                   {showStats ? 'Sembunyikan Stats' : 'Tampilkan Stats'}
                 </button>
               </div>
-              <div className="text-sm text-gray-500">
+              <div className="text-sm text-lp-text3 font-light">
                 Menampilkan {filteredSubmissions.length} dari {submissions.length} pengumpulan
               </div>
             </div>
           </div>
 
           {/* Submissions Table */}
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+          <div className="bg-lp-surface/80 backdrop-blur-sm rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border border border-lp-border border overflow-hidden">
             {filteredSubmissions.length > 0 ? (
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[1000px]">
-                  <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
+                  <thead className="bg-lp-bg">
                     <tr>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Mahasiswa</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Tugas</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Pertemuan</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">File</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Nilai</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Status</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Aksi</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-lp-text2">Mahasiswa</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-lp-text2">Tugas</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-lp-text2">Pertemuan</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-lp-text2">File</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-lp-text2">Nilai</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-lp-text2">Status</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-lp-text2">Aksi</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
                     {filteredSubmissions.map((submission, index) => (
-                      <tr key={index} className="hover:bg-gray-50/50 transition-colors group">
+                      <tr key={index} className="hover:bg-lp-bg/50 transition-colors group">
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
-                            <div className="p-2 bg-gradient-to-r from-blue-100 to-blue-50 rounded-lg">
-                              <FiUser className="text-blue-600" />
+                            <div className="p-2 bg-lp-bg rounded-lg">
+                              <FiUser className="text-lp-atext" />
                             </div>
                             <div>
-                              <div className="font-medium text-gray-900">{submission.student_name}</div>
-                              <div className="text-sm text-gray-500 font-mono">{submission.student_nim}</div>
+                              <div className="font-medium text-lp-text font-bold tracking-tight">{submission.student_name}</div>
+                              <div className="text-sm text-lp-text3 font-light font-mono">{submission.student_nim}</div>
                             </div>
                           </div>
                         </td>
                         <td className="px-6 py-4">
                           <div className="max-w-xs">
-                            <div className="font-medium text-gray-900 truncate">{submission.task_title}</div>
-                            <div className="text-sm text-gray-500 mt-1">
+                            <div className="font-medium text-lp-text font-bold tracking-tight truncate">{submission.task_title}</div>
+                            <div className="text-sm text-lp-text3 font-light mt-1">
                               {new Date(submission.created_at).toLocaleString('id-ID')}
                             </div>
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <span className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-gradient-to-r from-blue-100 to-blue-50 text-blue-800 border border-blue-200">
+                          <span className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-lp-bg text-blue-800 border border-blue-200">
                             P{submission.pertemuan}
                           </span>
                         </td>
@@ -428,7 +428,7 @@ const PenilaianDosen = () => {
                               href={resolveBackendAssetUrl(submission.file_url)}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-100 to-emerald-50 text-emerald-700 rounded-lg font-medium hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 border border-emerald-200"
+                              className="inline-flex items-center gap-2 px-4 py-2 bg-lp-bg text-emerald-700 rounded-lg font-medium hover:shadow-sm border border-lp-border transition-all duration-300 hover:-translate-y-0.5 border border-emerald-200"
                             >
                               <FiDownload />
                               Download
@@ -447,7 +447,7 @@ const PenilaianDosen = () => {
                                 type="number"
                                 value={gradeInputs[submission.id] || ''}
                                 onChange={(e) => handleGradeChange(submission.id, e.target.value)}
-                                className="w-24 border border-gray-200 rounded-xl px-4 py-2.5 text-center focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white/50 backdrop-blur-sm"
+                                className="w-24 border border-lp-border border rounded-xl px-4 py-2.5 text-center focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-lp-surface/50 backdrop-blur-sm"
                                 min="0"
                                 max="100"
                                 step="0.1"
@@ -467,7 +467,7 @@ const PenilaianDosen = () => {
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-2">
                             <div className={`w-2 h-2 rounded-full ${submission.grade ? 'bg-emerald-500' : 'bg-amber-500'}`}></div>
-                            <span className="text-sm text-gray-600">
+                            <span className="text-sm text-lp-text2 font-light">
                               {submission.grade ? 'Sudah Dinilai' : 'Belum Dinilai'}
                             </span>
                           </div>
@@ -479,8 +479,8 @@ const PenilaianDosen = () => {
                               disabled={grading[submission.id]}
                               className={`px-4 py-2 rounded-lg font-medium transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2 ${
                                 grading[submission.id]
-                                  ? 'bg-blue-100 text-blue-600'
-                                  : 'bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:shadow-lg'
+                                  ? 'bg-blue-100 text-lp-atext'
+                                  : 'bg-lp-bg text-white hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border'
                               }`}
                             >
                               {grading[submission.id] ? (
@@ -498,7 +498,7 @@ const PenilaianDosen = () => {
                             {submission.answer_text && (
                               <button
                                 onClick={() => showAnswer(submission.answer_text)}
-                                className="px-4 py-2 bg-gradient-to-r from-amber-100 to-amber-50 text-amber-700 rounded-lg font-medium hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 border border-amber-200 flex items-center gap-2"
+                                className="px-4 py-2 bg-lp-bg text-amber-700 rounded-lg font-medium hover:shadow-sm border border-lp-border transition-all duration-300 hover:-translate-y-0.5 border border-amber-200 flex items-center gap-2"
                               >
                                 <FiEye />
                                 Jawaban
@@ -513,11 +513,11 @@ const PenilaianDosen = () => {
               </div>
             ) : (
               <div className="text-center py-16">
-                <div className="p-4 bg-gradient-to-r from-gray-100 to-gray-50 rounded-full w-24 h-24 mx-auto mb-6 flex items-center justify-center">
+                <div className="p-4 bg-lp-bg rounded-full w-24 h-24 mx-auto mb-6 flex items-center justify-center">
                   <FiFileText className="text-4xl text-gray-400" />
                 </div>
-                <h3 className="text-2xl font-bold text-gray-700 mb-3">Belum ada pengumpulan tugas</h3>
-                <p className="text-gray-500 mb-8 max-w-md mx-auto">
+                <h3 className="text-2xl font-bold text-lp-text2 mb-3">Belum ada pengumpulan tugas</h3>
+                <p className="text-lp-text3 font-light mb-8 max-w-md mx-auto">
                   {filterPertemuan 
                     ? `Tidak ada submission untuk pertemuan ${filterPertemuan}`
                     : 'Mahasiswa belum mengumpulkan tugas untuk mata kuliah ini'
@@ -526,14 +526,14 @@ const PenilaianDosen = () => {
                 <div className="flex flex-col sm:flex-row justify-center gap-3">
                   <button
                     onClick={fetchSubmissions}
-                    className="px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2"
+                    className="px-6 py-3 bg-lp-bg text-white rounded-xl font-medium shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2"
                   >
                     <FiRefreshCw />
                     Refresh Data
                   </button>
                   <Link 
                     to={`/dosen/matkul/${courseId}`}
-                    className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2"
+                    className="px-6 py-3 bg-lp-bg text-white rounded-xl font-medium shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2"
                   >
                     <FiBookOpen />
                     Kelola Materi & Tugas
@@ -545,16 +545,16 @@ const PenilaianDosen = () => {
 
           {/* Bulk Actions (for future implementation) */}
           {filteredSubmissions.length > 0 && (
-            <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-white rounded-2xl border border-blue-100">
+            <div className="mt-6 p-4 bg-lp-bg rounded-2xl border border-blue-100">
               <div className="flex items-center justify-between">
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-lp-text2 font-light">
                   <strong>Tips:</strong> Klik pada kolom nilai untuk mengedit, lalu tekan Simpan untuk menyimpan perubahan.
                 </div>
                 <div className="flex items-center gap-3">
-                  <button className="px-4 py-2 text-sm bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+                  <button className="px-4 py-2 text-sm bg-lp-surface border border-lp-border border text-lp-text2 rounded-lg hover:bg-lp-bg transition-colors">
                     Export Excel
                   </button>
-                  <button className="px-4 py-2 text-sm bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:shadow-lg transition-all duration-300">
+                  <button className="px-4 py-2 text-sm bg-lp-bg text-white rounded-lg hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border transition-all duration-300">
                     Print Laporan
                   </button>
                 </div>
@@ -565,37 +565,37 @@ const PenilaianDosen = () => {
           {/* Answer Modal */}
           {showAnswerModal && (
             <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fadeIn">
-              <div className="bg-white rounded-2xl p-8 w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col shadow-2xl animate-slideUp">
+              <div className="bg-lp-surface rounded-2xl p-8 w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col shadow-2xl animate-slideUp">
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-amber-100 rounded-lg">
                       <FiEye className="text-xl text-amber-600" />
                     </div>
                     <div>
-                      <h3 className="text-xl font-bold text-gray-800">Jawaban Mahasiswa</h3>
-                      <p className="text-gray-600 text-sm">Detail jawaban tugas</p>
+                      <h3 className="text-xl font-bold text-lp-text font-semibold tracking-tight">Jawaban Mahasiswa</h3>
+                      <p className="text-lp-text2 font-light text-sm">Detail jawaban tugas</p>
                     </div>
                   </div>
                   <button
                     onClick={() => setShowAnswerModal(false)}
                     className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
                   >
-                    <FiX className="text-2xl text-gray-400 hover:text-gray-600" />
+                    <FiX className="text-2xl text-gray-400 hover:text-lp-text2 font-light" />
                   </button>
                 </div>
                 <div className="flex-1 overflow-y-auto">
-                  <div className="bg-gradient-to-r from-gray-50 to-white rounded-xl p-6 border border-gray-200">
+                  <div className="bg-lp-bg rounded-xl p-6 border border-lp-border border">
                     <div className="prose max-w-none">
-                      <div className="whitespace-pre-wrap text-gray-700 leading-relaxed">
+                      <div className="whitespace-pre-wrap text-lp-text2 leading-relaxed">
                         {selectedAnswer || 'Tidak ada jawaban teks yang disubmit.'}
                       </div>
                     </div>
                   </div>
                 </div>
-                <div className="flex justify-end gap-3 pt-6 border-t border-gray-200 mt-6">
+                <div className="flex justify-end gap-3 pt-6 border-t border-lp-border border mt-6">
                   <button
                     onClick={() => setShowAnswerModal(false)}
-                    className="px-6 py-3 bg-white border border-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-all duration-300"
+                    className="px-6 py-3 bg-lp-surface border border-lp-border border text-lp-text2 rounded-xl font-medium hover:bg-lp-bg transition-all duration-300"
                   >
                     Tutup
                   </button>

@@ -78,7 +78,7 @@ const ChatDosen = () => {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-lp-bg">
       <Sidebar role="dosen" isOpen={sidebarOpen} onClose={toggleSidebar} />
       
       {/* Main Content */}
@@ -88,13 +88,13 @@ const ChatDosen = () => {
           <div className="flex items-center gap-4 mb-6 lg:mb-8">
             <button 
               onClick={toggleSidebar}
-              className="lg:hidden p-3 rounded-xl bg-white shadow-md hover:shadow-lg transition-shadow"
+              className="lg:hidden p-3 rounded-xl bg-lp-surface shadow-sm border border-lp-border hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border transition-shadow"
             >
               <span className="text-xl">☰</span>
             </button>
             <div className="flex-1">
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Chat Dosen</h1>
-              <p className="text-gray-600 mt-2">Kelola grup chat mata kuliah yang Anda ajar</p>
+              <h1 className="text-2xl sm:text-3xl font-bold text-lp-text font-semibold tracking-tight">Chat Dosen</h1>
+              <p className="text-lp-text2 font-light mt-2">Kelola grup chat mata kuliah yang Anda ajar</p>
             </div>
             <Link
               to="/chat"
@@ -106,11 +106,11 @@ const ChatDosen = () => {
           </div>
 
           <div className="mb-8">
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+            <div className="bg-lp-surface rounded-2xl shadow-sm border border-lp-border border p-6">
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h2 className="text-xl font-bold text-gray-800">Grup Mata Kuliah</h2>
-                  <p className="text-gray-600">Buat dan kelola grup chat untuk setiap mata kuliah</p>
+                  <h2 className="text-xl font-bold text-lp-text font-semibold tracking-tight">Grup Mata Kuliah</h2>
+                  <p className="text-lp-text2 font-light">Buat dan kelola grup chat untuk setiap mata kuliah</p>
                 </div>
                 <button
                   onClick={() => setShowCreateGroupModal(true)}
@@ -125,15 +125,15 @@ const ChatDosen = () => {
               {loading ? (
                 <div className="text-center py-8">
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
-                  <p className="mt-4 text-gray-600">Memuat mata kuliah...</p>
+                  <p className="mt-4 text-lp-text2 font-light">Memuat mata kuliah...</p>
                 </div>
               ) : matkulList.length === 0 ? (
                 <div className="text-center py-8">
                   <i className="fas fa-book text-4xl text-gray-300 mb-4"></i>
-                  <h3 className="text-lg font-semibold text-gray-700 mb-2">
+                  <h3 className="text-lg font-semibold text-lp-text2 mb-2">
                     Belum ada mata kuliah
                   </h3>
-                  <p className="text-gray-500">
+                  <p className="text-lp-text3 font-light">
                     Anda belum mengampu mata kuliah apapun
                   </p>
                 </div>
@@ -143,14 +143,14 @@ const ChatDosen = () => {
                     const groupStatus = getGroupStatus(matkul.id)
                     
                     return (
-                      <div key={matkul.id} className="bg-gray-50 rounded-xl border border-gray-200 p-5 hover:shadow-md transition-shadow">
+                      <div key={matkul.id} className="bg-lp-bg rounded-xl border border-lp-border border p-5 hover:shadow-sm border border-lp-border transition-shadow">
                         <div className="flex items-start justify-between mb-4">
                           <div>
-                            <h3 className="font-bold text-lg text-gray-800">{matkul.nama}</h3>
-                            <p className="text-sm text-gray-600">
+                            <h3 className="font-bold text-lg text-lp-text font-semibold tracking-tight">{matkul.nama}</h3>
+                            <p className="text-sm text-lp-text2 font-light">
                               Kode: {matkul.kode} | SKS: {matkul.sks}
                             </p>
-                            <p className="text-sm text-gray-600 mt-1">
+                            <p className="text-sm text-lp-text2 font-light mt-1">
                               Hari: {matkul.hari} | {matkul.jam_mulai} - {matkul.jam_selesai}
                             </p>
                           </div>
@@ -201,7 +201,7 @@ const ChatDosen = () => {
                         </div>
                         
                         {groupStatus.exists && groupStatus.createdAt && (
-                          <p className="text-xs text-gray-500 mt-3">
+                          <p className="text-xs text-lp-text3 font-light mt-3">
                             Dibuat: {new Date(groupStatus.createdAt).toLocaleDateString('id-ID')}
                           </p>
                         )}
@@ -215,25 +215,25 @@ const ChatDosen = () => {
 
           {/* Stats */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-            <div className="bg-white rounded-xl p-6 border border-gray-200">
+            <div className="bg-lp-surface rounded-xl p-6 border border-lp-border border">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                  <i className="fas fa-book text-blue-500 text-xl"></i>
+                  <i className="fas fa-book text-lp-atext text-xl"></i>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Mata Kuliah Diajar</p>
+                  <p className="text-sm text-lp-text2 font-light">Mata Kuliah Diajar</p>
                   <p className="text-2xl font-bold">{matkulList.length}</p>
                 </div>
               </div>
             </div>
             
-            <div className="bg-white rounded-xl p-6 border border-gray-200">
+            <div className="bg-lp-surface rounded-xl p-6 border border-lp-border border">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                  <i className="fas fa-users text-green-500 text-xl"></i>
+                  <i className="fas fa-users text-lp-green text-xl"></i>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Grup Aktif</p>
+                  <p className="text-sm text-lp-text2 font-light">Grup Aktif</p>
                   <p className="text-2xl font-bold">
                     {groups.length}
                   </p>
@@ -241,13 +241,13 @@ const ChatDosen = () => {
               </div>
             </div>
             
-            <div className="bg-white rounded-xl p-6 border border-gray-200">
+            <div className="bg-lp-surface rounded-xl p-6 border border-lp-border border">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
                   <i className="fas fa-comment-dots text-purple-500 text-xl"></i>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Total Pesan</p>
+                  <p className="text-sm text-lp-text2 font-light">Total Pesan</p>
                   <p className="text-2xl font-bold">
                     {/* You would fetch this from API */}
                     0
@@ -262,19 +262,19 @@ const ChatDosen = () => {
             <h3 className="font-bold text-lg text-blue-800 mb-3">📋 Panduan Grup Chat</h3>
             <ul className="space-y-2 text-blue-700">
               <li key="group-members" className="flex items-start gap-2">
-                <i className="fas fa-check-circle text-blue-500 mt-1"></i>
+                <i className="fas fa-check-circle text-lp-atext mt-1"></i>
                 <span>Setiap grup akan berisi semua mahasiswa yang terdaftar di mata kuliah tersebut</span>
               </li>
               <li key="admin-role" className="flex items-start gap-2">
-                <i className="fas fa-check-circle text-blue-500 mt-1"></i>
+                <i className="fas fa-check-circle text-lp-atext mt-1"></i>
                 <span>Anda sebagai dosen akan menjadi admin grup</span>
               </li>
               <li key="student-messaging" className="flex items-start gap-2">
-                <i className="fas fa-check-circle text-blue-500 mt-1"></i>
+                <i className="fas fa-check-circle text-lp-atext mt-1"></i>
                 <span>Mahasiswa dapat mengirim pesan dan bertanya tentang materi kuliah</span>
               </li>
               <li key="manage-members" className="flex items-start gap-2">
-                <i className="fas fa-check-circle text-blue-500 mt-1"></i>
+                <i className="fas fa-check-circle text-lp-atext mt-1"></i>
                 <span>Anda dapat mengelola anggota grup (tambah/hapus peserta)</span>
               </li>
             </ul>
@@ -285,16 +285,16 @@ const ChatDosen = () => {
       {/* Create Group Modal */}
       {showCreateGroupModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl w-full max-w-md max-h-[90vh] overflow-hidden flex flex-col">
+          <div className="bg-lp-surface rounded-xl w-full max-w-md max-h-[90vh] overflow-hidden flex flex-col">
             <div className="p-6 border-b">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-bold text-gray-800">Buat Grup Chat Mata Kuliah</h3>
+                <h3 className="text-lg font-bold text-lp-text font-semibold tracking-tight">Buat Grup Chat Mata Kuliah</h3>
                 <button
                   onClick={() => {
                     setShowCreateGroupModal(false)
                     setSelectedMatkul(null)
                   }}
-                  className="text-gray-500 hover:text-gray-700"
+                  className="text-lp-text3 font-light hover:text-lp-text2"
                 >
                   <i className="fas fa-times"></i>
                 </button>
@@ -311,27 +311,27 @@ const ChatDosen = () => {
                   </div>
                   
                   <div className="space-y-3">
-                    <div className="flex items-center p-3 bg-gray-50 rounded-lg">
-                      <i className="fas fa-users text-blue-500 mr-3"></i>
+                    <div className="flex items-center p-3 bg-lp-bg rounded-lg">
+                      <i className="fas fa-users text-lp-atext mr-3"></i>
                       <div>
                         <p className="font-medium">Semua Mahasiswa</p>
-                        <p className="text-sm text-gray-600">Akan otomatis ditambahkan ke grup</p>
+                        <p className="text-sm text-lp-text2 font-light">Akan otomatis ditambahkan ke grup</p>
                       </div>
                     </div>
                     
-                    <div className="flex items-center p-3 bg-gray-50 rounded-lg">
-                      <i className="fas fa-user-tie text-green-500 mr-3"></i>
+                    <div className="flex items-center p-3 bg-lp-bg rounded-lg">
+                      <i className="fas fa-user-tie text-lp-green mr-3"></i>
                       <div>
                         <p className="font-medium">Anda sebagai Admin</p>
-                        <p className="text-sm text-gray-600">Dapat mengelola grup dan anggotanya</p>
+                        <p className="text-sm text-lp-text2 font-light">Dapat mengelola grup dan anggotanya</p>
                       </div>
                     </div>
                     
-                    <div className="flex items-center p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center p-3 bg-lp-bg rounded-lg">
                       <i className="fas fa-comments text-purple-500 mr-3"></i>
                       <div>
                         <p className="font-medium">Pesan Sistem</p>
-                        <p className="text-sm text-gray-600">Notifikasi grup akan dikirim otomatis</p>
+                        <p className="text-sm text-lp-text2 font-light">Notifikasi grup akan dikirim otomatis</p>
                       </div>
                     </div>
                   </div>
@@ -355,7 +355,7 @@ const ChatDosen = () => {
                 </div>
               ) : (
                 <div>
-                  <p className="text-gray-600 mb-4">Pilih mata kuliah untuk membuat grup chat:</p>
+                  <p className="text-lp-text2 font-light mb-4">Pilih mata kuliah untuk membuat grup chat:</p>
                   <div className="space-y-2 max-h-64 overflow-y-auto">
                     {matkulList.map(matkul => {
                       const groupStatus = getGroupStatus(matkul.id)
@@ -366,14 +366,14 @@ const ChatDosen = () => {
                           className={`p-4 border rounded-lg cursor-pointer transition-colors ${
                             groupStatus.exists
                               ? 'border-green-200 bg-green-50 hover:bg-green-100'
-                              : 'border-gray-200 hover:bg-gray-50'
+                              : 'border-lp-border border hover:bg-lp-bg'
                           }`}
                           onClick={() => !groupStatus.exists && setSelectedMatkul(matkul)}
                         >
                           <div className="flex justify-between items-start">
                             <div>
                               <h4 className="font-semibold">{matkul.nama}</h4>
-                              <p className="text-sm text-gray-600">{matkul.kode}</p>
+                              <p className="text-sm text-lp-text2 font-light">{matkul.kode}</p>
                             </div>
                             {groupStatus.exists ? (
                               <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">

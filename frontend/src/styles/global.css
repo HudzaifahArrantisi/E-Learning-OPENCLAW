@@ -1,116 +1,31 @@
 /* ================= FONT ================= */
-@import url('https://fonts.googleapis.com/css2?family=Cabin:ital,wght@0,400..700;1,400..700&family=Google+Sans:ital,opsz,wght@0,17..18,400..700;1,17..18,400..700&family=Quicksand:wght@300..700&family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cabin:ital,wght@0,400..700;1,400..700&family=Quicksand:wght@300..700&family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-/* ================= ROOT ================= */
-:root {
-  --instagram-gradient: linear-gradient(
-    45deg,
-    #f09433 0%,
-    #e6683c 25%,
-    #dc2743 50%,
-    #cc2366 75%,
-    #bc1888 100%
-  );
-  --instagram-pink: #E4405F;
-  --twitter-blue: #1DA1F2;
-}
+/* ================= BASE RESET ================= */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
 
 body {
-  font-family: 'Cabin', 'Google Sans', 'Quicksand', system-ui, sans-serif;
+  font-family: 'Cabin', 'Quicksand', system-ui, sans-serif;
   background-color: #ffffff;
-  color: #262626;
+  color: #0F172A;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* ================= FONT UTILS ================= */
-.font-sans {
-  font-family: 'Cabin', 'Google Sans', 'Quicksand', system-ui, sans-serif;
-}
+/* ================= SCROLLBAR ================= */
+.custom-scrollbar::-webkit-scrollbar { width: 4px; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); border-radius: 4px; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.2); }
 
-.font-instagram {
-  font-family: 'Quicksand', 'Cabin', system-ui, sans-serif;
-}
-
-.font-logo {
-  font-family: 'Google Sans', 'Cabin', system-ui, sans-serif;
-}
-
-.font-mono {
-  font-family: 'Space Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
-}
-
-/* ================= ANIMATIONS ================= */
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes slideUp {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
-}
-
-@keyframes slideInRight {
-  from { transform: translateX(20px); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
-}
-
-@keyframes scaleIn {
-  from { transform: scale(0.9); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
-}
-
-@keyframes heartBeat {
-  0% { transform: scale(0); opacity: 0; }
-  15% { transform: scale(1.2); opacity: 1; }
-  30% { transform: scale(0.95); }
-  45%, 80% { transform: scale(1); opacity: 1; }
-  100% { transform: scale(0); opacity: 0; }
-}
-
-@keyframes pulse {
-  0%,100% { opacity: 1; }
-  50% { opacity: .5; }
-}
-
-/* Animation Utilities */
-.animate-fadeIn { animation: fadeIn .3s ease-out; }
-.animate-slideUp { animation: slideUp .3s ease-out; }
-.animate-slideInRight { animation: slideInRight .3s ease-out; }
-.animate-scaleIn { animation: scaleIn .2s ease-out; }
-.animate-heartBeat { animation: heartBeat 1s ease-out; }
-.animate-pulse { animation: pulse 2s infinite; }
-
-@keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes blob {
-  0% { transform: translate(0px, 0px) scale(1); }
-  33% { transform: translate(30px, -50px) scale(1.1); }
-  66% { transform: translate(-20px, 20px) scale(0.9); }
-  100% { transform: translate(0px, 0px) scale(1); }
-}
-
-.animate-fadeInUp { animation: fadeInUp .5s ease-out; }
-.animate-blob { animation: blob 7s infinite; }
-.animation-delay-2000 { animation-delay: 2s; }
-
-/* ================= ASPECT RATIO ================= */
-.aspect-square { aspect-ratio: 1 / 1; }
-.aspect-4-5 { aspect-ratio: 4 / 5; }
-.aspect-9-16 { aspect-ratio: 9 / 16; }
-.aspect-video { aspect-ratio: 16 / 9; }
+.scrollbar-hide { scrollbar-width: none; }
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.no-scrollbar { scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
 
 /* ================= IMAGE CONTAINER ================= */
 .image-container {
@@ -121,69 +36,11 @@ body {
   align-items: center;
   overflow: hidden;
 }
-
 .image-container img {
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
 }
 
-/* ================= MAX HEIGHT ================= */
-.max-h-400 { max-height: 400px; }
-.max-h-450 { max-height: 450px; }
-.max-h-500 { max-height: 500px; }
-.max-h-600 { max-height: 600px; }
-.max-h-700 { max-height: 700px; }
-.max-h-800 { max-height: 800px; }
-
-/* ================= SCROLLBAR ================= */
-.custom-scrollbar::-webkit-scrollbar {
-  width: 4px;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #dbdbdb;
-  border-radius: 4px;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #a8a8a8;
-}
-
-.scrollbar-hide {
-  scrollbar-width: none;
-}
-.scrollbar-hide::-webkit-scrollbar {
-  display: none;
-}
-
-/* ================= EFFECT ================= */
-.glass {
-  background: rgba(255,255,255,.9);
-  backdrop-filter: blur(16px);
-  border: 1px solid rgba(255,255,255,.2);
-}
-
-.shadow-instagram {
-  box-shadow: 0 4px 24px rgba(0,0,0,.08);
-}
-
-/* ================= BUTTON ================= */
-.btn-instagram {
-  background: var(--instagram-gradient);
-  color: white;
-  border-radius: 8px;
-  padding: 10px 24px;
-  font-weight: 600;
-  transition: all .2s ease;
-}
-
-.btn-instagram:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(220,39,67,.3);
-}
-
-/* ================= RESPONSIVE ================= */
-@media (max-width: 768px) {
-  .main-content {
-    margin-left: 0;
-  }
-}
+/* ================= FILL MODE FOR ANIMATIONS ================= */
+.fill-mode-both { animation-fill-mode: both; }

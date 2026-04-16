@@ -4,8 +4,6 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 const LandingPage = lazy(() => import('./pages/LandingPage'))
-const Login = lazy(() => import('./pages/Auth/Login'))
-const Register = lazy(() => import('./pages/Auth/Register'))
 const VisiMisiPage = lazy(() => import('./pages/Public/VisiMisiPage'))
 const CurriculumPage = lazy(() => import('./pages/Public/CurriculumPage'))
 const AcademicCalendarPage = lazy(() => import('./pages/Public/AcademicCalendarPage'))
@@ -86,8 +84,6 @@ function App() {
         <div className="App">
           <Suspense fallback={<PageLoader />}>
             <Routes>
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
               <Route path="/" element={<LandingPage />} />
 
               <Route path="/visi-misi" element={<VisiMisiPage />} />

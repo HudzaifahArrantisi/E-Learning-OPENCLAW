@@ -94,20 +94,20 @@ const PostingPemberitahuan = () => {
   }, [previews])
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-lp-bg">
       <Sidebar role="admin" />
       <div className="flex-1 lg:ml-64">
         <Navbar user={user} />
         
         <div className="max-w-4xl mx-auto p-6 mt-8">
-          <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-8 mb-8 text-white text-center">
+          <div className="bg-lp-bg rounded-2xl p-8 mb-8 text-white text-center">
             <h1 className="text-4xl font-bold mb-4">Posting Pemberitahuan Resmi</h1>
             <p className="text-lg opacity-90">Bagikan informasi penting kepada seluruh civitas akademika</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-xl p-8 space-y-8">
+          <form onSubmit={handleSubmit} className="bg-lp-surface rounded-2xl shadow-xl p-8 space-y-8">
             <div>
-              <label className="block text-lg font-semibold text-gray-800 mb-3">
+              <label className="block text-lg font-semibold text-lp-text font-semibold tracking-tight mb-3">
                 <span className="text-red-500">*</span> Judul Pemberitahuan
               </label>
               <input
@@ -115,13 +115,13 @@ const PostingPemberitahuan = () => {
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Contoh: Pengumuman Libur Semester Ganjil 2025"
-                className="w-full px-5 py-4 text-lg border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition"
+                className="w-full px-5 py-4 text-lg border-2 border-lp-border border rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-lg font-semibold text-gray-800 mb-3">
+              <label className="block text-lg font-semibold text-lp-text font-semibold tracking-tight mb-3">
                 <span className="text-red-500">*</span> Isi Pemberitahuan
               </label>
               <textarea
@@ -129,18 +129,18 @@ const PostingPemberitahuan = () => {
                 onChange={(e) => setContent(e.target.value)}
                 rows={8}
                 placeholder="Tuliskan detail pemberitahuan di sini..."
-                className="w-full px-5 py-4 text-lg border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition resize-none"
+                className="w-full px-5 py-4 text-lg border-2 border-lp-border border rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition resize-none"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-lg font-semibold text-gray-800 mb-3">
+              <label className="block text-lg font-semibold text-lp-text font-semibold tracking-tight mb-3">
                 Gambar / Poster (Maksimal 10 gambar)
               </label>
               
               {/* File Input */}
-              <div className="border-2 border-dashed border-gray-300 rounded-2xl p-8 text-center mb-4 hover:border-blue-400 transition-colors">
+              <div className="border-2 border-dashed border-lp-border border rounded-2xl p-8 text-center mb-4 hover:border-blue-400 transition-colors">
                 <input
                   type="file"
                   accept="image/*"
@@ -151,9 +151,9 @@ const PostingPemberitahuan = () => {
                 />
                 <label htmlFor="file-upload" className="cursor-pointer">
                   <FaUpload className="text-4xl text-gray-400 mx-auto mb-4" />
-                  <p className="text-lg text-gray-600 mb-2">Klik untuk upload gambar</p>
-                  <p className="text-sm text-gray-500">Format: JPG, PNG, GIF (Maksimal 10MB per file)</p>
-                  <p className="text-sm text-gray-500 mt-1">Maksimal 10 gambar</p>
+                  <p className="text-lg text-lp-text2 font-light mb-2">Klik untuk upload gambar</p>
+                  <p className="text-sm text-lp-text3 font-light">Format: JPG, PNG, GIF (Maksimal 10MB per file)</p>
+                  <p className="text-sm text-lp-text3 font-light mt-1">Maksimal 10 gambar</p>
                 </label>
               </div>
 
@@ -183,7 +183,7 @@ const PostingPemberitahuan = () => {
                       <img 
                         src={preview} 
                         alt={`Preview ${index + 1}`} 
-                        className="w-full h-32 object-cover rounded-lg shadow-md"
+                        className="w-full h-32 object-cover rounded-lg shadow-sm border border-lp-border"
                       />
                       <button
                         type="button"
@@ -205,14 +205,14 @@ const PostingPemberitahuan = () => {
               <button
                 type="button"
                 onClick={() => window.history.back()}
-                className="flex-1 py-4 bg-gray-500 hover:bg-gray-600 text-white text-lg font-bold rounded-xl transition duration-300"
+                className="flex-1 py-4 bg-lp-bg0 hover:bg-gray-600 text-white text-lg font-bold rounded-xl transition duration-300"
               >
                 Batal
               </button>
               <button
                 type="submit"
                 disabled={mutation.isPending}
-                className="flex-1 py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white text-lg font-bold rounded-xl shadow-lg transform hover:scale-105 transition duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
+                className="flex-1 py-4 bg-lp-bg hover:from-blue-700 hover:to-purple-700 text-white text-lg font-bold rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border transform hover:scale-105 transition duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {mutation.isPending ? (
                   <div className="flex items-center justify-center space-x-2">

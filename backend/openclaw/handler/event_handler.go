@@ -142,7 +142,7 @@ func (h *EventHandler) sendInstantNotification(event TugasCreatedEvent) {
 // getCourseName fetches the course name from the database
 func (h *EventHandler) getCourseName(courseID string) string {
 	var courseName string
-	err := h.DB.QueryRow("SELECT nama FROM mata_kuliah WHERE kode = ?", courseID).Scan(&courseName)
+	err := h.DB.QueryRow("SELECT nama FROM mata_kuliah WHERE kode = $1", courseID).Scan(&courseName)
 	if err != nil {
 		return courseID // Fallback to course ID if not found
 	}
@@ -189,7 +189,7 @@ func GetStudentCountForCourse(db *sql.DB, courseID string) int {
 	err := db.QueryRow(`
 		SELECT COUNT(DISTINCT mmk.mahasiswa_id) 
 		FROM mahasiswa_mata_kuliah mmk 
-		WHERE mmk.mata_kuliah_kode = ?
+		WHERE mmk.mata_kuliah_kode = $1
 	`, courseID).Scan(&count)
 
 	if err != nil {
@@ -203,9 +203,9 @@ func GetPendingStudentsForTask(db *sql.DB, tugasID int, courseID string) ([]int,
 	rows, err := db.Query(`
 		SELECT DISTINCT mmk.mahasiswa_id
 		FROM mahasiswa_mata_kuliah mmk
-		WHERE mmk.mata_kuliah_kode = ?
+		WHERE mmk.mata_kuliah_kode = $1
 			AND mmk.mahasiswa_id NOT IN (
-				SELECT s.student_id FROM submissions s WHERE s.task_id = ?
+				SELECT s.student_id FROM submissions s WHERE s.task_id = $2
 			)
 	`, courseID, tugasID)
 

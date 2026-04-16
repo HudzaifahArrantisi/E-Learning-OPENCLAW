@@ -11,22 +11,22 @@ const DashboardOrmawa = () => {
   ]
 
   const statsComponent = (stats) => (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
-      <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-xl border border-blue-200">
-        <div className="text-2xl font-bold text-blue-600">{stats?.total_anggota || 0}</div>
-        <div className="text-xs text-blue-600 font-medium">Total Anggota</div>
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+      <div className="bg-lp-accentS border border-lp-borderA p-5 rounded-2xl transition-all hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] hover:-translate-y-0.5">
+        <div className="text-2xl font-bold text-lp-atext">{stats?.total_anggota || 0}</div>
+        <div className="text-[11px] text-lp-text2 font-mono tracking-wider uppercase mt-1">Total Anggota</div>
       </div>
-      <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-xl border border-green-200">
-        <div className="text-2xl font-bold text-green-600">{stats?.posting_count || 0}</div>
-        <div className="text-xs text-green-600 font-medium">Postingan</div>
+      <div className="bg-lp-green/8 border border-lp-green/15 p-5 rounded-2xl transition-all hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] hover:-translate-y-0.5">
+        <div className="text-2xl font-bold text-lp-green">{stats?.posting_count || 0}</div>
+        <div className="text-[11px] text-lp-text2 font-mono tracking-wider uppercase mt-1">Postingan</div>
       </div>
-      <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-xl border border-purple-200">
-        <div className="text-2xl font-bold text-purple-600">{stats?.event_count || 0}</div>
-        <div className="text-xs text-purple-600 font-medium">Event</div>
+      <div className="bg-lp-amber/8 border border-lp-amber/15 p-5 rounded-2xl transition-all hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] hover:-translate-y-0.5">
+        <div className="text-2xl font-bold text-lp-amber">{stats?.event_count || 0}</div>
+        <div className="text-[11px] text-lp-text2 font-mono tracking-wider uppercase mt-1">Event</div>
       </div>
-      <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-4 rounded-xl border border-orange-200">
-        <div className="text-2xl font-bold text-orange-600">{stats?.pengikut || 0}</div>
-        <div className="text-xs text-orange-600 font-medium">Pengikut</div>
+      <div className="bg-lp-red/8 border border-lp-red/15 p-5 rounded-2xl transition-all hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] hover:-translate-y-0.5">
+        <div className="text-2xl font-bold text-lp-red">{stats?.pengikut || 0}</div>
+        <div className="text-[11px] text-lp-text2 font-mono tracking-wider uppercase mt-1">Pengikut</div>
       </div>
     </div>
   )

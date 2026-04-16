@@ -2,10 +2,9 @@ package main
 
 import (
 	"log"
-	"math/rand"
 	"os"
 	"strings"
-	"time"
+	
 
 	"nf-student-hub-backend/config"
 	"nf-student-hub-backend/routes"
@@ -20,10 +19,8 @@ import (
 func main() {
 	godotenv.Load()
 
+	// Initialize database
 	config.InitDB()
-
-	// Initialize random seed
-	rand.Seed(time.Now().UnixNano())
 
 	// buat folde
 	os.MkdirAll("uploads/posts", 0755)

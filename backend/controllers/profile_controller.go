@@ -55,7 +55,7 @@ func GetMyProfile(c *gin.Context) {
             SELECT id, user_id, name, nim, alamat, photo,
                    created_at, updated_at
             FROM ` + table + ` 
-            WHERE user_id = ? AND deleted_at IS NULL
+            WHERE user_id = $1 AND deleted_at IS NULL
         `
     } else {
         query = `
@@ -63,7 +63,7 @@ func GetMyProfile(c *gin.Context) {
                    profile_picture, followers_count, following_count,
                    created_at, updated_at
             FROM ` + table + ` 
-            WHERE user_id = ? AND deleted_at IS NULL
+            WHERE user_id = $1 AND deleted_at IS NULL
         `
     }
 
@@ -194,7 +194,7 @@ func GetPublicProfile(c *gin.Context) {
             SELECT id, name, username, bio, website, phone, profile_picture, 
                 followers_count, following_count, created_at, updated_at
             FROM ` + table + ` 
-            WHERE (username = ? OR username = ?) AND deleted_at IS NULL
+            WHERE (username = $1 OR username = $2) AND deleted_at IS NULL
         `
 
     // Coba dengan username yang sudah dibersihkan
@@ -218,7 +218,7 @@ func GetPublicProfile(c *gin.Context) {
                 SELECT id, name, username, bio, website, phone, profile_picture, 
                        followers_count, following_count, created_at, updated_at
                 FROM ` + table + ` 
-                WHERE name LIKE ? AND deleted_at IS NULL
+                WHERE name LIKE $1 AND deleted_at IS NULL
             `
             
             err = config.DB.QueryRow(fallbackQuery, "%"+nameFromUsername+"%").Scan(
@@ -286,8 +286,8 @@ func GetUserPosts(c *gin.Context) {
             COALESCE(p.likes_count, 0) AS likes_count,
             COALESCE(p.comments_count, 0) AS comments_count
         FROM posts p
-        WHERE p.role = ? 
-        AND (p.author_username = ? OR p.author_username LIKE ?)
+        WHERE p.role = $1 
+        AND (p.author_username = $2 OR p.author_username LIKE $3)
         ORDER BY p.created_at DESC
         LIMIT 50
     `

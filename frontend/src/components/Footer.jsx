@@ -6,7 +6,7 @@ const Footer = () => {
     <footer className="bg-gray-900/80 backdrop-blur-md text-gray-400 py-12 border-t border-white/10">
       <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-8">
         <div className="col-span-1 md:col-span-2">
-          <h3 className="text-white text-2xl font-bold mb-4">NF StudentHub</h3>
+          <h3 className="text-white text-2xl font-bold mb-4">Student Hub</h3>
           <p className="mb-4 max-w-md">
             Platform digital untuk mahasiswa, dosen, dan orang tua dalam ekosistem akademik yang terintegrasi.
           </p>
@@ -48,7 +48,7 @@ const Footer = () => {
         </div>
       </div>
       <div className="border-t border-gray-700 mt-8 pt-8 text-center">
-        <p>&copy; 2024 NF StudentHub. Semua hak dilindungi.</p>
+        <p>&copy; 2024 Student Hub. Semua hak dilindungi.</p>
       </div>
     </footer>
   );

@@ -200,7 +200,7 @@ const SettingProfileUKM = () => {
       <div className="flex min-h-screen bg-gray-100">
         <Sidebar role="ukm" />
         <div className="flex-1 flex justify-center items-center">
-          <div className="text-xl text-gray-600">Loading profile...</div>
+          <div className="text-xl text-lp-text2 font-light">Loading profile...</div>
         </div>
       </div>
     )
@@ -214,7 +214,7 @@ const SettingProfileUKM = () => {
         
         <div className="p-6">
           <h1 className="text-2xl font-bold mb-2">Pengaturan Profile UKM</h1>
-          <p className="text-gray-600 mb-6">Kelola informasi profile UKM Anda</p>
+          <p className="text-lp-text2 font-light mb-6">Kelola informasi profile UKM Anda</p>
 
           {/* Save Message */}
           {saveMessage && (
@@ -228,10 +228,10 @@ const SettingProfileUKM = () => {
           )}
 
           {/* Preview Card */}
-          <div className="mb-6 bg-white rounded-lg shadow-sm border p-4">
+          <div className="mb-6 bg-lp-surface rounded-lg shadow-sm border p-4">
             <h3 className="font-bold mb-3">Preview Profile:</h3>
             <div className="flex items-center space-x-4">
-              <div className="w-16 h-16 rounded-full bg-gradient-to-r from-orange-500 to-orange-700 flex items-center justify-center text-white text-xl font-bold">
+              <div className="w-16 h-16 rounded-full bg-lp-bg flex items-center justify-center text-white text-xl font-bold">
                 {previewImage ? (
                   <img src={previewImage} alt="Preview" className="w-16 h-16 rounded-full object-cover" />
                 ) : (
@@ -240,7 +240,7 @@ const SettingProfileUKM = () => {
               </div>
               <div>
                 <div className="font-bold">{formData.name || 'Nama UKM'}</div>
-                <div className="text-sm text-gray-500">@{formData.username || 'username'}</div>
+                <div className="text-sm text-lp-text3 font-light">@{formData.username || 'username'}</div>
                 <div className="text-xs text-gray-400">
                   Akan terlihat di: {window.location.origin}/profile/ukm/{formData.username || 'username'}
                 </div>
@@ -248,7 +248,7 @@ const SettingProfileUKM = () => {
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-sm border p-6">
+          <form onSubmit={handleSubmit} className="bg-lp-surface rounded-lg shadow-sm border p-6">
             <div className="space-y-6">
               {/* Profile Picture */}
               <div className="flex items-center space-x-6">
@@ -260,7 +260,7 @@ const SettingProfileUKM = () => {
                       className="w-24 h-24 rounded-full object-cover border-2 border-orange-500"
                     />
                   ) : (
-                    <div className="w-24 h-24 rounded-full bg-gradient-to-r from-orange-500 to-orange-700 flex items-center justify-center text-white text-2xl font-bold">
+                    <div className="w-24 h-24 rounded-full bg-lp-bg flex items-center justify-center text-white text-2xl font-bold">
                       {formData.name?.[0]?.toUpperCase() || 'U'}
                     </div>
                   )}
@@ -275,18 +275,18 @@ const SettingProfileUKM = () => {
                   />
                   <label 
                     htmlFor="profile-picture" 
-                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 cursor-pointer inline-block"
+                    className="bg-lp-accent text-white px-4 py-2 rounded-lg hover:bg-lp-atext cursor-pointer inline-block"
                   >
                     Ubah Foto Profile
                   </label>
-                  <p className="text-sm text-gray-500 mt-2">Format: JPG, PNG. Maksimal 2MB</p>
+                  <p className="text-sm text-lp-text3 font-light mt-2">Format: JPG, PNG. Maksimal 2MB</p>
                 </div>
               </div>
 
               {/* Form Fields */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-lp-text2 mb-2">
                     Nama UKM *
                   </label>
                   <input
@@ -294,14 +294,14 @@ const SettingProfileUKM = () => {
                     name="name"
                     value={formData.name}
                     onChange={handleChange}
-                    className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full border border-lp-border border rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     required
                     placeholder="Contoh: UKM Musik"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-lp-text2 mb-2">
                     Username *
                   </label>
                   <input
@@ -309,17 +309,17 @@ const SettingProfileUKM = () => {
                     name="username"
                     value={formData.username}
                     onChange={handleChange}
-                    className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full border border-lp-border border rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     required
                     placeholder="nfscc"
                   />
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-lp-text3 font-light mt-1">
                     URL: {window.location.origin}/profile/ukm/{formData.username || 'username'}
                   </p>
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-lp-text2 mb-2">
                     Email *
                   </label>
                   <input
@@ -327,13 +327,13 @@ const SettingProfileUKM = () => {
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
-                    className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full border border-lp-border border rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     required
                   />
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-lp-text2 mb-2">
                     Bio
                   </label>
                   <textarea
@@ -341,17 +341,17 @@ const SettingProfileUKM = () => {
                     value={formData.bio}
                     onChange={handleChange}
                     rows="3"
-                    className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full border border-lp-border border rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="Deskripsikan UKM Anda..."
                     maxLength="150"
                   />
-                  <p className="text-xs text-gray-500 text-right mt-1">
+                  <p className="text-xs text-lp-text3 font-light text-right mt-1">
                     {formData.bio?.length || 0}/150 karakter
                   </p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-lp-text2 mb-2">
                     Website
                   </label>
                   <input
@@ -359,13 +359,13 @@ const SettingProfileUKM = () => {
                     name="website"
                     value={formData.website}
                     onChange={handleChange}
-                    className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full border border-lp-border border rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="https://example.com"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-lp-text2 mb-2">
                     Telepon
                   </label>
                   <input
@@ -373,7 +373,7 @@ const SettingProfileUKM = () => {
                     name="phone"
                     value={formData.phone}
                     onChange={handleChange}
-                    className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full border border-lp-border border rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="+62 812-3456-7890"
                   />
                 </div>
@@ -381,14 +381,14 @@ const SettingProfileUKM = () => {
 
               {/* Action Buttons */}
               <div className="flex justify-between items-center pt-6 border-t">
-                <div className="text-sm text-gray-500">
+                <div className="text-sm text-lp-text3 font-light">
                   Terakhir update: {localProfile?.updated_at ? new Date(localProfile.updated_at).toLocaleString('id-ID') : 'Belum pernah'}
                 </div>
                 <div className="flex space-x-4">
                   <button
                     type="button"
                     onClick={() => window.history.back()}
-                    className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                    className="px-6 py-3 border border-lp-border border rounded-lg text-lp-text2 hover:bg-lp-bg"
                     disabled={isSubmitting}
                   >
                     Batal
@@ -396,7 +396,7 @@ const SettingProfileUKM = () => {
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center"
+                    className="bg-lp-accent text-white px-6 py-3 rounded-lg hover:bg-lp-atext disabled:opacity-50 flex items-center"
                   >
                     {isSubmitting ? (
                       <>
@@ -421,7 +421,7 @@ const SettingProfileUKM = () => {
               href={`/profile/ukm/${formData.username || 'username'}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="bg-green-600 text-white py-3 px-4 rounded-lg text-center hover:bg-green-700"
+              className="bg-lp-green text-white py-3 px-4 rounded-lg text-center hover:bg-[rgb(21,128,61)]"
             >
               👀 Lihat Profile Publik
             </a>

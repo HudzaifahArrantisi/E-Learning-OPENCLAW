@@ -6,7 +6,7 @@
 ![License](https://img.shields.io/badge/License-Academic-lightgrey)
 
 
-![Landing Page](frontend/src/assets/image1.png)
+![Landing Page](frontend/src/assets/image.png)
 
 *Landing Page NF StudentHub - hero utama platform akademik terintegrasi.*
 

@@ -265,7 +265,7 @@ const AbsensiDosen = () => {
       case 'izin': return 'bg-yellow-100 text-yellow-800'
       case 'sakit': return 'bg-blue-100 text-blue-800'
       case 'alpa': return 'bg-red-100 text-red-800'
-      default: return 'bg-gray-100 text-gray-800'
+      default: return 'bg-gray-100 text-lp-text font-semibold tracking-tight'
     }
   }
 
@@ -282,11 +282,11 @@ const AbsensiDosen = () => {
 
   const getStatusIcon = (status) => {
     switch(status?.toLowerCase()) {
-      case 'hadir': return <FaUserCheck className="text-green-500" />
+      case 'hadir': return <FaUserCheck className="text-lp-green" />
       case 'izin': return <FaEdit className="text-yellow-500" />
-      case 'sakit': return <FaUserCircle className="text-blue-500" />
+      case 'sakit': return <FaUserCircle className="text-lp-atext" />
       case 'alpa': return <FaUserTimes className="text-red-500" />
-      default: return <FaClock className="text-gray-500" />
+      default: return <FaClock className="text-lp-text3 font-light" />
     }
   }
 
@@ -295,14 +295,14 @@ const AbsensiDosen = () => {
 
   // Status options untuk modal manual
   const statusOptions = [
-    { value: 'hadir', label: 'Hadir', color: 'text-green-600', bg: 'bg-green-100' },
+    { value: 'hadir', label: 'Hadir', color: 'text-lp-green', bg: 'bg-green-100' },
     { value: 'izin', label: 'Izin', color: 'text-yellow-600', bg: 'bg-yellow-100' },
-    { value: 'sakit', label: 'Sakit', color: 'text-blue-600', bg: 'bg-blue-100' },
+    { value: 'sakit', label: 'Sakit', color: 'text-lp-atext', bg: 'bg-blue-100' },
     { value: 'alpa', label: 'Alpa', color: 'text-red-600', bg: 'bg-red-100' }
   ]
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-lp-bg">
       <Sidebar role="dosen" isOpen={sidebarOpen} onClose={() => setSidebarOpen(!sidebarOpen)} />
       
       <div className="flex-1 lg:ml-0 transition-all duration-300 min-w-0">
@@ -311,27 +311,27 @@ const AbsensiDosen = () => {
           <div className="flex items-center gap-4 mb-6 lg:mb-8">
             <button 
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="lg:hidden p-3 rounded-xl bg-white shadow-md hover:shadow-lg transition-shadow"
+              className="lg:hidden p-3 rounded-xl bg-lp-surface shadow-sm border border-lp-border hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border transition-shadow"
             >
               <span className="text-xl">☰</span>
             </button>
             <div className="flex-1">
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Manajemen Absensi Dosen</h1>
-              <p className="text-gray-600 mt-2">Buat dan kelola sesi absensi per pertemuan</p>
+              <h1 className="text-2xl sm:text-3xl font-bold text-lp-text font-semibold tracking-tight">Manajemen Absensi Dosen</h1>
+              <p className="text-lp-text2 font-light mt-2">Buat dan kelola sesi absensi per pertemuan</p>
             </div>
           </div>
 
           {/* Filter Section */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
+          <div className="bg-lp-surface rounded-2xl shadow-sm border border-lp-border border p-6 mb-6">
             <div className="flex flex-wrap gap-4 items-center">
               <div className="flex items-center gap-2">
-                <FaFilter className="text-gray-500" />
-                <span className="font-medium text-gray-700">Filter Sesi Aktif:</span>
+                <FaFilter className="text-lp-text3 font-light" />
+                <span className="font-medium text-lp-text2">Filter Sesi Aktif:</span>
               </div>
               <select
                 value={filterPertemuan}
                 onChange={(e) => setFilterPertemuan(e.target.value)}
-                className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                className="border border-lp-border border rounded-lg px-3 py-2 text-sm"
               >
                 <option value="">Semua Pertemuan</option>
                 {pertemuanList.map(p => (
@@ -341,7 +341,7 @@ const AbsensiDosen = () => {
               <select
                 value={filterCourse}
                 onChange={(e) => setFilterCourse(e.target.value)}
-                className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                className="border border-lp-border border rounded-lg px-3 py-2 text-sm"
               >
                 <option value="">Semua Mata Kuliah</option>
                 {courses?.map((course) => (
@@ -355,7 +355,7 @@ const AbsensiDosen = () => {
                   setFilterPertemuan('')
                   setFilterCourse('')
                 }}
-                className="text-sm text-gray-600 hover:text-gray-800"
+                className="text-sm text-lp-text2 font-light hover:text-lp-text font-semibold tracking-tight"
               >
                 Reset Filter
               </button>
@@ -366,22 +366,22 @@ const AbsensiDosen = () => {
             {/* Panel Kiri - Buat Sesi & Mata Kuliah */}
             <div className="lg:col-span-2 space-y-6">
               {/* Buat Sesi Baru */}
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-                <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-3">
-                  <FaQrcode className="text-blue-600" />
+              <div className="bg-lp-surface rounded-2xl shadow-sm border border-lp-border border p-6">
+                <h3 className="text-xl font-bold text-lp-text font-semibold tracking-tight mb-4 flex items-center gap-3">
+                  <FaQrcode className="text-lp-atext" />
                   Buat Sesi Absensi Baru
                 </h3>
                 
                 <form onSubmit={handleCreateSession} className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <label className="block text-sm font-semibold text-lp-text2 mb-2">
                         Mata Kuliah
                       </label>
                       <select
                         value={courseID}
                         onChange={(e) => setCourseID(e.target.value)}
-                        className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full border border-lp-border border rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         required
                         disabled={loadingCourses || createSessionMutation.isLoading}
                       >
@@ -395,13 +395,13 @@ const AbsensiDosen = () => {
                     </div>
                     
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <label className="block text-sm font-semibold text-lp-text2 mb-2">
                         Pertemuan Ke-
                       </label>
                       <select
                         value={pertemuanKe}
                         onChange={(e) => setPertemuanKe(parseInt(e.target.value))}
-                        className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full border border-lp-border border rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         required
                         disabled={createSessionMutation.isLoading}
                       >
@@ -413,7 +413,7 @@ const AbsensiDosen = () => {
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold text-lp-text2 mb-2">
                       Durasi Sesi (menit)
                     </label>
                     <input
@@ -425,18 +425,18 @@ const AbsensiDosen = () => {
                       step="5"
                       className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
                     />
-                    <div className="flex justify-between text-sm text-gray-600 mt-1">
+                    <div className="flex justify-between text-sm text-lp-text2 font-light mt-1">
                       <span>5m</span>
                       <span className="font-medium">{duration} menit</span>
                       <span>120m</span>
                     </div>
-                    <p className="text-sm text-gray-500 mt-1">QR Code akan auto-refresh setiap 15 detik</p>
+                    <p className="text-sm text-lp-text3 font-light mt-1">QR Code akan auto-refresh setiap 15 detik</p>
                   </div>
                   
                   <button
                     type="submit"
                     disabled={createSessionMutation.isLoading || !courseID}
-                    className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 rounded-xl font-semibold hover:from-blue-600 hover:to-blue-700 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+                    className="w-full bg-lp-bg text-white py-3 rounded-xl font-semibold hover:from-blue-600 hover:to-blue-700 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none transition-all duration-300 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl flex items-center justify-center gap-2"
                   >
                     {createSessionMutation.isLoading ? (
                       <>
@@ -455,22 +455,22 @@ const AbsensiDosen = () => {
 
               {/* Sesi Aktif */}
               {activeSession && (
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+                <div className="bg-lp-surface rounded-2xl shadow-sm border border-lp-border border p-6">
                   <div className="flex justify-between items-start mb-6">
                     <div>
-                      <h3 className="text-xl font-bold text-gray-800 flex items-center gap-3">
-                        <FaHourglassHalf className="text-green-600" />
+                      <h3 className="text-xl font-bold text-lp-text font-semibold tracking-tight flex items-center gap-3">
+                        <FaHourglassHalf className="text-lp-green" />
                         Sesi Aktif: {activeSession.course_name}
                       </h3>
                       <div className="flex flex-wrap items-center gap-3 mt-2">
                         <span className="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">
                           Pertemuan {activeSession.pertemuan_ke}
                         </span>
-                        <span className="text-gray-600">
+                        <span className="text-lp-text2 font-light">
                           Berakhir: {new Date(activeSession.expires_at).toLocaleString('id-ID')}
                         </span>
                         <span className={`text-sm font-medium px-2 py-1 rounded ${
-                          refreshIntervalRef.current ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                          refreshIntervalRef.current ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-lp-text font-semibold tracking-tight'
                         }`}>
                           {refreshIntervalRef.current ? '🟢 Auto-refresh aktif' : '⚫ Auto-refresh berhenti'}
                         </span>
@@ -480,7 +480,7 @@ const AbsensiDosen = () => {
                       <button
                         onClick={handleManualRefresh}
                         disabled={refreshTokenMutation.isLoading}
-                        className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors flex items-center gap-2"
+                        className="bg-lp-green text-white px-4 py-2 rounded-lg hover:bg-lp-green transition-colors flex items-center gap-2"
                       >
                         <FaSync className={refreshTokenMutation.isLoading ? "animate-spin" : ""} />
                         Refresh QR
@@ -502,7 +502,7 @@ const AbsensiDosen = () => {
 
                   {/* QR Code */}
                   <div className="flex flex-col items-center mb-6">
-                    <div className="bg-white p-6 rounded-2xl border-4 border-blue-200 mb-4 shadow-lg">
+                    <div className="bg-lp-surface p-6 rounded-2xl border-4 border-blue-200 mb-4 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border">
                       {qrToken && (
                         <QRCodeSVG 
                           value={qrToken}
@@ -515,16 +515,16 @@ const AbsensiDosen = () => {
                       )}
                     </div>
                     <div className="text-center space-y-2">
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm text-lp-text2 font-light">
                         Tampilkan QR Code ini di kelas untuk di-scan mahasiswa
                       </p>
                       <div className="flex items-center justify-center gap-2">
-                        <div className={`w-3 h-3 rounded-full ${refreshIntervalRef.current ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}></div>
-                        <span className="text-sm text-gray-700">
+                        <div className={`w-3 h-3 rounded-full ${refreshIntervalRef.current ? 'bg-lp-green animate-pulse' : 'bg-gray-400'}`}></div>
+                        <span className="text-sm text-lp-text2">
                           {refreshIntervalRef.current ? 'Auto-refresh aktif (15 detik)' : 'Auto-refresh berhenti'}
                         </span>
                       </div>
-                      <p className="text-xs text-gray-500 font-mono bg-gray-100 p-2 rounded mt-2">
+                      <p className="text-xs text-lp-text3 font-light font-mono bg-gray-100 p-2 rounded mt-2">
                         Token: {qrToken?.substring(0, 20)}...
                       </p>
                     </div>
@@ -533,8 +533,8 @@ const AbsensiDosen = () => {
                   {/* Session Info */}
                   <div className="grid grid-cols-2 gap-4 mb-6">
                     <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
-                      <p className="text-sm text-gray-600 flex items-center gap-2">
-                        <FaKey className="text-blue-500" />
+                      <p className="text-sm text-lp-text2 font-light flex items-center gap-2">
+                        <FaKey className="text-lp-atext" />
                         Token Session
                       </p>
                       <p className="font-mono text-sm truncate mt-1" title={activeSession.session_token}>
@@ -542,8 +542,8 @@ const AbsensiDosen = () => {
                       </p>
                     </div>
                     <div className="bg-green-50 p-4 rounded-xl border border-green-100">
-                      <p className="text-sm text-gray-600 flex items-center gap-2">
-                        <FaUsers className="text-green-500" />
+                      <p className="text-sm text-lp-text2 font-light flex items-center gap-2">
+                        <FaUsers className="text-lp-green" />
                         Total Mahasiswa
                       </p>
                       <p className="text-2xl font-bold mt-1">{sessionStudents?.total_students || 0}</p>
@@ -555,7 +555,7 @@ const AbsensiDosen = () => {
                     <div className="grid grid-cols-4 gap-2 mb-6">
                       <div className="bg-green-100 p-3 rounded-lg text-center">
                         <p className="text-lg font-bold text-green-800">{sessionStudents.hadir_count || 0}</p>
-                        <p className="text-xs text-green-600">Hadir</p>
+                        <p className="text-xs text-lp-green">Hadir</p>
                       </div>
                       <div className="bg-yellow-100 p-3 rounded-lg text-center">
                         <p className="text-lg font-bold text-yellow-800">{sessionStudents.izin_count || 0}</p>
@@ -563,7 +563,7 @@ const AbsensiDosen = () => {
                       </div>
                       <div className="bg-blue-100 p-3 rounded-lg text-center">
                         <p className="text-lg font-bold text-blue-800">{sessionStudents.sakit_count || 0}</p>
-                        <p className="text-xs text-blue-600">Sakit</p>
+                        <p className="text-xs text-lp-atext">Sakit</p>
                       </div>
                       <div className="bg-red-100 p-3 rounded-lg text-center">
                         <p className="text-lg font-bold text-red-800">{sessionStudents.alpa_count || 0}</p>
@@ -575,13 +575,13 @@ const AbsensiDosen = () => {
               )}
 
               {/* Daftar Sesi Aktif */}
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+              <div className="bg-lp-surface rounded-2xl shadow-sm border border-lp-border border p-6">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-xl font-bold text-gray-800 flex items-center gap-3">
+                  <h3 className="text-xl font-bold text-lp-text font-semibold tracking-tight flex items-center gap-3">
                     <FaCalendarAlt className="text-purple-600" />
                     Sesi Absensi Aktif
                   </h3>
-                  <div className="text-sm text-gray-600">
+                  <div className="text-sm text-lp-text2 font-light">
                     Total: {activeSessions?.sessions?.length || 0} sesi
                   </div>
                 </div>
@@ -589,12 +589,12 @@ const AbsensiDosen = () => {
                 {loadingSessions ? (
                   <div className="text-center py-8">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                    <p className="mt-2 text-gray-600">Memuat sesi aktif...</p>
+                    <p className="mt-2 text-lp-text2 font-light">Memuat sesi aktif...</p>
                   </div>
                 ) : activeSessions?.sessions && activeSessions.sessions.length > 0 ? (
                   <div className="space-y-4">
                     {activeSessions.sessions.map((session) => (
-                      <div key={session.id} className="border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow">
+                      <div key={session.id} className="border border-lp-border border rounded-xl p-4 hover:shadow-sm border border-lp-border transition-shadow">
                         <div className="flex justify-between items-start mb-3">
                           <div>
                             <div className="flex items-center gap-2 mb-1">
@@ -609,18 +609,18 @@ const AbsensiDosen = () => {
                                 {session.time_left_minutes > 0 ? `${session.time_left_minutes}m tersisa` : 'Expired'}
                               </span>
                             </div>
-                            <h4 className="font-semibold text-gray-800">{session.course_name}</h4>
-                            <p className="text-sm text-gray-600">
+                            <h4 className="font-semibold text-lp-text font-semibold tracking-tight">{session.course_name}</h4>
+                            <p className="text-sm text-lp-text2 font-light">
                               {session.hari} {session.jam_mulai}-{session.jam_selesai}
                             </p>
-                            <p className="text-xs text-gray-500">
+                            <p className="text-xs text-lp-text3 font-light">
                               Dibuat: {new Date(session.created_at).toLocaleString('id-ID')}
                             </p>
                           </div>
                           <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                             session.status === 'active' && session.time_left_minutes > 0
                               ? 'bg-green-100 text-green-800' 
-                              : 'bg-gray-100 text-gray-800'
+                              : 'bg-gray-100 text-lp-text font-semibold tracking-tight'
                           }`}>
                             {session.status === 'active' && session.time_left_minutes > 0 ? 'Aktif' : 'Tidak Aktif'}
                           </span>
@@ -650,7 +650,7 @@ const AbsensiDosen = () => {
                               // Navigate to session detail
                               window.location.href = `/dosen/absensi/${session.id}`
                             }}
-                            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200 transition-colors flex items-center gap-1"
+                            className="px-4 py-2 bg-gray-100 text-lp-text2 rounded-lg text-sm hover:bg-gray-200 transition-colors flex items-center gap-1"
                           >
                             <FaEye />
                             Detail
@@ -673,8 +673,8 @@ const AbsensiDosen = () => {
                 ) : (
                   <div className="text-center py-8">
                     <div className="text-4xl mb-4 text-gray-300">📋</div>
-                    <h4 className="font-semibold text-gray-700 mb-2">Tidak ada sesi aktif</h4>
-                    <p className="text-gray-500 text-sm">
+                    <h4 className="font-semibold text-lp-text2 mb-2">Tidak ada sesi aktif</h4>
+                    <p className="text-lp-text3 font-light text-sm">
                       Buat sesi absensi baru untuk memulai
                     </p>
                   </div>
@@ -682,15 +682,15 @@ const AbsensiDosen = () => {
               </div>
 
               {/* Riwayat Pertemuan */}
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+              <div className="bg-lp-surface rounded-2xl shadow-sm border border-lp-border border p-6">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-xl font-bold text-gray-800 flex items-center gap-3">
+                  <h3 className="text-xl font-bold text-lp-text font-semibold tracking-tight flex items-center gap-3">
                     <FaHistory className="text-purple-600" />
                     Riwayat Pertemuan
                   </h3>
                   <button 
                     onClick={() => refetchHistory()}
-                    className="text-sm text-gray-600 hover:text-gray-800"
+                    className="text-sm text-lp-text2 font-light hover:text-lp-text font-semibold tracking-tight"
                   >
                     Refresh
                   </button>
@@ -699,23 +699,23 @@ const AbsensiDosen = () => {
                 <div className="space-y-3">
                   {pertemuanHistory && pertemuanHistory.length > 0 ? (
                     pertemuanHistory.slice(0, 5).map((item, index) => (
-                      <div key={index} className="border border-gray-200 rounded-lg p-3">
+                      <div key={index} className="border border-lp-border border rounded-lg p-3">
                         <div className="flex justify-between items-center">
                           <div>
-                            <p className="font-medium text-gray-800">{item.course_name}</p>
-                            <p className="text-sm text-gray-600">Pertemuan {item.pertemuan_ke} • {item.date}</p>
+                            <p className="font-medium text-lp-text font-semibold tracking-tight">{item.course_name}</p>
+                            <p className="text-sm text-lp-text2 font-light">Pertemuan {item.pertemuan_ke} • {item.date}</p>
                           </div>
                           <div className="flex gap-2">
                             <span className={`px-2 py-1 rounded text-xs ${getStatusColor(item.status)}`}>
                               {getStatusLabel(item.status)}
                             </span>
-                            <span className="text-xs text-gray-500">{item.time}</span>
+                            <span className="text-xs text-lp-text3 font-light">{item.time}</span>
                           </div>
                         </div>
                       </div>
                     ))
                   ) : (
-                    <div className="text-center py-4 text-gray-500">
+                    <div className="text-center py-4 text-lp-text3 font-light">
                       <p>Belum ada riwayat pertemuan</p>
                     </div>
                   )}
@@ -726,8 +726,8 @@ const AbsensiDosen = () => {
             {/* Panel Kanan - Daftar Mahasiswa & Statistik */}
             <div className="space-y-6">
               {/* Statistik Pertemuan */}
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-                <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-3">
+              <div className="bg-lp-surface rounded-2xl shadow-sm border border-lp-border border p-6">
+                <h3 className="text-xl font-bold text-lp-text font-semibold tracking-tight mb-4 flex items-center gap-3">
                   <FaChartBar className="text-purple-600" />
                   Statistik Pertemuan
                 </h3>
@@ -735,10 +735,10 @@ const AbsensiDosen = () => {
                   {pertemuanList.slice(0, 6).map(pertemuan => {
                     const sessionCount = activeSessions?.sessions?.filter(s => s.pertemuan_ke === pertemuan).length || 0
                     return (
-                      <div key={pertemuan} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
+                      <div key={pertemuan} className="flex items-center justify-between p-3 border border-lp-border border rounded-lg hover:bg-lp-bg">
                         <div>
-                          <span className="font-medium text-gray-800">Pertemuan {pertemuan}</span>
-                          <p className="text-sm text-gray-600">{sessionCount} sesi aktif</p>
+                          <span className="font-medium text-lp-text font-semibold tracking-tight">Pertemuan {pertemuan}</span>
+                          <p className="text-sm text-lp-text2 font-light">{sessionCount} sesi aktif</p>
                         </div>
                         <button
                           onClick={() => {
@@ -748,7 +748,7 @@ const AbsensiDosen = () => {
                           className={`px-3 py-1 rounded-lg text-sm transition-colors ${
                             filterPertemuan === pertemuan.toString() 
                               ? 'bg-blue-100 text-blue-700' 
-                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                              : 'bg-gray-100 text-lp-text2 hover:bg-gray-200'
                           }`}
                         >
                           Filter
@@ -759,7 +759,7 @@ const AbsensiDosen = () => {
                 </div>
                 <button 
                   onClick={() => window.location.href = '/dosen/absensi/riwayat'}
-                  className="w-full mt-4 text-center text-blue-600 hover:text-blue-800 text-sm font-medium"
+                  className="w-full mt-4 text-center text-lp-atext hover:text-blue-800 text-sm font-medium"
                 >
                   Lihat semua statistik →
                 </button>
@@ -767,10 +767,10 @@ const AbsensiDosen = () => {
 
               {/* Daftar Mahasiswa untuk Sesi Aktif */}
               {activeSession && (
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+                <div className="bg-lp-surface rounded-2xl shadow-sm border border-lp-border border p-6">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-xl font-bold text-gray-800 flex items-center gap-3">
-                      <FaUsers className="text-green-600" />
+                    <h3 className="text-xl font-bold text-lp-text font-semibold tracking-tight flex items-center gap-3">
+                      <FaUsers className="text-lp-green" />
                       Daftar Mahasiswa
                     </h3>
                     <div className="flex items-center gap-2">
@@ -779,7 +779,7 @@ const AbsensiDosen = () => {
                       </span>
                       <button 
                         onClick={() => refetchStudents()}
-                        className="text-gray-500 hover:text-gray-700"
+                        className="text-lp-text3 font-light hover:text-lp-text2"
                         disabled={loadingStudents}
                       >
                         <FaSync className={loadingStudents ? "animate-spin" : ""} />
@@ -790,18 +790,18 @@ const AbsensiDosen = () => {
                   {loadingStudents ? (
                     <div className="text-center py-8">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                      <p className="mt-2 text-gray-600">Memuat data mahasiswa...</p>
+                      <p className="mt-2 text-lp-text2 font-light">Memuat data mahasiswa...</p>
                     </div>
                   ) : sessionStudents?.students && sessionStudents.students.length > 0 ? (
                     <>
                       <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
                         {sessionStudents.students.map((student, index) => (
-                          <div key={student.id} className="border border-gray-200 rounded-lg p-3 hover:bg-gray-50 transition-colors">
+                          <div key={student.id} className="border border-lp-border border rounded-lg p-3 hover:bg-lp-bg transition-colors">
                             <div className="flex justify-between items-center">
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2">
-                                  <p className="font-medium text-sm text-gray-800 truncate">{student.name}</p>
-                                  <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
+                                  <p className="font-medium text-sm text-lp-text font-semibold tracking-tight truncate">{student.name}</p>
+                                  <span className="text-xs text-lp-text3 font-light bg-gray-100 px-2 py-0.5 rounded">
                                     {student.nim}
                                   </span>
                                 </div>
@@ -811,7 +811,7 @@ const AbsensiDosen = () => {
                                     {getStatusLabel(student.attendance_status)}
                                   </span>
                                   {student.attendance_time && (
-                                    <span className="text-xs text-gray-500">
+                                    <span className="text-xs text-lp-text3 font-light">
                                       {student.attendance_time}
                                     </span>
                                   )}
@@ -823,7 +823,7 @@ const AbsensiDosen = () => {
                                 className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
                                   student.attendance_status === 'hadir' 
                                     ? 'bg-green-200 text-green-700 border border-green-300' 
-                                    : 'bg-green-100 text-green-600 hover:bg-green-200'
+                                    : 'bg-green-100 text-lp-green hover:bg-green-200'
                                 }`}
                                 title="Hadir"
                               >
@@ -845,7 +845,7 @@ const AbsensiDosen = () => {
                                 className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
                                   student.attendance_status === 'sakit' 
                                     ? 'bg-blue-200 text-blue-700 border border-blue-300' 
-                                    : 'bg-blue-100 text-blue-600 hover:bg-blue-200'
+                                    : 'bg-blue-100 text-lp-atext hover:bg-blue-200'
                                 }`}
                                 title="Sakit"
                               >
@@ -864,7 +864,7 @@ const AbsensiDosen = () => {
                               </button>
                               <button
                                 onClick={() => handleManualStatus(student)}
-                                className="w-8 h-8 rounded-lg flex items-center justify-center bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
+                                className="w-8 h-8 rounded-lg flex items-center justify-center bg-gray-100 text-lp-text2 font-light hover:bg-gray-200 transition-colors"
                                 title="Edit Manual"
                               >
                                 <FaEdit className="text-xs" />
@@ -877,17 +877,17 @@ const AbsensiDosen = () => {
                       
                       {/* Summary */}
                       {sessionStudents && (
-                        <div className="mt-4 pt-4 border-t border-gray-200">
+                        <div className="mt-4 pt-4 border-t border-lp-border border">
                           <div className="grid grid-cols-2 gap-2">
                             <div className="text-center">
-                              <p className="text-lg font-bold text-green-600">{sessionStudents.hadir_count || 0}</p>
-                              <p className="text-xs text-gray-600">Hadir</p>
+                              <p className="text-lg font-bold text-lp-green">{sessionStudents.hadir_count || 0}</p>
+                              <p className="text-xs text-lp-text2 font-light">Hadir</p>
                             </div>
                             <div className="text-center">
                               <p className="text-lg font-bold text-red-600">
                                 {sessionStudents.total_students - sessionStudents.attendance_count || 0}
                               </p>
-                              <p className="text-xs text-gray-600">Belum Absen</p>
+                              <p className="text-xs text-lp-text2 font-light">Belum Absen</p>
                             </div>
                           </div>
                         </div>
@@ -896,7 +896,7 @@ const AbsensiDosen = () => {
                   ) : (
                     <div className="text-center py-8">
                       <div className="text-4xl text-gray-300 mb-4">👥</div>
-                      <p className="text-gray-500">Tidak ada mahasiswa terdaftar</p>
+                      <p className="text-lp-text3 font-light">Tidak ada mahasiswa terdaftar</p>
                     </div>
                   )}
                 </div>
@@ -905,7 +905,7 @@ const AbsensiDosen = () => {
               {/* Instruksi */}
               <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4">
                 <h4 className="font-bold text-blue-800 mb-2 flex items-center gap-2">
-                  <FaClock className="text-blue-600" />
+                  <FaClock className="text-lp-atext" />
                   Cara Kerja Absensi:
                 </h4>
                 <ol className="text-sm text-blue-700 space-y-2 list-decimal pl-4">
@@ -916,7 +916,7 @@ const AbsensiDosen = () => {
                   <li>Klik tombol H/I/S/A untuk absen manual</li>
                   <li>Status langsung tersimpan di database</li>
                 </ol>
-                <div className="mt-3 text-xs text-blue-600 space-y-1">
+                <div className="mt-3 text-xs text-lp-atext space-y-1">
                   <p>⚡ QR Code auto-refresh setiap 15 detik</p>
                   <p>🔒 Token berbeda untuk setiap sesi</p>
                   <p>📊 Data realtime di mahasiswa & dosen</p>
@@ -924,8 +924,8 @@ const AbsensiDosen = () => {
               </div>
 
               {/* Legend Status */}
-              <div className="bg-gray-50 border border-gray-200 rounded-2xl p-4">
-                <h4 className="font-bold text-gray-800 mb-3">Legenda Status:</h4>
+              <div className="bg-lp-bg border border-lp-border border rounded-2xl p-4">
+                <h4 className="font-bold text-lp-text font-semibold tracking-tight mb-3">Legenda Status:</h4>
                 <div className="space-y-2">
                   {statusOptions.map((status) => (
                     <div key={status.value} className="flex items-center gap-2">
@@ -934,7 +934,7 @@ const AbsensiDosen = () => {
                          status.value === 'izin' ? 'I' : 
                          status.value === 'sakit' ? 'S' : 'A'}
                       </div>
-                      <span className="text-sm text-gray-700">{status.label}</span>
+                      <span className="text-sm text-lp-text2">{status.label}</span>
                     </div>
                   ))}
                 </div>
@@ -943,7 +943,7 @@ const AbsensiDosen = () => {
               {/* Status Messages */}
               {createSessionMutation.isSuccess && (
                 <div className="p-4 bg-green-100 border border-green-200 rounded-xl text-green-800 flex items-center space-x-2">
-                  <FaCheckCircle className="text-green-500 text-lg" />
+                  <FaCheckCircle className="text-lp-green text-lg" />
                   <span>Sesi absensi berhasil dibuat!</span>
                 </div>
               )}
@@ -969,11 +969,11 @@ const AbsensiDosen = () => {
       {/* Modal Absensi Manual */}
       {showManualModal && selectedStudent && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-6 max-w-md w-full">
+          <div className="bg-lp-surface rounded-2xl p-6 max-w-md w-full">
             <div className="flex justify-between items-center mb-6">
               <div>
-                <h3 className="text-xl font-bold text-gray-800">Absensi Manual</h3>
-                <p className="text-sm text-gray-600">
+                <h3 className="text-xl font-bold text-lp-text font-semibold tracking-tight">Absensi Manual</h3>
+                <p className="text-sm text-lp-text2 font-light">
                   {selectedStudent.name} ({selectedStudent.nim})
                 </p>
               </div>
@@ -982,14 +982,14 @@ const AbsensiDosen = () => {
                   setShowManualModal(false)
                   setSelectedStudent(null)
                 }}
-                className="text-gray-500 hover:text-gray-700"
+                className="text-lp-text3 font-light hover:text-lp-text2"
               >
                 ✕
               </button>
             </div>
             
             <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-3">
+              <label className="block text-sm font-medium text-lp-text2 mb-3">
                 Pilih Status Kehadiran:
               </label>
               <div className="grid grid-cols-2 gap-3">
@@ -1001,7 +1001,7 @@ const AbsensiDosen = () => {
                     className={`p-4 rounded-xl border-2 transition-all ${
                       manualStatus === status.value 
                         ? `${status.bg} border-blue-500` 
-                        : 'border-gray-200 hover:border-gray-300'
+                        : 'border-lp-border border hover:border-lp-border border'
                     }`}
                   >
                     <div className="text-center">
@@ -1025,14 +1025,14 @@ const AbsensiDosen = () => {
                   setShowManualModal(false)
                   setSelectedStudent(null)
                 }}
-                className="flex-1 bg-gray-100 text-gray-700 py-3 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+                className="flex-1 bg-gray-100 text-lp-text2 py-3 rounded-lg font-medium hover:bg-gray-200 transition-colors"
               >
                 Batal
               </button>
               <button
                 onClick={() => handleStatusUpdate(selectedStudent.id, manualStatus)}
                 disabled={updateStatusMutation.isLoading}
-                className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                className="flex-1 bg-lp-accent text-white py-3 rounded-lg font-medium hover:bg-lp-atext transition-colors flex items-center justify-center gap-2"
               >
                 {updateStatusMutation.isLoading ? (
                   <>

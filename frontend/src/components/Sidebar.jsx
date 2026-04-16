@@ -93,76 +93,81 @@ const Sidebar = ({ role, isOpen, onClose }) => {
       {/* Overlay untuk mobile */}
       {sidebarOpen && (
         <div 
-          className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40 lg:hidden transition-opacity duration-300 animate-fadeIn"
+          className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 lg:hidden animate-fadeIn"
           onClick={closeSidebar}
         />
       )}
       
-      {/* Sidebar - Instagram Style */}
+      {/* Sidebar - Glassmorphism Style */}
       <div className={`
         fixed lg:sticky top-0 left-0 z-50
-        w-64 bg-white shadow-2xl transform transition-all duration-500 ease-in-out
+        w-[260px] bg-white/80 backdrop-blur-2xl border-r border-lp-border
+        transform transition-all duration-500 ease-in-out
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-        flex flex-col h-screen border-r border-gray-100
+        flex flex-col h-screen
       `}>
-        {/* Header Sidebar - Instagram Inspired */}
-        <div className="p-6 border-b border-gray-100">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-r from-pink-500 to-orange-500 rounded-lg flex items-center justify-center text-white font-bold text-lg">
-                NF
+
+        {/* Header Sidebar */}
+        <div className="px-5 pt-7 pb-5 border-b border-lp-border">
+          <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-lp-accentS border border-lp-borderA flex items-center justify-center">
+                <svg className="w-[18px] h-[18px] stroke-lp-accent fill-none stroke-2 [stroke-linecap:round] [stroke-linejoin:round]" viewBox="0 0 24 24">
+                  <path d="M22 10v6M2 10l10-5 10 5-10 5-10-5z" />
+                  <path d="M6 12v5c3.33 1.67 8.67 1.67 12 0v-5" />
+                </svg>
               </div>
               <div>
-                <h2 className="text-lg font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-                  StudentHub
-                </h2>
-                <p className="text-xs text-gray-500 capitalize font-medium">{role}</p>
+                <h2 className="text-[13px] font-bold text-lp-text tracking-wide">StudentHub</h2>
+                <p className="text-[10px] font-mono text-lp-text3 tracking-[0.08em] uppercase">{role}</p>
               </div>
             </div>
             <button 
               onClick={closeSidebar}
-              className="lg:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+              className="lg:hidden p-2 hover:bg-lp-surface rounded-xl transition-colors"
             >
-              <FaTimes className="text-gray-500 text-lg" />
+              <FaTimes className="text-lp-text3 text-sm" />
             </button>
           </div>
         </div>
 
+        {/* Section Label */}
+        <div className="px-5 pt-5 pb-2">
+          <span className="text-[10px] font-mono font-medium tracking-[0.14em] uppercase text-lp-text3">Navigation</span>
+        </div>
+
         {/* Menu Items */}
-        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-          {/* Main Feed Link */}
-
-
-          {/* Role Specific Menus */}
+        <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto custom-scrollbar">
           {items.map((item) => (
-            <div key={item.path}>
-              <Link
-                to={item.path}
-                onClick={() => window.innerWidth < 1024 && closeSidebar()}
-                className={`
-                  flex items-center space-x-3 p-3 rounded-xl transition-all duration-300
-                  ${isActive(item.path) 
-                    ? 'bg-gradient-to-r from-pink-50 to-pink-100 text-pink-600 border-l-4 border-pink-500' 
-                    : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
-                  }
-                `}
-              >
-                <div className={`${isActive(item.path) ? 'text-pink-500' : 'text-gray-400'}`}>
-                  {item.icon}
-                </div>
-                <span className="font-medium">{item.label}</span>
-              </Link>
-            </div>
+            <Link
+              key={item.path}
+              to={item.path}
+              onClick={() => window.innerWidth < 1024 && closeSidebar()}
+              className={`
+                flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group
+                ${isActive(item.path) 
+                  ? 'bg-lp-accentS text-lp-atext font-semibold' 
+                  : 'text-lp-text2 hover:bg-lp-surface hover:text-lp-text'
+                }
+              `}
+            >
+              <div className={`text-base ${isActive(item.path) ? 'text-lp-atext' : 'text-lp-text3 group-hover:text-lp-text2'}`}>
+                {item.icon}
+              </div>
+              <span className="text-[13px] font-light">{item.label}</span>
+              {isActive(item.path) && (
+                <div className="ml-auto w-1.5 h-1.5 rounded-full bg-lp-accent animate-pulse" />
+              )}
+            </Link>
           ))}
         </nav>
 
         {/* Footer Sidebar */}
-        <div className="p-4 border-t border-gray-100">
-          <div className="space-y-2">
-
-            <div className="text-xs text-gray-400 text-center pt-4">
-              © 2024 NF StudentHub
-            </div>
+        <div className="px-5 py-4 border-t border-lp-border">
+          <div className="flex items-center gap-1.5 justify-center">
+            <div className="w-1 h-1 rounded-full bg-lp-accent/40" />
+            <span className="text-[9px] font-mono text-lp-text3 tracking-[0.06em]">© 2025 Student Hub</span>
+            <div className="w-1 h-1 rounded-full bg-lp-accent/40" />
           </div>
         </div>
       </div>

@@ -1,4 +1,4 @@
-// components/PostCard.jsx - DIUPDATE UNTUK PUSAT DAN LURUS
+// components/PostCard.jsx
 import React, { useState, memo, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { usePostInteractions } from '../hooks/usePostInteractions'
@@ -25,35 +25,35 @@ const CommentItem = memo(({ comment, getRelativeTime }) => {
   if (!comment) return null
   
   return (
-    <div className="flex space-x-3 mb-3 animate-fadeIn">
-      <div className="flex-shrink-0">
-        <Link 
-          to={`/profile/${comment.user_role || 'mahasiswa'}/${cleanUsername(comment.author_username || comment.author_name)}`}
-          className="hover:opacity-80 transition-opacity"
-        >
-          <div className="w-6 h-6 bg-gradient-to-r from-pink-500 to-orange-500 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm">
-            {comment.author_name?.[0]?.toUpperCase() || '?'}
-          </div>
-        </Link>
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="bg-gray-50 rounded-2xl px-3 py-2 hover:bg-gray-100 transition-colors duration-200">
-          <div className="flex items-center space-x-2 mb-1">
-            <Link 
-              to={`/profile/${comment.user_role || 'mahasiswa'}/${cleanUsername(comment.author_username || comment.author_name)}`}
-              className="hover:opacity-80 transition-opacity"
-            >
-              <span className="text-sm font-semibold text-gray-900 hover:underline">
-                {comment.author_name || 'Unknown'}
-              </span>
-            </Link>
-            <span className="text-xs text-gray-500">
-              {getRelativeTime ? getRelativeTime(comment.created_at) : new Date(comment.created_at).toLocaleDateString('id-ID')}
-            </span>
-          </div>
-          <p className="text-gray-800 text-sm break-words leading-relaxed">{comment.content || ''}</p>
+    <div className="flex items-start space-x-3 group mb-4 animate-fadeIn">
+      <Link 
+        to={`/profile/${comment.user_role || 'mahasiswa'}/${cleanUsername(comment.author_username || comment.author_name)}`}
+        className="flex-shrink-0"
+      >
+        <div className="w-8 h-8 bg-lp-surface border border-lp-border rounded-full flex items-center justify-center text-lp-text2 text-xs font-bold shrink-0">
+          {comment.author_name?.[0]?.toUpperCase() || '?'}
+        </div>
+      </Link>
+      <div className="flex-1 min-w-0 pt-1">
+        <span className="font-semibold text-lp-text text-[14px] tracking-tight mr-2">
+          <Link 
+            to={`/profile/${comment.user_role || 'mahasiswa'}/${cleanUsername(comment.author_username || comment.author_name)}`}
+            className="hover:opacity-80 transition-opacity"
+          >
+            {comment.author_name || 'Unknown'}
+          </Link>
+        </span>
+        <span className="text-lp-text text-[14px] font-normal break-words leading-relaxed">
+          {comment.content || ''}
+        </span>
+        <div className="text-lp-text3 text-[12px] font-normal mt-1 flex gap-3">
+          <span>{getRelativeTime ? getRelativeTime(comment.created_at) : new Date(comment.created_at).toLocaleDateString('id-ID')}</span>
+          <button className="font-semibold hidden group-hover:block hover:text-lp-text2">Balas</button>
         </div>
       </div>
+      <button className="pt-2 text-lp-text3 hover:text-lp-red px-1">
+        <FaRegHeart className="text-[10px]" />
+      </button>
     </div>
   )
 })
@@ -67,57 +67,22 @@ const getAspectRatioInfo = (width, height) => {
   
   const ratio = height / width
   
-  // Square (1:1)
   if (ratio >= 0.95 && ratio <= 1.05) {
-    return { 
-      ratio: '1:1', 
-      class: 'aspect-square',
-      icon: <MdCropSquare />
-    }
+    return { ratio: '1:1', class: 'aspect-square', icon: <MdCropSquare /> }
   }
-  
-  // Portrait (4:5)
   if (ratio >= 1.2 && ratio <= 1.35) {
-    return { 
-      ratio: '4:5', 
-      class: 'aspect-[4/5]',
-      icon: <MdCropPortrait />
-    }
+    return { ratio: '4:5', class: 'aspect-[4/5]', icon: <MdCropPortrait /> }
   }
-  
-  // Vertical/Stories (9:16)
   if (ratio >= 1.7 && ratio <= 1.85) {
-    return { 
-      ratio: '9:16', 
-      class: 'aspect-[9/16]',
-      icon: <MdCrop169 />
-    }
+    return { ratio: '9:16', class: 'aspect-[9/16]', icon: <MdCrop169 /> }
   }
-  
-  // Landscape (1.91:1)
   if (ratio >= 0.5 && ratio <= 0.6) {
-    return { 
-      ratio: '1.91:1', 
-      class: 'aspect-video',
-      icon: <MdCropLandscape />
-    }
+    return { ratio: '1.91:1', class: 'aspect-video', icon: <MdCropLandscape /> }
   }
-  
-  // Custom portrait
   if (ratio > 1) {
-    return { 
-      ratio: 'custom', 
-      class: '',
-      icon: <MdCropPortrait />
-    }
+    return { ratio: 'custom', class: '', icon: <MdCropPortrait /> }
   }
-  
-  // Custom landscape
-  return { 
-    ratio: 'custom', 
-    class: '',
-    icon: <MdCropLandscape />
-  }
+  return { ratio: 'custom', class: '', icon: <MdCropLandscape /> }
 }
 
 const PostCard = memo(({ post, getRelativeTime }) => {
@@ -216,7 +181,7 @@ const PostCard = memo(({ post, getRelativeTime }) => {
 
   const handleImageError = (e) => {
     e.target.style.display = 'none'
-    e.target.parentElement.classList.add('bg-gray-100')
+    e.target.parentElement.classList.add('bg-lp-surface')
   }
 
   const nextSlide = () => {
@@ -246,7 +211,7 @@ const PostCard = memo(({ post, getRelativeTime }) => {
     ? displayContent.substring(0, 150) + '...' 
     : displayContent
 
-  // Instagram-like heart animation
+  // Heart animation
   const HeartAnimation = () => (
     <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
       <div className="animate-heartBeat">
@@ -256,44 +221,40 @@ const PostCard = memo(({ post, getRelativeTime }) => {
   )
 
   return (
-    <div className="bg-white rounded-lg mb-6 w-full border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden max-w-[470px] mx-auto">
+    <>
+      <div className="bg-white border border-lp-border rounded-2xl mb-4 w-full overflow-hidden max-w-[470px] mx-auto hover:border-lp-borderA hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] hover:-translate-y-0.5 transition-all duration-300 group">
       {/* Header */}
-      <div className="flex items-center justify-between p-3.5 pb-3">
+      <div className="flex items-center justify-between p-4 pb-3">
         <Link
           to={`/profile/${post.role}/${username}`}
-          className="flex items-center space-x-3 hover:opacity-90 transition-opacity"
+          className="flex items-center gap-3 hover:opacity-90 transition-opacity"
         >
-          <div className="w-8 h-8 bg-gradient-to-r from-pink-500 to-orange-500 rounded-full flex items-center justify-center text-white text-sm font-bold shadow-sm">
+          <div className="w-8 h-8 bg-lp-accentS border border-lp-borderA rounded-full flex items-center justify-center text-lp-atext text-[11px] font-bold">
             {username?.[0]?.toUpperCase() || '?'}
           </div>
           <div>
-            <div className="font-semibold text-gray-900 text-sm hover:underline">{username}</div>
-            <div className="text-xs text-gray-500 capitalize">{post.role}</div>
+            <div className="font-semibold text-lp-text text-[13px] hover:underline tracking-tight">{username}</div>
+            <div className="text-[10px] text-lp-text3 font-mono tracking-wider uppercase">{post.role}</div>
           </div>
         </Link>
 
-        <button className="text-gray-400 hover:text-gray-600 p-1.5 rounded-full hover:bg-gray-100 transition-colors">
-          <FaEllipsisH className="text-lg" />
+        <button className="text-lp-text3 hover:text-lp-text2 p-1.5 rounded-full hover:bg-lp-surface transition-colors">
+          <FaEllipsisH className="text-sm" />
         </button>
       </div>
 
-      {/* Image Carousel - FIXED CENTER ALIGNMENT */}
+      {/* Image Carousel */}
       {hasMedia && (
         <div 
-          className="w-full relative bg-white"
+          className="w-full relative bg-lp-surface"
           onMouseEnter={() => setShowNavigation(true)}
           onMouseLeave={() => setShowNavigation(false)}
         >
-          <div className={`relative bg-white flex items-center justify-center overflow-hidden ${!imageLoaded ? 'animate-pulse bg-gray-100' : ''}`}
-            style={{ 
-              minHeight: '200px',
-              maxHeight: '600px'
-            }}
+          <div className={`relative flex items-center justify-center overflow-hidden ${!imageLoaded ? 'animate-pulse bg-lp-surface' : ''}`}
+            style={{ minHeight: '200px', maxHeight: '600px' }}
           >
-            {/* Heart Animation Overlay */}
             {animateLike && <HeartAnimation />}
             
-            {/* Image Container with Perfect Centering */}
             <div className="w-full h-full flex items-center justify-center">
               <img
                 src={resolveBackendAssetUrl(mediaUrls[currentSlide])}
@@ -302,47 +263,42 @@ const PostCard = memo(({ post, getRelativeTime }) => {
                 onError={handleImageError}
                 onLoad={() => setImageLoaded(true)}
                 loading="lazy"
-                style={{
-                  display: 'block',
-                  maxHeight: '600px'
-                }}
+                style={{ display: 'block', maxHeight: '600px' }}
               />
             </div>
             
-            {/* Navigation Arrows */}
             {hasMultipleMedia && (
               <>
                 <button
                   onClick={prevSlide}
-                  className={`absolute left-2 top-1/2 transform -translate-y-1/2 bg-black/30 text-white p-2 rounded-full hover:bg-black/50 transition-all duration-200 backdrop-blur-sm z-20 ${
+                  className={`absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 backdrop-blur-sm text-lp-text p-2 rounded-full hover:bg-white transition-all z-20 shadow-sm ${
                     isMobile || showNavigation ? 'opacity-100' : 'opacity-0'
                   }`}
                 >
-                  <FaChevronLeft className="text-sm" />
+                  <FaChevronLeft className="text-xs" />
                 </button>
                 <button
                   onClick={nextSlide}
-                  className={`absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/30 text-white p-2 rounded-full hover:bg-black/50 transition-all duration-200 backdrop-blur-sm z-20 ${
+                  className={`absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 backdrop-blur-sm text-lp-text p-2 rounded-full hover:bg-white transition-all z-20 shadow-sm ${
                     isMobile || showNavigation ? 'opacity-100' : 'opacity-0'
                   }`}
                 >
-                  <FaChevronRight className="text-sm" />
+                  <FaChevronRight className="text-xs" />
                 </button>
               </>
             )}
           </div>
 
-          {/* Slide Indicators */}
           {hasMultipleMedia && (
-            <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2 flex space-x-2 z-20">
+            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-20">
               {mediaUrls.map((_, index) => (
                 <button
                   key={index}
                   onClick={() => setCurrentSlide(index)}
                   className={`w-1.5 h-1.5 rounded-full transition-all ${
                     index === currentSlide 
-                      ? 'bg-white scale-125 shadow-lg' 
-                      : 'bg-white/50 hover:bg-white/80'
+                      ? 'bg-lp-accent scale-125' 
+                      : 'bg-lp-text3/40 hover:bg-lp-text3/60'
                   }`}
                 />
               ))}
@@ -351,51 +307,50 @@ const PostCard = memo(({ post, getRelativeTime }) => {
         </div>
       )}
 
-      {/* Content Area - FIXED PADDING */}
-      <div className="px-3.5 pt-3">
+      {/* Content Area */}
+      <div className="px-4 pt-3">
         {/* Actions */}
         <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center gap-4">
             <button
               onClick={handleLike}
               disabled={isLiking}
-              className={`relative flex items-center space-x-2 ${isLiking ? 'opacity-50' : 'hover:opacity-70'}`}
+              className={`relative flex items-center gap-1.5 ${isLiking ? 'opacity-50' : 'hover:opacity-70'} transition-opacity`}
             >
               {isLiked ? 
-                <BsHeartFill className="text-red-500 text-xl hover:scale-110 transition-transform" /> : 
-                <BsHeart className="text-xl text-gray-900 hover:text-red-400 transition-colors" />
+                <BsHeartFill className="text-lp-red text-lg hover:scale-110 transition-transform" /> : 
+                <BsHeart className="text-lg text-lp-text hover:text-lp-red transition-colors" />
               }
-              <span className="text-sm font-semibold text-gray-900">{localLikes}</span>
+              <span className="text-[12px] font-semibold text-lp-text">{localLikes}</span>
             </button>
             <button 
               onClick={() => {
                 setShowComments(true);
                 setTimeout(() => commentInputRef.current?.focus(), 100);
               }}
-              className="flex items-center space-x-2 hover:opacity-70 transition-opacity"
+              className="flex items-center gap-1.5 hover:opacity-70 transition-opacity"
             >
-              <FaComment className="text-xl text-gray-900 hover:text-blue-400 transition-colors transform scale-x-[-1]" />
-              <span className="text-sm font-semibold text-gray-900">{post.comments_count || 0}</span>
+              <FaComment className="text-lg text-lp-text hover:text-lp-accent transition-colors scale-x-[-1]" />
+              <span className="text-[12px] font-semibold text-lp-text">{post.comments_count || 0}</span>
             </button>
-            <button className="flex items-center space-x-2 hover:opacity-70 transition-opacity">
-              <FiSend className="text-xl text-gray-900 hover:text-green-400 transition-colors transform -rotate-45" />
+            <button className="flex items-center gap-1.5 hover:opacity-70 transition-opacity">
+              <FiSend className="text-lg text-lp-text hover:text-lp-green transition-colors -rotate-45" />
             </button>
           </div>
-
         </div>
 
         {/* Caption */}
         {displayContent && (
           <div className="mb-2">
-            <div className="text-gray-900 text-sm leading-relaxed">
-              <span className="font-semibold mr-2 hover:underline cursor-pointer">{username}</span>
+            <div className="text-lp-text text-[13px] font-light leading-relaxed">
+              <span className="font-semibold mr-1.5 hover:underline cursor-pointer tracking-tight">{username}</span>
               <span className="whitespace-pre-line">
                 {truncatedCaption}
               </span>
               {shouldTruncateCaption && (
                 <button
                   onClick={() => setShowFullCaption(true)}
-                  className="text-gray-500 hover:text-gray-700 ml-1 text-sm font-medium"
+                  className="text-lp-text3 hover:text-lp-text2 ml-1 text-[12px] font-medium"
                 >
                   selengkapnya
                 </button>
@@ -403,7 +358,7 @@ const PostCard = memo(({ post, getRelativeTime }) => {
               {showFullCaption && displayContent.length > 150 && (
                 <button
                   onClick={() => setShowFullCaption(false)}
-                  className="text-gray-500 hover:text-gray-700 ml-1 text-sm font-medium"
+                  className="text-lp-text3 hover:text-lp-text2 ml-1 text-[12px] font-medium"
                 >
                   sembunyikan
                 </button>
@@ -416,7 +371,7 @@ const PostCard = memo(({ post, getRelativeTime }) => {
         {localComments.length > 0 && (
           <button 
             onClick={() => setShowComments(true)}
-            className="text-gray-500 text-sm mb-2 hover:text-gray-700 transition-colors"
+            className="text-lp-text3 text-[12px] font-light mb-2 hover:text-lp-text2 transition-colors"
           >
             Lihat semua {localComments.length} komentar
           </button>
@@ -424,133 +379,250 @@ const PostCard = memo(({ post, getRelativeTime }) => {
 
         {/* Time */}
         <div className="mb-3">
-          <span className="text-xs text-gray-500 uppercase tracking-wide">
+          <span className="text-[10px] text-lp-text3 uppercase tracking-widest font-mono">
             {getRelativeTime ? getRelativeTime(post.created_at) : new Date(post.created_at).toLocaleDateString('id-ID')}
           </span>
         </div>
-
-     
       </div>
+      </div> {/* Tutup card utama supaya Modal bebas dari efek CSS Transform */}
 
       {/* Comments Modal/Drawer */}
       {showComments && (
         <>
           {/* Desktop Modal */}
           {!isMobile && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fadeIn">
-              <div className="bg-white rounded-xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex shadow-2xl">
-                {/* Image Carousel */}
-                {hasMedia && (
-                  <div className="w-1/2 bg-white flex items-center justify-center relative overflow-hidden">
-                    <div className="w-full h-full flex items-center justify-center">
-                      <img
-                        src={resolveBackendAssetUrl(mediaUrls[currentSlide])}
-                        alt={`Post content ${currentSlide + 1}`}
-                        className="w-full h-full object-contain"
-                        onError={handleImageError}
-                      />
-                    </div>
-                    
-                    {hasMultipleMedia && (
-                      <>
-                        <button
-                          onClick={prevSlide}
-                          className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black/50 text-white p-2 rounded-full hover:bg-black/70 transition-all backdrop-blur-sm"
-                        >
-                          <FaChevronLeft className="text-sm" />
-                        </button>
-                        <button
-                          onClick={nextSlide}
-                          className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black/50 text-white p-2 rounded-full hover:bg-black/70 transition-all backdrop-blur-sm"
-                        >
-                          <FaChevronRight className="text-sm" />
-                        </button>
-                        
-                        {/* Slide Indicators */}
-                        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
-                          {mediaUrls.map((_, index) => (
-                            <button
-                              key={index}
-                              onClick={() => setCurrentSlide(index)}
-                              className={`w-2 h-2 rounded-full transition-all ${
-                                index === currentSlide 
-                                  ? 'bg-white scale-125' 
-                                  : 'bg-white/50 hover:bg-white/80'
-                              }`}
-                            />
-                          ))}
-                        </div>
-                      </>
-                    )}
-                  </div>
-                )}
+            <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 md:p-8 lg:p-12 animate-fadeIn">
+              {/* Tombol Close Mengambang */}
+              <button 
+                onClick={() => setShowComments(false)}
+                className="absolute top-4 right-4 text-white hover:text-gray-300 z-[60] p-2"
+              >
+                <FaTimes className="text-2xl sm:text-3xl" />
+              </button>
 
-                {/* Comments Section */}
-                <div className={`${hasMedia ? 'w-1/2' : 'w-full'} flex flex-col h-[80vh]`}>
-                  {/* Header */}
-                  <div className="flex items-center justify-between p-4 border-b border-gray-200">
-                    <Link
-                      to={`/profile/${post.role}/${username}`}
-                      className="flex items-center space-x-3 hover:opacity-80 transition-opacity"
-                    >
-                      <div className="w-8 h-8 bg-gradient-to-r from-pink-500 to-orange-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
+              <div className="bg-white w-full h-[100dvh] md:w-auto md:h-auto md:max-h-[90vh] flex flex-col md:inline-block overflow-hidden shadow-2xl relative md:rounded-md md:pr-[350px] lg:pr-[400px]">
+                
+                {/* Bagian Gambar/Content - Background Putih/Abu agar tidak ada pillar hitam */}
+                <div className={`w-full md:w-auto bg-lp-surface flex items-center justify-center flex-shrink-0 h-[45vh] md:h-full relative border-b md:border-b-0 border-lp-border`}>
+                  {hasMedia ? (
+                    <>
+                      <div className="w-full h-full md:w-auto md:h-auto flex items-center justify-center bg-lp-surface">
+                        <img
+                          src={resolveBackendAssetUrl(mediaUrls[currentSlide])}
+                          alt={`Post content ${currentSlide + 1}`}
+                          className="w-full h-full md:w-auto md:h-auto md:max-w-[calc(95vw-350px)] lg:max-w-[calc(95vw-400px)] md:max-h-[90vh] md:min-h-[400px] object-contain block"
+                          onError={handleImageError}
+                        />
+                      </div>
+                      
+                      {hasMultipleMedia && (
+                        <>
+                          <button onClick={prevSlide} className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/50 hover:bg-white text-black p-2 rounded-full transition-all shadow-sm">
+                            <FaChevronLeft className="text-sm" />
+                          </button>
+                          <button onClick={nextSlide} className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/50 hover:bg-white text-black p-2 rounded-full transition-all shadow-sm">
+                            <FaChevronRight className="text-sm" />
+                          </button>
+                          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5">
+                            {mediaUrls.map((_, index) => (
+                              <button key={index} onClick={() => setCurrentSlide(index)} className={`w-1.5 h-1.5 rounded-full transition-all ${index === currentSlide ? 'bg-white scale-125' : 'bg-white/50'}`} />
+                            ))}
+                          </div>
+                        </>
+                      )}
+                    </>
+                  ) : (
+                    <div className="w-full h-full md:w-[400px] lg:w-[500px] md:min-h-[450px] flex flex-col items-center justify-center p-6 sm:p-12 bg-lp-surface">
+                      <div className="mb-4 sm:mb-6 flex items-center gap-3">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-white border border-lp-border flex items-center justify-center shadow-sm">
+                          <FaFileAlt className="text-lp-text2 text-lg sm:text-xl" />
+                        </div>
+                        <h2 className="text-lg sm:text-xl font-semibold text-lp-text tracking-tight">Postingan Teks</h2>
+                      </div>
+                      
+                      {post.title && (
+                        <h1 className="text-xl sm:text-2xl font-semibold text-lp-text mb-4 text-center tracking-tight">
+                          {post.title}
+                        </h1>
+                      )}
+                      
+                      <div className="max-w-md w-full">
+                        <div className="bg-white p-6 sm:p-8 rounded-xl border border-lp-border shadow-sm">
+                          <p className="text-lp-text text-[14px] font-normal leading-relaxed whitespace-pre-line text-center">
+                            {post.content}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Bagian Sidebar Konten (Komentar & Caption) */}
+                <div className="w-full md:w-[350px] lg:w-[400px] flex flex-col h-[55vh] md:h-full bg-white relative md:absolute md:top-0 md:bottom-0 md:right-0 border-l border-lp-border">
+                  
+                  {/* Header Post */}
+                  <div className="flex items-center justify-between p-3 sm:p-4 border-b border-lp-border bg-white flex-shrink-0">
+                    <Link to={`/profile/${post.role}/${username}`} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+                      <div className="w-8 h-8 bg-lp-accentS border border-lp-borderA rounded-full flex items-center justify-center text-lp-atext text-xs font-bold shrink-0">
                         {username?.[0]?.toUpperCase() || '?'}
                       </div>
-                      <div>
-                        <div className="font-semibold text-gray-900 text-sm">{username}</div>
-                        <div className="text-xs text-gray-500 capitalize">{post.role}</div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-lp-text text-[14px] tracking-tight">{username}</span>
                       </div>
                     </Link>
-                    <button 
-                      onClick={() => setShowComments(false)}
-                      className="text-gray-500 hover:text-gray-700 p-2 rounded-full hover:bg-gray-100 transition-colors"
-                    >
-                      <FaTimes className="text-lg" />
+                    <button className="text-lp-text3 hover:text-lp-text2 p-1 font-bold tracking-widest leading-none pb-2">
+                      ...
                     </button>
                   </div>
 
-                  {/* Comments List */}
-                  <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
-                    {localComments.length > 0 ? (
-                      <div className="space-y-4">
-                        {localComments.map((comment) => (
-                          <CommentItem 
-                            key={comment.id} 
-                            comment={comment} 
-                            getRelativeTime={getRelativeTime}
-                          />
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-12 text-gray-500">
-                        <div className="text-4xl mb-3 opacity-50">💬</div>
-                        <p className="font-medium text-gray-700">Belum ada komentar</p>
-                        <p className="text-sm mt-1 text-gray-500">Jadilah yang pertama berkomentar!</p>
+                  {/* Area Konten dan Komentar */}
+                  <div className="flex-1 overflow-y-auto">
+                    {/* Caption diposisikan di puncak area */}
+                    {post.content && (
+                      <div className="p-4 flex items-start space-x-3">
+                        <Link 
+                          to={`/profile/${post.role}/${username}`}
+                          className="flex-shrink-0"
+                        >
+                          <div className="w-8 h-8 bg-lp-bg rounded-full flex items-center justify-center text-lp-text border border-lp-border text-xs font-bold shrink-0">
+                            {username?.[0]?.toUpperCase() || '?'}
+                          </div>
+                        </Link>
+                        <div className="flex-1 min-w-0 pt-1">
+                          <span className="font-semibold text-lp-text text-[14px] tracking-tight mr-2">
+                            <Link 
+                              to={`/profile/${post.role}/${username}`}
+                              className="hover:opacity-80 transition-opacity"
+                            >
+                              {username}
+                            </Link>
+                          </span>
+                          <span className="text-lp-text font-normal whitespace-pre-line break-words text-[14px] leading-relaxed">
+                            {post.content}
+                          </span>
+                          <div className="text-lp-text3 text-[12px] font-normal mt-2">
+                            {getRelativeTime ? getRelativeTime(post.created_at) : new Date(post.created_at).toLocaleDateString('id-ID')}
+                          </div>
+                        </div>
                       </div>
                     )}
+
+                    <div className="px-4 pb-4 space-y-4 pt-2">
+                      {localComments.length > 0 ? (
+                        localComments.map((comment) => (
+                          <div key={comment.id} className="flex items-start space-x-3 group">
+                            <Link 
+                              to={`/profile/${comment.user_role || 'mahasiswa'}/${cleanUsername(comment.author_username || comment.author_name)}`}
+                              className="flex-shrink-0"
+                            >
+                              <div className="w-8 h-8 bg-lp-surface border border-lp-border rounded-full flex items-center justify-center text-lp-text2 text-xs font-bold shrink-0">
+                                {comment.author_name?.[0]?.toUpperCase() || '?'}
+                              </div>
+                            </Link>
+                            <div className="flex-1 min-w-0 pt-1">
+                              <span className="font-semibold text-lp-text text-[14px] tracking-tight mr-2">
+                                <Link 
+                                  to={`/profile/${comment.user_role || 'mahasiswa'}/${cleanUsername(comment.author_username || comment.author_name)}`}
+                                  className="hover:opacity-80 transition-opacity"
+                                >
+                                  {comment.author_name || 'Unknown'}
+                                </Link>
+                              </span>
+                              <span className="text-lp-text text-[14px] font-normal break-words leading-relaxed">
+                                {comment.content}
+                              </span>
+                              <div className="text-lp-text3 text-[12px] font-normal mt-1 flex gap-3">
+                                <span>{getRelativeTime ? getRelativeTime(comment.created_at) : new Date(comment.created_at).toLocaleDateString('id-ID')}</span>
+                                <button className="font-semibold hidden group-hover:block hover:text-lp-text2">Balas</button>
+                              </div>
+                            </div>
+                            <button className="pt-2 text-lp-text3 hover:text-lp-red px-1">
+                              <FaRegHeart className="text-[10px]" />
+                            </button>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-center py-8">
+                          <p className="font-medium text-lp-text text-[14px]">Belum ada komentar.</p>
+                          <p className="text-[12px] mt-1 text-lp-text3 font-light">Mulai obrolan.</p>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
-                  {/* Comment Input */}
-                  <div className="border-t border-gray-200 p-4">
-                    <form onSubmit={handleCommentSubmit} className="flex items-center space-x-3">
-                      <button type="button" className="text-gray-500 hover:text-gray-700">
-                        <FaSmile className="text-lg" />
+                  {/* Actions, Likes, dan Input Komentar (Sticky di bawah) */}
+                  <div className="border-t border-lp-border bg-white flex-shrink-0">
+                    {/* Action Buttons */}
+                    <div className="flex items-center justify-between px-4 py-2 mt-1">
+                      <div className="flex items-center space-x-4">
+                        <button
+                          onClick={handleLike}
+                          className={`transition-colors ${
+                            isLiked 
+                              ? 'text-lp-red hover:text-lp-red' 
+                              : 'text-lp-text hover:text-lp-text2'
+                          }`}
+                        >
+                          {isLiked ? (
+                            <FaHeart className="text-2xl" />
+                          ) : (
+                            <FaRegHeart className="text-2xl" />
+                          )}
+                        </button>
+                        <button className="text-lp-text hover:text-lp-text2">
+                          <FaComment className="text-2xl transform scale-x-[-1]" />
+                        </button>
+                        <button className="text-lp-text hover:text-lp-text2 mb-1">
+                          <FaPaperPlane className="text-2xl transform -rotate-12" />
+                        </button>
+                      </div>
+                      <button 
+                        onClick={handleSave}
+                        className={`transition-colors ${
+                          isSaved 
+                            ? 'text-lp-text hover:text-lp-text' 
+                            : 'text-lp-text hover:text-lp-text2'
+                        }`}
+                      >
+                        {isSaved ? (
+                          <FaBookmark className="text-2xl" />
+                        ) : (
+                          <FaRegBookmark className="text-2xl" />
+                        )}
+                      </button>
+                    </div>
+
+                    {/* Like Count & Timestamp */}
+                    <div className="px-4 pb-3">
+                      <div className="font-semibold text-[14px] text-lp-text mb-1">
+                        {localLikes || 0} suka
+                      </div>
+                      <div className="text-[10px] text-lp-text3 uppercase tracking-wide">
+                        {getRelativeTime ? getRelativeTime(post.created_at) : new Date(post.created_at).toLocaleDateString('id-ID')}
+                      </div>
+                    </div>
+
+                    {/* Input Komentar Area */}
+                    <form onSubmit={handleCommentSubmit} className="px-4 py-3 border-t border-lp-border flex items-center space-x-3">
+                      <button type="button" className="text-lp-text hover:text-lp-text2">
+                        <FaSmile className="text-2xl" />
                       </button>
                       <input
+                        ref={commentInputRef}
                         type="text"
                         placeholder="Tambahkan komentar..."
                         value={commentText}
                         onChange={(e) => setCommentText(e.target.value)}
-                        className="flex-1 text-sm border-none focus:outline-none focus:ring-0 bg-transparent placeholder-gray-400"
+                        className="flex-1 text-[14px] font-normal text-lp-text border-none focus:outline-none focus:ring-0 bg-transparent placeholder-lp-text3"
                         disabled={isCommenting}
                       />
                       <button 
                         type="submit"
                         disabled={!commentText.trim() || isCommenting}
-                        className={`text-sm font-medium transition-all duration-200 ${
+                        className={`font-semibold text-[14px] transition-colors ${
                           commentText.trim() && !isCommenting
-                            ? 'text-blue-500 hover:text-blue-600'
-                            : 'text-blue-300 cursor-not-allowed'
+                            ? 'text-lp-atext hover:text-lp-accent'
+                            : 'text-lp-atext/40 cursor-text'
                         }`}
                       >
                         {isCommenting ? '...' : 'Kirim'}
@@ -564,66 +636,54 @@ const PostCard = memo(({ post, getRelativeTime }) => {
 
           {/* Mobile Drawer */}
           {isMobile && (
-            <div className="fixed inset-0 bg-black/50 z-50 animate-fadeIn">
-              <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl max-h-[80vh] overflow-hidden animate-slideUp">
-                {/* Drawer Handle */}
+            <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 animate-fadeIn">
+              <div className="absolute bottom-0 left-0 right-0 bg-white border-t border-lp-border rounded-t-2xl max-h-[80vh] overflow-hidden animate-slideUp">
                 <div className="flex justify-center py-3">
-                  <div className="w-12 h-1 bg-gray-300 rounded-full"></div>
+                  <div className="w-10 h-1 bg-lp-border rounded-full" />
                 </div>
 
-                {/* Header */}
-                <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
-                  <h3 className="font-semibold text-gray-900">Komentar</h3>
-                  <button 
-                    onClick={() => setShowComments(false)}
-                    className="text-gray-500 hover:text-gray-700 p-2 rounded-full hover:bg-gray-100 transition-colors"
-                  >
-                    <FaTimes className="text-lg" />
+                <div className="flex items-center justify-between px-4 py-3 border-b border-lp-border">
+                  <h3 className="font-semibold text-lp-text text-[14px] tracking-tight">Komentar</h3>
+                  <button onClick={() => setShowComments(false)} className="text-lp-text3 hover:text-lp-text2 p-2 rounded-full hover:bg-lp-surface transition-colors">
+                    <FaTimes className="text-sm" />
                   </button>
                 </div>
 
-                {/* Comments List */}
                 <div className="flex-1 overflow-y-auto p-4 custom-scrollbar max-h-[50vh]">
                   {localComments.length > 0 ? (
-                    <div className="space-y-4">
+                    <div className="space-y-3">
                       {localComments.map((comment) => (
-                        <CommentItem 
-                          key={comment.id} 
-                          comment={comment} 
-                          getRelativeTime={getRelativeTime}
-                        />
+                        <CommentItem key={comment.id} comment={comment} getRelativeTime={getRelativeTime} />
                       ))}
                     </div>
                   ) : (
-                    <div className="text-center py-8 text-gray-500">
-                      <div className="text-4xl mb-3 opacity-50">💬</div>
-                      <p className="font-medium text-gray-700">Belum ada komentar</p>
-                      <p className="text-sm mt-1 text-gray-500">Jadilah yang pertama berkomentar!</p>
+                    <div className="text-center py-8">
+                      <div className="w-12 h-12 mx-auto mb-3 bg-lp-accentS rounded-2xl flex items-center justify-center">
+                        <span className="text-2xl">💬</span>
+                      </div>
+                      <p className="font-medium text-lp-text text-[14px]">Belum ada komentar</p>
+                      <p className="text-[12px] mt-1 text-lp-text3 font-light">Jadilah yang pertama berkomentar!</p>
                     </div>
                   )}
                 </div>
 
-                {/* Comment Input */}
-                <div className="border-t border-gray-200 p-4">
-                  <form onSubmit={handleCommentSubmit} className="flex items-center space-x-3">
-                    <button type="button" className="text-gray-500 hover:text-gray-700">
-                      <FaSmile className="text-lg" />
-                    </button>
+                <div className="border-t border-lp-border p-4">
+                  <form onSubmit={handleCommentSubmit} className="flex items-center gap-3">
                     <input
                       type="text"
                       placeholder="Tambahkan komentar..."
                       value={commentText}
                       onChange={(e) => setCommentText(e.target.value)}
-                      className="flex-1 text-sm border-none focus:outline-none focus:ring-0 bg-transparent placeholder-gray-400"
+                      className="flex-1 text-[13px] font-light text-lp-text border-none focus:outline-none bg-transparent placeholder-lp-text3"
                       disabled={isCommenting}
                     />
                     <button 
                       type="submit"
                       disabled={!commentText.trim() || isCommenting}
-                      className={`text-sm font-medium transition-all duration-200 ${
+                      className={`text-[12px] font-semibold transition-colors ${
                         commentText.trim() && !isCommenting
-                          ? 'text-blue-500 hover:text-blue-600'
-                          : 'text-blue-300 cursor-not-allowed'
+                          ? 'text-lp-atext hover:text-lp-accent'
+                          : 'text-lp-text3/50 cursor-not-allowed'
                       }`}
                     >
                       {isCommenting ? '...' : 'Kirim'}
@@ -635,7 +695,7 @@ const PostCard = memo(({ post, getRelativeTime }) => {
           )}
         </>
       )}
-    </div>
+    </>
   )
 })
 

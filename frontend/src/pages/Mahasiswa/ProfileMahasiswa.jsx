@@ -118,14 +118,20 @@ const ProfileMahasiswa = () => {
 
   if (isLoading) {
     return (
-      <div className="flex h-screen bg-slate-100">
-        <Sidebar role="mahasiswa" isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <Navbar user={user} onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
-          <div className="flex-1 flex items-center justify-center">
-            <div className="text-center">
-              <div className="mx-auto h-10 w-10 animate-spin rounded-full border-2 border-indigo-200 border-t-indigo-600"></div>
-              <p className="mt-3 text-sm font-medium text-slate-600">Memuat profil...</p>
+      <div className="bg-lp-bg text-lp-text font-sans font-light min-h-screen relative z-0">
+        <div className="fixed inset-0 pointer-events-none z-[-1] bg-lp-surface">
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.08)_1px,transparent_1px)] bg-[size:64px_64px]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,transparent_0%,rgba(255,255,255,0.85)_70%,#ffffff_100%)]" />
+        </div>
+        <div className="flex h-screen">
+          <Sidebar role="mahasiswa" isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+          <div className="flex-1 flex flex-col overflow-hidden">
+            <Navbar user={user} onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
+            <div className="flex-1 flex items-center justify-center">
+              <div className="text-center">
+                <div className="mx-auto h-10 w-10 border-2 border-lp-border border-t-lp-accent rounded-full animate-spin" />
+                <p className="mt-3 text-sm font-light text-lp-text2">Memuat profil...</p>
+              </div>
             </div>
           </div>
         </div>
@@ -135,20 +141,26 @@ const ProfileMahasiswa = () => {
 
   if (profileError) {
     return (
-      <div className="flex h-screen bg-slate-100">
-        <Sidebar role="mahasiswa" isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <Navbar user={user} onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
-          <div className="flex-1 flex items-center justify-center p-6">
-            <div className="w-full max-w-md rounded-2xl border border-red-200 bg-white p-6 text-center shadow-sm">
-              <h2 className="text-lg font-semibold text-slate-800">Gagal memuat profil</h2>
-              <p className="mt-2 text-sm text-slate-500">Silakan coba lagi dalam beberapa saat.</p>
-              <button
-                onClick={() => queryClient.invalidateQueries({ queryKey: ['mahasiswaProfile'] })}
-                className="mt-4 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-700"
-              >
-                Coba Lagi
-              </button>
+      <div className="bg-lp-bg text-lp-text font-sans font-light min-h-screen relative z-0">
+        <div className="fixed inset-0 pointer-events-none z-[-1] bg-lp-surface">
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.08)_1px,transparent_1px)] bg-[size:64px_64px]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,transparent_0%,rgba(255,255,255,0.85)_70%,#ffffff_100%)]" />
+        </div>
+        <div className="flex h-screen">
+          <Sidebar role="mahasiswa" isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+          <div className="flex-1 flex flex-col overflow-hidden">
+            <Navbar user={user} onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
+            <div className="flex-1 flex items-center justify-center p-6">
+              <div className="w-full max-w-md bg-lp-surface border border-lp-border rounded-2xl p-7 text-center shadow-[0_8px_30px_rgba(0,0,0,0.04)]">
+                <h2 className="text-lg font-semibold text-lp-text tracking-tight">Gagal memuat profil</h2>
+                <p className="mt-2 text-[13px] font-light text-lp-text2">Silakan coba lagi dalam beberapa saat.</p>
+                <button
+                  onClick={() => queryClient.invalidateQueries({ queryKey: ['mahasiswaProfile'] })}
+                  className="mt-5 bg-lp-text text-white rounded-full px-5 py-2.5 text-sm font-semibold transition-all hover:bg-lp-atext hover:-translate-y-px"
+                >
+                  Coba Lagi
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -163,190 +175,206 @@ const ProfileMahasiswa = () => {
       label: 'Nama Lengkap',
       value: profile?.name || '-',
       icon: FaUser,
-      accent: 'text-blue-600',
-      bg: 'bg-blue-50',
+      accent: 'text-lp-atext',
+      bg: 'bg-lp-accentS',
     },
     {
       label: 'Nomor Induk Mahasiswa',
       value: profile?.nim || '-',
       icon: FaIdCard,
-      accent: 'text-emerald-600',
-      bg: 'bg-emerald-50',
+      accent: 'text-lp-green',
+      bg: 'bg-lp-green/10',
     },
     {
       label: 'Alamat Email',
       value: profile?.email || '-',
       icon: FaEnvelope,
-      accent: 'text-violet-600',
-      bg: 'bg-violet-50',
+      accent: 'text-lp-accent',
+      bg: 'bg-lp-accentS',
     },
     {
       label: 'Alamat Tempat Tinggal',
       value: profile?.alamat || 'Belum ditambahkan',
       icon: FaMapMarkerAlt,
-      accent: 'text-rose-600',
-      bg: 'bg-rose-50',
+      accent: 'text-lp-red',
+      bg: 'bg-lp-red/8',
       fullRow: true,
     },
   ]
 
   return (
-    <div className="flex h-screen bg-slate-100">
-      <Sidebar role="mahasiswa" isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+    <div className="bg-lp-bg text-lp-text font-sans font-light min-h-screen relative z-0">
+      {/* GLOBAL GRID BACKGROUND */}
+      <div className="fixed inset-0 pointer-events-none z-[-1] bg-lp-surface">
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.08)_1px,transparent_1px)] bg-[size:64px_64px]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,transparent_0%,rgba(255,255,255,0.85)_70%,#ffffff_100%)]" />
+      </div>
 
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Navbar user={user} onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
+      <div className="flex h-screen">
+        <Sidebar role="mahasiswa" isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-        <main className="flex-1 overflow-y-auto p-4 md:p-8 lg:p-10">
-          <div className="mx-auto w-full max-w-5xl space-y-6">
-            <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
-              <div className="flex flex-col gap-6 md:flex-row md:items-center">
-                <div className="relative mx-auto md:mx-0">
-                  <div className="h-32 w-32 overflow-hidden rounded-full border-4 border-white bg-slate-100 shadow md:h-36 md:w-36">
-                    {displayPhoto ? (
-                      <img src={displayPhoto} alt="Foto Profil" className="h-full w-full object-cover" />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center">
-                        <FaUser className="text-5xl text-slate-300" />
-                      </div>
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <Navbar user={user} onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
+
+          <main className="flex-1 overflow-y-auto p-4 md:p-8 lg:p-10">
+            <div className="mx-auto w-full max-w-5xl space-y-6">
+
+              {/* Section label */}
+              <div className="flex items-center gap-4 text-[10px] font-mono font-medium tracking-[0.14em] uppercase text-lp-text3 after:content-[''] after:flex-1 after:h-px after:bg-lp-border">
+                <span>Profile</span>
+              </div>
+
+              {/* Profile Header Card */}
+              <section className="bg-lp-surface border border-lp-border rounded-2xl p-7 md:p-8 hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] transition-all duration-300">
+                <div className="flex flex-col gap-6 md:flex-row md:items-center">
+                  <div className="relative mx-auto md:mx-0">
+                    <div className="h-28 w-28 overflow-hidden rounded-2xl border-2 border-lp-border bg-lp-surface md:h-32 md:w-32">
+                      {displayPhoto ? (
+                        <img src={displayPhoto} alt="Foto Profil" className="h-full w-full object-cover" />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center bg-lp-accentS">
+                          <FaUser className="text-4xl text-lp-text3" />
+                        </div>
+                      )}
+                    </div>
+
+                    {isEditing && (
+                      <label className="absolute bottom-1 right-1 cursor-pointer rounded-full bg-lp-accent p-2.5 text-white shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border transition-all hover:bg-lp-atext hover:-translate-y-px">
+                        <FaCamera className="text-xs" />
+                        <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
+                      </label>
                     )}
                   </div>
 
-                  {isEditing && (
-                    <label className="absolute bottom-1 right-1 cursor-pointer rounded-full bg-indigo-600 p-2.5 text-white shadow transition hover:bg-indigo-700">
-                      <FaCamera className="text-sm" />
-                      <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
-                    </label>
-                  )}
+                  <div className="flex-1 text-center md:text-left">
+                    <h1 className="text-2xl font-semibold text-lp-text tracking-tight md:text-3xl">{profile?.name}</h1>
+                    <p className="mt-2 inline-flex items-center gap-2 rounded-full bg-lp-surface px-3.5 py-1.5 text-[12px] font-mono text-lp-text2 tracking-wider">
+                      <FaIdCard className="text-lp-atext text-xs" />
+                      <span>{profile?.nim}</span>
+                    </p>
+                    <p className="mt-2 text-[13px] text-lp-text3 font-light">{profile?.email}</p>
+                  </div>
+
+                  <div className="flex justify-center md:justify-end">
+                    {!isEditing && (
+                      <button
+                        onClick={() => setIsEditing(true)}
+                        className="inline-flex items-center gap-2 bg-lp-text text-white rounded-full px-5 py-3 text-[13px] font-semibold transition-all hover:bg-lp-atext hover:-translate-y-px"
+                      >
+                        <FaEdit className="text-xs" />
+                        <span>Edit Profil</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
+              </section>
 
-                <div className="flex-1 text-center md:text-left">
-                  <h1 className="text-2xl font-bold text-slate-900 md:text-3xl">{profile?.name}</h1>
-                  <p className="mt-2 inline-flex items-center gap-2 rounded-lg bg-slate-100 px-3 py-1.5 text-sm font-semibold text-slate-700">
-                    <FaIdCard className="text-indigo-600" />
-                    <span>{profile?.nim}</span>
-                  </p>
-                  <p className="mt-2 text-sm text-slate-500">{profile?.email}</p>
-                </div>
+              {/* Profile Info Card */}
+              <section className="bg-lp-surface border border-lp-border rounded-2xl p-7 md:p-8 hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] transition-all duration-300">
+                <h2 className="text-lg font-semibold text-lp-text tracking-tight">
+                  {isEditing ? 'Perbarui Data Profil' : 'Informasi Profil'}
+                </h2>
 
-                <div className="flex justify-center md:justify-end">
-                  {!isEditing && (
-                    <button
-                      onClick={() => setIsEditing(true)}
-                      className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-indigo-700"
-                    >
-                      <FaEdit className="text-sm" />
-                      <span>Edit Profil</span>
-                    </button>
-                  )}
-                </div>
-              </div>
-            </section>
+                {isEditing ? (
+                  <form onSubmit={handleSubmit} className="mt-6 space-y-5">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                      {[
+                        { label: 'Nama Lengkap', value: profile?.name, icon: FaUser },
+                        { label: 'Nomor Induk Mahasiswa', value: profile?.nim, icon: FaIdCard },
+                        { label: 'Alamat Email', value: profile?.email, icon: FaEnvelope },
+                      ].map((field, index) => (
+                        <div key={index}>
+                          <label className="mb-2 block text-[10px] font-mono font-bold uppercase tracking-[0.1em] text-lp-text3">
+                            {field.label}
+                          </label>
+                          <div className="relative">
+                            <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-lp-text3">
+                              <field.icon className="text-xs" />
+                            </span>
+                            <input
+                              type="text"
+                              value={field.value || ''}
+                              className="w-full cursor-not-allowed rounded-xl border border-lp-border bg-lp-surface py-3 pl-9 pr-3 text-[13px] font-light text-lp-text3"
+                              readOnly
+                              disabled
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
 
-            <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
-              <h2 className="text-xl font-bold text-slate-900 md:text-2xl">
-                {isEditing ? 'Perbarui Data Profil' : 'Informasi Profil'}
-              </h2>
+                    <div>
+                      <label className="mb-2 block text-[10px] font-mono font-bold uppercase tracking-[0.1em] text-lp-text3">
+                        Alamat Lengkap
+                      </label>
+                      <div className="relative">
+                        <span className="pointer-events-none absolute left-3 top-3.5 text-lp-text3">
+                          <FaMapMarkerAlt className="text-xs" />
+                        </span>
+                        <textarea
+                          name="alamat"
+                          value={formData.alamat}
+                          onChange={handleInputChange}
+                          rows="4"
+                          className="w-full rounded-xl border border-lp-border bg-lp-surface py-3 pl-9 pr-3 text-[13px] font-light text-lp-text outline-none transition-all placeholder:text-lp-text3 focus:border-lp-borderA focus:ring-2 focus:ring-lp-accent/10"
+                          placeholder="Contoh: Jl. Margonda Raya No. 100, Depok, Jawa Barat"
+                        />
+                      </div>
+                      <p className="mt-2 text-[11px] font-light text-lp-text3">
+                        Untuk mengganti foto profil, klik ikon kamera pada foto.
+                      </p>
+                    </div>
 
-              {isEditing ? (
-                <form onSubmit={handleSubmit} className="mt-6 space-y-6">
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                    {[
-                      { label: 'Nama Lengkap', value: profile?.name, icon: FaUser },
-                      { label: 'Nomor Induk Mahasiswa', value: profile?.nim, icon: FaIdCard },
-                      { label: 'Alamat Email', value: profile?.email, icon: FaEnvelope },
-                    ].map((field, index) => (
-                      <div key={index}>
-                        <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-                          {field.label}
-                        </label>
-                        <div className="relative">
-                          <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
-                            <field.icon />
-                          </span>
-                          <input
-                            type="text"
-                            value={field.value || ''}
-                            className="w-full cursor-not-allowed rounded-xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-3 text-sm font-medium text-slate-500"
-                            readOnly
-                            disabled
-                          />
+                    <div className="flex flex-col-reverse gap-3 border-t border-lp-border pt-5 sm:flex-row sm:justify-end">
+                      <button
+                        type="button"
+                        onClick={handleCancelEdit}
+                        className="rounded-full border border-lp-border px-5 py-2.5 text-[13px] font-medium text-lp-text2 transition-all hover:bg-lp-surface"
+                      >
+                        Batalkan
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={updateProfileMutation.isLoading}
+                        className="inline-flex items-center justify-center gap-2 bg-lp-text text-white rounded-full px-5 py-2.5 text-[13px] font-semibold transition-all hover:bg-lp-atext hover:-translate-y-px disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {updateProfileMutation.isLoading ? (
+                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                        ) : (
+                          <FaSave className="text-xs" />
+                        )}
+                        <span>{updateProfileMutation.isLoading ? 'Menyimpan...' : 'Simpan Perubahan'}</span>
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
+                    {profileInfo.map((item, index) => (
+                      <div
+                        key={index}
+                        className={`rounded-2xl border border-lp-border bg-lp-surface/50 p-5 hover:bg-lp-surface hover:border-lp-borderA transition-all duration-200 ${item.fullRow ? 'md:col-span-2' : ''}`}
+                      >
+                        <div className="flex items-start gap-4">
+                          <div className={`mt-0.5 flex h-9 w-9 items-center justify-center rounded-xl ${item.bg}`}>
+                            <item.icon className={`${item.accent} text-sm`} />
+                          </div>
+                          <div>
+                            <p className="text-[10px] font-mono font-medium uppercase tracking-[0.1em] text-lp-text3">{item.label}</p>
+                            <p
+                              className={`mt-1 text-[14px] font-medium text-lp-text ${item.label === 'Alamat Tempat Tinggal' && !profile?.alamat ? 'italic text-lp-text3 font-light' : ''}`}
+                            >
+                              {item.value}
+                            </p>
+                          </div>
                         </div>
                       </div>
                     ))}
                   </div>
-
-                  <div>
-                    <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      Alamat Lengkap
-                    </label>
-                    <div className="relative">
-                      <span className="pointer-events-none absolute left-3 top-3.5 text-slate-400">
-                        <FaMapMarkerAlt />
-                      </span>
-                      <textarea
-                        name="alamat"
-                        value={formData.alamat}
-                        onChange={handleInputChange}
-                        rows="4"
-                        className="w-full rounded-xl border border-slate-300 bg-white py-3 pl-10 pr-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
-                        placeholder="Contoh: Jl. Margonda Raya No. 100, Depok, Jawa Barat"
-                      />
-                    </div>
-                    <p className="mt-2 text-xs text-slate-500">
-                      Untuk mengganti foto profil, klik ikon kamera pada foto.
-                    </p>
-                  </div>
-
-                  <div className="flex flex-col-reverse gap-3 border-t border-slate-200 pt-5 sm:flex-row sm:justify-end">
-                    <button
-                      type="button"
-                      onClick={handleCancelEdit}
-                      className="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-                    >
-                      Batalkan
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={updateProfileMutation.isLoading}
-                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-70"
-                    >
-                      {updateProfileMutation.isLoading ? (
-                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white"></div>
-                      ) : (
-                        <FaSave className="text-sm" />
-                      )}
-                      <span>{updateProfileMutation.isLoading ? 'Menyimpan...' : 'Simpan Perubahan'}</span>
-                    </button>
-                  </div>
-                </form>
-              ) : (
-                <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
-                  {profileInfo.map((item, index) => (
-                    <div
-                      key={index}
-                      className={`rounded-2xl border border-slate-200 bg-slate-50 p-5 ${item.fullRow ? 'md:col-span-2' : ''}`}
-                    >
-                      <div className="flex items-start gap-4">
-                        <div className={`mt-0.5 flex h-10 w-10 items-center justify-center rounded-xl ${item.bg}`}>
-                          <item.icon className={`${item.accent} text-base`} />
-                        </div>
-                        <div>
-                          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{item.label}</p>
-                          <p
-                            className={`mt-1 text-sm font-semibold text-slate-800 ${item.label === 'Alamat Tempat Tinggal' && !profile?.alamat ? 'italic text-slate-500' : ''}`}
-                          >
-                            {item.value}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </section>
-          </div>
-        </main>
+                )}
+              </section>
+            </div>
+          </main>
+        </div>
       </div>
     </div>
   )

@@ -118,14 +118,14 @@ const DetailPertemuanTugas = () => {
 
   if (loading) {
     return (
-      <div className="flex h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="flex h-screen bg-lp-bg">
         <Sidebar role="mahasiswa" isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
         <div className="flex-1 flex flex-col overflow-hidden">
           <Navbar user={user} onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">Memuat tugas...</p>
+              <p className="text-lp-text2 font-light">Memuat tugas...</p>
             </div>
           </div>
         </div>
@@ -134,7 +134,7 @@ const DetailPertemuanTugas = () => {
   }
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="flex h-screen bg-lp-bg">
       <Sidebar role="mahasiswa" isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -148,26 +148,26 @@ const DetailPertemuanTugas = () => {
                 <Link 
                   to={`/mahasiswa/matkul/${courseId}`}
                   className="
-                    inline-flex items-center space-x-2 text-blue-600 hover:text-blue-700 
+                    inline-flex items-center space-x-2 text-lp-atext hover:text-lp-accent 
                     mb-4 transition-colors
                   "
                 >
                   <FaArrowLeft />
                   <span>Kembali ke Mata Kuliah</span>
                 </Link>
-                <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
+                <h1 className="text-2xl md:text-3xl font-bold text-lp-text font-semibold tracking-tight">
                   {matkulData[courseId] || courseId}
                 </h1>
-                <p className="text-gray-600 mt-1">Pertemuan {pertemuan} - Daftar Tugas</p>
+                <p className="text-lp-text2 font-light mt-1">Pertemuan {pertemuan} - Daftar Tugas</p>
               </div>
               
               <div className="flex space-x-2">
                 <Link 
                   to={`/mahasiswa/matkul/${courseId}/pertemuan/${pertemuan}/materi`}
                   className="
-                    flex items-center space-x-2 bg-blue-500 text-white 
-                    py-2 px-4 rounded-xl hover:bg-blue-600 
-                    transition-all duration-300 shadow-lg hover:shadow-xl
+                    flex items-center space-x-2 bg-lp-accent text-white 
+                    py-2 px-4 rounded-xl hover:bg-lp-accent 
+                    transition-all duration-300 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl
                   "
                 >
                   <FaBook />
@@ -184,18 +184,18 @@ const DetailPertemuanTugas = () => {
                   return (
                     <div 
                       key={index}
-                      className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300"
+                      className="bg-lp-surface rounded-2xl p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border border border-lp-border border hover:shadow-xl transition-all duration-300"
                     >
                       <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between space-y-4 lg:space-y-0">
                         <div className="flex-1">
                           <div className="flex items-start space-x-3 mb-4">
                             <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
-                              <FaUpload className="text-green-600 text-lg" />
+                              <FaUpload className="text-lp-green text-lg" />
                             </div>
                             <div className="flex-1">
-                              <h3 className="font-bold text-xl text-gray-800 mb-2">{tugas.title}</h3>
+                              <h3 className="font-bold text-xl text-lp-text font-semibold tracking-tight mb-2">{tugas.title}</h3>
                               {tugas.desc && (
-                                <p className="text-gray-600 mb-3 leading-relaxed">{tugas.desc}</p>
+                                <p className="text-lp-text2 font-light mb-3 leading-relaxed">{tugas.desc}</p>
                               )}
                             </div>
                           </div>
@@ -213,18 +213,18 @@ const DetailPertemuanTugas = () => {
                           {submission && (
                             <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4">
                               <h4 className="font-semibold text-blue-800 mb-3 flex items-center space-x-2">
-                                <FaCheckCircle className="text-blue-600" />
+                                <FaCheckCircle className="text-lp-atext" />
                                 <span>Status Pengumpulan:</span>
                               </h4>
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                                 {submission.file_url && (
                                   <div className="flex items-center space-x-2">
-                                    <span className="font-medium text-gray-700">File: </span>
+                                    <span className="font-medium text-lp-text2">File: </span>
                                     <a 
                                       href={resolveBackendAssetUrl(submission.file_url)}
                                       target="_blank"
                                       rel="noopener noreferrer"
-                                      className="text-blue-600 hover:underline flex items-center space-x-1"
+                                      className="text-lp-atext hover:underline flex items-center space-x-1"
                                     >
                                       <FaDownload className="text-xs" />
                                       <span>Lihat File</span>
@@ -233,15 +233,15 @@ const DetailPertemuanTugas = () => {
                                 )}
                                 {submission.answer_text && (
                                   <div>
-                                    <span className="font-medium text-gray-700">Jawaban Text: </span>
-                                    <span className="text-gray-600">{submission.answer_text.substring(0, 50)}...</span>
+                                    <span className="font-medium text-lp-text2">Jawaban Text: </span>
+                                    <span className="text-lp-text2 font-light">{submission.answer_text.substring(0, 50)}...</span>
                                   </div>
                                 )}
                                 {submission.grade > 0 && (
                                   <div>
-                                    <span className="font-medium text-gray-700">Nilai: </span>
+                                    <span className="font-medium text-lp-text2">Nilai: </span>
                                     <span className={`font-bold ${
-                                      submission.grade >= 80 ? 'text-green-600' :
+                                      submission.grade >= 80 ? 'text-lp-green' :
                                       submission.grade >= 70 ? 'text-yellow-600' : 'text-red-600'
                                     }`}>
                                       {submission.grade}
@@ -249,8 +249,8 @@ const DetailPertemuanTugas = () => {
                                   </div>
                                 )}
                                 <div>
-                                  <span className="font-medium text-gray-700">Dikumpulkan: </span>
-                                  <span className="text-gray-600">
+                                  <span className="font-medium text-lp-text2">Dikumpulkan: </span>
+                                  <span className="text-lp-text2 font-light">
                                     {submission.created_at ? new Date(submission.created_at).toLocaleDateString('id-ID') : 'Tidak diketahui'}
                                   </span>
                                 </div>
@@ -265,7 +265,7 @@ const DetailPertemuanTugas = () => {
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="
-                                  flex items-center space-x-2 bg-gray-500 text-white
+                                  flex items-center space-x-2 bg-lp-bg0 text-white
                                   py-2 px-4 rounded-lg hover:bg-gray-600
                                   transition-all duration-300
                                 "
@@ -273,7 +273,7 @@ const DetailPertemuanTugas = () => {
                                 <FaDownload />
                                 <span>Download File Tugas</span>
                               </a>
-                              <span className="text-sm text-gray-500">
+                              <span className="text-sm text-lp-text3 font-light">
                                 {tugas.file_path.split('.').pop().toUpperCase()} File
                               </span>
                             </div>
@@ -283,10 +283,10 @@ const DetailPertemuanTugas = () => {
                         <button
                           onClick={() => openSubmitModal(tugas)}
                           className="
-                            flex items-center space-x-2 bg-green-500 text-white
-                            py-3 px-6 rounded-xl hover:bg-green-600
+                            flex items-center space-x-2 bg-lp-green text-white
+                            py-3 px-6 rounded-xl hover:bg-lp-green
                             transform hover:scale-105 transition-all duration-300
-                            shadow-lg hover:shadow-xl w-full lg:w-auto justify-center
+                            shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl w-full lg:w-auto justify-center
                           "
                         >
                           <FaUpload />
@@ -297,10 +297,10 @@ const DetailPertemuanTugas = () => {
                   )
                 })
               ) : (
-                <div className="bg-white rounded-2xl p-8 text-center shadow-lg border border-gray-100">
+                <div className="bg-lp-surface rounded-2xl p-8 text-center shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border border border-lp-border border">
                   <div className="text-6xl mb-4">📝</div>
-                  <h3 className="text-xl font-semibold text-gray-800 mb-2">Belum ada tugas</h3>
-                  <p className="text-gray-600">Tugas untuk pertemuan ini belum dibuat oleh dosen.</p>
+                  <h3 className="text-xl font-semibold text-lp-text font-semibold tracking-tight mb-2">Belum ada tugas</h3>
+                  <p className="text-lp-text2 font-light">Tugas untuk pertemuan ini belum dibuat oleh dosen.</p>
                 </div>
               )}
             </div>
@@ -309,21 +309,21 @@ const DetailPertemuanTugas = () => {
           {/* Submit Modal */}
           {showSubmitModal && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-              <div className="bg-white rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-                <h3 className="text-xl font-bold text-gray-800 mb-4">
+              <div className="bg-lp-surface rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                <h3 className="text-xl font-bold text-lp-text font-semibold tracking-tight mb-4">
                   {submissionStatus[selectedTugas?.id] ? 'Edit' : 'Kumpulkan'} Tugas: {selectedTugas?.title}
                 </h3>
                 
                 <form onSubmit={handleSubmitTugas} className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-lp-text2 mb-2">
                       Jawaban Text (Optional)
                     </label>
                     <textarea
                       value={formData.answer_text}
                       onChange={(e) => setFormData(prev => ({ ...prev, answer_text: e.target.value }))}
                       className="
-                        w-full border border-gray-300 rounded-xl p-4
+                        w-full border border-lp-border border rounded-xl p-4
                         focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
                         transition-all duration-300 resize-none
                       "
@@ -333,24 +333,24 @@ const DetailPertemuanTugas = () => {
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-lp-text2 mb-2">
                       Upload File (Optional)
                     </label>
                     <input
                       type="file"
                       onChange={handleFileChange}
                       className="
-                        w-full border border-gray-300 rounded-xl p-3
+                        w-full border border-lp-border border rounded-xl p-3
                         focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
                         transition-all duration-300
                       "
                       accept=".pdf,.doc,.docx,.zip,.jpg,.jpeg,.png"
                     />
-                    <p className="text-sm text-gray-500 mt-2">
+                    <p className="text-sm text-lp-text3 font-light mt-2">
                       Format yang didukung: PDF, DOC, DOCX, ZIP, JPG, JPEG, PNG
                     </p>
                     {submissionStatus[selectedTugas?.id]?.file_url && (
-                      <p className="text-sm text-blue-600 mt-2">
+                      <p className="text-sm text-lp-atext mt-2">
                         File sebelumnya: 
                         <a 
                           href={resolveBackendAssetUrl(submissionStatus[selectedTugas?.id].file_url)}
@@ -369,8 +369,8 @@ const DetailPertemuanTugas = () => {
                       type="button"
                       onClick={() => setShowSubmitModal(false)}
                       className="
-                        px-6 py-3 border border-gray-300 text-gray-700 
-                        rounded-xl font-semibold hover:bg-gray-50 
+                        px-6 py-3 border border-lp-border border text-lp-text2 
+                        rounded-xl font-semibold hover:bg-lp-bg 
                         transition-all duration-300 flex-1
                       "
                     >
@@ -380,8 +380,8 @@ const DetailPertemuanTugas = () => {
                       type="submit"
                       disabled={submitting || (!formData.answer_text && !formData.file)}
                       className="
-                        bg-green-500 text-white px-6 py-3 rounded-xl 
-                        font-semibold hover:bg-green-600 transform hover:scale-105
+                        bg-lp-green text-white px-6 py-3 rounded-xl 
+                        font-semibold hover:bg-lp-green transform hover:scale-105
                         disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none
                         transition-all duration-300 flex-1
                       "

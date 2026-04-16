@@ -6,7 +6,7 @@ import (
 	"log"
 	"os"
 
-	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
 // Config holds all configuration for OpenClaw service
@@ -34,12 +34,16 @@ var (
 // Load reads environment variables and returns a Config
 func Load() *Config {
 	cfg := &Config{
-		DBDSN:            getEnv("DB_DSN", "root:@tcp(127.0.0.1:3306)/nf_student_hub3?parseTime=true"),
+		DBDSN:            getEnv("DB_DSN", ""),
 		TelegramBotToken: getEnv("TELEGRAM_BOT_TOKEN", ""),
 		TelegramChannelID: getEnv("TELEGRAM_CHANNEL_ID", "@tugasreminder"),
 		Port:             getEnv("OPENCLAW_PORT", "9090"),
 		CronSchedule:     getEnv("OPENCLAW_CRON_SCHEDULE", "0 * * * *"),
 		MaxRetryAttempts: 3,
+	}
+
+	if cfg.DBDSN == "" {
+		log.Fatal("[OpenClaw] DB_DSN environment variable is required for PostgreSQL connection")
 	}
 
 	if cfg.TelegramBotToken == "" {
@@ -50,9 +54,9 @@ func Load() *Config {
 	return cfg
 }
 
-// InitDB initializes the database connection
+// InitDB initializes the database connection using PostgreSQL (pgx)
 func InitDB(dsn string) *sql.DB {
-	db, err := sql.Open("mysql", dsn)
+	db, err := sql.Open("pgx", dsn)
 	if err != nil {
 		log.Fatalf("[OpenClaw] Failed to connect to database: %v", err)
 	}
@@ -65,7 +69,7 @@ func InitDB(dsn string) *sql.DB {
 	db.SetMaxIdleConns(5)
 
 	DB = db
-	fmt.Println("[OpenClaw] Database connected successfully")
+	fmt.Println("[OpenClaw] Database connected successfully (PostgreSQL/Supabase)")
 	return db
 }
 

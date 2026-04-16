@@ -161,8 +161,8 @@ func (w *Worker) scheduleRetry(event OutboxEvent) {
 
 	_, err := w.DB.Exec(`
 		UPDATE openclaw_event_outbox 
-		SET status = 'pending', attempts = ?, next_retry_at = ?, last_error = 'Retry scheduled', updated_at = NOW()
-		WHERE id = ?
+		SET status = 'pending', attempts = $1, next_retry_at = $2, last_error = 'Retry scheduled', updated_at = NOW()
+		WHERE id = $3
 	`, newAttempts, nextRetry, event.ID)
 
 	if err != nil {
@@ -174,8 +174,8 @@ func (w *Worker) scheduleRetry(event OutboxEvent) {
 func (w *Worker) updateStatus(id int64, status, errorMsg string, attempts int) {
 	_, err := w.DB.Exec(`
 		UPDATE openclaw_event_outbox 
-		SET status = ?, last_error = ?, attempts = ?, updated_at = NOW()
-		WHERE id = ?
+		SET status = $1, last_error = $2, attempts = $3, updated_at = NOW()
+		WHERE id = $4
 	`, status, errorMsg, attempts, id)
 
 	if err != nil {

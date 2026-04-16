@@ -326,10 +326,10 @@ const ProfilePublic = () => {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen bg-gray-50">
+      <div className="flex min-h-screen bg-lp-bg font-sans font-light">
         <Sidebar role={user ? user.role : 'mahasiswa'} />
-        <div className="flex-1 flex items-center justify-center ml-0 lg:ml-56">
-          <div className="text-xl text-gray-600">Memuat profil...</div>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center"><div className="w-10 h-10 border-2 border-lp-border border-t-lp-accent rounded-full animate-spin mx-auto mb-3" /><p className="text-lp-text2 text-sm font-light">Memuat profil...</p></div>
         </div>
       </div>
     )
@@ -337,16 +337,16 @@ const ProfilePublic = () => {
 
   if (error || !profile) {
     return (
-      <div className="flex min-h-screen bg-gray-50">
+      <div className="flex min-h-screen bg-lp-bg font-sans font-light">
         <Sidebar role={user ? user.role : 'mahasiswa'} />
-        <div className="flex-1 max-w-2xl mx-auto p-8 ml-0 lg:ml-56">
-          <div className="bg-white rounded-2xl shadow-lg p-12 text-center">
-            <div className="text-6xl mb-4">❌</div>
-            <h1 className="text-3xl font-bold mb-4">Profile Tidak Ditemukan</h1>
-            <p className="text-gray-600 mb-4">{error ? error.message : 'Pastikan username dan role benar'}</p>
+        <div className="flex-1 max-w-2xl mx-auto p-8">
+          <div className="bg-lp-surface border border-lp-border rounded-2xl p-12 text-center shadow-[0_8px_30px_rgba(0,0,0,0.04)]">
+            <div className="w-16 h-16 mx-auto mb-5 bg-lp-red/8 rounded-2xl flex items-center justify-center"><span className="text-3xl">❌</span></div>
+            <h1 className="text-2xl font-semibold text-lp-text tracking-tight mb-3">Profile Tidak Ditemukan</h1>
+            <p className="text-[13px] text-lp-text2 font-light mb-4">{error ? error.message : 'Pastikan username dan role benar'}</p>
             <button 
               onClick={() => navigate(-1)} 
-              className="mt-6 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+              className="mt-4 bg-lp-text text-white px-6 py-3 rounded-full text-[13px] font-semibold hover:bg-lp-atext hover:-translate-y-px transition-all"
             >
               Kembali
             </button>
@@ -357,20 +357,23 @@ const ProfilePublic = () => {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-lp-bg font-sans font-light">
       <Sidebar role={user ? user.role : 'mahasiswa'} />
       
       {/* Main Content - Diperbaiki untuk responsif */}
       <div className="flex-1 w-full ml-0 lg:ml-56">
         
-        {/* Header Profil - Diperbaiki untuk lebih responsif */}
-        <header className="bg-white border-b border-gray-200">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
-            <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
+        {/* Header Profil - Diperbaiki untuk lebih responsif dan aesthetically pleasing */}
+        <header className="bg-white border-b border-lp-border relative">
+          {/* Banner */}
+          <div className="h-24 sm:h-36 lg:h-48 bg-gradient-to-r from-lp-accentS to-lp-surface w-full absolute top-0 left-0 z-0"></div>
+          
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 pt-16 sm:pt-24 lg:pt-32 pb-4 sm:pb-6 relative z-10">
+            <div className="flex flex-col sm:flex-row items-center sm:items-end gap-4 sm:gap-6">
               {/* Foto Profil */}
-              <div className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-full bg-gradient-to-r from-purple-400 to-orange-500 p-1 flex-shrink-0">
-                <div className="w-full h-full rounded-full bg-white p-1">
-                  <div className="w-full h-full rounded-full overflow-hidden bg-gray-200 relative">
+              <div className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-full border-4 border-white overflow-hidden flex-shrink-0 shadow-sm bg-lp-surface relative -mt-12 sm:-mt-16 z-20">
+                <div className="w-full h-full bg-lp-surface">
+                  <div className="w-full h-full overflow-hidden bg-lp-surface relative">
                     {profile.profile_picture ? (
                       <>
                         <img
@@ -383,13 +386,13 @@ const ProfilePublic = () => {
                           className="absolute inset-0 hidden items-center justify-center bg-gray-200"
                           style={{ display: 'none' }}
                         >
-                          <div className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-400">
+                          <div className="text-3xl sm:text-4xl font-bold text-lp-text3">
                             {profile.name && profile.name[0] ? profile.name[0].toUpperCase() : 'U'}
                           </div>
                         </div>
                       </>
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-2xl sm:text-3xl md:text-4xl font-bold text-gray-400">
+                      <div className="w-full h-full flex items-center justify-center text-3xl sm:text-4xl font-bold text-lp-text3 bg-lp-accentS">
                         {profile.name && profile.name[0] ? profile.name[0].toUpperCase() : 'U'}
                       </div>
                     )}
@@ -398,33 +401,33 @@ const ProfilePublic = () => {
               </div>
 
               {/* Info Profil */}
-              <div className="text-center sm:text-left flex-1 w-full">
-                <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-3">
-                  <h1 className="text-lg sm:text-xl font-semibold text-gray-900 truncate">{profile.name}</h1>
-                  <span className="inline-block px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full border whitespace-nowrap">
+              <div className="text-center sm:text-left flex-1 w-full pb-2">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-center sm:justify-start gap-2 mb-1">
+                  <h1 className="text-xl sm:text-2xl font-bold text-lp-text tracking-tight truncate">{profile.name}</h1>
+                  <span className="inline-flex w-max mx-auto sm:mx-0 px-3 py-1 bg-lp-accentS text-lp-atext text-[10px] font-mono tracking-wider uppercase rounded-full border border-lp-borderA whitespace-nowrap">
                     {getRoleDisplay(role)}
                   </span>
                 </div>
                 
-                <p className="text-gray-600 mb-3 sm:mb-4 text-sm">@{profile.username}</p>
+                <p className="text-lp-text3 mb-3 text-[12px] font-mono">@{profile.username}</p>
 
-                <div className="flex gap-4 sm:gap-6 justify-center sm:justify-start mb-3">
-                  <div className="text-center">
-                    <div className="font-bold text-sm sm:text-base text-gray-900">{userPosts.length}</div>
-                    <div className="text-gray-500 text-xs">Postingan</div>
+                <div className="flex gap-4 sm:gap-8 justify-center sm:justify-start mb-3">
+                  <div className="text-center sm:text-left">
+                    <div className="font-bold text-base sm:text-lg text-lp-text">{userPosts.length}</div>
+                    <div className="text-lp-text3 text-[10px] sm:text-[11px] font-mono tracking-wider uppercase">Postingan</div>
                   </div>
-                  <div className="text-center">
-                    <div className="font-bold text-sm sm:text-base text-gray-900">{profile.followers_count || 0}</div>
-                    <div className="text-gray-500 text-xs">Pengikut</div>
+                  <div className="text-center sm:text-left">
+                    <div className="font-bold text-base sm:text-lg text-lp-text">{profile.followers_count || 0}</div>
+                    <div className="text-lp-text3 text-[10px] sm:text-[11px] font-mono tracking-wider uppercase">Pengikut</div>
                   </div>
-                  <div className="text-center">
-                    <div className="font-bold text-sm sm:text-base text-gray-900">{profile.following_count || 0}</div>
-                    <div className="text-gray-500 text-xs">Mengikuti</div>
+                  <div className="text-center sm:text-left">
+                    <div className="font-bold text-base sm:text-lg text-lp-text">{profile.following_count || 0}</div>
+                    <div className="text-lp-text3 text-[10px] sm:text-[11px] font-mono tracking-wider uppercase">Mengikuti</div>
                   </div>
                 </div>
 
                 {profile.bio && (
-                  <p className="text-gray-700 text-sm max-w-md text-center sm:text-left mx-auto sm:mx-0">{profile.bio}</p>
+                  <p className="text-lp-text2 text-[13px] font-light max-w-md text-center sm:text-left mx-auto sm:mx-0 leading-relaxed mt-2">{profile.bio}</p>
                 )}
               </div>
             </div>
@@ -433,13 +436,13 @@ const ProfilePublic = () => {
 
         {/* Filter Tabs */}
         <div className="max-w-4xl mx-auto px-4 sm:px-6 pt-4">
-          <div className="flex border-b border-gray-200">
+          <div className="flex border-b border-lp-border">
             <button
               onClick={() => setActiveFilter('semua')}
-              className={`flex-1 py-3 px-4 text-center font-medium text-sm transition-colors ${
+              className={`flex-1 py-3 px-4 text-center font-medium text-[12px] transition-colors ${
                 activeFilter === 'semua'
-                  ? 'text-blue-600 border-b-2 border-blue-600'
-                  : 'text-gray-500 hover:text-gray-700'
+                  ? 'text-lp-text font-semibold border-b-2 border-lp-accent'
+                  : 'text-lp-text3 hover:text-lp-text2'
               }`}
             >
               <div className="flex items-center justify-center gap-2">
@@ -449,10 +452,10 @@ const ProfilePublic = () => {
             </button>
             <button
               onClick={() => setActiveFilter('foto')}
-              className={`flex-1 py-3 px-4 text-center font-medium text-sm transition-colors ${
+              className={`flex-1 py-3 px-4 text-center font-medium text-[12px] transition-colors ${
                 activeFilter === 'foto'
-                  ? 'text-blue-600 border-b-2 border-blue-600'
-                  : 'text-gray-500 hover:text-gray-700'
+                  ? 'text-lp-text font-semibold border-b-2 border-lp-accent'
+                  : 'text-lp-text3 hover:text-lp-text2'
               }`}
             >
               <div className="flex items-center justify-center gap-2">
@@ -462,10 +465,10 @@ const ProfilePublic = () => {
             </button>
             <button
               onClick={() => setActiveFilter('text')}
-              className={`flex-1 py-3 px-4 text-center font-medium text-sm transition-colors ${
+              className={`flex-1 py-3 px-4 text-center font-medium text-[12px] transition-colors ${
                 activeFilter === 'text'
-                  ? 'text-blue-600 border-b-2 border-blue-600'
-                  : 'text-gray-500 hover:text-gray-700'
+                  ? 'text-lp-text font-semibold border-b-2 border-lp-accent'
+                  : 'text-lp-text3 hover:text-lp-text2'
               }`}
             >
               <div className="flex items-center justify-center gap-2">
@@ -480,11 +483,11 @@ const ProfilePublic = () => {
         <div className="max-w-4xl mx-auto p-3 sm:p-4">
           {loadingPosts ? (
             <div className="text-center py-8 sm:py-12">
-              <div className="inline-block animate-spin rounded-full h-8 w-8 sm:h-10 sm:w-10 border-b-2 border-blue-600"></div>
-              <p className="text-gray-500 mt-2 text-sm">Memuat postingan...</p>
+              <div className="w-8 h-8 sm:w-10 sm:h-10 border-2 border-lp-border border-t-lp-accent rounded-full animate-spin mx-auto"></div>
+              <p className="text-lp-text2 mt-3 text-sm font-light">Memuat postingan...</p>
             </div>
           ) : filteredPosts.length === 0 ? (
-            <div className="text-center py-12 sm:py-16 text-gray-500">
+            <div className="text-center py-12 sm:py-16 text-lp-text2">
               <div className="text-4xl sm:text-5xl mb-3">
                 {activeFilter === 'foto' ? '📷' : activeFilter === 'text' ? '📄' : '📭'}
               </div>
@@ -512,8 +515,8 @@ const ProfilePublic = () => {
                     key={post.id}
                     onClick={() => openPostModal(post)}
                     className={`relative aspect-square group overflow-hidden ${
-                      isImage ? 'bg-gray-100' : 'bg-gradient-to-br from-blue-50 to-indigo-50'
-                    } rounded sm:rounded-lg cursor-pointer`}
+                      isImage ? 'bg-lp-surface' : 'bg-lp-accentS'
+                    } rounded-xl border border-lp-border cursor-pointer hover:border-lp-borderA transition-all`}
                   >
                     {isImage ? (
                       // Tampilan untuk postingan foto
@@ -538,26 +541,26 @@ const ProfilePublic = () => {
                       // Tampilan untuk postingan teks
                       <div className="w-full h-full p-3 sm:p-4 flex flex-col">
                         <div className="mb-2 flex items-center gap-2">
-                          <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-gradient-to-r from-blue-400 to-purple-500 flex items-center justify-center">
-                            <FaFileAlt className="text-white text-xs" />
+                          <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-lp-accentS border border-lp-borderA flex items-center justify-center">
+                            <FaFileAlt className="text-lp-accent text-xs" />
                           </div>
-                          <span className="text-xs font-medium text-blue-600">Postingan Teks</span>
+                          <span className="text-[10px] font-mono font-medium text-lp-atext tracking-wider uppercase">Postingan Teks</span>
                         </div>
                         
                         <div className="flex-1 overflow-hidden">
                           {post.title && (
-                            <h3 className="font-bold text-gray-900 text-sm mb-1 line-clamp-1">
+                            <h3 className="font-semibold text-lp-text text-sm mb-1 line-clamp-1 tracking-tight">
                               {post.title}
                             </h3>
                           )}
                           
-                          <p className="text-gray-700 text-xs leading-relaxed line-clamp-4">
+                          <p className="text-lp-text2 text-[11px] font-light leading-relaxed line-clamp-4">
                             {truncateText(post.content, 150)}
                           </p>
                         </div>
                         
-                        <div className="mt-2 pt-2 border-t border-gray-200 border-opacity-30">
-                          <div className="flex items-center justify-between text-gray-500 text-xs">
+                        <div className="mt-2 pt-2 border-t border-lp-border">
+                          <div className="flex items-center justify-between text-lp-text3 text-[10px] font-mono">
                             <span className="flex items-center gap-1">
                               ❤️ {post.likes_count || 0}
                             </span>
@@ -590,39 +593,47 @@ const ProfilePublic = () => {
         </div>
       </div>
 
-      {/* Modal Postingan - Responsif untuk mobile */}
+      {/* Modal Postingan - Gaya Instagram Asli */}
       {showPostModal && selectedPost && (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-2 sm:p-4">
-          <div className="bg-white rounded-lg w-full h-full sm:h-[90vh] sm:max-w-5xl overflow-hidden flex flex-col sm:flex-row">
+        <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 md:p-8 lg:p-12 animate-fadeIn">
+          {/* Tombol Close Mengambang ala Instagram */}
+          <button 
+            onClick={() => setShowPostModal(false)}
+            className="absolute top-4 right-4 text-white hover:text-gray-300 z-[60] p-2"
+          >
+            <FaTimes className="text-2xl sm:text-3xl" />
+          </button>
+
+          <div className="bg-white w-full h-[100dvh] md:w-auto md:h-auto md:max-h-[90vh] flex flex-col md:inline-block md:rounded-bl-none overflow-hidden shadow-2xl relative md:pr-[350px] lg:pr-[400px]">
             
-            {/* Bagian Gambar/Content - Responsif */}
-            <div className={`sm:w-1/2 ${isImagePost(selectedPost) ? 'bg-black' : 'bg-gradient-to-br from-blue-50 to-indigo-50'} flex items-center justify-center flex-shrink-0 h-1/2 sm:h-full`}>
+            {/* Bagian Gambar/Content - Menyesuaikan ukuran foto asli (Shrink-wrap) */}
+            <div className={`w-full md:w-auto bg-lp-surface flex items-center justify-center flex-shrink-0 h-[45vh] md:h-full relative border-b md:border-b-0 border-lp-border`}>
               {isImagePost(selectedPost) ? (
-                <div className="w-full h-full flex items-center justify-center">
+                <div className="w-full h-full md:w-auto md:h-auto flex items-center justify-center bg-lp-surface">
                   <img
                     src={getImageUrl(selectedPost.media_url)}
                     alt={`Post by ${selectedPost.author_name}`}
-                    className="w-full h-full object-contain"
+                    className="w-full h-full md:w-auto md:h-auto md:max-w-[calc(95vw-350px)] lg:max-w-[calc(95vw-400px)] md:max-h-[90vh] md:min-h-[400px] object-contain block"
                   />
                 </div>
               ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center p-6 sm:p-12">
+                <div className="w-full h-full md:w-[400px] lg:w-[500px] md:min-h-[450px] flex flex-col items-center justify-center p-6 sm:p-12 bg-lp-surface">
                   <div className="mb-4 sm:mb-6 flex items-center gap-3">
-                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-r from-blue-400 to-purple-500 flex items-center justify-center">
-                      <FaFileAlt className="text-white text-lg sm:text-xl" />
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-white border border-lp-border flex items-center justify-center shadow-sm">
+                      <FaFileAlt className="text-lp-text2 text-lg sm:text-xl" />
                     </div>
-                    <h2 className="text-lg sm:text-xl font-bold text-gray-900">Postingan Teks</h2>
+                    <h2 className="text-lg sm:text-xl font-semibold text-lp-text tracking-tight">Postingan Teks</h2>
                   </div>
                   
                   {selectedPost.title && (
-                    <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 text-center">
+                    <h1 className="text-xl sm:text-2xl font-semibold text-lp-text mb-4 text-center tracking-tight">
                       {selectedPost.title}
                     </h1>
                   )}
                   
                   <div className="max-w-md w-full">
-                    <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200">
-                      <p className="text-gray-800 text-sm sm:text-base leading-relaxed whitespace-pre-line">
+                    <div className="bg-white p-6 sm:p-8 rounded-xl border border-lp-border shadow-sm">
+                      <p className="text-lp-text text-[14px] font-normal leading-relaxed whitespace-pre-line text-center">
                         {selectedPost.content}
                       </p>
                     </div>
@@ -631,186 +642,179 @@ const ProfilePublic = () => {
               )}
             </div>
 
-            {/* Bagian Konten */}
-            <div className="sm:w-1/2 flex flex-col h-1/2 sm:h-full">
+            {/* Bagian Sidebar Konten */}
+            <div className="w-full md:w-[350px] lg:w-[400px] flex flex-col h-[55vh] md:h-full bg-white relative md:absolute md:top-0 md:bottom-0 md:right-0 border-l border-lp-border">
               
               {/* Header Post */}
-              <div className="flex items-center justify-between p-3 sm:p-4 border-b border-gray-200">
+              <div className="flex items-center justify-between p-3 sm:p-4 border-b border-lp-border bg-white flex-shrink-0">
                 <Link 
                   to={`/profile/${selectedPost.role}/${cleanUsername(selectedPost.author_username || selectedPost.author_name)}`}
-                  className="flex items-center space-x-2 sm:space-x-3 hover:opacity-80 transition-opacity"
+                  className="flex items-center space-x-3 hover:opacity-80 transition-opacity"
                 >
-                  <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-purple-400 to-orange-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                  <div className="w-8 h-8 bg-lp-accentS border border-lp-borderA rounded-full flex items-center justify-center text-lp-atext text-xs font-bold overflow-hidden shrink-0">
                     {selectedPost.author_name?.[0]?.toUpperCase() || 'U'}
                   </div>
-                  <div>
-                    <div className="font-semibold text-gray-900 text-xs sm:text-sm">{selectedPost.author_name}</div>
-                    <div className="text-gray-500 text-xs capitalize">{selectedPost.role}</div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-lp-text text-[14px] tracking-tight">{selectedPost.author_name}</span>
                   </div>
                 </Link>
-                <button 
-                  onClick={() => setShowPostModal(false)}
-                  className="text-gray-500 hover:text-gray-700 p-1 sm:p-2"
-                >
-                  <FaTimes className="text-base sm:text-lg" />
+                <button className="text-lp-text3 hover:text-lp-text2 p-1 font-bold tracking-widest leading-none pb-2">
+                  ...
                 </button>
               </div>
 
-              {/* Area Konten dan Komentar - Scrollable */}
+              {/* Area Konten dan Komentar - Scrollable (Tanpa scrollbar custom untuk native feel) */}
               <div className="flex-1 overflow-y-auto">
-                {/* Caption - hanya untuk post image */}
-                {isImagePost(selectedPost) && (
-                  <div className="p-3 sm:p-4 border-b border-gray-100">
-                    <div className="flex items-start space-x-2 sm:space-x-3">
-                      <Link 
-                        to={`/profile/${selectedPost.role}/${cleanUsername(selectedPost.author_username || selectedPost.author_name)}`}
-                        className="flex-shrink-0"
-                      >
-                        <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-purple-400 to-orange-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
-                          {selectedPost.author_name?.[0]?.toUpperCase() || 'U'}
-                        </div>
-                      </Link>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center space-x-2 mb-1">
-                          <Link 
-                            to={`/profile/${selectedPost.role}/${cleanUsername(selectedPost.author_username || selectedPost.author_name)}`}
-                            className="hover:opacity-80 transition-opacity"
-                          >
-                            <span className="font-semibold text-gray-900 text-xs sm:text-sm">{selectedPost.author_name}</span>
-                          </Link>
-                        </div>
-                        <p className="text-gray-800 whitespace-pre-line break-words text-xs sm:text-sm">
-                          {selectedPost.content}
-                        </p>
-                        <div className="text-gray-500 text-xs mt-1 sm:mt-2">
-                          {getRelativeTime(selectedPost.created_at)}
-                        </div>
+                {/* Caption - Selalu di atas mirip Instagam */}
+                {isImagePost(selectedPost) && selectedPost.content && (
+                  <div className="p-4 flex items-start space-x-3">
+                    <Link 
+                      to={`/profile/${selectedPost.role}/${cleanUsername(selectedPost.author_username || selectedPost.author_name)}`}
+                      className="flex-shrink-0"
+                    >
+                      <div className="w-8 h-8 bg-lp-bg rounded-full flex items-center justify-center text-lp-text border border-lp-border text-xs font-bold shrink-0">
+                        {selectedPost.author_name?.[0]?.toUpperCase() || 'U'}
+                      </div>
+                    </Link>
+                    <div className="flex-1 min-w-0 pt-1">
+                      <span className="font-semibold text-lp-text text-[14px] tracking-tight mr-2">
+                        <Link 
+                          to={`/profile/${selectedPost.role}/${cleanUsername(selectedPost.author_username || selectedPost.author_name)}`}
+                          className="hover:opacity-80 transition-opacity"
+                        >
+                          {selectedPost.author_name}
+                        </Link>
+                      </span>
+                      <span className="text-lp-text font-normal whitespace-pre-line break-words text-[14px] leading-relaxed">
+                        {selectedPost.content}
+                      </span>
+                      <div className="text-lp-text3 text-[12px] font-normal mt-2">
+                        {getRelativeTime(selectedPost.created_at)}
                       </div>
                     </div>
                   </div>
                 )}
 
-                {/* Daftar Komentar - Scrollable */}
-                <div className="p-3 sm:p-4 space-y-3 sm:space-y-4 max-h-[40vh] sm:max-h-[calc(100vh-300px)] overflow-y-auto">
+                {/* Daftar Komentar */}
+                <div className="px-4 pb-4 space-y-4 pt-2">
                   {localComments.length > 0 ? (
                     localComments.map((comment) => (
-                      <div key={comment.id} className="flex items-start space-x-2 sm:space-x-3">
+                      <div key={comment.id} className="flex items-start space-x-3 group">
                         <Link 
                           to={`/profile/${comment.user_role || 'mahasiswa'}/${cleanUsername(comment.author_username || comment.author_name)}`}
                           className="flex-shrink-0"
                         >
-                          <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-blue-400 to-green-400 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                          <div className="w-8 h-8 bg-lp-surface border border-lp-border rounded-full flex items-center justify-center text-lp-text2 text-xs font-bold shrink-0">
                             {comment.author_name?.[0]?.toUpperCase() || 'U'}
                           </div>
                         </Link>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center space-x-2 mb-1">
+                        <div className="flex-1 min-w-0 pt-1">
+                          <span className="font-semibold text-lp-text text-[14px] tracking-tight mr-2">
                             <Link 
                               to={`/profile/${comment.user_role || 'mahasiswa'}/${cleanUsername(comment.author_username || comment.author_name)}`}
                               className="hover:opacity-80 transition-opacity"
                             >
-                              <span className="font-semibold text-gray-900 text-xs sm:text-sm">
-                                {comment.author_name}
-                              </span>
+                              {comment.author_name}
                             </Link>
-                          </div>
-                          <p className="text-gray-800 text-xs sm:text-sm break-words">
+                          </span>
+                          <span className="text-lp-text text-[14px] font-normal break-words leading-relaxed">
                             {comment.content}
-                          </p>
-                          <div className="text-gray-500 text-xs mt-1">
-                            {getRelativeTime(comment.created_at)}
+                          </span>
+                          <div className="text-lp-text3 text-[12px] font-normal mt-1 flex gap-3">
+                            <span>{getRelativeTime(comment.created_at)}</span>
+                            <button className="font-semibold hidden group-hover:block hover:text-lp-text2">Balas</button>
                           </div>
                         </div>
+                        <button className="pt-2 text-lp-text3 hover:text-lp-red px-1">
+                          <FaRegHeart className="text-[10px]" />
+                        </button>
                       </div>
                     ))
                   ) : (
-                    <div className="text-center py-4 sm:py-8 text-gray-500">
-                      <div className="text-2xl sm:text-4xl mb-2">💬</div>
-                      <p className="font-medium text-xs sm:text-sm">Belum ada komentar</p>
-                      <p className="text-xs mt-1">Jadilah yang pertama berkomentar!</p>
+                    <div className="text-center py-8">
+                      <p className="font-medium text-lp-text text-[14px]">Belum ada komentar.</p>
+                      <p className="text-[12px] text-lp-text3 font-light mt-1">Mulai obrolan.</p>
                     </div>
                   )}
                 </div>
               </div>
 
-              {/* Actions dan Input Komentar */}
-              <div className="border-t border-gray-200">
+              {/* Actions, Likes, dan Input Komentar (Sticky di bawah) */}
+              <div className="border-t border-lp-border bg-white flex-shrink-0">
                 {/* Action Buttons */}
-                <div className="flex items-center justify-between p-3 sm:p-4">
-                  <div className="flex items-center space-x-3 sm:space-x-4">
+                <div className="flex items-center justify-between px-4 py-2 mt-1">
+                  <div className="flex items-center space-x-4">
                     <button
                       onClick={handleLikePost}
-                      className={`p-1 sm:p-2 rounded-full transition-colors ${
+                      className={`transition-colors ${
                         selectedPost.user_has_liked 
-                          ? 'text-red-500 hover:text-red-600' 
-                          : 'text-gray-600 hover:text-red-500'
+                          ? 'text-lp-red hover:text-lp-red' 
+                          : 'text-lp-text hover:text-lp-text2'
                       }`}
                     >
                       {selectedPost.user_has_liked ? (
-                        <FaHeart className="text-lg sm:text-xl" />
+                        <FaHeart className="text-2xl" />
                       ) : (
-                        <FaRegHeart className="text-lg sm:text-xl" />
+                        <FaRegHeart className="text-2xl" />
                       )}
                     </button>
-                    <button className="text-gray-600 hover:text-blue-500 p-1 sm:p-2">
-                      <FaComment className="text-lg sm:text-xl transform scale-x-[-1]" />
+                    <button className="text-lp-text hover:text-lp-text2">
+                      <FaComment className="text-2xl transform scale-x-[-1]" />
                     </button>
-                    <button className="text-gray-600 hover:text-green-500 p-1 sm:p-2">
-                      <FaPaperPlane className="text-lg sm:text-xl transform -rotate-45" />
+                    <button className="text-lp-text hover:text-lp-text2 mb-1">
+                      <FaPaperPlane className="text-2xl transform -rotate-12" />
                     </button>
                   </div>
                   <button 
                     onClick={handleSavePost}
-                    className={`p-1 sm:p-2 rounded-full transition-colors ${
+                    className={`transition-colors ${
                       selectedPost.user_has_saved 
-                        ? 'text-yellow-500 hover:text-yellow-600' 
-                        : 'text-gray-600 hover:text-yellow-500'
+                        ? 'text-lp-text hover:text-lp-text' 
+                        : 'text-lp-text hover:text-lp-text2'
                     }`}
                   >
                     {selectedPost.user_has_saved ? (
-                      <FaBookmark className="text-lg sm:text-xl" />
+                      <FaBookmark className="text-2xl" />
                     ) : (
-                      <FaRegBookmark className="text-lg sm:text-xl" />
+                      <FaRegBookmark className="text-2xl" />
                     )}
                   </button>
                 </div>
 
-                {/* Like Count */}
-                <div className="px-3 sm:px-4 pb-2 sm:pb-3">
-                  <div className="font-semibold text-gray-900 text-xs sm:text-sm">
+                {/* Like Count & Timestamp */}
+                <div className="px-4 pb-3">
+                  <div className="font-semibold text-[14px] text-lp-text mb-1">
                     {selectedPost.likes_count || 0} suka
                   </div>
-                  <div className="text-gray-500 text-xs mt-0.5 sm:mt-1">
+                  <div className="text-[10px] text-lp-text3 uppercase tracking-wide">
                     {getRelativeTime(selectedPost.created_at)}
                   </div>
                 </div>
 
-                {/* Input Komentar */}
-                <form onSubmit={handleAddComment} className="p-3 sm:p-4 border-t border-gray-200">
-                  <div className="flex items-center space-x-2 sm:space-x-3">
-                    <button type="button" className="text-gray-500 hover:text-gray-700 p-1">
-                      <FaSmile className="text-base sm:text-lg" />
-                    </button>
-                    <input
-                      type="text"
-                      placeholder="Tambahkan komentar..."
-                      value={commentText}
-                      onChange={(e) => setCommentText(e.target.value)}
-                      className="flex-1 text-xs sm:text-sm border-none focus:outline-none focus:ring-0 bg-transparent placeholder-gray-500"
-                      disabled={isCommenting}
-                    />
-                    <button 
-                      type="submit"
-                      disabled={!commentText.trim() || isCommenting}
-                      className={`font-semibold text-xs sm:text-sm px-2 sm:px-3 py-1 rounded-full transition-all duration-200 ${
-                        commentText.trim() && !isCommenting
-                          ? 'text-blue-500 hover:text-blue-700 hover:bg-blue-50'
-                          : 'text-blue-300 cursor-not-allowed'
-                      }`}
-                    >
-                      {isCommenting ? '...' : 'Kirim'}
-                    </button>
-                  </div>
+                {/* Input Komentar Area */}
+                <form onSubmit={handleAddComment} className="px-4 py-3 border-t border-lp-border flex items-center space-x-3">
+                  <button type="button" className="text-lp-text hover:text-lp-text2">
+                    <FaSmile className="text-2xl" />
+                  </button>
+                  <input
+                    type="text"
+                    placeholder="Tambahkan komentar..."
+                    value={commentText}
+                    onChange={(e) => setCommentText(e.target.value)}
+                    className="flex-1 text-[14px] font-normal text-lp-text border-none focus:outline-none focus:ring-0 bg-transparent placeholder-lp-text3"
+                    disabled={isCommenting}
+                  />
+                  <button 
+                    type="submit"
+                    disabled={!commentText.trim() || isCommenting}
+                    className={`font-semibold text-[14px] transition-colors ${
+                      commentText.trim() && !isCommenting
+                        ? 'text-lp-atext hover:text-lp-accent' // atau blue-500 seperti ig
+                        : 'text-lp-atext/40 cursor-text'
+                    }`}
+                  >
+                    {isCommenting ? '...' : 'Kirim'}
+                  </button>
                 </form>
               </div>
             </div>

@@ -153,7 +153,7 @@ const PembayaranOrtu = () => {
       
       if (error.response?.status === 401) {
         logout()
-        navigate('/login')
+        navigate('/')
       }
     }
   })
@@ -182,7 +182,7 @@ const PembayaranOrtu = () => {
       
       if (error.response?.status === 401) {
         logout()
-        navigate('/login')
+        navigate('/')
       }
     }
   })
@@ -271,9 +271,9 @@ const PembayaranOrtu = () => {
 
   const getStatusIcon = (status) => {
     switch (status) {
-      case 'success': return <FaCheckCircle className="text-green-500 text-lg" />
+      case 'success': return <FaCheckCircle className="text-lp-green text-lg" />
       case 'pending': return <FaClock className="text-yellow-500 text-lg" />
-      case 'failed': return <FaBan className="text-gray-500 text-lg" />
+      case 'failed': return <FaBan className="text-lp-text3 font-light text-lg" />
       case 'expired': return <FaTimesCircle className="text-red-500 text-lg" />
       default: return <FaTimesCircle className="text-red-500 text-lg" />
     }
@@ -283,9 +283,9 @@ const PembayaranOrtu = () => {
     switch (status) {
       case 'success': return 'bg-green-100 text-green-800 border-green-200'
       case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-200'
-      case 'failed': return 'bg-gray-100 text-gray-800 border-gray-200'
+      case 'failed': return 'bg-gray-100 text-lp-text font-semibold tracking-tight border-lp-border border'
       case 'expired': return 'bg-red-100 text-red-800 border-red-200'
-      default: return 'bg-gray-100 text-gray-800 border-gray-200'
+      default: return 'bg-gray-100 text-lp-text font-semibold tracking-tight border-lp-border border'
     }
   }
 
@@ -355,14 +355,14 @@ const PembayaranOrtu = () => {
 
   if (anakLoading || sisaLoading) {
     return (
-      <div className="flex h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="flex h-screen bg-lp-bg">
         <Sidebar role={user?.role} isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
         <div className="flex-1 flex flex-col overflow-hidden">
           <Navbar user={user} onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">Memuat data anak...</p>
+              <p className="text-lp-text2 font-light">Memuat data anak...</p>
             </div>
           </div>
         </div>
@@ -371,7 +371,7 @@ const PembayaranOrtu = () => {
   }
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="flex h-screen bg-lp-bg">
       <Sidebar role={user?.role} isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -381,10 +381,10 @@ const PembayaranOrtu = () => {
           <div className="max-w-6xl mx-auto">
             {/* Header */}
             <div className="mb-8">
-              <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-2">
+              <h1 className="text-2xl md:text-3xl font-bold text-lp-text font-semibold tracking-tight mb-2">
                 Pembayaran UKT Anak
               </h1>
-              <p className="text-gray-600">
+              <p className="text-lp-text2 font-light">
                 Bayar UKT untuk anak Anda dengan mudah menggunakan Pakasir.com
               </p>
             </div>
@@ -416,13 +416,13 @@ const PembayaranOrtu = () => {
             )}
             
             {/* Info Anak Card */}
-            <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 mb-6">
+            <div className="bg-lp-surface rounded-2xl p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border border border-lp-border border mb-6">
               <div className="flex justify-between items-center mb-6">
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
+                  <div className="w-10 h-10 bg-lp-bg rounded-xl flex items-center justify-center">
                     <FaUserGraduate className="text-white text-lg" />
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-800">Informasi Anak</h3>
+                  <h3 className="text-lg font-semibold text-lp-text font-semibold tracking-tight">Informasi Anak</h3>
                 </div>
                 <button
                   onClick={() => {
@@ -430,7 +430,7 @@ const PembayaranOrtu = () => {
                     refetchSisaUKT()
                     refetchRiwayat()
                   }}
-                  className="flex items-center space-x-2 text-blue-600 hover:text-blue-800 transition-colors"
+                  className="flex items-center space-x-2 text-lp-atext hover:text-blue-800 transition-colors"
                   disabled={anakLoading}
                 >
                   <FaSync className={`${anakLoading ? 'animate-spin' : ''}`} />
@@ -440,66 +440,66 @@ const PembayaranOrtu = () => {
               
               {anakData ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 border border-blue-200">
+                  <div className="bg-lp-bg rounded-xl p-4 border border-blue-200">
                     <div className="flex items-center space-x-2 text-blue-700 mb-2">
                       <FaUser />
                       <span className="text-sm font-medium">Nama Mahasiswa</span>
                     </div>
-                    <p className="text-lg font-bold text-gray-800 truncate">{anakData.nama}</p>
+                    <p className="text-lg font-bold text-lp-text font-semibold tracking-tight truncate">{anakData.nama}</p>
                   </div>
                   
-                  <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-4 border border-green-200">
+                  <div className="bg-lp-bg rounded-xl p-4 border border-green-200">
                     <div className="flex items-center space-x-2 text-green-700 mb-2">
                       <FaUniversity />
                       <span className="text-sm font-medium">NIM</span>
                     </div>
-                    <p className="text-lg font-bold text-gray-800">{anakData.nim}</p>
+                    <p className="text-lg font-bold text-lp-text font-semibold tracking-tight">{anakData.nim}</p>
                   </div>
                   
-                  <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-4 border border-purple-200">
+                  <div className="bg-lp-bg rounded-xl p-4 border border-purple-200">
                     <div className="flex items-center space-x-2 text-purple-700 mb-2">
                       <FaWallet />
                       <span className="text-sm font-medium">Sisa UKT</span>
                     </div>
-                    <p className="text-lg font-bold text-gray-800">
+                    <p className="text-lg font-bold text-lp-text font-semibold tracking-tight">
                       {formatRupiah(sisaUKTData?.sisa_ukt || 0)}
                     </p>
                   </div>
                   
-                  <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-xl p-4 border border-yellow-200">
+                  <div className="bg-lp-bg rounded-xl p-4 border border-yellow-200">
                     <div className="flex items-center space-x-2 text-yellow-700 mb-2">
                       <FaUniversity />
                       <span className="text-sm font-medium">Total UKT</span>
                     </div>
-                    <p className="text-lg font-bold text-gray-800">Rp 7.000.000</p>
+                    <p className="text-lg font-bold text-lp-text font-semibold tracking-tight">Rp 7.000.000</p>
                   </div>
                 </div>
               ) : anakError ? (
                 <div className="text-center py-8">
                   <div className="text-6xl mb-4">😟</div>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-2">Data anak tidak ditemukan</h3>
-                  <p className="text-gray-600">Hubungi administrator untuk melengkapi data anak</p>
+                  <h3 className="text-lg font-semibold text-lp-text font-semibold tracking-tight mb-2">Data anak tidak ditemukan</h3>
+                  <p className="text-lp-text2 font-light">Hubungi administrator untuk melengkapi data anak</p>
                 </div>
               ) : (
                 <div className="text-center py-8">
                   <div className="text-6xl mb-4">👨‍👦</div>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-2">Belum ada data anak</h3>
-                  <p className="text-gray-600">Data anak Anda belum terdaftar di sistem</p>
+                  <h3 className="text-lg font-semibold text-lp-text font-semibold tracking-tight mb-2">Belum ada data anak</h3>
+                  <p className="text-lp-text2 font-light">Data anak Anda belum terdaftar di sistem</p>
                 </div>
               )}
             </div>
 
             {/* Create Payment Card */}
-            <div id="payment-form" className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 mb-8">
+            <div id="payment-form" className="bg-lp-surface rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border border border-lp-border border p-6 mb-8">
               <div className="flex items-center space-x-3 mb-6">
-                <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-green-600 rounded-xl flex items-center justify-center">
+                <div className="w-10 h-10 bg-lp-bg rounded-xl flex items-center justify-center">
                   <FaWallet className="text-white text-lg" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-gray-800">
+                  <h3 className="text-xl font-bold text-lp-text font-semibold tracking-tight">
                     Bayar UKT untuk {anakData?.nama?.split(' ')[0] || 'Anak'}
                   </h3>
-                  <p className="text-gray-600 text-sm">
+                  <p className="text-lp-text2 font-light text-sm">
                     Pembayaran menggunakan Pakasir.com (QRIS & Transfer Bank)
                   </p>
                 </div>
@@ -507,20 +507,20 @@ const PembayaranOrtu = () => {
               
               <form onSubmit={handleShowConfirm} className="space-y-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-lp-text2 mb-2">
                     Jumlah Pembayaran
                   </label>
                   <div className="relative">
-                    <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium">Rp</span>
+                    <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-lp-text3 font-light font-medium">Rp</span>
                     <input
                       type="text"
                       value={amountFormatted}
                       onChange={handleAmountChange}
                       className="
-                        w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl
+                        w-full pl-12 pr-4 py-3 border border-lp-border border rounded-xl
                         focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
                         transition-all duration-300
-                        bg-gray-50 focus:bg-white text-lg font-medium
+                        bg-lp-bg focus:bg-lp-surface text-lg font-medium
                       "
                       placeholder="Contoh: 50.000"
                       required
@@ -528,7 +528,7 @@ const PembayaranOrtu = () => {
                     />
                   </div>
                   <div className="flex justify-between mt-2">
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-lp-text3 font-light">
                       Sisa UKT: <span className="font-semibold">{formatRupiah(sisaUKTData?.sisa_ukt || 0)}</span>
                     </p>
                     <button
@@ -539,7 +539,7 @@ const PembayaranOrtu = () => {
                           setAmountFormatted(formatNumber(sisaUKTData.sisa_ukt.toString()))
                         }
                       }}
-                      className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                      className="text-sm text-lp-atext hover:text-blue-800 font-medium"
                       disabled={!anakData}
                     >
                       Bayar Semua
@@ -548,7 +548,7 @@ const PembayaranOrtu = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-lp-text2 mb-2">
                     Metode Pembayaran
                   </label>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -559,14 +559,14 @@ const PembayaranOrtu = () => {
                         p-4 rounded-xl border-2 flex flex-col items-center justify-center space-y-2
                         ${paymentMethod === 'qris' 
                           ? 'border-green-500 bg-green-50 text-green-700' 
-                          : 'border-gray-300 bg-white text-gray-700 hover:border-green-300'
+                          : 'border-lp-border border bg-lp-surface text-lp-text2 hover:border-green-300'
                         }
                       `}
                       disabled={!anakData}
                     >
                       <FaQrcode className="text-2xl" />
                       <span className="text-sm font-medium">QRIS</span>
-                      <span className="text-xs text-gray-500">Rp 10k - 250k</span>
+                      <span className="text-xs text-lp-text3 font-light">Rp 10k - 250k</span>
                     </button>
                     
                     <button
@@ -576,14 +576,14 @@ const PembayaranOrtu = () => {
                         p-4 rounded-xl border-2 flex flex-col items-center justify-center space-y-2
                         ${paymentMethod === 'bri_va' 
                           ? 'border-blue-500 bg-blue-50 text-blue-700' 
-                          : 'border-gray-300 bg-white text-gray-700 hover:border-blue-300'
+                          : 'border-lp-border border bg-lp-surface text-lp-text2 hover:border-blue-300'
                         }
                       `}
                       disabled={!anakData}
                     >
                       <FaBuilding className="text-2xl" />
                       <span className="text-sm font-medium">BRI VA</span>
-                      <span className="text-xs text-gray-500">Min. Rp 50k</span>
+                      <span className="text-xs text-lp-text3 font-light">Min. Rp 50k</span>
                     </button>
                     
                     <button
@@ -593,14 +593,14 @@ const PembayaranOrtu = () => {
                         p-4 rounded-xl border-2 flex flex-col items-center justify-center space-y-2
                         ${paymentMethod === 'bni_va' 
                           ? 'border-yellow-500 bg-yellow-50 text-yellow-700' 
-                          : 'border-gray-300 bg-white text-gray-700 hover:border-yellow-300'
+                          : 'border-lp-border border bg-lp-surface text-lp-text2 hover:border-yellow-300'
                         }
                       `}
                       disabled={!anakData}
                     >
                       <FaBuilding className="text-2xl" />
                       <span className="text-sm font-medium">BNI VA</span>
-                      <span className="text-xs text-gray-500">Min. Rp 50k</span>
+                      <span className="text-xs text-lp-text3 font-light">Min. Rp 50k</span>
                     </button>
                     
                     <button
@@ -610,43 +610,43 @@ const PembayaranOrtu = () => {
                         p-4 rounded-xl border-2 flex flex-col items-center justify-center space-y-2
                         ${paymentMethod === 'mandiri_va' 
                           ? 'border-red-500 bg-red-50 text-red-700' 
-                          : 'border-gray-300 bg-white text-gray-700 hover:border-red-300'
+                          : 'border-lp-border border bg-lp-surface text-lp-text2 hover:border-red-300'
                         }
                       `}
                       disabled={!anakData}
                     >
                       <FaBuilding className="text-2xl" />
                       <span className="text-sm font-medium">Mandiri VA</span>
-                      <span className="text-xs text-gray-500">Min. Rp 50k</span>
+                      <span className="text-xs text-lp-text3 font-light">Min. Rp 50k</span>
                     </button>
                   </div>
                 </div>
 
                 {amount >= 10000 && (
-                  <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl p-5 border border-blue-200">
-                    <h4 className="font-semibold text-gray-800 mb-4 flex items-center">
-                      <FaCalculator className="mr-2 text-blue-600" />
+                  <div className="bg-lp-bg rounded-xl p-5 border border-blue-200">
+                    <h4 className="font-semibold text-lp-text font-semibold tracking-tight mb-4 flex items-center">
+                      <FaCalculator className="mr-2 text-lp-atext" />
                       Preview Pembayaran:
                     </h4>
                     <div className="space-y-3">
                       <div className="flex justify-between items-center">
-                        <span className="text-gray-600">Metode Pembayaran</span>
+                        <span className="text-lp-text2 font-light">Metode Pembayaran</span>
                         <span className="font-semibold capitalize">
                           {paymentMethod === 'qris' ? 'QRIS' : getBankName(paymentMethod)}
                         </span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="text-gray-600">Nominal UKT</span>
+                        <span className="text-lp-text2 font-light">Nominal UKT</span>
                         <span className="font-semibold">{formatRupiah(amount)}</span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="text-gray-600">Biaya Admin ({paymentMethod === 'qris' ? '0.6%' : '0.5%'})</span>
+                        <span className="text-lp-text2 font-light">Biaya Admin ({paymentMethod === 'qris' ? '0.6%' : '0.5%'})</span>
                         <span className="font-semibold text-yellow-600">{formatRupiah(biayaAdminPreview)}</span>
                       </div>
                       <div className="pt-3 border-t border-blue-200">
                         <div className="flex justify-between items-center text-lg">
-                          <span className="font-bold text-gray-800">Total Bayar:</span>
-                          <span className="font-bold text-blue-600">
+                          <span className="font-bold text-lp-text font-semibold tracking-tight">Total Bayar:</span>
+                          <span className="font-bold text-lp-atext">
                             {formatRupiah(totalDibayarPreview)}
                           </span>
                         </div>
@@ -673,11 +673,11 @@ const PembayaranOrtu = () => {
                     (paymentMethod !== 'qris' && amount < 50000)
                   }
                   className="
-                    w-full bg-gradient-to-r from-green-500 to-green-600 text-white
+                    w-full bg-lp-bg text-white
                     py-4 px-6 rounded-xl font-semibold text-lg
                     hover:from-green-600 hover:to-green-700 transform hover:scale-[1.02]
                     disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none
-                    transition-all duration-300 shadow-lg hover:shadow-xl
+                    transition-all duration-300 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl
                     flex items-center justify-center space-x-3
                   "
                 >
@@ -697,17 +697,17 @@ const PembayaranOrtu = () => {
             </div>
             
             {/* Riwayat Pembayaran Anak */}
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
+            <div className="bg-lp-surface rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border border border-lp-border border p-6">
               <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
                 <div className="flex items-center space-x-3 mb-4 md:mb-0">
-                  <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl flex items-center justify-center">
+                  <div className="w-10 h-10 bg-lp-bg rounded-xl flex items-center justify-center">
                     <FaHistory className="text-white text-lg" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-gray-800">
+                    <h3 className="text-xl font-bold text-lp-text font-semibold tracking-tight">
                       Riwayat Pembayaran {anakData?.nama?.split(' ')[0] || 'Anak'}
                     </h3>
-                    <p className="text-gray-600 text-sm">Histori pembayaran UKT anak Anda</p>
+                    <p className="text-lp-text2 font-light text-sm">Histori pembayaran UKT anak Anda</p>
                   </div>
                 </div>
                 
@@ -717,8 +717,8 @@ const PembayaranOrtu = () => {
                       onClick={() => setFilter('all')}
                       className={`px-4 py-2 rounded-lg flex items-center space-x-2 ${
                         filter === 'all' 
-                          ? 'bg-blue-500 text-white' 
-                          : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+                          ? 'bg-lp-accent text-white' 
+                          : 'bg-gray-200 text-lp-text font-semibold tracking-tight hover:bg-gray-300'
                       }`}
                     >
                       <FaFilter />
@@ -729,7 +729,7 @@ const PembayaranOrtu = () => {
                       className={`px-4 py-2 rounded-lg flex items-center space-x-2 ${
                         filter === 'pending' 
                           ? 'bg-yellow-500 text-white' 
-                          : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+                          : 'bg-gray-200 text-lp-text font-semibold tracking-tight hover:bg-gray-300'
                       }`}
                     >
                       <FaClock />
@@ -739,8 +739,8 @@ const PembayaranOrtu = () => {
                       onClick={() => setFilter('success')}
                       className={`px-4 py-2 rounded-lg flex items-center space-x-2 ${
                         filter === 'success' 
-                          ? 'bg-green-500 text-white' 
-                          : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+                          ? 'bg-lp-green text-white' 
+                          : 'bg-gray-200 text-lp-text font-semibold tracking-tight hover:bg-gray-300'
                       }`}
                     >
                       <FaCheckCircle />
@@ -750,8 +750,8 @@ const PembayaranOrtu = () => {
                       onClick={() => setFilter('failed')}
                       className={`px-4 py-2 rounded-lg flex items-center space-x-2 ${
                         filter === 'failed' 
-                          ? 'bg-gray-500 text-white' 
-                          : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+                          ? 'bg-lp-bg0 text-white' 
+                          : 'bg-gray-200 text-lp-text font-semibold tracking-tight hover:bg-gray-300'
                       }`}
                     >
                       <FaBan />
@@ -764,7 +764,7 @@ const PembayaranOrtu = () => {
               {riwayatLoading ? (
                 <div className="text-center py-12">
                   <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-purple-600 mx-auto mb-4"></div>
-                  <p className="text-gray-600">Memuat riwayat pembayaran...</p>
+                  <p className="text-lp-text2 font-light">Memuat riwayat pembayaran...</p>
                 </div>
               ) : riwayat && riwayat.length > 0 ? (
                 <div className="space-y-4">
@@ -792,21 +792,21 @@ const PembayaranOrtu = () => {
                             : status === 'pending' && !isExpired
                             ? 'border-yellow-200 bg-yellow-50'
                             : status === 'failed'
-                            ? 'border-gray-200 bg-gray-50'
+                            ? 'border-lp-border border bg-lp-bg'
                             : 'border-red-200 bg-red-50'
                         }`}
                       >
                         <div className="flex justify-between items-start mb-4">
                           <div className="flex-1">
                             <div className="flex items-center space-x-2 mb-1">
-                              <span className="font-bold text-gray-800">
+                              <span className="font-bold text-lp-text font-semibold tracking-tight">
                                 Invoice #{transaksi.invoice_uuid?.substring(0, 8).toUpperCase() || 'N/A'}
                               </span>
-                              <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                              <span className="text-xs text-lp-text3 font-light bg-gray-100 px-2 py-1 rounded-full">
                                 {formatDate(transaksi.tanggal)}
                               </span>
                             </div>
-                            <p className="text-sm text-gray-500">
+                            <p className="text-sm text-lp-text3 font-light">
                               {formatDate(transaksi.tanggal)}
                             </p>
                           </div>
@@ -817,26 +817,26 @@ const PembayaranOrtu = () => {
                         </div>
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                          <div className="bg-white p-3 rounded-lg border border-gray-200">
-                            <span className="text-blue-600 text-xs font-medium">NOMINAL UKT</span>
-                            <p className="font-bold text-gray-800">{formatRupiah(transaksi.nominal || 0)}</p>
+                          <div className="bg-lp-surface p-3 rounded-lg border border-lp-border border">
+                            <span className="text-lp-atext text-xs font-medium">NOMINAL UKT</span>
+                            <p className="font-bold text-lp-text font-semibold tracking-tight">{formatRupiah(transaksi.nominal || 0)}</p>
                           </div>
-                          <div className="bg-white p-3 rounded-lg border border-gray-200">
+                          <div className="bg-lp-surface p-3 rounded-lg border border-lp-border border">
                             <span className="text-yellow-600 text-xs font-medium">BIAYA ADMIN</span>
-                            <p className="font-bold text-gray-800">{formatRupiah(transaksi.biaya_admin || 0)}</p>
+                            <p className="font-bold text-lp-text font-semibold tracking-tight">{formatRupiah(transaksi.biaya_admin || 0)}</p>
                           </div>
-                          <div className="bg-white p-3 rounded-lg border border-gray-200">
-                            <span className="text-green-600 text-xs font-medium">TOTAL BAYAR</span>
-                            <p className="font-bold text-gray-800">{formatRupiah(transaksi.total_dibayar || 0)}</p>
+                          <div className="bg-lp-surface p-3 rounded-lg border border-lp-border border">
+                            <span className="text-lp-green text-xs font-medium">TOTAL BAYAR</span>
+                            <p className="font-bold text-lp-text font-semibold tracking-tight">{formatRupiah(transaksi.total_dibayar || 0)}</p>
                           </div>
-                          <div className="bg-white p-3 rounded-lg border border-gray-200">
+                          <div className="bg-lp-surface p-3 rounded-lg border border-lp-border border">
                             <span className="text-purple-600 text-xs font-medium">METODE</span>
                             <div className="flex items-center space-x-2">
                               {transaksi.payment_method === 'qris' ? 
-                                <FaQrcode className="text-green-500" /> : 
-                                <FaBuilding className="text-blue-500" />
+                                <FaQrcode className="text-lp-green" /> : 
+                                <FaBuilding className="text-lp-atext" />
                               }
-                              <span className="font-bold text-gray-800 capitalize">
+                              <span className="font-bold text-lp-text font-semibold tracking-tight capitalize">
                                 {transaksi.payment_method === 'qris' ? 'QRIS' : getBankName(transaksi.payment_method)}
                               </span>
                             </div>
@@ -844,7 +844,7 @@ const PembayaranOrtu = () => {
                         </div>
 
                         {status === 'pending' && !isExpired && transaksi.expired_at && (
-                          <div className="mt-4 pt-4 border-t border-gray-300">
+                          <div className="mt-4 pt-4 border-t border-lp-border border">
                             <div className="flex items-center justify-between">
                               <div className="flex items-center space-x-2 text-yellow-600">
                                 <FaClock />
@@ -865,7 +865,7 @@ const PembayaranOrtu = () => {
                                         setErrorMessage('Gagal memuat detail pembayaran')
                                       })
                                   }}
-                                  className="bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors flex items-center space-x-2"
+                                  className="bg-lp-accent text-white py-2 px-4 rounded-lg hover:bg-lp-accent transition-colors flex items-center space-x-2"
                                 >
                                   <FaInfoCircle />
                                   <span>Detail</span>
@@ -895,7 +895,7 @@ const PembayaranOrtu = () => {
 
                         {status === 'success' && (
                           <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-                            <div className="flex items-center space-x-2 text-green-600">
+                            <div className="flex items-center space-x-2 text-lp-green">
                               <FaCheckCircle />
                               <span className="text-sm">
                                 Pembayaran berhasil mengurangi sisa UKT anak Anda
@@ -905,8 +905,8 @@ const PembayaranOrtu = () => {
                         )}
 
                         {status === 'failed' && (
-                          <div className="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                            <div className="flex items-center space-x-2 text-gray-600">
+                          <div className="mt-4 p-3 bg-lp-bg border border-lp-border border rounded-lg">
+                            <div className="flex items-center space-x-2 text-lp-text2 font-light">
                               <FaBan />
                               <span className="text-sm">
                                 Pembayaran telah dibatalkan
@@ -921,13 +921,13 @@ const PembayaranOrtu = () => {
               ) : (
                 <div className="text-center py-12">
                   <div className="text-4xl mb-4">📝</div>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-2">
+                  <h3 className="text-lg font-semibold text-lp-text font-semibold tracking-tight mb-2">
                     {filter === 'all' 
                       ? 'Belum ada riwayat pembayaran' 
                       : `Tidak ada pembayaran dengan status ${filter === 'failed' ? 'dibatalkan' : filter}`
                     }
                   </h3>
-                  <p className="text-gray-600 mb-6">
+                  <p className="text-lp-text2 font-light mb-6">
                     {filter === 'all' 
                       ? `Lakukan pembayaran pertama untuk ${anakData?.nama?.split(' ')[0] || 'anak Anda'}.`
                       : 'Coba filter lainnya atau buat pembayaran baru.'
@@ -941,7 +941,7 @@ const PembayaranOrtu = () => {
                           form.scrollIntoView({ behavior: 'smooth' })
                         }
                       }}
-                      className="inline-flex items-center space-x-2 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
+                      className="inline-flex items-center space-x-2 bg-lp-accent text-white px-4 py-2 rounded-lg hover:bg-lp-accent transition-colors"
                     >
                       <FaMoneyBillWave />
                       <span>Buat Pembayaran Pertama</span>

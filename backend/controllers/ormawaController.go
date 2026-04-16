@@ -24,10 +24,10 @@ func CreateOrmawaPost(c *gin.Context) {
 
 	// Ambil name dan username dari tabel ormawa
 	var authorName, authorUsername string
-	err := config.DB.QueryRow("SELECT name, username FROM ormawa WHERE user_id = ?", userID).Scan(&authorName, &authorUsername)
+	err := config.DB.QueryRow("SELECT name, username FROM ormawa WHERE user_id = $1", userID).Scan(&authorName, &authorUsername)
 	if err != nil || authorName == "" || authorUsername == "" {
 		var email string
-		config.DB.QueryRow("SELECT email FROM users WHERE id = ?", userID).Scan(&email)
+		config.DB.QueryRow("SELECT email FROM users WHERE id = $1", userID).Scan(&email)
 		parts := strings.Split(email, "@")
 		authorName = "Ormawa " + strings.Title(parts[0])
 		authorUsername = strings.ToLower(parts[0])
@@ -56,15 +56,15 @@ func CreateOrmawaPost(c *gin.Context) {
 	query := `
 		INSERT INTO posts 
 		(user_id, role, title, content, media_url, author_name, author_username, likes_count, comments_count, created_at)
-		VALUES (?, 'ormawa', ?, ?, ?, ?, ?, 0, 0, NOW())
+		VALUES ($1, 'ormawa', $2, $3, $4, $5, $6, 0, 0, NOW())
+		RETURNING id
 	`
-	result, err := config.DB.Exec(query, userID, title, content, mediaURL, authorName, authorUsername)
+	var postID int64
+	err = config.DB.QueryRow(query, userID, title, content, mediaURL, authorName, authorUsername).Scan(&postID)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, "Gagal simpan ke database: "+err.Error())
 		return
 	}
-
-	postID, _ := result.LastInsertId()
 
 	utils.SuccessResponse(c, gin.H{
 		"id":              postID,
