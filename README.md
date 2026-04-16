@@ -176,7 +176,7 @@ NF-Student-HUB/
 
 <div align="center">
   <p><strong>Lisensi Penggunaan</strong><br>
-  Proyek ini berada di bawah jalur pengunaan Akademik (STT Terpadu Nurul Fikri).<br>Setiap modifikasi untuk penggunaan Komersial penuh memerlukan Izin pihak pembuat.</p>
+  Proyek ini berada di bawah jalur pengunaan Akademik (STT Terpadu Nurul Fikri).</p>
 
   <p><em>Terakhir diperbarui: April 2026 — v1.0.1</em></p>
 </div>
