@@ -68,21 +68,14 @@ const queryClient = new QueryClient({
   },
 })
 
-const PageLoader = () => (
-  <div className="min-h-screen flex items-center justify-center bg-black text-white">
-    <div className="flex items-center gap-3 text-sm md:text-base">
-      <span className="inline-block w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-      <span>Memuat halaman...</span>
-    </div>
-  </div>
-)
+import Loading from './components/Loading'
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <Router>
         <div className="App">
-          <Suspense fallback={<PageLoader />}>
+          <Suspense fallback={<Loading />}>
             <Routes>
               <Route path="/" element={<LandingPage />} />
 

@@ -361,7 +361,7 @@ const ProfilePublic = () => {
       <Sidebar role={user ? user.role : 'mahasiswa'} />
       
       {/* Main Content - Diperbaiki untuk responsif */}
-      <div className="flex-1 w-full ml-0 lg:ml-56">
+      <div className="flex-1 w-full relative">
         
         {/* Header Profil - Diperbaiki untuk lebih responsif dan aesthetically pleasing */}
         <header className="bg-white border-b border-lp-border relative">

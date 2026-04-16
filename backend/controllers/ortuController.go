@@ -215,7 +215,7 @@ func GetChildAttendanceToday(c *gin.Context) {
 	case time.Wednesday:
 		hariIni = "Rabu"
 	case time.Thursday:
-		hariIni = "Kamis"
+		hariIni = "Kmais"
 	case time.Friday:
 		hariIni = "Jumat"
 	case time.Saturday:

@@ -48,7 +48,7 @@ export default function LandingPage() {
       {/* HEADER / NAV */}
       <div className="fixed top-5 left-0 right-0 z-50 flex justify-center px-4 sm:px-5 pointer-events-none">
         <div className={`pointer-events-auto transition-all duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)] relative ${isMobileMenuOpen ? 'w-full sm:w-max' : 'w-max max-w-full'}`}>
-          <nav className="flex items-center justify-between bg-lp-bg/50 backdrop-blur-xl border border-lp-border/60 rounded-full py-1 px-1.5 pl-4 sm:pl-5 whitespace-nowrap gap-0.5 shadow-[0_12px_32px_rgba(0,0,0,0.08)]">
+          <nav className="flex items-center justify-between bg-lp-bg/50 backdrop-blur-x1 border border-lp-border/20 rounded-full py-1 px-1.5 pl-4 sm:pl-5 whitespace-nowrap gap-0.5 shadow-[0_12px_32px_rgba(0,0,0,0.08)]">
             <span className="text-[11.5px] font-semibold text-lp-text tracking-[0.07em] mr-2.5 sm:mr-4">STUDENT-HUB</span>
             
             <div className="hidden sm:flex items-center gap-0.5">
@@ -176,7 +176,7 @@ export default function LandingPage() {
               <p className="text-[16px] font-light text-lp-text2 max-w-[380px] leading-relaxed mb-7">
                 OpenClaw is the automation layer beneath Student Hub. It synchronizes
                 assignments, dispatches Telegram reminders, monitors attendance, and
-                generates reports — automatically, every session.
+                generates reports automatically, every session.
               </p>
               <p className="text-xs font-mono tracking-wider text-lp-text3">RUNS ON GOLANG · REST API · TELEGRAM GATEWAY</p>
             </div>
@@ -189,10 +189,10 @@ export default function LandingPage() {
                 <div className="p-6 pb-7 font-mono text-[12.5px] font-light leading-loose">
                   <span className="block"><span className="text-lp-text3">$ </span><span className="text-lp-atext">openclaw run --session morning-sync</span></span>
                   <span className="block h-2" />
-                  <span className="block"><span className="text-lp-green">✓ </span><span className="text-lp-text2">247 students notified via Telegram</span></span>
+                  <span className="block"><span className="text-lp-green">✓ </span><span className="text-lp-text2">1000+ students notified via Telegram</span></span>
                   <span className="block"><span className="text-lp-green">✓ </span><span className="text-lp-text2">12 new assignments synced to feed</span></span>
                   <span className="block"><span className="text-lp-green">✓ </span><span className="text-lp-text2">Attendance QR codes generated (18 classes)</span></span>
-                  <span className="block"><span className="text-lp-green">✓ </span><span className="text-lp-text2">UKT reminders dispatched (34 students)</span></span>
+                  <span className="block"><span className="text-lp-green">✓ </span><span className="text-lp-text2">UKT reminders dispatched (1000+ students)</span></span>
                   <span className="block"><span className="text-lp-green">✓ </span><span className="text-lp-text2">Daily digest compiled and sent</span></span>
                   <span className="block h-2" />
                   <span className="block text-lp-text3 my-1">───────────────────────────────</span>

@@ -14,6 +14,7 @@ import { MdOutlineSchool } from 'react-icons/md'
 import { BsPeopleFill } from 'react-icons/bs'
 import { getProfilePhotoUrl, getInitials, cleanUsername } from '../utils/profileUtils'
 import { resolveBackendAssetUrl } from '../utils/assetUrl'
+import Loading from './Loading'
 
 const Chatbot = lazy(() => import('./Chatbot'))
 
@@ -130,15 +131,7 @@ const DashboardLayout = ({
   const isLoading = profileLoading || postsLoading
 
   if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-screen bg-lp-bg font-sans font-light">
-        <div className="text-center">
-          <div className="w-10 h-10 border-2 border-lp-border border-t-lp-accent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-lp-text2 text-sm font-light">Loading feed...</p>
-          <p className="text-[10px] font-mono text-lp-text3 tracking-widest uppercase mt-2">STUDENT HUB</p>
-        </div>
-      </div>
-    )
+    return <Loading />
   }
 
   const organizations = [
