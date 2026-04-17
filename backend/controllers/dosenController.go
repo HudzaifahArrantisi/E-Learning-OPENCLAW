@@ -1493,13 +1493,13 @@ func UploadMateri(c *gin.Context) {
 	// Validasi dosen
 	userID, _ := c.Get("user_id")
 	var dosenID int
-	if err := config.DB.QueryRow("SELECT id FROM dosen WHERE user_id = $6", userID).Scan(&dosenID); err != nil {
+	if err := config.DB.QueryRow("SELECT id FROM dosen WHERE user_id = $1", userID).Scan(&dosenID); err != nil {
 		utils.ErrorResponse(c, http.StatusNotFound, "Dosen tidak ditemukan")
 		return
 	}
 
 	var exists bool
-	if err := config.DB.QueryRow("SELECT EXISTS(SELECT 1 FROM mata_kuliah WHERE kode = $7 AND dosen_id = $8)", courseID, dosenID).Scan(&exists); err != nil || !exists {
+	if err := config.DB.QueryRow("SELECT EXISTS(SELECT 1 FROM mata_kuliah WHERE kode = $1 AND dosen_id = $2)", courseID, dosenID).Scan(&exists); err != nil || !exists {
 		utils.ErrorResponse(c, http.StatusForbidden, "Anda tidak mengampu mata kuliah ini")
 		return
 	}
@@ -1593,7 +1593,7 @@ func CreateTugas(c *gin.Context) {
 	}
 
 	var exists bool
-	if err := config.DB.QueryRow("SELECT EXISTS(SELECT 1 FROM mata_kuliah WHERE kode = $2 AND dosen_id = $3)", courseID, dosenID).Scan(&exists); err != nil || !exists {
+	if err := config.DB.QueryRow("SELECT EXISTS(SELECT 1 FROM mata_kuliah WHERE kode = $1 AND dosen_id = $2)", courseID, dosenID).Scan(&exists); err != nil || !exists {
 		utils.ErrorResponse(c, http.StatusForbidden, "Anda tidak mengampu mata kuliah ini")
 		return
 	}

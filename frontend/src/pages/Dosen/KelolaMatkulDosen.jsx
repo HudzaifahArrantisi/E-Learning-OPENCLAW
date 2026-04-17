@@ -246,7 +246,7 @@ const KelolaMatkulDosen = () => {
             <div className="flex flex-wrap gap-3">
               <Link 
                 to={`/dosen/penilaian/${courseId}`}
-                className="group relative overflow-hidden px-6 py-3 bg-lp-bg text-white rounded-xl font-medium shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-3"
+                className="group relative overflow-hidden px-6 py-3 bg-lp-accent text-white border-none rounded-xl font-medium shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-3"
               >
                 <div className="absolute inset-0 bg-lp-surface/10 translate-x-[-100%] group-hover:translate-x-full transition-transform duration-1000"></div>
                 <FiEye className="relative z-10" />
@@ -316,7 +316,7 @@ const KelolaMatkulDosen = () => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <button
                 onClick={() => setShowUploadMateri(true)}
-                className="group relative overflow-hidden bg-lp-bg text-white rounded-2xl p-6 text-left shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+                className="group relative overflow-hidden bg-lp-accent text-white border-none rounded-2xl p-6 text-left shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
               >
                 <div className="absolute inset-0 bg-lp-surface/10 translate-x-[-100%] group-hover:translate-x-full transition-transform duration-1000"></div>
                 <div className="relative flex items-start gap-4">
@@ -331,7 +331,7 @@ const KelolaMatkulDosen = () => {
               </button>
               <button
                 onClick={() => setShowCreateTugas(true)}
-                className="group relative overflow-hidden bg-lp-bg text-white rounded-2xl p-6 text-left shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+                className="group relative overflow-hidden bg-lp-accent text-white border-none rounded-2xl p-6 text-left shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
               >
                 <div className="absolute inset-0 bg-lp-surface/10 translate-x-[-100%] group-hover:translate-x-full transition-transform duration-1000"></div>
                 <div className="relative flex items-start gap-4">
@@ -552,7 +552,7 @@ const KelolaMatkulDosen = () => {
                     <button
                       type="submit"
                       disabled={submitting}
-                      className="group relative overflow-hidden px-8 py-3 bg-lp-bg text-white rounded-xl font-medium shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2"
+                      className="group relative overflow-hidden px-8 py-3 bg-lp-accent text-white border-none rounded-xl font-medium shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2"
                     >
                       <div className="absolute inset-0 bg-lp-surface/10 translate-x-[-100%] group-hover:translate-x-full transition-transform duration-1000"></div>
                       {submitting ? (
@@ -712,7 +712,7 @@ const KelolaMatkulDosen = () => {
                     <button
                       type="submit"
                       disabled={submitting}
-                      className="group relative overflow-hidden px-8 py-3 bg-lp-bg text-white rounded-xl font-medium shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2"
+                      className="group relative overflow-hidden px-8 py-3 bg-lp-accent text-white border-none rounded-xl font-medium shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2"
                     >
                       <div className="absolute inset-0 bg-lp-surface/10 translate-x-[-100%] group-hover:translate-x-full transition-transform duration-1000"></div>
                       {submitting ? (
@@ -778,7 +778,7 @@ const KelolaMatkulDosen = () => {
                         </div>
                         <button
                           onClick={() => setShowUploadMateri(true)}
-                          className="px-4 py-2 bg-lp-bg text-white rounded-lg font-medium hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border transition-all duration-300 flex items-center gap-2"
+                          className="px-4 py-2 bg-lp-accent text-white border-none rounded-lg font-medium hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border transition-all duration-300 flex items-center gap-2"
                         >
                           <FiPlus />
                           Tambah Materi
@@ -838,7 +838,7 @@ const KelolaMatkulDosen = () => {
                               setShowDetailPertemuan(false)
                               setShowUploadMateri(true)
                             }}
-                            className="mt-4 px-4 py-2 bg-lp-bg text-white rounded-lg font-medium hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border transition-all duration-300 flex items-center gap-2 mx-auto"
+                            className="mt-4 px-4 py-2 bg-lp-accent text-white border-none rounded-lg font-medium hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border transition-all duration-300 flex items-center gap-2 mx-auto"
                           >
                             <FiPlus />
                             Tambah Materi Pertama
@@ -861,7 +861,7 @@ const KelolaMatkulDosen = () => {
                         </div>
                         <button
                           onClick={() => setShowCreateTugas(true)}
-                          className="px-4 py-2 bg-lp-bg text-white rounded-lg font-medium hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border transition-all duration-300 flex items-center gap-2"
+                          className="px-4 py-2 bg-lp-accent text-white border-none rounded-lg font-medium hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border transition-all duration-300 flex items-center gap-2"
                         >
                           <FiPlus />
                           Buat Tugas
@@ -922,7 +922,7 @@ const KelolaMatkulDosen = () => {
                                 </span>
                                 <Link
                                   to={`/dosen/penilaian/${courseId}?pertemuan=${selectedPertemuan}`}
-                                  className="px-3 py-1.5 bg-lp-bg text-white rounded-lg text-sm font-medium hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border transition-all duration-300 flex items-center gap-2"
+                                  className="px-3 py-1.5 bg-lp-accent text-white border-none rounded-lg text-sm font-medium hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border transition-all duration-300 flex items-center gap-2"
                                 >
                                   <FiEye />
                                   Lihat Pengumpulan
@@ -942,7 +942,7 @@ const KelolaMatkulDosen = () => {
                               setShowDetailPertemuan(false)
                               setShowCreateTugas(true)
                             }}
-                            className="mt-4 px-4 py-2 bg-lp-bg text-white rounded-lg font-medium hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border transition-all duration-300 flex items-center gap-2 mx-auto"
+                            className="mt-4 px-4 py-2 bg-lp-accent text-white border-none rounded-lg font-medium hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border transition-all duration-300 flex items-center gap-2 mx-auto"
                           >
                             <FiPlus />
                             Buat Tugas Pertama

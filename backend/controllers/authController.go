@@ -137,9 +137,9 @@ func Login(c *gin.Context) {
 
 	if err != nil {
 		if err == sql.ErrNoRows {
-			c.JSON(http.StatusUnauthorized, gin.H{
+			c.JSON(http.StatusBadRequest, gin.H{
 				"success": false,
-				"message": "Invalid credentials",
+				"message": "Login gagal atau kredensial tidak aktif",
 			})
 			return
 		}
@@ -152,9 +152,9 @@ func Login(c *gin.Context) {
 
 	// Cek password
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(input.Password)); err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{
+		c.JSON(http.StatusBadRequest, gin.H{
 			"success": false,
-			"message": "Invalid credentials",
+			"message": "Login gagal atau kredensial tidak aktif",
 		})
 		return
 	}

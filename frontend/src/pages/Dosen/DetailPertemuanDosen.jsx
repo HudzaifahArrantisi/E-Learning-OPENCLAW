@@ -154,7 +154,7 @@ const DetailPertemuanDosen = () => {
             <div className="flex flex-wrap gap-3">
               <Link 
                 to={`/dosen/matkul/${courseId}`}
-                className="group relative overflow-hidden px-6 py-3 bg-lp-bg text-white rounded-xl font-medium shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-3"
+                className="group relative overflow-hidden px-6 py-3 bg-lp-accent text-white border-none rounded-xl font-medium shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-3"
               >
                 <div className="absolute inset-0 bg-lp-surface/10 translate-x-[-100%] group-hover:translate-x-full transition-transform duration-1000"></div>
                 <FiArrowLeft className="relative z-10" />
@@ -162,7 +162,7 @@ const DetailPertemuanDosen = () => {
               </Link>
               <Link 
                 to={`/dosen/penilaian/${courseId}?pertemuan=${pertemuan}`}
-                className="px-6 py-3 bg-lp-bg text-white rounded-xl font-medium shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-3"
+                className="px-6 py-3 bg-lp-accent text-white border-none rounded-xl font-medium shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-3"
               >
                 <FiBarChart2 />
                 Lihat Penilaian
@@ -268,7 +268,7 @@ const DetailPertemuanDosen = () => {
                   </div>
                   <Link
                     to={`/dosen/matkul/${courseId}?upload=materi&pertemuan=${pertemuan}`}
-                    className="px-4 py-2 bg-lp-bg text-white rounded-lg font-medium hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2"
+                    className="px-4 py-2 bg-lp-accent text-white border-none rounded-lg font-medium hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2"
                   >
                     <FiFileText />
                     Tambah Materi
@@ -340,7 +340,7 @@ const DetailPertemuanDosen = () => {
                     <p className="text-lp-text3 font-light mb-6">Tambahkan materi untuk pertemuan ini</p>
                     <Link
                       to={`/dosen/matkul/${courseId}?upload=materi&pertemuan=${pertemuan}`}
-                      className="inline-flex items-center gap-2 px-6 py-3 bg-lp-bg text-white rounded-xl font-medium hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border transition-all duration-300 hover:-translate-y-0.5"
+                      className="inline-flex items-center gap-2 px-6 py-3 bg-lp-accent text-white border-none rounded-xl font-medium hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border transition-all duration-300 hover:-translate-y-0.5"
                     >
                       <FiFileText />
                       Tambah Materi Pertama
@@ -362,7 +362,7 @@ const DetailPertemuanDosen = () => {
                   </div>
                   <Link
                     to={`/dosen/matkul/${courseId}?create=tugas&pertemuan=${pertemuan}`}
-                    className="px-4 py-2 bg-lp-bg text-white rounded-lg font-medium hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2"
+                    className="px-4 py-2 bg-lp-accent text-white border-none rounded-lg font-medium hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2"
                   >
                     <FiCalendar />
                     Buat Tugas
@@ -426,7 +426,7 @@ const DetailPertemuanDosen = () => {
                             </span>
                             <Link
                               to={`/dosen/penilaian/${courseId}?pertemuan=${pertemuan}`}
-                              className="px-3 py-1.5 bg-lp-bg text-white rounded-lg text-sm font-medium hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2"
+                              className="px-3 py-1.5 bg-lp-accent text-white border-none rounded-lg text-sm font-medium hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2"
                             >
                               <FiEye />
                               Lihat Pengumpulan
@@ -448,7 +448,7 @@ const DetailPertemuanDosen = () => {
                     <p className="text-lp-text3 font-light mb-6">Buat tugas untuk mengukur pemahaman mahasiswa</p>
                     <Link
                       to={`/dosen/matkul/${courseId}?create=tugas&pertemuan=${pertemuan}`}
-                      className="inline-flex items-center gap-2 px-6 py-3 bg-lp-bg text-white rounded-xl font-medium hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border transition-all duration-300 hover:-translate-y-0.5"
+                      className="inline-flex items-center gap-2 px-6 py-3 bg-lp-accent text-white border-none rounded-xl font-medium hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border transition-all duration-300 hover:-translate-y-0.5"
                     >
                       <FiCalendar />
                       Buat Tugas Pertama
@@ -545,7 +545,7 @@ const DetailPertemuanDosen = () => {
                       }
                       setShowDeleteConfirm(null)
                     }}
-                    className="px-6 py-3 bg-lp-bg text-white rounded-xl font-medium hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border transition-all duration-300 hover:-translate-y-0.5"
+                    className="px-6 py-3 bg-lp-accent text-white border-none rounded-xl font-medium hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border transition-all duration-300 hover:-translate-y-0.5"
                   >
                     Ya, Hapus
                   </button>

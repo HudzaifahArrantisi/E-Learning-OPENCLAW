@@ -481,7 +481,7 @@ const ScanAbsensi = () => {
                 <button
                   type="submit"
                   disabled={scanAttendanceMutation.isLoading || !manualInput.course_id}
-                  className="w-full bg-lp-bg text-white py-3 px-6 rounded-xl font-semibold hover:from-green-600 hover:to-green-700 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none transition-all duration-300 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl flex items-center justify-center space-x-2"
+                  className="w-full bg-lp-accent text-white border-none py-3 px-6 rounded-xl font-semibold hover:from-green-600 hover:to-green-700 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none transition-all duration-300 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl flex items-center justify-center space-x-2"
                 >
                   {scanAttendanceMutation.isLoading ? (
                     <>
@@ -536,7 +536,7 @@ const ScanAbsensi = () => {
                 disabled={!selectedCourse.can_scan || isScanning}
                 className={`w-full py-3 px-6 rounded-xl font-semibold transition-all flex items-center justify-center gap-3 ${
                   selectedCourse.can_scan && !isScanning
-                    ? 'bg-lp-bg text-white hover:from-green-600 hover:to-green-700'
+                    ? 'bg-lp-accent text-white border-none hover:from-green-600 hover:to-green-700'
                     : 'bg-gray-300 text-lp-text2 font-light cursor-not-allowed'
                 }`}
               >
@@ -558,7 +558,7 @@ const ScanAbsensi = () => {
                   setShowHistoryModal(true)
                   setShowActionsModal(false)
                 }}
-                className="w-full bg-lp-bg text-white py-3 px-6 rounded-xl font-semibold hover:from-blue-600 hover:to-blue-700 transition-all flex items-center justify-center gap-3"
+                className="w-full bg-lp-accent text-white border-none py-3 px-6 rounded-xl font-semibold hover:from-blue-600 hover:to-blue-700 transition-all flex items-center justify-center gap-3"
               >
                 <FaHistory />
                 <span>Lihat Riwayat Absen</span>

@@ -673,7 +673,7 @@ const PembayaranOrtu = () => {
                     (paymentMethod !== 'qris' && amount < 50000)
                   }
                   className="
-                    w-full bg-lp-bg text-white
+                    w-full bg-lp-accent text-white border-none
                     py-4 px-6 rounded-xl font-semibold text-lg
                     hover:from-green-600 hover:to-green-700 transform hover:scale-[1.02]
                     disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none

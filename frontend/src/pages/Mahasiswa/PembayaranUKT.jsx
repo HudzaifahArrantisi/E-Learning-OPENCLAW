@@ -521,7 +521,7 @@ const PembayaranUKT = () => {
                         refetchRiwayat()
                       }, 300)
                     }}
-                    className="flex-1 bg-lp-bg text-white px-5 py-3 rounded-xl font-semibold hover:from-emerald-600 hover:to-emerald-700 transition-all duration-300 transform hover:scale-105 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-emerald-200"
+                    className="flex-1 bg-lp-accent text-white border-none px-5 py-3 rounded-xl font-semibold hover:from-emerald-600 hover:to-emerald-700 transition-all duration-300 transform hover:scale-105 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-emerald-200"
                   >
                     Tutup & Refresh Data
                   </button>
@@ -534,7 +534,7 @@ const PembayaranUKT = () => {
                         navigate(`/mahasiswa/invoice/${webhookData.invoice_uuid || webhookData.uuid}`)
                       }, 300)
                     }}
-                    className="flex-1 bg-lp-bg text-white px-5 py-3 rounded-xl font-semibold hover:from-blue-600 hover:to-blue-700 transition-all duration-300 transform hover:scale-105 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-blue-200"
+                    className="flex-1 bg-lp-accent text-white border-none px-5 py-3 rounded-xl font-semibold hover:from-blue-600 hover:to-blue-700 transition-all duration-300 transform hover:scale-105 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-blue-200"
                   >
                     Lihat Detail Invoice
                   </button>
@@ -651,7 +651,7 @@ const PembayaranUKT = () => {
               <button
                 onClick={handleConfirmPayment}
                 disabled={createPaymentMutation.isLoading}
-                className="flex-1 bg-lp-bg text-white py-3 px-4 rounded-xl font-medium hover:from-green-600 hover:to-green-700 transition-colors flex items-center justify-center"
+                className="flex-1 bg-lp-accent text-white border-none py-3 px-4 rounded-xl font-medium hover:from-green-600 hover:to-green-700 transition-colors flex items-center justify-center"
               >
                 {createPaymentMutation.isLoading ? (
                   <>
@@ -942,7 +942,7 @@ const PembayaranUKT = () => {
                   stopFastPolling()
                   // TIDAK melakukan refresh data saat tombol tutup ditekan
                 }}
-                className="flex-1 bg-lp-bg text-white py-3 px-6 rounded-xl font-semibold hover:from-gray-500 hover:to-gray-600 transition-all duration-300"
+                className="flex-1 bg-lp-accent text-white border-none py-3 px-6 rounded-xl font-semibold hover:from-gray-500 hover:to-gray-600 transition-all duration-300"
               >
                 Tutup
               </button>
@@ -955,7 +955,7 @@ const PembayaranUKT = () => {
                     }
                   }}
                   disabled={cancelPaymentMutation.isLoading}
-                  className="flex-1 bg-lp-bg text-white py-3 px-6 rounded-xl font-semibold hover:from-red-600 hover:to-red-700 transition-all duration-300 flex items-center justify-center space-x-2"
+                  className="flex-1 bg-lp-accent text-white border-none py-3 px-6 rounded-xl font-semibold hover:from-red-600 hover:to-red-700 transition-all duration-300 flex items-center justify-center space-x-2"
                 >
                   {cancelPaymentMutation.isLoading ? <FaSpinner className="animate-spin" /> : <FaBan />}
                   <span>{cancelPaymentMutation.isLoading ? 'Membatalkan...' : 'Batalkan Pembayaran'}</span>
@@ -1261,7 +1261,7 @@ const PembayaranUKT = () => {
                       (paymentMethod !== 'qris' && amount < 50000)
                     }
                     className="
-                      w-full bg-lp-bg text-white
+                      w-full bg-lp-accent text-white border-none
                       py-4 px-6 rounded-xl font-semibold text-lg
                       hover:from-green-600 hover:to-green-700 transform hover:scale-[1.02]
                       disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none

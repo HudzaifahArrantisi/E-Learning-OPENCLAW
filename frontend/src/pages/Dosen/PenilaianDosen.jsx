@@ -231,7 +231,7 @@ const PenilaianDosen = () => {
             <div className="flex flex-wrap gap-3">
               <Link 
                 to={`/dosen/matkul/${courseId}`}
-                className="group relative overflow-hidden px-6 py-3 bg-lp-bg text-white rounded-xl font-medium shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-3"
+                className="group relative overflow-hidden px-6 py-3 bg-lp-accent text-white border-none rounded-xl font-medium shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-3"
               >
                 <div className="absolute inset-0 bg-lp-surface/10 translate-x-[-100%] group-hover:translate-x-full transition-transform duration-1000"></div>
                 <FiBookOpen className="relative z-10" />
@@ -355,7 +355,7 @@ const PenilaianDosen = () => {
               <div className="flex items-end">
                 <button
                   onClick={fetchSubmissions}
-                  className="group relative overflow-hidden w-full px-6 py-3 bg-lp-bg text-white rounded-xl font-medium shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 flex items-center justify-center gap-2"
+                  className="group relative overflow-hidden w-full px-6 py-3 bg-lp-accent text-white border-none rounded-xl font-medium shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 flex items-center justify-center gap-2"
                 >
                   <div className="absolute inset-0 bg-lp-surface/10 translate-x-[-100%] group-hover:translate-x-full transition-transform duration-1000"></div>
                   <FiRefreshCw className="relative z-10" />
@@ -480,7 +480,7 @@ const PenilaianDosen = () => {
                               className={`px-4 py-2 rounded-lg font-medium transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2 ${
                                 grading[submission.id]
                                   ? 'bg-blue-100 text-lp-atext'
-                                  : 'bg-lp-bg text-white hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border'
+                                  : 'bg-lp-accent text-white border-none hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border'
                               }`}
                             >
                               {grading[submission.id] ? (
@@ -526,14 +526,14 @@ const PenilaianDosen = () => {
                 <div className="flex flex-col sm:flex-row justify-center gap-3">
                   <button
                     onClick={fetchSubmissions}
-                    className="px-6 py-3 bg-lp-bg text-white rounded-xl font-medium shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2"
+                    className="px-6 py-3 bg-lp-accent text-white border-none rounded-xl font-medium shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2"
                   >
                     <FiRefreshCw />
                     Refresh Data
                   </button>
                   <Link 
                     to={`/dosen/matkul/${courseId}`}
-                    className="px-6 py-3 bg-lp-bg text-white rounded-xl font-medium shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2"
+                    className="px-6 py-3 bg-lp-accent text-white border-none rounded-xl font-medium shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2"
                   >
                     <FiBookOpen />
                     Kelola Materi & Tugas
@@ -554,7 +554,7 @@ const PenilaianDosen = () => {
                   <button className="px-4 py-2 text-sm bg-lp-surface border border-lp-border border text-lp-text2 rounded-lg hover:bg-lp-bg transition-colors">
                     Export Excel
                   </button>
-                  <button className="px-4 py-2 text-sm bg-lp-bg text-white rounded-lg hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border transition-all duration-300">
+                  <button className="px-4 py-2 text-sm bg-lp-accent text-white border-none rounded-lg hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border transition-all duration-300">
                     Print Laporan
                   </button>
                 </div>

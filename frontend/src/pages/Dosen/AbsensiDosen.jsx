@@ -436,7 +436,7 @@ const AbsensiDosen = () => {
                   <button
                     type="submit"
                     disabled={createSessionMutation.isLoading || !courseID}
-                    className="w-full bg-lp-bg text-white py-3 rounded-xl font-semibold hover:from-blue-600 hover:to-blue-700 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none transition-all duration-300 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl flex items-center justify-center gap-2"
+                    className="w-full bg-lp-accent text-white border-none py-3 rounded-xl font-semibold hover:from-blue-600 hover:to-blue-700 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none transition-all duration-300 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl flex items-center justify-center gap-2"
                   >
                     {createSessionMutation.isLoading ? (
                       <>

@@ -141,7 +141,7 @@ const CourseDosen = () => {
                   <div className="flex flex-col sm:flex-row justify-center gap-3">
                     <button 
                       onClick={fetchDosenCourses} 
-                      className="group relative overflow-hidden px-6 py-3 bg-lp-bg text-white rounded-xl font-medium shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2"
+                      className="group relative overflow-hidden px-6 py-3 bg-lp-accent text-white rounded-xl font-medium shadow-[0_8px_30px_rgba(0,0,0,0.04)] border-none hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2"
                     >
                       <div className="absolute inset-0 bg-lp-surface/10 translate-x-[-100%] group-hover:translate-x-full transition-transform duration-1000"></div>
                       <FiRefreshCw className="relative z-10" />
@@ -182,7 +182,7 @@ const CourseDosen = () => {
               </button>
               <div>
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="p-3 bg-lp-bg rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border">
+                  <div className="p-3 bg-lp-accent rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.04)] border-none">
                     <FiBookOpen className="text-2xl text-white" />
                   </div>
                   <div>
@@ -197,7 +197,7 @@ const CourseDosen = () => {
             <div className="flex flex-wrap gap-3">
               <button 
                 onClick={fetchDosenCourses}
-                className="group relative overflow-hidden px-6 py-3 bg-lp-bg text-white rounded-xl font-medium shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2"
+                className="group relative overflow-hidden px-6 py-3 bg-lp-accent text-white rounded-xl font-medium shadow-[0_8px_30px_rgba(0,0,0,0.04)] border-none hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2"
               >
                 <div className="absolute inset-0 bg-lp-surface/10 translate-x-[-100%] group-hover:translate-x-full transition-transform duration-1000"></div>
                 <FiRefreshCw className="relative z-10" />
@@ -354,7 +354,7 @@ const CourseDosen = () => {
                         <div className="grid grid-cols-2 gap-3">
                           <Link 
                             to={`/dosen/matkul/${course.kode}`}
-                            className="group/btn relative overflow-hidden px-4 py-3 bg-lp-bg text-white rounded-xl font-medium hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border transition-all duration-300 hover:-translate-y-0.5 flex items-center justify-center gap-2"
+                            className="group/btn relative overflow-hidden px-4 py-3 bg-lp-accent text-white rounded-xl font-medium hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border-none transition-all duration-300 hover:-translate-y-0.5 flex items-center justify-center gap-2"
                           >
                             <div className="absolute inset-0 bg-lp-surface/10 translate-x-[-100%] group-hover/btn:translate-x-full transition-transform duration-1000"></div>
                             <FiEdit2 className="relative z-10" />
@@ -362,7 +362,7 @@ const CourseDosen = () => {
                           </Link>
                           <Link 
                             to={`/dosen/penilaian/${course.kode}`}
-                            className="px-4 py-3 bg-lp-bg text-white rounded-xl font-medium hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border transition-all duration-300 hover:-translate-y-0.5 flex items-center justify-center gap-2"
+                            className="px-4 py-3 bg-lp-accent text-white rounded-xl font-medium hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border-none transition-all duration-300 hover:-translate-y-0.5 flex items-center justify-center gap-2"
                           >
                             <FiBarChart2 />
                             <span className="text-sm">Nilai</span>
@@ -426,7 +426,7 @@ const CourseDosen = () => {
                             <div className="flex items-center gap-2">
                               <Link 
                                 to={`/dosen/matkul/${course.kode}`}
-                                className="group/btn relative overflow-hidden px-4 py-2 bg-lp-bg text-white rounded-lg font-medium hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2"
+                                className="group/btn relative overflow-hidden px-4 py-2 bg-lp-accent text-white rounded-lg font-medium hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border-none transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2"
                               >
                                 <div className="absolute inset-0 bg-lp-surface/10 translate-x-[-100%] group-hover/btn:translate-x-full transition-transform duration-1000"></div>
                                 <FiEdit2 className="relative z-10 text-sm" />
@@ -434,7 +434,7 @@ const CourseDosen = () => {
                               </Link>
                               <Link 
                                 to={`/dosen/penilaian/${course.kode}`}
-                                className="px-4 py-2 bg-lp-bg text-white rounded-lg font-medium hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2"
+                                className="px-4 py-2 bg-lp-accent text-white rounded-lg font-medium hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border-none transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2"
                               >
                                 <FiBarChart2 className="text-sm" />
                                 <span className="text-sm">Nilai</span>
@@ -465,7 +465,7 @@ const CourseDosen = () => {
               <div className="flex flex-col sm:flex-row justify-center gap-3">
                 <button 
                   onClick={fetchDosenCourses}
-                  className="px-6 py-3 bg-lp-bg text-white rounded-xl font-medium shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2"
+                  className="px-6 py-3 bg-lp-accent text-white rounded-xl font-medium shadow-[0_8px_30px_rgba(0,0,0,0.04)] border-none hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2"
                 >
                   <FiRefreshCw />
                   Muat Ulang

@@ -229,7 +229,7 @@ const MatkulMahasiswa = () => {
                   >
                     {/* Course Header */}
                     <div className="flex items-start justify-between mb-4">
-                      <div className="w-12 h-12 bg-lp-bg rounded-xl flex items-center justify-center">
+                      <div className="w-12 h-12 bg-lp-accent rounded-xl flex items-center justify-center">
                         <FaBook className="text-xl text-white" />
                       </div>
                       <div className="flex flex-col items-end">
@@ -266,10 +266,10 @@ const MatkulMahasiswa = () => {
                         handleCardClick(course.kode)
                       }}
                       className="
-                        w-full bg-lp-bg text-white
+                        w-full bg-lp-accent text-white border-none
                         py-2 px-4 rounded-lg text-sm font-medium
-                        hover:from-blue-600 hover:to-blue-700
-                        transition-all duration-300 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl
+                        hover:bg-blue-600
+                        transition-all duration-300 shadow-[0_8px_30px_rgba(0,0,0,0.04)] hover:shadow-xl
                       "
                     >
                       Lihat Detail
@@ -306,10 +306,10 @@ const MatkulMahasiswa = () => {
                 <button 
                   onClick={fetchMahasiswaCourses}
                   className="
-                    bg-lp-bg text-white
+                    bg-lp-accent text-white border-none
                     px-6 py-3 rounded-xl font-semibold
-                    hover:from-blue-600 hover:to-blue-700
-                    transition-all duration-300 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl
+                    hover:bg-blue-600
+                    transition-all duration-300 shadow-[0_8px_30px_rgba(0,0,0,0.04)] hover:shadow-xl
                   "
                 >
                   Muat Ulang Data

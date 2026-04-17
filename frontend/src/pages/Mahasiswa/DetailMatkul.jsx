@@ -98,7 +98,7 @@ const DetailMatkul = () => {
                 >
                   <div className="text-center mb-4">
                     <div className="
-                      w-16 h-16 bg-lp-bg 
+                      w-16 h-16 bg-lp-accent 
                       rounded-2xl flex items-center justify-center text-white 
                       font-bold text-xl mx-auto mb-3
                     ">

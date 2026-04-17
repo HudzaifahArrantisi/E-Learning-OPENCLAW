@@ -265,7 +265,7 @@ const DetailPertemuanTugas = () => {
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="
-                                  flex items-center space-x-2 bg-lp-bg0 text-white
+                                  flex items-center space-x-2 bg-lp-accent text-white
                                   py-2 px-4 rounded-lg hover:bg-gray-600
                                   transition-all duration-300
                                 "
