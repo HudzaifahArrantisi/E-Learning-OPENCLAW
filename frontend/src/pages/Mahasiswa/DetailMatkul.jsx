@@ -63,25 +63,31 @@ const DetailMatkul = () => {
       <div className="flex-1 flex flex-col overflow-hidden">
         <Navbar user={user} onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
         
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
-          <div className="max-w-6xl mx-auto">
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 relative bg-white">
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
+          
+          <div className="max-w-6xl mx-auto relative z-10">
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-8 space-y-4 sm:space-y-0">
               <div>
                 <Link 
                   to="/mahasiswa/matkul"
                   className="
-                    inline-flex items-center space-x-2 text-lp-atext hover:text-lp-accent 
-                    mb-4 transition-colors
+                    inline-flex items-center space-x-2 text-lp-text3 hover:text-lp-text 
+                    mb-6 transition-all hover:-translate-x-1 font-medium text-[13px]
                   "
                 >
                   <FaArrowLeft />
                   <span>Kembali ke Daftar Matkul</span>
                 </Link>
-                <h1 className="text-2xl md:text-3xl font-bold text-lp-text font-semibold tracking-tight">
-                  {matkulData[courseId] || courseId}
-                </h1>
-                <p className="text-lp-text2 font-light mt-1">Kode: {courseId}</p>
+                <div className="flex flex-col items-start gap-2.5">
+                  <span className="px-2.5 py-1 bg-gray-50 border border-gray-200 text-lp-text text-[11px] rounded-lg font-mono font-medium tracking-wider uppercase">
+                    Kode: {courseId}
+                  </span>
+                  <h1 className="text-2xl md:text-[28px] font-bold text-lp-text tracking-tight leading-tight">
+                    {matkulData[courseId] || courseId}
+                  </h1>
+                </div>
               </div>
             </div>
 
@@ -91,37 +97,36 @@ const DetailMatkul = () => {
                 <div 
                   key={index} 
                   className="
-                    bg-lp-surface rounded-2xl p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border border border-lp-border border
-                    hover:shadow-xl transform hover:scale-105
-                    transition-all duration-300
+                    bg-white rounded-[24px] p-6 shadow-[0_2px_12px_rgba(0,0,0,0.04)] border border-lp-border
+                    hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] hover:-translate-y-1
+                    transition-all duration-300 flex flex-col items-center justify-center
                   "
                 >
-                  <div className="text-center mb-4">
+                  <div className="text-center mb-6 w-full">
                     <div className="
-                      w-16 h-16 bg-lp-accent 
-                      rounded-2xl flex items-center justify-center text-white 
-                      font-bold text-xl mx-auto mb-3
+                      w-[60px] h-[60px] bg-white border-2 border-gray-100 
+                      rounded-full flex items-center justify-center text-lp-text 
+                      font-mono font-bold text-[22px] mx-auto mb-4
                     ">
                       {pertemuan.pertemuan}
                     </div>
-                    <h3 className="font-bold text-lg text-lp-text font-semibold tracking-tight">
+                    <h3 className="font-bold text-[17px] text-lp-text tracking-tight w-full">
                       Pertemuan {pertemuan.pertemuan}
                     </h3>
                   </div>
 
-                  <div className="space-y-3">
+                  <div className="space-y-3 w-full">
                     {pertemuan.has_materi && (
                       <Link 
                         to={`/mahasiswa/matkul/${courseId}/pertemuan/${pertemuan.pertemuan}/materi`}
                         className="
                           flex items-center justify-center space-x-2 
-                          bg-lp-accent text-white py-3 px-4 rounded-xl
-                          hover:bg-lp-accent transform hover:scale-105
-                          transition-all duration-300 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl
-                          w-full
+                          bg-[#111827] text-white h-[42px] rounded-full
+                          font-sans text-[13px] font-semibold tracking-[0.02em]
+                          hover:bg-black hover:shadow-md transition-all duration-300 w-full
                         "
                       >
-                        <FaBook />
+                        <FaBook className="text-sm" />
                         <span>Materi</span>
                       </Link>
                     )}
@@ -131,20 +136,19 @@ const DetailMatkul = () => {
                         to={`/mahasiswa/matkul/${courseId}/pertemuan/${pertemuan.pertemuan}/tugas`}
                         className="
                           flex items-center justify-center space-x-2 
-                          bg-lp-green text-white py-3 px-4 rounded-xl
-                          hover:bg-lp-green transform hover:scale-105
-                          transition-all duration-300 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl
-                          w-full
+                          bg-white text-lp-text border border-lp-border h-[42px] rounded-full
+                          font-sans text-[13px] font-semibold tracking-[0.02em]
+                          hover:bg-gray-50 hover:shadow-sm transition-all duration-300 w-full
                         "
                       >
-                        <FaTasks />
+                        <FaTasks className="text-sm" />
                         <span>Tugas</span>
                       </Link>
                     )}
                     
                     {!pertemuan.has_materi && !pertemuan.has_tugas && (
-                      <div className="text-center py-4">
-                        <p className="text-lp-text3 font-light text-sm">Belum ada konten</p>
+                      <div className="text-center py-4 bg-gray-50 border border-gray-100 rounded-2xl w-full">
+                        <p className="text-lp-text3 font-medium text-xs uppercase tracking-wider">Belum ada konten</p>
                       </div>
                     )}
                   </div>
@@ -154,10 +158,12 @@ const DetailMatkul = () => {
 
             {/* Empty State */}
             {pertemuanList.length === 0 && (
-              <div className="bg-lp-surface rounded-2xl p-8 text-center shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border border border-lp-border border">
-                <div className="text-6xl mb-4">📚</div>
-                <h3 className="text-xl font-semibold text-lp-text font-semibold tracking-tight mb-2">Belum ada pertemuan</h3>
-                <p className="text-lp-text2 font-light">Pertemuan untuk mata kuliah ini belum tersedia.</p>
+              <div className="bg-white rounded-[24px] p-8 md:p-12 text-center shadow-[0_2px_12px_rgba(0,0,0,0.04)] border border-lp-border">
+                <div className="w-20 h-20 bg-gray-50 border border-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <FaBook className="text-3xl text-gray-400" />
+                </div>
+                <h3 className="text-xl font-bold text-lp-text tracking-tight mb-2">Belum ada pertemuan</h3>
+                <p className="text-lp-text2 font-light text-sm max-w-md mx-auto">Pertemuan untuk mata kuliah ini belum tersedia.</p>
               </div>
             )}
           </div>

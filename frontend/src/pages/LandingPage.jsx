@@ -119,7 +119,7 @@ export default function LandingPage() {
           <div className={`${rvBase} ${rvDelays[1]} flex flex-col md:flex-row md:justify-between md:items-end gap-6 mb-14`}>
             <h2 className="font-sans text-[clamp(2.8rem,5.5vw,4.5rem)] leading-[1.06] tracking-tight text-lp-text">Everything you need<br /><em className="italic text-lp-text/40">to stay on track.</em></h2>
             <p className="text-[14px] font-light text-lp-text2 max-w-[320px] pb-2">
-              Smart reminders, automated tracking, and seamless Telegram integration — built for the modern student.
+              Smart reminders, automated tracking, and seamless Telegram integration built for the modern student.
             </p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -245,7 +245,7 @@ export default function LandingPage() {
               <h2 className="font-sans text-[clamp(2.8rem,5.5vw,4.5rem)] leading-[1.06] tracking-tight text-lp-text mb-5">Reminders<br /><em className="italic text-lp-text/40">where you are.</em></h2>
               <p className="text-[16px] font-light text-lp-text2 max-w-[380px] leading-relaxed mb-7">
                 No need to open another app. Student Hub sends smart, 
-                contextual reminders directly to your Telegram — classes, 
+                contextual reminders directly to your Telegram  classes, 
                 deadlines, attendance confirmations, and daily digests.
               </p>
               <p className="text-xs font-mono tracking-wider text-lp-text3 mb-6">TELEGRAM BOT API · END-TO-END ENCRYPTED · INSTANT DELIVERY</p>

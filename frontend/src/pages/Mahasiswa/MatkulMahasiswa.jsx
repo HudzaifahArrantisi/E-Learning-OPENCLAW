@@ -172,7 +172,11 @@ const MatkulMahasiswa = () => {
       <div className="flex-1 flex flex-col overflow-hidden">
         <Navbar user={user} onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
         
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 relative bg-white">
+          {/* Grid Background */}
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
+          
+          <div className="relative z-10">
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 space-y-4 sm:space-y-0">
             <div>
@@ -186,28 +190,27 @@ const MatkulMahasiswa = () => {
             </div>
             
             <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
-              {/* Search Bar */}
               <div className="relative">
                 <input
                   type="text"
                   placeholder="Cari mata kuliah..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2 border border-lp-border border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full sm:w-64"
+                  className="pl-10 pr-4 h-[42px] border border-lp-border rounded-full focus:outline-none focus:border-lp-text focus:ring-1 focus:ring-lp-text w-full sm:w-64 text-sm font-sans placeholder:text-lp-text3 transition-all bg-white"
                 />
-                <FaSearch className="absolute left-3 top-3 text-gray-400" />
+                <FaSearch className="absolute left-4 top-[14px] text-lp-text3" />
               </div>
               
               <button 
                 onClick={fetchMahasiswaCourses}
                 className="
-                  flex items-center space-x-2 px-4 py-2 bg-lp-surface rounded-xl
-                  text-lp-text2 hover:bg-lp-bg border border-lp-border border
-                  transition-all duration-300 hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border
-                  w-full sm:w-auto justify-center
+                  flex items-center space-x-2 px-4 h-[42px] bg-white rounded-full
+                  text-lp-text hover:bg-gray-50 border border-lp-border
+                  transition-all duration-300 hover:shadow-sm
+                  w-full sm:w-auto justify-center text-sm font-medium
                 "
               >
-                <FaSync className="text-lg" />
+                <FaSync className="text-sm" />
                 <span>Refresh</span>
               </button>
             </div>
@@ -221,40 +224,40 @@ const MatkulMahasiswa = () => {
                     key={index}
                     onClick={() => handleCardClick(course.kode)}
                     className="
-                      bg-lp-surface rounded-2xl p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border border border-lp-border border
-                      hover:shadow-xl transform hover:scale-105
+                      bg-white rounded-[24px] p-6 shadow-[0_2px_12px_rgba(0,0,0,0.04)] border border-lp-border 
+                      hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] hover:-translate-y-1
                       transition-all duration-300 cursor-pointer
                       group relative
                     "
                   >
                     {/* Course Header */}
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="w-12 h-12 bg-lp-accent rounded-xl flex items-center justify-center">
-                        <FaBook className="text-xl text-white" />
+                    <div className="flex items-start justify-between mb-5">
+                      <div className="w-12 h-12 bg-lp-surface border border-lp-border rounded-[14px] flex items-center justify-center group-hover:border-gray-300 transition-colors">
+                        <FaBook className="text-lg text-lp-text" />
                       </div>
                       <div className="flex flex-col items-end">
                         <span className="
-                          px-2 py-1 bg-blue-100 text-blue-700 text-xs
-                          rounded-lg font-medium mb-1
+                          px-2.5 py-1 bg-gray-50 border border-gray-200 text-lp-text text-[11px]
+                          rounded-lg font-mono tracking-tight font-medium mb-1.5
                         ">
                           {course.sks || 0} SKS
                         </span>
-                        <span className="text-xs text-lp-text3 font-light">{course.kode}</span>
+                        <span className="text-[11px] font-mono text-lp-text3 tracking-wider uppercase">{course.kode}</span>
                       </div>
                     </div>
 
                     {/* Course Info */}
-                    <h3 className="font-bold text-lp-text font-semibold tracking-tight text-lg mb-2 line-clamp-2 group-hover:text-lp-atext transition-colors">
+                    <h3 className="font-bold text-lp-text tracking-tight text-[17px] leading-snug mb-3 line-clamp-2 group-hover:text-lp-atext transition-colors min-h-[48px]">
                       {course.nama || 'Nama Mata Kuliah'}
                     </h3>
                     
-                    <div className="space-y-2 mb-4">
-                      <div className="flex items-center space-x-2 text-sm text-lp-text2 font-light">
-                        <FaChalkboardTeacher className="text-gray-400" />
+                    <div className="space-y-2.5 mb-6">
+                      <div className="flex items-center space-x-2.5 text-[13px] text-lp-text2 font-light">
+                        <FaChalkboardTeacher className="text-gray-400 text-sm" />
                         <span className="line-clamp-1">{course.dosen || 'Dosen'}</span>
                       </div>
-                      <div className="flex items-center space-x-2 text-sm text-lp-text2 font-light">
-                        <FaClock className="text-gray-400" />
+                      <div className="flex items-center space-x-2.5 text-[13px] text-lp-text2 font-light">
+                        <FaClock className="text-gray-400 text-sm" />
                         <span>{course.hari || 'Hari'}, {course.jam_mulai || '00:00'} - {course.jam_selesai || '00:00'}</span>
                       </div>
                     </div>
@@ -266,10 +269,10 @@ const MatkulMahasiswa = () => {
                         handleCardClick(course.kode)
                       }}
                       className="
-                        w-full bg-lp-accent text-white border-none
-                        py-2 px-4 rounded-lg text-sm font-medium
-                        hover:bg-blue-600
-                        transition-all duration-300 shadow-[0_8px_30px_rgba(0,0,0,0.04)] hover:shadow-xl
+                        w-full h-[42px] bg-[#111827] text-white rounded-full 
+                        font-sans text-[13px] font-semibold tracking-[0.02em] 
+                        hover:bg-black hover:shadow-md transition-all duration-300 
+                        flex items-center justify-center
                       "
                     >
                       Lihat Detail
@@ -279,12 +282,14 @@ const MatkulMahasiswa = () => {
               </div>
             </>
           ) : (
-            <div className="bg-lp-surface rounded-2xl p-8 text-center shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border border border-lp-border border">
-              <div className="text-6xl mb-4">📚</div>
-              <h3 className="text-xl font-semibold text-lp-text font-semibold tracking-tight mb-2">
+            <div className="bg-white rounded-[24px] p-8 md:p-12 text-center shadow-[0_2px_12px_rgba(0,0,0,0.04)] border border-lp-border">
+              <div className="w-20 h-20 bg-gray-50 border border-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <FaBook className="text-3xl text-gray-400" />
+              </div>
+              <h3 className="text-xl font-bold text-lp-text tracking-tight mb-2">
                 {searchTerm ? 'Mata kuliah tidak ditemukan' : 'Belum ada mata kuliah'}
               </h3>
-              <p className="text-lp-text2 font-light mb-6">
+              <p className="text-lp-text2 font-light mb-8 max-w-md mx-auto text-sm leading-relaxed">
                 {searchTerm 
                   ? `Tidak ada hasil untuk "${searchTerm}". Coba kata kunci lain.`
                   : 'Anda belum mengambil mata kuliah untuk semester ini.'}
@@ -294,10 +299,9 @@ const MatkulMahasiswa = () => {
                   <button 
                     onClick={() => setSearchTerm('')}
                     className="
-                      bg-gray-100 text-lp-text2
-                      px-6 py-3 rounded-xl font-medium
-                      hover:bg-gray-200
-                      transition-all duration-300
+                      bg-white text-lp-text border border-lp-border
+                      px-6 h-11 rounded-full text-[13px] font-semibold
+                      hover:bg-gray-50 transition-all duration-300
                     "
                   >
                     Hapus Filter
@@ -306,10 +310,9 @@ const MatkulMahasiswa = () => {
                 <button 
                   onClick={fetchMahasiswaCourses}
                   className="
-                    bg-lp-accent text-white border-none
-                    px-6 py-3 rounded-xl font-semibold
-                    hover:bg-blue-600
-                    transition-all duration-300 shadow-[0_8px_30px_rgba(0,0,0,0.04)] hover:shadow-xl
+                    bg-[#111827] text-white
+                    px-6 h-11 rounded-full text-[13px] font-semibold
+                    hover:bg-black transition-all duration-300 shadow-md
                   "
                 >
                   Muat Ulang Data
@@ -346,6 +349,7 @@ const MatkulMahasiswa = () => {
               </div>
             </div>
           )}
+          </div>
         </main>
       </div>
     </div>
