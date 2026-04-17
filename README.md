@@ -1,6 +1,5 @@
 <div align="center">
-  <h1>🎓 NF StudentHub</h1>
-  <p><em>Platform digital terintegrasi untuk ekosistem akademik STT Nurul Fikri</em></p>
+  <h1>E-learning StudentHub</h1>
 
   ![Status](https://img.shields.io/badge/Status-Active-success)
   ![Platform](https://img.shields.io/badge/Platform-Web-blue)
@@ -8,8 +7,6 @@
   ![Database](https://img.shields.io/badge/Database-PostgreSQL-blue)
   ![License](https://img.shields.io/badge/License-Academic-lightgrey)
 </div>
-
----
 
 ## 📸 Preview
 
