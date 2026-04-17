@@ -281,20 +281,26 @@ func LikePost(c *gin.Context) {
 		return
 	}
 
-	// Cek apakah user sudah like post ini
-	var existingLike int
+	// Cek apakah user sudah like post ini (termasuk yang soft-deleted)
+	var hasLikeRecord bool
+	var isDeleted bool
 	err = config.DB.QueryRow(
-		"SELECT COUNT(*) FROM likes WHERE post_id = $1 AND user_id = $2 AND deleted_at IS NULL",
+		"SELECT true, (deleted_at IS NOT NULL) FROM likes WHERE post_id = $1 AND user_id = $2",
 		postID, userID,
-	).Scan(&existingLike)
+	).Scan(&hasLikeRecord, &isDeleted)
 
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "Database error: "+err.Error())
-		return
+		// Jika err == sql.ErrNoRows (baris belum ada sama sekali)
+		if err.Error() == "sql: no rows in result set" {
+			hasLikeRecord = false
+		} else {
+			utils.ErrorResponse(c, http.StatusInternalServerError, "Database error: "+err.Error())
+			return
+		}
 	}
 
-	if existingLike > 0 {
-		// Unlike
+	if hasLikeRecord && !isDeleted {
+		// Kondisi: Aktif -> Unlike
 		_, err = config.DB.Exec(
 			"UPDATE likes SET deleted_at = NOW() WHERE post_id = $1 AND user_id = $2",
 			postID, userID,
@@ -316,11 +322,21 @@ func LikePost(c *gin.Context) {
 
 		utils.SuccessResponse(c, gin.H{"liked": false}, "Post di-unlike")
 	} else {
-		// Like
-		_, err = config.DB.Exec(
-			"INSERT INTO likes (post_id, user_id, created_at) VALUES ($1, $2, NOW())",
-			postID, userID,
-		)
+		// Kondisi: Belum ada ATAU sudah di-unlike (deleted_at IS NOT NULL) -> Like lagi
+		if hasLikeRecord && isDeleted {
+			// Update yang sudah ada
+			_, err = config.DB.Exec(
+				"UPDATE likes SET deleted_at = NULL WHERE post_id = $1 AND user_id = $2",
+				postID, userID,
+			)
+		} else {
+			// Insert baru
+			_, err = config.DB.Exec(
+				"INSERT INTO likes (post_id, user_id, created_at) VALUES ($1, $2, NOW())",
+				postID, userID,
+			)
+		}
+
 		if err != nil {
 			utils.ErrorResponse(c, http.StatusInternalServerError, "Gagal like: "+err.Error())
 			return

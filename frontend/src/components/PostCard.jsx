@@ -479,28 +479,28 @@ const PostCard = memo(({ post, getRelativeTime }) => {
                   <div className="flex-1 overflow-y-auto">
                     {/* Caption diposisikan di puncak area */}
                     {post.content && (
-                      <div className="p-4 flex items-start space-x-3">
+                      <div className="p-5 flex items-start space-x-4 border-b-[3px] border-gray-100 bg-gray-50/50 mb-2 relative">
                         <Link 
                           to={`/profile/${post.role}/${username}`}
-                          className="flex-shrink-0"
+                          className="flex-shrink-0 mt-0.5"
                         >
-                          <div className="w-8 h-8 bg-lp-bg rounded-full flex items-center justify-center text-lp-text border border-lp-border text-xs font-bold shrink-0">
+                          <div className="w-9 h-9 bg-lp-bg rounded-full flex items-center justify-center text-lp-text border-2 border-white shadow-sm text-sm font-bold shrink-0">
                             {username?.[0]?.toUpperCase() || '?'}
                           </div>
                         </Link>
-                        <div className="flex-1 min-w-0 pt-1">
-                          <span className="font-semibold text-lp-text text-[14px] tracking-tight mr-2">
+                        <div className="flex-1 min-w-0">
+                          <span className="font-bold text-gray-800 text-[14px] tracking-tight mr-2">
                             <Link 
                               to={`/profile/${post.role}/${username}`}
-                              className="hover:opacity-80 transition-opacity"
+                              className="hover:text-lp-accent transition-colors"
                             >
                               {username}
                             </Link>
                           </span>
-                          <span className="text-lp-text font-normal whitespace-pre-line break-words text-[14px] leading-relaxed">
+                          <div className="text-gray-700 font-normal whitespace-pre-line break-words text-[14px] leading-relaxed mt-1">
                             {post.content}
-                          </span>
-                          <div className="text-lp-text3 text-[12px] font-normal mt-2">
+                          </div>
+                          <div className="text-gray-400 text-[11px] font-medium mt-3 uppercase tracking-wider">
                             {getRelativeTime ? getRelativeTime(post.created_at) : new Date(post.created_at).toLocaleDateString('id-ID')}
                           </div>
                         </div>

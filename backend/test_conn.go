@@ -9,7 +9,7 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-func main() {
+func testConn() {
 	password := "StudentHub%402026DB%21"
 	projectRef := "evycuwsqufckfvejqxng"
 	
