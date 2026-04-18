@@ -335,15 +335,15 @@ const ProfileMahasiswa = () => {
                       </button>
                       <button
                         type="submit"
-                        disabled={updateProfileMutation.isLoading}
+                        disabled={updateProfileMutation.isPending}
                         className="inline-flex items-center justify-center gap-2 bg-lp-text text-white rounded-full px-5 py-2.5 text-[13px] font-semibold transition-all hover:bg-lp-atext hover:-translate-y-px disabled:cursor-not-allowed disabled:opacity-50"
                       >
-                        {updateProfileMutation.isLoading ? (
+                        {updateProfileMutation.isPending ? (
                           <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
                         ) : (
                           <FaSave className="text-xs" />
                         )}
-                        <span>{updateProfileMutation.isLoading ? 'Menyimpan...' : 'Simpan Perubahan'}</span>
+                        <span>{updateProfileMutation.isPending ? 'Menyimpan...' : 'Simpan Perubahan'}</span>
                       </button>
                     </div>
                   </form>

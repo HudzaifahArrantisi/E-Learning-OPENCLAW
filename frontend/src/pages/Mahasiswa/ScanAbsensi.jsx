@@ -451,7 +451,7 @@ const ScanAbsensi = () => {
                       onChange={(e) => setManualInput({...manualInput, course_id: e.target.value})}
                       className="w-full px-4 py-3 border border-lp-border border rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-300 bg-lp-bg focus:bg-lp-surface"
                       required
-                      disabled={scanAttendanceMutation.isLoading}
+                      disabled={scanAttendanceMutation.isPending}
                     >
                       <option value="">Pilih Mata Kuliah</option>
                       {coursesByDay?.courses?.map((course) => (
@@ -473,17 +473,17 @@ const ScanAbsensi = () => {
                       className="w-full px-4 py-3 border border-lp-border border rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-300 bg-lp-bg focus:bg-lp-surface"
                       placeholder="Masukkan token dari QR code dosen"
                       required
-                      disabled={scanAttendanceMutation.isLoading}
+                      disabled={scanAttendanceMutation.isPending}
                     />
                   </div>
                 </div>
                 
                 <button
                   type="submit"
-                  disabled={scanAttendanceMutation.isLoading || !manualInput.course_id}
+                  disabled={scanAttendanceMutation.isPending || !manualInput.course_id}
                   className="w-full bg-lp-accent text-white border-none py-3 px-6 rounded-xl font-semibold hover:from-green-600 hover:to-green-700 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none transition-all duration-300 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl flex items-center justify-center space-x-2"
                 >
-                  {scanAttendanceMutation.isLoading ? (
+                  {scanAttendanceMutation.isPending ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                       <span>Memproses...</span>

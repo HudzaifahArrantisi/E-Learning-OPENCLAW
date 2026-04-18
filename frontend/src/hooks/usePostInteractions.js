@@ -133,8 +133,8 @@ export const usePostInteractions = () => {
     likePost: (postId) => likeMutation.mutate(postId),
     addComment: (postId, content, parentId = null) => commentMutation.mutate({ postId, content, parentId }),
     savePost: (postId) => saveMutation.mutate(postId),
-    isLiking: likeMutation.isLoading,
-    isCommenting: commentMutation.isLoading,
-    isSaving: saveMutation.isLoading
+    isLiking: likeMutation.isPending,
+    isCommenting: commentMutation.isPending,
+    isSaving: saveMutation.isPending
   }
 }

@@ -524,7 +524,7 @@ const PembayaranOrtu = () => {
                       "
                       placeholder="Contoh: 50.000"
                       required
-                      disabled={createPaymentMutation.isLoading || !anakData}
+                      disabled={createPaymentMutation.isPending || !anakData}
                     />
                   </div>
                   <div className="flex justify-between mt-2">
@@ -664,7 +664,7 @@ const PembayaranOrtu = () => {
                 <button
                   type="submit"
                   disabled={
-                    createPaymentMutation.isLoading || 
+                    createPaymentMutation.isPending || 
                     !amount || 
                     amount < 10000 || 
                     !anakData ||
@@ -681,7 +681,7 @@ const PembayaranOrtu = () => {
                     flex items-center justify-center space-x-3
                   "
                 >
-                  {createPaymentMutation.isLoading ? (
+                  {createPaymentMutation.isPending ? (
                     <>
                       <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
                       <span>Memproses Pembayaran...</span>

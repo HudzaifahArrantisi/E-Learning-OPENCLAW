@@ -650,10 +650,10 @@ const PembayaranUKT = () => {
               </button>
               <button
                 onClick={handleConfirmPayment}
-                disabled={createPaymentMutation.isLoading}
+                disabled={createPaymentMutation.isPending}
                 className="flex-1 bg-lp-accent text-white border-none py-3 px-4 rounded-xl font-medium hover:from-green-600 hover:to-green-700 transition-colors flex items-center justify-center"
               >
-                {createPaymentMutation.isLoading ? (
+                {createPaymentMutation.isPending ? (
                   <>
                     <FaSpinner className="animate-spin mr-2" />
                     Memproses...
@@ -954,11 +954,11 @@ const PembayaranUKT = () => {
                       cancelPaymentMutation.mutate(paymentDetails.uuid)
                     }
                   }}
-                  disabled={cancelPaymentMutation.isLoading}
+                  disabled={cancelPaymentMutation.isPending}
                   className="flex-1 bg-lp-accent text-white border-none py-3 px-6 rounded-xl font-semibold hover:from-red-600 hover:to-red-700 transition-all duration-300 flex items-center justify-center space-x-2"
                 >
-                  {cancelPaymentMutation.isLoading ? <FaSpinner className="animate-spin" /> : <FaBan />}
-                  <span>{cancelPaymentMutation.isLoading ? 'Membatalkan...' : 'Batalkan Pembayaran'}</span>
+                  {cancelPaymentMutation.isPending ? <FaSpinner className="animate-spin" /> : <FaBan />}
+                  <span>{cancelPaymentMutation.isPending ? 'Membatalkan...' : 'Batalkan Pembayaran'}</span>
                 </button>
               )}
             </div>
@@ -1125,7 +1125,7 @@ const PembayaranUKT = () => {
                         "
                         placeholder="Masukan Nominal"
                         required
-                        disabled={createPaymentMutation.isLoading}
+                        disabled={createPaymentMutation.isPending}
                       />
                     </div>
                     <div className="flex justify-between mt-2">
@@ -1252,7 +1252,7 @@ const PembayaranUKT = () => {
                   <button
                     type="submit"
                     disabled={
-                      createPaymentMutation.isLoading || 
+                      createPaymentMutation.isPending || 
                       !amount || 
                       amount < 100 || 
                       (sisaUKTData && amount > sisaUKTData.sisa_ukt) ||
@@ -1269,7 +1269,7 @@ const PembayaranUKT = () => {
                       flex items-center justify-center space-x-3
                     "
                   >
-                    {createPaymentMutation.isLoading ? (
+                    {createPaymentMutation.isPending ? (
                       <>
                         <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
                         <span>Memproses Pembayaran...</span>

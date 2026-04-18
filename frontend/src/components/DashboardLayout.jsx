@@ -81,7 +81,7 @@ const DashboardLayout = ({
     queryKey: ['feed'],
     queryFn: () => api.get('/api/feed').then(res => res.data.data || []),
     staleTime: 30 * 60 * 1000,
-    cacheTime: 60 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
     refetchOnWindowFocus: false,
     refetchOnMount: false,
     refetchOnReconnect: false,

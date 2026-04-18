@@ -383,7 +383,7 @@ const AbsensiDosen = () => {
                         onChange={(e) => setCourseID(e.target.value)}
                         className="w-full border border-lp-border border rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         required
-                        disabled={loadingCourses || createSessionMutation.isLoading}
+                        disabled={loadingCourses || createSessionMutation.isPending}
                       >
                         <option value="">Pilih Mata Kuliah</option>
                         {courses?.map((course) => (
@@ -403,7 +403,7 @@ const AbsensiDosen = () => {
                         onChange={(e) => setPertemuanKe(parseInt(e.target.value))}
                         className="w-full border border-lp-border border rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         required
-                        disabled={createSessionMutation.isLoading}
+                        disabled={createSessionMutation.isPending}
                       >
                         {pertemuanList.map(p => (
                           <option key={p} value={p}>Pertemuan {p}</option>
@@ -435,10 +435,10 @@ const AbsensiDosen = () => {
                   
                   <button
                     type="submit"
-                    disabled={createSessionMutation.isLoading || !courseID}
+                    disabled={createSessionMutation.isPending || !courseID}
                     className="w-full bg-lp-accent text-white border-none py-3 rounded-xl font-semibold hover:from-blue-600 hover:to-blue-700 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none transition-all duration-300 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl flex items-center justify-center gap-2"
                   >
-                    {createSessionMutation.isLoading ? (
+                    {createSessionMutation.isPending ? (
                       <>
                         <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                         Membuat Sesi...
@@ -479,18 +479,18 @@ const AbsensiDosen = () => {
                     <div className="flex gap-2">
                       <button
                         onClick={handleManualRefresh}
-                        disabled={refreshTokenMutation.isLoading}
+                        disabled={refreshTokenMutation.isPending}
                         className="bg-lp-green text-white px-4 py-2 rounded-lg hover:bg-lp-green transition-colors flex items-center gap-2"
                       >
-                        <FaSync className={refreshTokenMutation.isLoading ? "animate-spin" : ""} />
+                        <FaSync className={refreshTokenMutation.isPending ? "animate-spin" : ""} />
                         Refresh QR
                       </button>
                       <button
                         onClick={handleCloseSession}
                         className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors flex items-center gap-2"
-                        disabled={closeSessionMutation.isLoading}
+                        disabled={closeSessionMutation.isPending}
                       >
-                        {closeSessionMutation.isLoading ? (
+                        {closeSessionMutation.isPending ? (
                           <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
                         ) : (
                           <FaStopCircle className="mr-2" />
@@ -1031,10 +1031,10 @@ const AbsensiDosen = () => {
               </button>
               <button
                 onClick={() => handleStatusUpdate(selectedStudent.id, manualStatus)}
-                disabled={updateStatusMutation.isLoading}
+                disabled={updateStatusMutation.isPending}
                 className="flex-1 bg-lp-accent text-white py-3 rounded-lg font-medium hover:bg-lp-atext transition-colors flex items-center justify-center gap-2"
               >
-                {updateStatusMutation.isLoading ? (
+                {updateStatusMutation.isPending ? (
                   <>
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                     Memproses...

@@ -29,7 +29,7 @@ const Feed = () => {
     queryKey: ['feed'],
     queryFn: () => api.get('/api/feed').then(res => res.data.data || []),
     staleTime: 5 * 60 * 1000,
-    cacheTime: 30 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
     refetchOnWindowFocus: false,
     refetchOnMount: false,
   })
