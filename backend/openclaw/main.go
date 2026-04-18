@@ -1,4 +1,4 @@
-package main
+﻿package main
 
 import (
 	"fmt"
@@ -23,8 +23,8 @@ func main() {
 	godotenv.Load(".env")
 
 	fmt.Println("================================================")
-	fmt.Println("  🦀 OpenClaw Reminder Service")
-	fmt.Println("  NF Student HUB — Tugas Notification System")
+	fmt.Println("  ðŸ¦€ OpenClaw Reminder Service")
+	fmt.Println("  STUDENT HUB â€” Tugas Notification System")
 	fmt.Println("================================================")
 
 	// Load configuration
@@ -39,9 +39,9 @@ func main() {
 	log.Printf("[OpenClaw] Telegram channel: %s", cfg.TelegramChannelID)
 
 	if cfg.TelegramBotToken != "" {
-		log.Println("[OpenClaw] Telegram bot token: ✅ configured")
+		log.Println("[OpenClaw] Telegram bot token: âœ… configured")
 	} else {
-		log.Println("[OpenClaw] Telegram bot token: ❌ NOT SET — notifications will fail!")
+		log.Println("[OpenClaw] Telegram bot token: âŒ NOT SET â€” notifications will fail!")
 	}
 
 	// Initialize event handler

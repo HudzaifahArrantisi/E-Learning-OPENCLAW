@@ -1,4 +1,4 @@
-package handlers
+﻿package handlers
 
 import (
 	"bytes"
@@ -197,7 +197,7 @@ func callPuterAI(currentMessage string, history []ChatMessage) (string, error) {
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("User-Agent", "NF-Student-HUB/1.0")
+	req.Header.Set("User-Agent", "STUDENT HUB/1.0")
 
 	client := &http.Client{Timeout: 30 * time.Second}
 	resp, err := client.Do(req)
@@ -253,7 +253,7 @@ func callPuterAI(currentMessage string, history []ChatMessage) (string, error) {
 func getSystemPrompt() string {
 	currentTime := time.Now().Format("January 2, 2006 15:04")
 	
-	return `You are NF Assistant, a helpful AI assistant for NF Student HUB. Answer in the same language as the user's question.
+	return `You are NF Assistant, a helpful AI assistant for STUDENT HUB. Answer in the same language as the user's question.
 
 IMPORTANT GUIDELINES:
 1. Always provide direct, specific answers to the user's questions
@@ -266,7 +266,7 @@ IMPORTANT GUIDELINES:
 8. For academic questions, provide clear explanations and steps
 
 CONTEXT:
-- Platform: NF Student HUB
+- Platform: STUDENT HUB
 - Current time: ` + currentTime + `
 - You are an AI assistant with knowledge in programming, mathematics, academics, and general topics
 
@@ -373,13 +373,13 @@ func getProgrammingResponse(message string, fromContext bool) string {
 
 Saat ini layanan AI sedang mengalami gangguan, tetapi saya bisa memberikan guidance:
 
-💡 **Untuk ` + message + `**, pertimbangkan:
-• Stack Overflow untuk solusi spesifik
-• MDN Web Docs (developer.mozilla.org) untuk web technologies
-• Official documentation framework/language yang digunakan
-• GitHub repositories untuk contoh code
+ðŸ’¡ **Untuk ` + message + `**, pertimbangkan:
+â€¢ Stack Overflow untuk solusi spesifik
+â€¢ MDN Web Docs (developer.mozilla.org) untuk web technologies
+â€¢ Official documentation framework/language yang digunakan
+â€¢ GitHub repositories untuk contoh code
 
-🔧 **Tips Programming:**
+ðŸ”§ **Tips Programming:**
 1. Always check the documentation first
 2. Use console.log/print statements for debugging
 3. Break complex problems into smaller functions
@@ -392,17 +392,17 @@ Butuh bantuan lebih spesifik tentang aspek tertentu?`,
 
 Untuk pertanyaan programming seperti ini, saya sarankan:
 
-📚 **Learning Resources:**
-• FreeCodeCamp - Tutorial interaktif gratis
-• Codecademy - Kursus programming online
-• W3Schools - Referensi web development
-• JavaScript.info - Panduan JavaScript modern
+ðŸ“š **Learning Resources:**
+â€¢ FreeCodeCamp - Tutorial interaktif gratis
+â€¢ Codecademy - Kursus programming online
+â€¢ W3Schools - Referensi web development
+â€¢ JavaScript.info - Panduan JavaScript modern
 
-🛠️ **Tools yang Membantu:**
-• VS Code dengan extensions
-• Chrome DevTools untuk debugging
-• Postman untuk API testing
-• Git untuk version control
+ðŸ› ï¸ **Tools yang Membantu:**
+â€¢ VS Code dengan extensions
+â€¢ Chrome DevTools untuk debugging
+â€¢ Postman untuk API testing
+â€¢ Git untuk version control
 
 Mau fokus pada bahasa atau framework tertentu?`,
 
@@ -410,12 +410,12 @@ Mau fokus pada bahasa atau framework tertentu?`,
 
 Walaupun sedang limited mode, saya bisa bantu dengan:
 
-• **Concept Explanation** - Penjelasan konsep programming
-• **Best Practices** - Tips menulis code yang baik
-• **Learning Path** - Roadmap belajar programming
-• **Resource Recommendations** - Sumber belajar terbaik
+â€¢ **Concept Explanation** - Penjelasan konsep programming
+â€¢ **Best Practices** - Tips menulis code yang baik
+â€¢ **Learning Path** - Roadmap belajar programming
+â€¢ **Resource Recommendations** - Sumber belajar terbaik
 
-🚀 **Quick Tips:**
+ðŸš€ **Quick Tips:**
 - Practice coding regularly
 - Build small projects first
 - Learn debugging techniques
@@ -440,18 +440,18 @@ func getMathResponse(message string, fromContext bool) string {
 
 Untuk menyelesaikan soal matematika:
 
-📐 **Langkah-langkah Umum:**
+ðŸ“ **Langkah-langkah Umum:**
 1. Pahami soal dengan baik - baca perlahan
 2. Identifikasi apa yang diketahui dan ditanyakan
 3. Tentukan rumus atau konsep yang relevan
 4. Selesaikan step by step
 5. Verifikasi hasil akhir
 
-🧮 **Resources Matematika:**
-• Khan Academy - Video tutorial matematika
-• Wolfram Alpha - Computational engine
-• Desmos - Graphing calculator online
-• Mathway - Problem solver
+ðŸ§® **Resources Matematika:**
+â€¢ Khan Academy - Video tutorial matematika
+â€¢ Wolfram Alpha - Computational engine
+â€¢ Desmos - Graphing calculator online
+â€¢ Mathway - Problem solver
 
 Butuh penjelasan konsep matematika tertentu?`,
 
@@ -459,19 +459,19 @@ Butuh penjelasan konsep matematika tertentu?`,
 
 Matematika membutuhkan pemahaman konsep dan latihan:
 
-💡 **Tips Belajar Matematika:**
-• Practice regularly dengan variasi soal
-• Understand the concepts, not just memorization
-• Use visual aids and diagrams
-• Study in groups for discussion
-• Don't hesitate to ask for help
+ðŸ’¡ **Tips Belajar Matematika:**
+â€¢ Practice regularly dengan variasi soal
+â€¢ Understand the concepts, not just memorization
+â€¢ Use visual aids and diagrams
+â€¢ Study in groups for discussion
+â€¢ Don't hesitate to ask for help
 
-📊 **Kategori Matematika:**
-• Aljabar & Persamaan
-• Geometri & Trigonometri
-• Kalkulus (Diferensial & Integral)
-• Statistik & Probabilitas
-• Matematika Diskrit
+ðŸ“Š **Kategori Matematika:**
+â€¢ Aljabar & Persamaan
+â€¢ Geometri & Trigonometri
+â€¢ Kalkulus (Diferensial & Integral)
+â€¢ Statistik & Probabilitas
+â€¢ Matematika Diskrit
 
 Mau fokus pada topik matematika mana?`,
 
@@ -479,12 +479,12 @@ Mau fokus pada topik matematika mana?`,
 
 Walaupun dalam mode terbatas, saya bisa bantu dengan:
 
-• **Concept Explanation** - Penjelasan konsep matematika
-• **Problem Solving Strategies** - Strategi penyelesaian soal
-• **Step-by-step Guidance** - Panduan langkah demi langkah
-• **Real-world Applications** - Aplikasi matematika di kehidupan
+â€¢ **Concept Explanation** - Penjelasan konsep matematika
+â€¢ **Problem Solving Strategies** - Strategi penyelesaian soal
+â€¢ **Step-by-step Guidance** - Panduan langkah demi langkah
+â€¢ **Real-world Applications** - Aplikasi matematika di kehidupan
 
-🎯 **Penting:**
+ðŸŽ¯ **Penting:**
 - Mathematics is about understanding patterns
 - Every problem has multiple solution paths
 - Mistakes are learning opportunities
@@ -508,14 +508,14 @@ func getAcademicResponse(message string, fromContext bool) string {
 
 Untuk masalah akademik dan perkuliahan:
 
-🎓 **Strategi Akademik:**
-• Buat jadwal belajar yang realistis
-• Prioritaskan tugas berdasarkan deadline
-• Gunakan teknik Pomodoro (25 menit fokus, 5 menit istirahat)
-• Buat catatan yang terorganisir
-• Jangan ragu bertanya ke dosen
+ðŸŽ“ **Strategi Akademik:**
+â€¢ Buat jadwal belajar yang realistis
+â€¢ Prioritaskan tugas berdasarkan deadline
+â€¢ Gunakan teknik Pomodoro (25 menit fokus, 5 menit istirahat)
+â€¢ Buat catatan yang terorganisir
+â€¢ Jangan ragu bertanya ke dosen
 
-📅 **Manajemen Waktu:**
+ðŸ“… **Manajemen Waktu:**
 - Gunakan planner digital (Google Calendar, Notion)
 - Break down tugas besar menjadi subtugas kecil
 - Set specific, achievable goals
@@ -527,23 +527,23 @@ Butuh bantuan dengan aspek akademik tertentu?`,
 
 Sebagai asisten akademik, saya bisa bantu dengan:
 
-✍️ **Penulisan Akademik:**
-• Structure paper dan report
-• Citation dan referencing
-• Research methodology
-• Critical thinking dan analysis
+âœï¸ **Penulisan Akademik:**
+â€¢ Structure paper dan report
+â€¢ Citation dan referencing
+â€¢ Research methodology
+â€¢ Critical thinking dan analysis
 
-📖 **Study Techniques:**
-• Active recall dan spaced repetition
-• Mind mapping untuk visual learning
-• Group study sessions
-• Teaching concepts to others
+ðŸ“– **Study Techniques:**
+â€¢ Active recall dan spaced repetition
+â€¢ Mind mapping untuk visual learning
+â€¢ Group study sessions
+â€¢ Teaching concepts to others
 
-🏫 **Campus Resources:**
-• Perpustakaan kampus
-• Academic advising
-• Writing center
-• Tutoring services
+ðŸ« **Campus Resources:**
+â€¢ Perpustakaan kampus
+â€¢ Academic advising
+â€¢ Writing center
+â€¢ Tutoring services
 
 Ada tantangan akademik spesifik yang dihadapi?`,
 
@@ -551,14 +551,14 @@ Ada tantangan akademik spesifik yang dihadapi?`,
 
 Untuk sukses di perkuliahan:
 
-🚀 **Tips Mahasiswa:**
-• Attend classes regularly dan aktif bertanya
-• Develop good relationships dengan dosen
-• Join study groups dan organisasi kampus
-• Balance academic dan extracurricular activities
-• Take care of your mental health
+ðŸš€ **Tips Mahasiswa:**
+â€¢ Attend classes regularly dan aktif bertanya
+â€¢ Develop good relationships dengan dosen
+â€¢ Join study groups dan organisasi kampus
+â€¢ Balance academic dan extracurricular activities
+â€¢ Take care of your mental health
 
-💼 **Skill Development:**
+ðŸ’¼ **Skill Development:**
 - Critical thinking dan problem solving
 - Time management dan organization
 - Communication dan presentation
@@ -582,14 +582,14 @@ func getCreativeResponse(message string, fromContext bool) string {
 
 Untuk project kreatif dan inovasi:
 
-🎨 **Proses Kreatif:**
-• Brainstorming tanpa batasan dulu
-• Research inspirasi dari berbagai sumber
-• Develop ideas secara bertahap
-• Get feedback dari orang lain
-• Refine dan improve continuously
+ðŸŽ¨ **Proses Kreatif:**
+â€¢ Brainstorming tanpa batasan dulu
+â€¢ Research inspirasi dari berbagai sumber
+â€¢ Develop ideas secara bertahap
+â€¢ Get feedback dari orang lain
+â€¢ Refine dan improve continuously
 
-💡 **Creative Techniques:**
+ðŸ’¡ **Creative Techniques:**
 - Mind mapping untuk ide generation
 - SCAMPER method (Substitute, Combine, Adapt, etc.)
 - Reverse thinking - what wouldn't work?
@@ -601,19 +601,19 @@ Butuh bantuan dengan aspek kreatif tertentu?`,
 
 Saya bisa bantu dengan project kreatif:
 
-📝 **Creative Writing:**
-• Story development dan plot structure
-• Character creation dan development
-• Setting dan world-building
-• Dialogue dan narrative style
+ðŸ“ **Creative Writing:**
+â€¢ Story development dan plot structure
+â€¢ Character creation dan development
+â€¢ Setting dan world-building
+â€¢ Dialogue dan narrative style
 
-🎭 **Creative Projects:**
-• Art dan design concepts
-• Innovation dan invention ideas
-• Presentation dan pitching
-• Project planning
+ðŸŽ­ **Creative Projects:**
+â€¢ Art dan design concepts
+â€¢ Innovation dan invention ideas
+â€¢ Presentation dan pitching
+â€¢ Project planning
 
-🚀 **Innovation Tips:**
+ðŸš€ **Innovation Tips:**
 - Combine existing ideas in new ways
 - Solve real problems people face
 - Think about user experience
@@ -625,13 +625,13 @@ Ada jenis project kreatif spesifik yang sedang dikerjakan?`,
 
 Untuk mengembangkan ide kreatif:
 
-✨ **Creative Thinking Methods:**
-• Analogical Thinking - belajar dari domain lain
-• First Principles - kembali ke dasar
-• Six Thinking Hats - multiple perspectives
-• Random Input - stimulasi acak untuk ide baru
+âœ¨ **Creative Thinking Methods:**
+â€¢ Analogical Thinking - belajar dari domain lain
+â€¢ First Principles - kembali ke dasar
+â€¢ Six Thinking Hats - multiple perspectives
+â€¢ Random Input - stimulasi acak untuk ide baru
 
-🌈 **Inspiration Sources:**
+ðŸŒˆ **Inspiration Sources:**
 - Nature dan science
 - History dan culture
 - Technology dan futurism
@@ -652,41 +652,41 @@ Mau explore jenis kreativitas tertentu?`,
 // getGreetingResponse - Response untuk salam
 func getGreetingResponse() string {
 	responses := []string{
-		`Halo! 👋 Saya NF Assistant, asisten AI NF Student HUB.
+		`Halo! ðŸ‘‹ Saya NF Assistant, asisten AI STUDENT HUB.
 
 Saat ini saya sedang dalam mode terbatas, tetapi saya masih bisa membantu Anda dengan:
 
-💻 **Programming & Technology**
-📚 **Matematika & Sains**  
-🎓 **Akademik & Perkuliahan**
-🎨 **Kreativitas & Inovasi**
-💡 **Problem Solving**
+ðŸ’» **Programming & Technology**
+ðŸ“š **Matematika & Sains**  
+ðŸŽ“ **Akademik & Perkuliahan**
+ðŸŽ¨ **Kreativitas & Inovasi**
+ðŸ’¡ **Problem Solving**
 
 Ada yang bisa saya bantu hari ini?`,
 
-		`Halo! 😊 Saya NF Assistant.
+		`Halo! ðŸ˜Š Saya NF Assistant.
 
 Walaupun sedang mengalami kendala teknis dengan AI utama, saya tetap siap membantu dengan pengetahuan yang ada.
 
 Saya bisa bantu dengan:
-• Pemrograman dan coding
-• Matematika dan logika
-• Tugas akademik
-• Ide kreatif
-• Dan banyak lagi!
+â€¢ Pemrograman dan coding
+â€¢ Matematika dan logika
+â€¢ Tugas akademik
+â€¢ Ide kreatif
+â€¢ Dan banyak lagi!
 
 Silakan tanyakan apa yang ingin diketahui!`,
 
-		`Hai! 🙌 NF Assistant di sini!
+		`Hai! ðŸ™Œ NF Assistant di sini!
 
 Saat ini sistem AI sedang dalam perbaikan, tapi jangan khawatir - saya masih bisa memberikan bantuan dan guidance.
 
 Area yang bisa saya bantu:
-🔧 Technical problems
-📖 Learning resources  
-🎯 Study strategies
-💭 Creative ideas
-📊 Analysis & planning
+ðŸ”§ Technical problems
+ðŸ“– Learning resources  
+ðŸŽ¯ Study strategies
+ðŸ’­ Creative ideas
+ðŸ“Š Analysis & planning
 
 Apa yang ingin kita diskusikan?`,
 	}
@@ -703,10 +703,10 @@ Terima kasih untuk pertanyaannya: "` + message + `"
 
 Saat ini saya sedang mengalami kendala teknis dengan layanan AI utama, tetapi saya masih bisa membantu dengan:
 
-🤔 **Problem Solving** - Bantu analisis masalah dan cari solusi
-📚 **Learning Guidance** - Rekomendasi resources dan strategi belajar
-💡 **Idea Generation** - Bantu kembangkan ide dan konsep
-🎯 **Planning & Strategy** - Bantu buat rencana dan strategi
+ðŸ¤” **Problem Solving** - Bantu analisis masalah dan cari solusi
+ðŸ“š **Learning Guidance** - Rekomendasi resources dan strategi belajar
+ðŸ’¡ **Idea Generation** - Bantu kembangkan ide dan konsep
+ðŸŽ¯ **Planning & Strategy** - Bantu buat rencana dan strategi
 
 Silakan jelaskan lebih detail apa yang ingin dibahas!`,
 
@@ -715,10 +715,10 @@ Silakan jelaskan lebih detail apa yang ingin dibahas!`,
 Menarik! Walaupun dalam mode terbatas, saya akan berusaha memberikan bantuan terbaik.
 
 Saya bisa bantu dengan:
-• **Explanation** - Penjelasan konsep dan ide
-• **Resources** - Rekomendasi sumber belajar
-• **Strategies** - Cara pendekatan masalah
-• **Guidance** - Panduan step-by-step
+â€¢ **Explanation** - Penjelasan konsep dan ide
+â€¢ **Resources** - Rekomendasi sumber belajar
+â€¢ **Strategies** - Cara pendekatan masalah
+â€¢ **Guidance** - Panduan step-by-step
 
 Apa aspek spesifik dari "` + message + `" yang paling ingin didalami?`,
 
@@ -726,14 +726,14 @@ Apa aspek spesifik dari "` + message + `" yang paling ingin didalami?`,
 
 Terima kasih sudah bertanya! Sebagai NF Assistant, saya di sini untuk membantu meskipun sedang dalam kondisi terbatas.
 
-🛠️ **Yang masih bisa saya bantu:**
-• Conceptual understanding
-• Learning recommendations  
-• Problem analysis
-• Planning assistance
-• Resource guidance
+ðŸ› ï¸ **Yang masih bisa saya bantu:**
+â€¢ Conceptual understanding
+â€¢ Learning recommendations  
+â€¢ Problem analysis
+â€¢ Planning assistance
+â€¢ Resource guidance
 
-🔍 **Mari explore bersama:** "` + message + `"`,
+ðŸ” **Mari explore bersama:** "` + message + `"`,
 	}
 	
 	return responses[rand.Intn(len(responses))]
@@ -809,7 +809,7 @@ func HealthCheck(c *gin.Context) {
 	
 	c.JSON(http.StatusOK, gin.H{
 		"status":        status,
-		"service":       "NF Student HUB Chatbot",
+		"service":       "STUDENT HUB Chatbot",
 		"api_status":    apiStatus,
 		"conversations": len(chatHistories),
 		"timestamp":     time.Now().Format(time.RFC3339),

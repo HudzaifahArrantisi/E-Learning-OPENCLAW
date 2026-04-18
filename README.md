@@ -1,5 +1,5 @@
 <div align="center">
-  <h1>E-learning StudentHub</h1>
+  <h1>E-learning STUDENT HUB</h1>
 
   ![Status](https://img.shields.io/badge/Status-Active-success)
   ![Platform](https://img.shields.io/badge/Platform-Web-blue)
@@ -22,9 +22,9 @@
 
 ## 📖 Gambaran Umum
 
-**NF StudentHub** menghubungkan **Mahasiswa**, **Dosen**, **Admin**, **Orang Tua**, **UKM**, dan **ORMAWA** ke dalam satu pengalaman web terpusat yang aman dan skalabel.
+**STUDENT HUB** menghubungkan **Mahasiswa**, **Dosen**, **Admin**, **Orang Tua**, **UKM**, dan **ORMAWA** ke dalam satu pengalaman web terpusat yang aman dan skalabel.
 
-Secara pengalaman pengguna (*User Experience*), NF StudentHub mengadopsi pola interaksi modern (seperti *timeline feed* dan *social interaction*) lalu menggabungkannya dengan kebutuhan inti kampus (*LMS*, administrasi, komunikasi real-time).
+Secara pengalaman pengguna (*User Experience*), STUDENT HUB mengadopsi pola interaksi modern (seperti *timeline feed* dan *social interaction*) lalu menggabungkannya dengan kebutuhan inti kampus (*LMS*, administrasi, komunikasi real-time).
 
 > **One platform. One ecosystem. One academic experience.**
 
@@ -72,7 +72,7 @@ Pastikan lingkungan lokal Anda sudah diinstal **Node.js ≥ 18**, **Go ≥ 1.20*
 ### 1. Ekstraksi Repositori
 ```bash
 git clone https://github.com/HudzaifahArrantisi/NF-STUDENT-HUB.git
-cd NF-Student-HUB
+cd NF-STUDENT-HUB
 ```
 
 ### 2. Setup Database & Environment Backend
@@ -84,7 +84,7 @@ DB_DSN=postgresql://postgres:password_anda@db.xxxxxxxx.supabase.co:5432/postgres
 
 # Security
 JWT_SECRET=isi_dengan_bebas_rahasia_panjang
-NAMA=NF StudentHub Server
+NAMA=STUDENT HUB Server
 
 # Konfigurasi OpenClaw dan Bot Telegram
 OPENCLAW_BASE_URL=http://localhost:9090
@@ -127,7 +127,7 @@ go run main.go
 ## 📁 Struktur Arsip Root
 
 ```text
-NF-Student-HUB/
+STUDENT-HUB/
 ├── frontend/             # Folder seluruh UI React
 │   ├── public/
 │   └── src/

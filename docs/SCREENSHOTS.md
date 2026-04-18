@@ -1,34 +1,34 @@
-# 📸 Panduan Screenshot
+﻿# ðŸ“¸ Panduan Screenshot
 
-File ini berisi panduan untuk mengambil dan menyimpan screenshot aplikasi NF StudentHub.
+File ini berisi panduan untuk mengambil dan menyimpan screenshot aplikasi STUDENT HUB.
 
-## 📁 Struktur Folder
+## ðŸ“ Struktur Folder
 ```
 docs/
-├── images/
-│   ├── auth/
-│   │   ├── login.png
-│   │   └── register.png
-│   ├── mahasiswa/
-│   │   ├── dashboard.png
-│   │   ├── courses.png
-│   │   └── attendance.png
-│   ├── dosen/
-│   │   ├── dashboard.png
-│   │   ├── upload-materi.png
-│   │   └── grade-students.png
-│   ├── admin/
-│   │   ├── dashboard.png
-│   │   └── ukt-monitoring.png
-│   ├── chat/
-│   │   └── chat-interface.png
-│   └── common/
-│       ├── landing-page.png
-│       └── navbar.png
-└── SCREENSHOTS.md (file ini)
+â”œâ”€â”€ images/
+â”‚   â”œâ”€â”€ auth/
+â”‚   â”‚   â”œâ”€â”€ login.png
+â”‚   â”‚   â””â”€â”€ register.png
+â”‚   â”œâ”€â”€ mahasiswa/
+â”‚   â”‚   â”œâ”€â”€ dashboard.png
+â”‚   â”‚   â”œâ”€â”€ courses.png
+â”‚   â”‚   â””â”€â”€ attendance.png
+â”‚   â”œâ”€â”€ dosen/
+â”‚   â”‚   â”œâ”€â”€ dashboard.png
+â”‚   â”‚   â”œâ”€â”€ upload-materi.png
+â”‚   â”‚   â””â”€â”€ grade-students.png
+â”‚   â”œâ”€â”€ admin/
+â”‚   â”‚   â”œâ”€â”€ dashboard.png
+â”‚   â”‚   â””â”€â”€ ukt-monitoring.png
+â”‚   â”œâ”€â”€ chat/
+â”‚   â”‚   â””â”€â”€ chat-interface.png
+â”‚   â””â”€â”€ common/
+â”‚       â”œâ”€â”€ landing-page.png
+â”‚       â””â”€â”€ navbar.png
+â””â”€â”€ SCREENSHOTS.md (file ini)
 ```
 
-## 📷 Halaman yang Perlu Di-screenshot
+## ðŸ“· Halaman yang Perlu Di-screenshot
 
 ### 1. Landing Page
 - Nama file: `common/landing-page.png`
@@ -61,18 +61,18 @@ docs/
 - Navbar: `common/navbar.png` - Navigation bar dengan role indicator
 - Feed/Posts: `common/feed.png` - Timeline posting UKM/ORMAWA
 
-## 🎨 Rekomendasi
+## ðŸŽ¨ Rekomendasi
 - **Resolusi**: 1920x1080 (atau crop ke section penting)
 - **Format**: PNG (lebih baik untuk screenshot)
 - **Brightness**: Pastikan cukup terang & readable
 - **Data Dummy**: Gunakan data dummy/sample untuk privacy
 - **Anonymize**: Ganti nama real dengan placeholders jika perlu
 
-## 🚀 Cara Mengambil Screenshot
+## ðŸš€ Cara Mengambil Screenshot
 
 ### Windows
-1. **Full Screen**: `Print Screen` → paste ke editor
-2. **Active Window**: `Alt + Print Screen` → paste
+1. **Full Screen**: `Print Screen` â†’ paste ke editor
+2. **Active Window**: `Alt + Print Screen` â†’ paste
 3. **Region**: `Shift + S` (Windows 11) atau gunakan Snipping Tool
 4. **Tool**: Gunakan ShareX, Lightshot, atau built-in Snipping Tool
 
@@ -86,4 +86,4 @@ docs/
 
 ---
 
-Setelah semua screenshot siap, referensikan di README.md dalam section **Screenshots** 📸.
+Setelah semua screenshot siap, referensikan di README.md dalam section **Screenshots** ðŸ“¸.

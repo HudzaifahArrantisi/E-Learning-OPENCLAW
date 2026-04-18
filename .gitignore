@@ -36,8 +36,6 @@ nf_student_hub3_lengkap2.sql
 postgre.sql
 
 
-
-
 # IDE
 .vscode/
 .idea/
@@ -48,10 +46,18 @@ postgre.sql
 Thumbs.db
 
 # OS
-.env.example
+.DS_Store
+Thumbs.db
 *.pem
 *.key
 *.crt
+
+# Keamanan Ekstra (Secret Files)
+**/.env
+**/.env.local
+**/.env.production
+**/secrets.json
+**/private.key
 
 # Uploads
 /uploads/*

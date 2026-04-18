@@ -30,6 +30,9 @@ func main() {
 	os.MkdirAll("uploads/profile", 0755)
 
 	r := gin.Default()
+	
+	// Untuk keamanan dan menghilangkan warning "You trusted all proxies"
+	r.SetTrustedProxies(nil)
 
 	// konfigurasi cros
 	r.Use(cors.New(cors.Config{
@@ -73,17 +76,21 @@ func main() {
 			}
 		}
 	}
-	log.Println("Starting NF Student HUB Server...")
+	log.Println("Starting STUDENT HUB Server...")
 	log.Println("Materi & Tugas System: Ready")
 	log.Println("Upload directories: Created")
 
 	log.Printf("Selamat datang! Ini nama '%s' dalam bentuk besar.", nama)
 
-	log.Println("Server jalan → http://localhost:8080")
+	log.Println("Server jalan â†’ http://localhost:8080")
 	log.Println("Materi: http://localhost:8080/uploads/materi/...")
 	log.Println("Tugas Mahasiswa: http://localhost:8080/uploads/tugas/...")
 	log.Println("Tugas Dosen: http://localhost:8080/uploads/tugasdosen/...")
 	log.Println("Profile: http://localhost:8080/uploads/profile/...")
 
-	r.Run("0.0.0.0:8080")
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+	r.Run("0.0.0.0:" + port)
 }
