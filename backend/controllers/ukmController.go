@@ -28,8 +28,13 @@ func CreateUKMPost(c *gin.Context) {
 		var email string
 		config.DB.QueryRow("SELECT email FROM users WHERE id = $1", userID).Scan(&email)
 		parts := strings.Split(email, "@")
-		authorName = "UKM " + parts[0]
-		authorUsername = strings.ToLower(parts[0])
+		if len(parts) > 0 {
+			authorName = "UKM " + parts[0]
+			authorUsername = strings.ToLower(parts[0])
+		} else {
+			authorName = "UKM User"
+			authorUsername = "ukm_user"
+		}
 	}
 
 	title := c.PostForm("title")
@@ -48,13 +53,25 @@ func CreateUKMPost(c *gin.Context) {
 			return
 		}
 
-		filename := fmt.Sprintf("ukm_%d_%d%s", userID.(int), time.Now().UnixNano(), ext)
+		filename := fmt.Sprintf("ukm_%v_%d%s", userID, time.Now().UnixNano(), ext)
 		savePath := filepath.Join("uploads/posts", filename)
-		os.MkdirAll("uploads/posts", 0755)
-		if err := c.SaveUploadedFile(file, savePath); err != nil {
-			utils.ErrorResponse(c, http.StatusInternalServerError, "Gagal menyimpan foto")
-			return
+		
+		// Ensure directory exists
+		if errDir := os.MkdirAll("uploads/posts", 0755); errDir != nil {
+			fmt.Println("Warning: failed to create directory:", errDir)
 		}
+		
+		if errSave := c.SaveUploadedFile(file, savePath); errSave != nil {
+			// If saving fails (e.g., ReadOnly filesystem in Serverless), try /tmp fallback
+			tmpPath := filepath.Join("/tmp", filename)
+			if errTmp := c.SaveUploadedFile(file, tmpPath); errTmp == nil {
+				savePath = tmpPath
+			} else {
+				utils.ErrorResponse(c, http.StatusInternalServerError, "Gagal menyimpan foto")
+				return
+			}
+		}
+		// Selalu simpan URL yang benar untuk frontend / image optimizer
 		mediaURL = "/uploads/posts/" + filename
 	}
 

@@ -71,27 +71,17 @@ func main() {
 	r.Use(middlewares.SecurityHeaders())
 	r.Use(middlewares.RateLimitMiddleware(200, 1*time.Minute)) // Global: 200 req/min per IP
 
-	// ============================================================
-	// 🖼️ IMAGE OPTIMIZER — Serve gambar terkompresi otomatis
-	// ============================================================
+
 	imgOptimizer := handlers.NewImageOptimizer(uploadPath)
 	r.GET("/uploads/*filepath", func(c *gin.Context) {
 		imgOptimizer.ServeOptimized(c)
 	})
 
-	// ============================================================
-	// 🌐 APPLICATION ROUTES
-	// ============================================================
 	routes.SetupRoutes(r, config.GormDB)
 
-	// ============================================================
-	// 🦀 OpenClaw Embedded — Runs inside the same process
-	// ============================================================
+
 	startOpenClaw(r)
 
-	// ============================================================
-	// 🎨 ASCII Art Banner
-	// ============================================================
 	nama := os.Getenv("NAMA")
 	if nama == "" {
 		nama = "c4ndalena server"
