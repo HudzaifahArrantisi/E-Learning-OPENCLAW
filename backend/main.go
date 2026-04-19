@@ -48,8 +48,6 @@ func main() {
 	// ============================================================
 	// 🔒 SECURITY MIDDLEWARES
 	// ============================================================
-	r.Use(middlewares.SecurityHeaders())
-	r.Use(middlewares.RateLimitMiddleware(200, 1*time.Minute)) // Global: 200 req/min per IP
 
 	// CORS — batasi hanya ke domain yang diizinkan
 	allowedOrigins := os.Getenv("ALLOWED_ORIGINS")
@@ -71,10 +69,14 @@ func main() {
 			// Fallback: izinkan semua (untuk backward compatibility)
 			return true
 		},
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization", "Accept", "X-Requested-With", "X-Internal-Key"},
 		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
 	}))
+
+	r.Use(middlewares.SecurityHeaders())
+	r.Use(middlewares.RateLimitMiddleware(200, 1*time.Minute)) // Global: 200 req/min per IP
 
 	// ============================================================
 	// 🖼️ IMAGE OPTIMIZER — Serve gambar terkompresi otomatis
