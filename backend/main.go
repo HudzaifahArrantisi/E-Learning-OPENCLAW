@@ -40,16 +40,22 @@ func main() {
 		os.MkdirAll("uploads/profile", 0755)
 	}
 
-	r.Static("/uploads", uploadPath)
-
 	r := gin.Default()
+
+	// Untuk keamanan dan menghilangkan warning "You trusted all proxies"
 	r.SetTrustedProxies(nil)
+
+	// konfigurasi cros
 	r.Use(cors.New(cors.Config{
-		AllowOriginFunc: func(origin string) bool { return true },
+		AllowOriginFunc: func(origin string) bool {
+			return true
+		},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization", "Accept", "X-Requested-With"},
 		AllowCredentials: true,
 	}))
+
+	r.Static("/uploads", uploadPath)
 
 	routes.SetupRoutes(r, config.GormDB)
 
