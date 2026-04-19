@@ -11,6 +11,7 @@ require (
 	github.com/jackc/pgx/v5 v5.9.1
 	github.com/joho/godotenv v1.5.1
 	github.com/mbndr/figlet4go v0.0.0-20190224160619-d6cef5b186ea
+	github.com/robfig/cron/v3 v3.0.1
 	golang.org/x/crypto v0.45.0
 	gorm.io/driver/postgres v1.6.0
 	gorm.io/gorm v1.31.1

@@ -9,8 +9,8 @@ import (
 	"net/http"
 	"time"
 
-	"openclaw/notiflog"
-	"openclaw/telegram"
+	"nf-student-hub-backend/openclaw/notiflog"
+	"nf-student-hub-backend/openclaw/telegram"
 )
 
 // TugasCreatedEvent is the incoming event from the main backend
@@ -91,6 +91,20 @@ func (h *EventHandler) HandleTugasCreated(w http.ResponseWriter, r *http.Request
 		"success": true,
 		"message": "Event received and instant notification queued",
 	})
+}
+
+// ProcessEventDirect processes a tugas event directly in-process (no HTTP).
+// This is used when OpenClaw runs embedded in the main backend.
+func (h *EventHandler) ProcessEventDirect(event TugasCreatedEvent) {
+	if event.TugasID == 0 || event.CourseID == "" || event.Title == "" {
+		log.Printf("[EventHandler] SKIP direct event — missing required fields: tugas_id=%d", event.TugasID)
+		return
+	}
+
+	log.Printf("[EventHandler] Processing direct event: event_id=%s tugas_id=%d course_id=%s title=%s",
+		event.EventID, event.TugasID, event.CourseID, event.Title)
+
+	h.sendInstantNotification(event)
 }
 
 // sendInstantNotification sends an instant Telegram notification for a new tugas

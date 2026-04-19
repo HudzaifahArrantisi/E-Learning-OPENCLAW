@@ -15,7 +15,7 @@ type Config struct {
 	DBDSN string
 
 	// Telegram
-	TelegramBotToken string
+	TelegramBotToken  string
 	TelegramChannelID string
 
 	// OpenClaw
@@ -27,23 +27,23 @@ type Config struct {
 }
 
 var (
-	DB   *sql.DB
-	Cfg  *Config
+	DB  *sql.DB
+	Cfg *Config
 )
 
 // Load reads environment variables and returns a Config
 func Load() *Config {
 	cfg := &Config{
-		DBDSN:            getEnv("DB_DSN", ""),
-		TelegramBotToken: getEnv("TELEGRAM_BOT_TOKEN", ""),
+		DBDSN:             getEnv("DB_DSN", ""),
+		TelegramBotToken:  getEnv("TELEGRAM_BOT_TOKEN", ""),
 		TelegramChannelID: getEnv("TELEGRAM_CHANNEL_ID", "@tugasreminder"),
-		Port:             getEnv("OPENCLAW_PORT", "9090"),
-		CronSchedule:     getEnv("OPENCLAW_CRON_SCHEDULE", "0 * * * *"),
-		MaxRetryAttempts: 3,
+		Port:              getEnv("OPENCLAW_PORT", "9090"),
+		CronSchedule:      getEnv("OPENCLAW_CRON_SCHEDULE", "0 * * * *"),
+		MaxRetryAttempts:  3,
 	}
 
 	if cfg.DBDSN == "" {
-		log.Fatal("[OpenClaw] DB_DSN environment variable is required for PostgreSQL connection")
+		log.Println("[OpenClaw] WARNING: DB_DSN not set — OpenClaw DB features will be disabled")
 	}
 
 	if cfg.TelegramBotToken == "" {

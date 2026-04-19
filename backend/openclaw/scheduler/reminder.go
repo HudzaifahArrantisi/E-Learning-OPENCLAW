@@ -6,8 +6,8 @@ import (
 	"log"
 	"time"
 
-	"openclaw/notiflog"
-	"openclaw/telegram"
+	"nf-student-hub-backend/openclaw/notiflog"
+	"nf-student-hub-backend/openclaw/telegram"
 
 	"github.com/robfig/cron/v3"
 )

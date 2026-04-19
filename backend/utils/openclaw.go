@@ -1,16 +1,17 @@
 package utils
 
 import (
-	"bytes"
 	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
-	"net/http"
 	"os"
 	"time"
 
 	"github.com/google/uuid"
+
+	openclawHandler "nf-student-hub-backend/openclaw/handler"
+	"nf-student-hub-backend/openclaw/telegram"
 )
 
 // TugasCreatedEvent represents the event payload sent to OpenClaw
@@ -27,43 +28,46 @@ type TugasCreatedEvent struct {
 	Type         string `json:"type"` // "tugas" or "materi-uploaded"
 }
 
-// PublishTugasCreatedEvent sends the tugas-created event to OpenClaw service.
-// If OpenClaw is unreachable, it falls back to inserting into the outbox table.
+// openclawEventHandler is the in-process event handler (set by StartOpenClaw)
+var openclawEventHandler *openclawHandler.EventHandler
+
+// SetOpenClawHandler allows main.go to inject the shared event handler
+func SetOpenClawHandler(h *openclawHandler.EventHandler) {
+	openclawEventHandler = h
+}
+
+// PublishTugasCreatedEvent processes the tugas-created event directly in-process.
+// No more HTTP call to a separate service — everything runs in the same process.
 func PublishTugasCreatedEvent(db *sql.DB, event TugasCreatedEvent) {
 	if event.EventID == "" {
 		event.EventID = uuid.New().String()
 	}
 
-	openclawURL := os.Getenv("OPENCLAW_BASE_URL")
-	if openclawURL == "" {
-		openclawURL = "http://localhost:9090"
-	}
+	// If the in-process handler is available, call it directly
+	if openclawEventHandler != nil {
+		// Convert to the handler's event type
+		handlerEvent := openclawHandler.TugasCreatedEvent{
+			EventID:      event.EventID,
+			TugasID:      int(event.TugasID),
+			CourseID:     event.CourseID,
+			Pertemuan:    event.Pertemuan,
+			Title:        event.Title,
+			Description:  event.Description,
+			DueDate:      event.DueDate,
+			CreatedAt:    event.CreatedAt,
+			ActorDosenID: event.ActorDosenID,
+			Type:         event.Type,
+		}
 
-	endpoint := openclawURL + "/internal/events/tugas-created"
-
-	payload, err := json.Marshal(event)
-	if err != nil {
-		log.Printf("[OpenClaw] Failed to marshal event: %v", err)
-		InsertOutboxEvent(db, event)
+		// Process directly in a goroutine (non-blocking)
+		go openclawEventHandler.ProcessEventDirect(handlerEvent)
+		log.Printf("[OpenClaw] Event dispatched in-process: event_id=%s tugas_id=%d", event.EventID, event.TugasID)
 		return
 	}
 
-	// Try to send to OpenClaw with a short timeout
-	client := &http.Client{Timeout: 5 * time.Second}
-	resp, err := client.Post(endpoint, "application/json", bytes.NewBuffer(payload))
-	if err != nil {
-		log.Printf("[OpenClaw] Failed to reach OpenClaw service: %v — falling back to outbox", err)
-		InsertOutboxEvent(db, event)
-		return
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
-		log.Printf("[OpenClaw] Event published successfully: event_id=%s tugas_id=%d", event.EventID, event.TugasID)
-	} else {
-		log.Printf("[OpenClaw] OpenClaw returned status %d — falling back to outbox", resp.StatusCode)
-		InsertOutboxEvent(db, event)
-	}
+	// Fallback: if handler not initialized, store in outbox
+	log.Println("[OpenClaw] Handler not initialized — falling back to outbox")
+	InsertOutboxEvent(db, event)
 }
 
 // InsertOutboxEvent stores a failed event into the outbox table for later retry
@@ -123,9 +127,17 @@ func LogOpenClawSkip(reason string, tugasID int64) {
 	log.Printf("[OpenClaw] SKIP tugas_id=%d reason=%s", tugasID, reason)
 }
 
-// StartOutboxWorker is a placeholder — the real outbox worker runs inside OpenClaw service.
-// This function is here to document the architecture: the main backend only WRITES to outbox,
-// the OpenClaw service is responsible for processing the outbox.
+// GetTelegramSender creates a Telegram sender from environment variables
+func GetTelegramSender() *telegram.Sender {
+	botToken := os.Getenv("TELEGRAM_BOT_TOKEN")
+	channelID := os.Getenv("TELEGRAM_CHANNEL_ID")
+	if channelID == "" {
+		channelID = "@tugasreminder"
+	}
+	return telegram.NewSender(botToken, channelID)
+}
+
+// StartOutboxWorker is kept for backward compatibility — now a no-op since outbox is embedded.
 func StartOutboxWorker() {
-	fmt.Println("[OpenClaw] Outbox worker runs inside OpenClaw service, not in main backend")
+	fmt.Println("[OpenClaw] Outbox worker now runs embedded inside the main backend server")
 }

@@ -4,10 +4,15 @@ import (
 	"log"
 	"os"
 	"strings"
-	
 
 	"nf-student-hub-backend/config"
+	openclawConfig "nf-student-hub-backend/openclaw/config"
+	"nf-student-hub-backend/openclaw/handler"
+	"nf-student-hub-backend/openclaw/outbox"
+	"nf-student-hub-backend/openclaw/scheduler"
+	"nf-student-hub-backend/openclaw/telegram"
 	"nf-student-hub-backend/routes"
+	"nf-student-hub-backend/utils"
 
 	"github.com/fatih/color"
 	"github.com/gin-contrib/cors"
@@ -30,7 +35,7 @@ func main() {
 	os.MkdirAll("uploads/profile", 0755)
 
 	r := gin.Default()
-	
+
 	// Untuk keamanan dan menghilangkan warning "You trusted all proxies"
 	r.SetTrustedProxies(nil)
 
@@ -47,6 +52,11 @@ func main() {
 	r.Static("/uploads", "./uploads")
 
 	routes.SetupRoutes(r, config.GormDB)
+
+	// ============================================================
+	// 🦀 OpenClaw Embedded — Runs inside the same process
+	// ============================================================
+	startOpenClaw(r)
 
 	nama := os.Getenv("NAMA")
 	if nama == "" {
@@ -79,10 +89,11 @@ func main() {
 	log.Println("Starting STUDENT HUB Server...")
 	log.Println("Materi & Tugas System: Ready")
 	log.Println("Upload directories: Created")
+	log.Println("🦀 OpenClaw Reminder: Embedded & Running")
 
 	log.Printf("Selamat datang! Ini nama '%s' dalam bentuk besar.", nama)
 
-	log.Println("Server jalan â†’ http://localhost:8080")
+	log.Println("Server jalan → http://localhost:8080")
 	log.Println("Materi: http://localhost:8080/uploads/materi/...")
 	log.Println("Tugas Mahasiswa: http://localhost:8080/uploads/tugas/...")
 	log.Println("Tugas Dosen: http://localhost:8080/uploads/tugasdosen/...")
@@ -93,4 +104,58 @@ func main() {
 		port = "8080"
 	}
 	r.Run("0.0.0.0:" + port)
+}
+
+// startOpenClaw initializes and embeds the OpenClaw reminder system
+// directly into the main backend server (no separate service needed).
+func startOpenClaw(r *gin.Engine) {
+	log.Println("================================================")
+	log.Println("  🦀 OpenClaw Reminder Service (Embedded)")
+	log.Println("  STUDENT HUB — Tugas Notification System")
+	log.Println("================================================")
+
+	// Load OpenClaw configuration from the same .env
+	cfg := openclawConfig.Load()
+
+	// Skip OpenClaw Db initialization if DB_DSN is empty
+	if cfg.DBDSN == "" {
+		log.Println("[OpenClaw] DB_DSN not set — OpenClaw features disabled")
+		return
+	}
+
+	// Initialize OpenClaw's own database connection (raw sql.DB via pgx)
+	db := openclawConfig.InitDB(cfg.DBDSN)
+
+	// Initialize Telegram sender
+	sender := telegram.NewSender(cfg.TelegramBotToken, cfg.TelegramChannelID)
+	log.Printf("[OpenClaw] Telegram channel: %s", cfg.TelegramChannelID)
+
+	if cfg.TelegramBotToken != "" {
+		log.Println("[OpenClaw] Telegram bot token: ✅ configured")
+	} else {
+		log.Println("[OpenClaw] Telegram bot token: ❌ NOT SET — notifications will fail!")
+	}
+
+	// Initialize event handler
+	eventHandler := handler.NewEventHandler(db, sender)
+
+	// Register the handler so utils/openclaw.go can call it directly in-process
+	utils.SetOpenClawHandler(eventHandler)
+
+	// Initialize and start scheduler (cron-based reminders)
+	sched := scheduler.NewScheduler(db, sender)
+	sched.Start(cfg.CronSchedule)
+
+	// Initialize and start outbox worker in background
+	outboxWorker := outbox.NewWorker(db)
+	go outboxWorker.Start()
+
+	// Register OpenClaw HTTP endpoints inside the Gin router
+	// These are internal endpoints, accessible on the same port as the main API
+	r.POST("/internal/events/tugas-created", gin.WrapF(eventHandler.HandleTugasCreated))
+	r.GET("/internal/health", gin.WrapF(handler.HealthCheck))
+
+	log.Println("[OpenClaw] All components started successfully (embedded mode)")
+	log.Printf("[OpenClaw] Event endpoint: POST /internal/events/tugas-created")
+	log.Printf("[OpenClaw] Health check: GET /internal/health")
 }

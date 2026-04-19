@@ -68,7 +68,12 @@ func (w *Worker) processOutbox() {
 
 	openclawURL := os.Getenv("OPENCLAW_BASE_URL")
 	if openclawURL == "" {
-		openclawURL = "http://localhost:9090"
+		// Embedded mode: use the main backend's own port
+		port := os.Getenv("PORT")
+		if port == "" {
+			port = "8080"
+		}
+		openclawURL = "http://localhost:" + port
 	}
 	endpoint := openclawURL + "/internal/events/tugas-created"
 
