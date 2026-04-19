@@ -1,14 +1,23 @@
 // src/hooks/useAuth.js
-import { useState, useEffect, useCallback } from 'react'
+// Centralized Auth Context — verifies token ONCE, shared across all components.
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
 import api from '../services/api'
 
-const useAuth = () => {
+const AuthContext = createContext(null)
+
+// Provider: wrap this around your app (inside App.jsx)
+export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const hasVerified = useRef(false) // Prevent double-call from StrictMode
 
-  // Function untuk verify token
+  // Function untuk verify token — only runs ONCE
   const verifyToken = useCallback(async () => {
+    // Guard: skip if already verified (StrictMode protection)
+    if (hasVerified.current) return
+    hasVerified.current = true
+
     try {
       const token = localStorage.getItem('token')
       if (!token) {
@@ -36,7 +45,7 @@ const useAuth = () => {
     }
   }, [])
 
-  // Cek token saat pertama kali load
+  // Cek token saat pertama kali load — ONLY ONCE
   useEffect(() => {
     verifyToken()
   }, [verifyToken])
@@ -82,14 +91,16 @@ const useAuth = () => {
     delete api.defaults.headers.common['Authorization']
     setUser(null)
     setError(null)
+    hasVerified.current = false // Allow re-verify on next login
   }, [])
 
   const refreshAuth = useCallback(() => {
     setLoading(true)
+    hasVerified.current = false // Allow re-verify
     verifyToken()
   }, [verifyToken])
 
-  return {
+  const value = {
     user,
     loading,
     error,
@@ -98,6 +109,21 @@ const useAuth = () => {
     refreshAuth,
     isAuthenticated: !!user && !!localStorage.getItem('token')
   }
+
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  )
+}
+
+// Hook: use this in any component to access auth state (NO extra API calls)
+const useAuth = () => {
+  const context = useContext(AuthContext)
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider')
+  }
+  return context
 }
 
 export default useAuth

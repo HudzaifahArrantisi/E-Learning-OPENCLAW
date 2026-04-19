@@ -55,6 +55,7 @@ const ProfilePublic = lazy(() => import('./pages/Public/ProfilePublic'))
 const NotFound = lazy(() => import('./pages/NotFound'))
 
 import ProtectedRoute from './components/ProtectedRoute'
+import { AuthProvider } from './hooks/useAuth'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -74,6 +75,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <Router>
+        <AuthProvider>
         <div className="App">
           <Suspense fallback={<Loading />}>
             <Routes>
@@ -132,6 +134,7 @@ function App() {
             </Routes>
           </Suspense>
         </div>
+        </AuthProvider>
       </Router>
     </QueryClientProvider>
   )
