@@ -15,6 +15,17 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
+// getJWTSecret mengambil JWT secret dari environment variable
+// WAJIB diset, tidak ada fallback demi keamanan
+func getJWTSecret() string {
+	secret := os.Getenv("JWT_SECRET")
+	if secret == "" {
+		// Di production ini akan crash — pastikan JWT_SECRET selalu diset!
+		panic("FATAL: JWT_SECRET environment variable is required! Set it in .env or server config.")
+	}
+	return secret
+}
+
 func GenerateToken(userID int, role string) (string, error) {
 	claims := &Claims{
 		UserID: userID,
@@ -26,12 +37,7 @@ func GenerateToken(userID int, role string) (string, error) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	secret := os.Getenv("JWT_SECRET")
-	if secret == "" {
-		secret = "your_secret_key_here"
-	}
-
-	return token.SignedString([]byte(secret))
+	return token.SignedString([]byte(getJWTSecret()))
 }
 
 func ValidateToken(tokenString string) (*Claims, error) {
@@ -39,11 +45,7 @@ func ValidateToken(tokenString string) (*Claims, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
-		secret := os.Getenv("JWT_SECRET")
-		if secret == "" {
-			secret = "your_secret_key_here"
-		}
-		return []byte(secret), nil
+		return []byte(getJWTSecret()), nil
 	})
 
 	if err != nil {

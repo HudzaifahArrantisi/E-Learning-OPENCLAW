@@ -17,9 +17,9 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB) {
 	// Initialize chat controller with hub
 	chatController := controllers.NewChatController(db, wsHub)
 
-	// Public routes
-	r.POST("/api/auth/login", controllers.Login)
-	r.POST("/api/auth/register", controllers.Register)
+	// Public routes (with login rate limiter)
+	r.POST("/api/auth/login", middlewares.LoginRateLimiter(), controllers.Login)
+	r.POST("/api/auth/register", middlewares.LoginRateLimiter(), controllers.Register)
 
 	// Webhook Pakasir.com (tanpa auth)
 	r.POST("/api/webhook/pakasir", controllers.PakasirWebhook)
@@ -36,7 +36,6 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB) {
 	// === AUTH & PROFILE ===
 	api.GET("/auth/verify", controllers.Verify)
 	api.GET("/profile/me", controllers.GetMyProfile)
-	api.GET("/debug/profile", controllers.DebugProfiles)
 	api.GET("/profile/public/:role/:username", controllers.GetPublicProfile)
 	api.GET("/profile/public/:role/:username/posts", controllers.GetUserPosts)
 
@@ -221,8 +220,8 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB) {
 		chat.DELETE("/conversations/:conversation_id/pin", chatController.UnpinConversation)
 	}
 
-	// Chatbot
-	chatbot := r.Group("/api/chatbot")
+	// Chatbot (dilindungi auth agar tidak disalahgunakan)
+	chatbot := api.Group("/chatbot")
 	{
 		chatbot.POST("/chat", handlers.HandleChat)
 		chatbot.GET("/history/:conversationId", handlers.GetChatHistory)

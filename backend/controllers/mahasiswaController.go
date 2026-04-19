@@ -271,23 +271,23 @@ func GetMahasiswaCourses(c *gin.Context) {
 		return
 	}
 
-	fmt.Printf("Debug: GetMahasiswaCourses called for user_id: %v\n", userID)
+
 
 	// Get mahasiswa ID
 	var mahasiswaID int
 	err := config.DB.QueryRow("SELECT id FROM mahasiswa WHERE user_id = $1", userID).Scan(&mahasiswaID)
 	if err != nil {
-		fmt.Printf("Debug: Mahasiswa not found for user_id: %v, error: %v\n", userID, err)
+
 		utils.ErrorResponse(c, http.StatusNotFound, "Mahasiswa not found")
 		return
 	}
 
-	fmt.Printf("Debug: Found mahasiswa_id: %d\n", mahasiswaID)
+
 
 	// Debug: Hitung total mata kuliah yang diambil
 	var totalCourses int
 	config.DB.QueryRow("SELECT COUNT(*) FROM mahasiswa_mata_kuliah WHERE mahasiswa_id = $1", mahasiswaID).Scan(&totalCourses)
-	fmt.Printf("Debug: Total courses for mahasiswa_id %d: %d\n", mahasiswaID, totalCourses)
+
 
 	rows, err := config.DB.Query(`
 		SELECT mk.kode, mk.nama, d.name as dosen, mk.sks, mk.hari, mk.jam_mulai, mk.jam_selesai
@@ -299,7 +299,7 @@ func GetMahasiswaCourses(c *gin.Context) {
 	`, mahasiswaID)
 	
 	if err != nil {
-		fmt.Printf("Debug: Error querying courses: %v\n", err)
+
 		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to fetch courses: "+err.Error())
 		return
 	}
@@ -311,7 +311,7 @@ func GetMahasiswaCourses(c *gin.Context) {
 		var kode, nama, dosen, hari, jamMulai, jamSelesai string
 		var sks int
 		if err := rows.Scan(&kode, &nama, &dosen, &sks, &hari, &jamMulai, &jamSelesai); err != nil {
-			fmt.Printf("Debug: Error scanning row: %v\n", err)
+
 			continue
 		}
 		courses = append(courses, gin.H{
@@ -326,11 +326,11 @@ func GetMahasiswaCourses(c *gin.Context) {
 		courseCount++
 	}
 
-	fmt.Printf("Debug: Retrieved %d courses for mahasiswa_id %d\n", courseCount, mahasiswaID)
+
 
 	// Jika tidak ada kursus, tampilkan semua mata kuliah sebagai fallback (untuk testing)
 	if len(courses) == 0 {
-		fmt.Println("Debug: No courses found, showing all mata kuliah as fallback")
+
 		
 		allRows, err := config.DB.Query(`
 			SELECT mk.kode, mk.nama, d.name as dosen, mk.sks, mk.hari, mk.jam_mulai, mk.jam_selesai
