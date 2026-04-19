@@ -27,29 +27,29 @@ func main() {
 	// Initialize database
 	config.InitDB()
 
-	// buat folde
-	os.MkdirAll("uploads/posts", 0755)
-	os.MkdirAll("uploads/materi", 0755)
-	os.MkdirAll("uploads/tugas", 0755)
-	os.MkdirAll("uploads/tugasdosen", 0755)
-	os.MkdirAll("uploads/profile", 0755)
+	// Cek apakah kita berjalan di root atau di dalam folder backend
+	uploadPath := "./uploads"
+	if _, err := os.Stat("./backend/uploads"); err == nil {
+		uploadPath = "./backend/uploads"
+	} else if _, err := os.Stat("./uploads"); os.IsNotExist(err) {
+		// Buat folder jika benar-benar tidak ada
+		os.MkdirAll("uploads/posts", 0755)
+		os.MkdirAll("uploads/materi", 0755)
+		os.MkdirAll("uploads/tugas", 0755)
+		os.MkdirAll("uploads/tugasdosen", 0755)
+		os.MkdirAll("uploads/profile", 0755)
+	}
+
+	r.Static("/uploads", uploadPath)
 
 	r := gin.Default()
-
-	// Untuk keamanan dan menghilangkan warning "You trusted all proxies"
 	r.SetTrustedProxies(nil)
-
-	// konfigurasi cros
 	r.Use(cors.New(cors.Config{
-		AllowOriginFunc: func(origin string) bool {
-			return true
-		},
+		AllowOriginFunc: func(origin string) bool { return true },
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization", "Accept", "X-Requested-With"},
 		AllowCredentials: true,
 	}))
-
-	r.Static("/uploads", "./uploads")
 
 	routes.SetupRoutes(r, config.GormDB)
 

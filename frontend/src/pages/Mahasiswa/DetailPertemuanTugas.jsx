@@ -28,7 +28,6 @@ const DetailPertemuanTugas = () => {
 
   const fetchTugasDetail = async () => {
     try {
-      // ✅ PERBAIKAN: Gunakan endpoint mahasiswa, bukan dosen
       const response = await api.getPertemuanDetail(courseId, pertemuan)
       const tugas = response.data.data.tugas || []
       setTugasList(tugas)
