@@ -176,25 +176,25 @@ const DashboardLayout = ({
         {/* Main Content */}
         <div className="flex-1 md:max-w-2xl lg:max-w-2xl mx-auto min-h-screen w-full">
           {/* Header */}
-          <div className="sticky top-0 bg-white/80 backdrop-blur-2xl border-b border-lp-border z-20">
-            <div className="px-5 py-3.5 flex items-center justify-between">
+          <div className="sticky top-0 bg-white/85 backdrop-blur-md border-b border-lp-border z-20">
+            <div className="px-4 py-2 flex items-center justify-between">
               {/* Mobile Menu Button */}
               <button 
                 onClick={() => setSidebarOpen(true)}
-                className="lg:hidden p-2 hover:bg-lp-surface rounded-xl transition-colors"
+                className="lg:hidden p-1.5 hover:bg-lp-surface rounded-lg transition-colors"
               >
-                <FaBars className="text-lg text-lp-text2" />
+                <FaBars className="text-base text-lp-text2" />
               </button>
 
               {/* Logo */}
               <Link to="/" className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg bg-lp-accentS border border-lp-borderA flex items-center justify-center">
-                  <svg className="w-3.5 h-3.5 stroke-lp-accent fill-none stroke-2 [stroke-linecap:round]" viewBox="0 0 24 24">
+                <div className="w-6 h-6 rounded-md bg-lp-accentS border border-lp-borderA flex items-center justify-center">
+                  <svg className="w-3 h-3 stroke-lp-accent fill-none stroke-2 [stroke-linecap:round]" viewBox="0 0 24 24">
                     <path d="M22 10v6M2 10l10-5 10 5-10 5-10-5z" />
                     <path d="M6 12v5c3.33 1.67 8.67 1.67 12 0v-5" />
                   </svg>
                 </div>
-                <span className="text-[13px] font-bold text-lp-text tracking-[0.05em] hidden sm:inline">STUDENT-HUB</span>
+                <span className="text-[12px] font-bold text-lp-text tracking-[0.05em] hidden sm:inline">STUDENT-HUB</span>
               </Link>
             </div>
 
@@ -204,7 +204,7 @@ const DashboardLayout = ({
                 <button
                   key={tab.key}
                   onClick={() => setActiveTab(tab.key)}
-                  className={`flex-shrink-0 px-5 py-3 text-[12.5px] transition-all duration-200 relative ${
+                  className={`flex-shrink-0 px-4 py-2.5 text-[11px] font-medium transition-all duration-200 relative uppercase tracking-wider ${
                     activeTab === tab.key 
                       ? 'text-lp-text font-semibold' 
                       : 'text-lp-text3 hover:text-lp-text2 font-light'
@@ -222,15 +222,15 @@ const DashboardLayout = ({
             <div className="lg:hidden border-t border-lp-border">
               <button
                 onClick={() => setShowAccountsDropdown(!showAccountsDropdown)}
-                className="w-full flex items-center justify-between px-5 py-3 text-lp-text2 hover:bg-lp-surface/50 transition-colors"
+                className="w-full flex items-center justify-between px-4 py-1.5 hover:bg-lp-surface/50 transition-colors"
               >
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-xl bg-lp-accentS flex items-center justify-center">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-6 h-6 rounded-lg bg-lp-accentS flex items-center justify-center">
                     <FaUsers className="text-lp-accent text-xs" />
                   </div>
                   <div className="text-left">
-                    <div className="font-semibold text-[13px] text-lp-text">Rekomendasi Akun</div>
-                    <div className="text-[11px] text-lp-text3 font-light">Temukan ormawa & UKM</div>
+                    <div className="font-semibold text-[12px] text-lp-text">Rekomendasi Akun</div>
+                    <div className="text-[10px] text-lp-text3 font-light">Temukan ormawa & UKM</div>
                   </div>
                 </div>
                 {showAccountsDropdown ? (
