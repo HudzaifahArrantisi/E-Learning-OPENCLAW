@@ -49,31 +49,24 @@ func main() {
 	// 🔒 SECURITY MIDDLEWARES
 	// ============================================================
 
-	// CORS — batasi hanya ke domain yang diizinkan
-	allowedOrigins := os.Getenv("ALLOWED_ORIGINS")
+	// CORS Configuration
 	r.Use(cors.New(cors.Config{
-		AllowOriginFunc: func(origin string) bool {
-			// Selalu izinkan localhost untuk development
-			if strings.HasPrefix(origin, "http://localhost") || strings.HasPrefix(origin, "http://127.0.0.1") {
-				return true
-			}
-			// Jika ALLOWED_ORIGINS diset, cek apakah origin ada di daftar
-			if allowedOrigins != "" {
-				for _, allowed := range strings.Split(allowedOrigins, ",") {
-					if strings.TrimSpace(allowed) == origin {
-						return true
-					}
-				}
-				return false
-			}
-			// Fallback: izinkan semua (untuk backward compatibility)
-			return true
+		AllowOrigins: []string{
+			"https://e-learning-openclaw.vercel.app",
+			"http://localhost:5173",
+			"http://localhost:3000",
 		},
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization", "Accept", "X-Requested-With", "X-Internal-Key"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Length", "Content-Type", "Authorization", "Accept", "X-Requested-With", "X-Internal-Key"},
+		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
 	}))
+
+	// Handle OPTIONS fallback explicitly at the root level just in case proxy strips it
+	r.OPTIONS("/*path", func(c *gin.Context) {
+		c.Status(204)
+	})
 
 	r.Use(middlewares.SecurityHeaders())
 	r.Use(middlewares.RateLimitMiddleware(200, 1*time.Minute)) // Global: 200 req/min per IP
