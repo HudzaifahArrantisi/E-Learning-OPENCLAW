@@ -178,24 +178,35 @@ const DashboardLayout = ({
           {/* Header */}
           <div className="sticky top-0 bg-white/85 backdrop-blur-md border-b border-lp-border z-20">
             <div className="px-4 py-2 flex items-center justify-between">
-              {/* Mobile Menu Button */}
-              <button 
-                onClick={() => setSidebarOpen(true)}
-                className="lg:hidden p-1.5 hover:bg-lp-surface rounded-lg transition-colors"
-              >
-                <FaBars className="text-base text-lp-text2" />
-              </button>
+              {/* Left Side: Mobile Menu Button & Logo */}
+              <div className="flex items-center gap-3">
+                <button 
+                  onClick={() => setSidebarOpen(true)}
+                  className="lg:hidden p-1.5 hover:bg-lp-surface rounded-lg transition-colors"
+                >
+                  <FaBars className="text-base text-lp-text2" />
+                </button>
 
-              {/* Logo */}
-              <Link to="/" className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-md bg-lp-accentS border border-lp-borderA flex items-center justify-center">
-                  <svg className="w-3 h-3 stroke-lp-accent fill-none stroke-2 [stroke-linecap:round]" viewBox="0 0 24 24">
-                    <path d="M22 10v6M2 10l10-5 10 5-10 5-10-5z" />
-                    <path d="M6 12v5c3.33 1.67 8.67 1.67 12 0v-5" />
-                  </svg>
-                </div>
-                <span className="text-[12px] font-bold text-lp-text tracking-[0.05em] hidden sm:inline">STUDENT-HUB</span>
-              </Link>
+                {/* Logo */}
+                <Link to="/" className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-md bg-lp-accentS border border-lp-borderA flex items-center justify-center">
+                    <svg className="w-3 h-3 stroke-lp-accent fill-none stroke-2 [stroke-linecap:round]" viewBox="0 0 24 24">
+                      <path d="M22 10v6M2 10l10-5 10 5-10 5-10-5z" />
+                      <path d="M6 12v5c3.33 1.67 8.67 1.67 12 0v-5" />
+                    </svg>
+                  </div>
+                  <span className="text-[12px] font-bold text-lp-text tracking-[0.05em] hidden sm:inline">STUDENT-HUB</span>
+                </Link>
+              </div>
+
+              {/* Right Side: Mobile Logout Button */}
+              <button 
+                onClick={handleLogout}
+                className="lg:hidden p-2 text-lp-red/80 hover:text-white hover:bg-lp-red rounded-lg transition-colors"
+                title="Keluar"
+              >
+                <FaSignOutAlt className="text-sm" />
+              </button>
             </div>
 
             {/* Role Filter Tabs */}

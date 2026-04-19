@@ -102,17 +102,6 @@ const AkunOrmawa = () => {
     savePosts([newPost, ...posts])
   }
 
-  if (loading) {
-    return (
-      <div className="flex min-h-screen bg-gray-100">
-        <Sidebar role="ormawa" />
-        <div className="flex-1 flex justify-center items-center">
-          <div className="text-xl text-lp-text2 font-light">Loading...</div>
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div className="flex min-h-screen bg-gray-100">
       <Sidebar role="ormawa" />
