@@ -97,3 +97,5 @@ refresh_token
 # Local environment
 local.env
 local_database.db
+
+backend/app

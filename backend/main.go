@@ -151,11 +151,13 @@ func startOpenClaw(r *gin.Engine) {
 	go outboxWorker.Start()
 
 	// Register OpenClaw HTTP endpoints inside the Gin router
-	// These are internal endpoints, accessible on the same port as the main API
 	r.POST("/internal/events/tugas-created", gin.WrapF(eventHandler.HandleTugasCreated))
 	r.GET("/internal/health", gin.WrapF(handler.HealthCheck))
 
-	log.Println("[OpenClaw] All components started successfully (embedded mode)")
-	log.Printf("[OpenClaw] Event endpoint: POST /internal/events/tugas-created")
-	log.Printf("[OpenClaw] Health check: GET /internal/health")
+	log.Println("------------------------------------------------")
+	log.Printf("✅ [OpenClaw] Notification Handler: Ready")
+	log.Printf("✅ [OpenClaw] Scheduler (%s): Active", cfg.CronSchedule)
+	log.Printf("✅ [OpenClaw] Outbox Worker: Running")
+	log.Println("------------------------------------------------")
+	log.Println("[OpenClaw] Embedded Engine fully initialized")
 }
