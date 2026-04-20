@@ -1,14 +1,12 @@
 package controllers
 
 import (
-	"fmt"
-	"net/http"
-	"os"
-	"path/filepath"
-	"strconv"
-	"strings"
-	"time"
 	"database/sql"
+	"fmt"
+	"log"
+	"net/http"
+	"strconv"
+	"time"
 
 	"nf-student-hub-backend/config"
 	"nf-student-hub-backend/utils"
@@ -72,49 +70,17 @@ func UpdateMahasiswaProfile(c *gin.Context) {
 		return
 	}
 
-	// Handle file upload
+	// Handle file upload ke database (BYTEA)
 	var photoPath string
-	file, header, err := c.Request.FormFile("photo")
-	if err == nil {
-		defer file.Close()
-
-		// Validate file type
-		allowedTypes := map[string]bool{
-			".jpg":  true,
-			".jpeg": true,
-			".png":  true,
-			".gif":  true,
-		}
-
-		ext := strings.ToLower(filepath.Ext(header.Filename))
-		if !allowedTypes[ext] {
-			utils.ErrorResponse(c, http.StatusBadRequest, "Invalid file type. Only JPG, JPEG, PNG, GIF are allowed")
+	if _, _, fErr := c.Request.FormFile("photo"); fErr == nil {
+		uid, _ := userID.(int)
+		_, fileURL, uploadErr := UploadFileToDB(c, "photo", uid, "mahasiswa", "profile", nil, nil)
+		if uploadErr != nil {
+			utils.ErrorResponse(c, http.StatusBadRequest, uploadErr.Error())
 			return
 		}
-
-		// Validate file size (5MB max)
-		if header.Size > 5*1024*1024 {
-			utils.ErrorResponse(c, http.StatusBadRequest, "File too large. Maximum size is 5MB")
-			return
-		}
-
-		// Generate unique filename using utils package
-		filename := strings.ReplaceAll(nim, " ", "_") + "_" + utils.GenerateRandomString(8) + ext
-		photoPath = "/uploads/profile/" + filename
-
-		// Create uploads directory if not exists
-		uploadDir := "./uploads/profile"
-		if err := os.MkdirAll(uploadDir, 0755); err != nil {
-			utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to create directory: "+err.Error())
-			return
-		}
-
-		// Save file
-		fullPath := uploadDir + "/" + filename
-		if err := c.SaveUploadedFile(header, fullPath); err != nil {
-			utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to save file: "+err.Error())
-			return
-		}
+		photoPath = fileURL
+		log.Printf("[Profile] Photo uploaded to DB: %s", fileURL)
 	}
 
 	// Update database
@@ -1312,7 +1278,7 @@ func CreateUKTPayment(c *gin.Context) {
 	utils.SuccessResponse(c, nil, "Payment processed")
 }
 
-// SubmitTugas - Submit tugas (file atau text)
+// SubmitTugas - Submit tugas (file atau text) — file disimpan ke database (BYTEA)
 func SubmitTugas(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
@@ -1342,38 +1308,16 @@ func SubmitTugas(c *gin.Context) {
 		return
 	}
 
-	// Handle file upload
+	// Handle file upload ke database (BYTEA)
 	var fileURL string
-	file, header, err := c.Request.FormFile("file")
-	if err == nil {
-		defer file.Close()
-
-		allowedTypes := map[string]bool{
-			".pdf": true, ".doc": true, ".docx": true, ".zip": true,
-			".jpg": true, ".jpeg": true, ".png": true,
-		}
-		ext := strings.ToLower(filepath.Ext(header.Filename))
-		if !allowedTypes[ext] {
-			utils.ErrorResponse(c, http.StatusBadRequest, "Invalid file type")
+	if _, _, fErr := c.Request.FormFile("file"); fErr == nil {
+		_, fURL, uploadErr := UploadFileToDB(c, "file", mahasiswaID, "mahasiswa", "tugas_mahasiswa", &taskID, nil)
+		if uploadErr != nil {
+			utils.ErrorResponse(c, http.StatusBadRequest, uploadErr.Error())
 			return
 		}
-
-		// buat nama file uniqe atau
-		filename := fmt.Sprintf("tugas_%d_%s%s",
-			taskID, utils.GenerateRandomString(8), ext)
-		fileURL = "/uploads/tugas/" + filename
-
-		uploadDir := "./uploads/tugas"
-		if err := os.MkdirAll(uploadDir, 0755); err != nil {
-			utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to create directory")
-			return
-		}
-
-		fullPath := uploadDir + "/" + filename
-		if err := c.SaveUploadedFile(header, fullPath); err != nil {
-			utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to save file")
-			return
-		}
+		fileURL = fURL
+		log.Printf("[Submit Tugas] File uploaded to DB: url=%s", fileURL)
 	}
 
 	// Periksa apakah submission sudah ada

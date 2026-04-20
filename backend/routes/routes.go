@@ -70,6 +70,17 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB) {
 		ortu.POST("/ukt/bayar", controllers.CreatePaymentForChild)
 	}
 
+	// === FILE SERVING (Public — no auth for cache-friendly access) ===
+	r.GET("/api/files/:id", controllers.ServeFile)
+	r.GET("/api/files/:id/download", controllers.DownloadFile)
+
+	// === UPLOAD MANAGEMENT (Protected — requires JWT) ===
+	api.POST("/uploads", controllers.UploadFile)
+	api.DELETE("/uploads/:id", controllers.DeleteUpload)
+	api.GET("/uploads/type/:type", controllers.GetUploadsByType)
+	api.GET("/uploads/:id/signed-url", controllers.GenerateSignedURL)
+	api.GET("/upload-status/:session_id", controllers.GetUploadStatus)
+
 	// === FEED & POSTS ===
 	api.GET("/feed", controllers.GetFeed)
 	api.POST("/feed", controllers.CreatePost)

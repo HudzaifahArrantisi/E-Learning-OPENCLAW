@@ -1,12 +1,9 @@
 package controllers
 
 import (
-	"fmt"
+	"log"
 	"net/http"
-	"os"
-	"path/filepath"
 	"strings"
-	"time"
 
 	"nf-student-hub-backend/config"
 	"nf-student-hub-backend/utils"
@@ -44,35 +41,17 @@ func CreateUKMPost(c *gin.Context) {
 		return
 	}
 
+	// Upload media ke database (BYTEA) — BUKAN filesystem
 	var mediaURL string
-	if file, err := c.FormFile("media"); err == nil {
-		// 🔒 Validasi file upload
-		ext, valErr := utils.ValidateUpload(file, utils.DefaultImageConfig)
-		if valErr != nil {
-			utils.ErrorResponse(c, http.StatusBadRequest, valErr.Error())
+	if _, err := c.FormFile("media"); err == nil {
+		uid, _ := userID.(int)
+		_, fileURL, uploadErr := UploadFileToDB(c, "media", uid, "ukm", "post", nil, nil)
+		if uploadErr != nil {
+			utils.ErrorResponse(c, http.StatusBadRequest, uploadErr.Error())
 			return
 		}
-
-		filename := fmt.Sprintf("ukm_%v_%d%s", userID, time.Now().UnixNano(), ext)
-		savePath := filepath.Join("uploads/posts", filename)
-		
-		// Ensure directory exists
-		if errDir := os.MkdirAll("uploads/posts", 0755); errDir != nil {
-			fmt.Println("Warning: failed to create directory:", errDir)
-		}
-		
-		if errSave := c.SaveUploadedFile(file, savePath); errSave != nil {
-			// If saving fails (e.g., ReadOnly filesystem in Serverless), try /tmp fallback
-			tmpPath := filepath.Join("/tmp", filename)
-			if errTmp := c.SaveUploadedFile(file, tmpPath); errTmp == nil {
-				savePath = tmpPath
-			} else {
-				utils.ErrorResponse(c, http.StatusInternalServerError, "Gagal menyimpan foto")
-				return
-			}
-		}
-		// Selalu simpan URL yang benar untuk frontend / image optimizer
-		mediaURL = "/uploads/posts/" + filename
+		mediaURL = fileURL
+		log.Printf("[UKM Post] Media uploaded to DB: %s", fileURL)
 	}
 
 	query := `

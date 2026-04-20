@@ -5,10 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
-	"path/filepath"
 	"strconv"
-	"strings"
 	"time"
 
 	"nf-student-hub-backend/config"
@@ -1510,31 +1507,19 @@ func UploadMateri(c *gin.Context) {
 		return
 	}
 
-	// File wajib untuk materi
-	file, header, err := c.Request.FormFile("file")
-	if err != nil {
+	// File wajib untuk materi — upload ke database (BYTEA)
+	if _, _, fErr := c.Request.FormFile("file"); fErr != nil {
 		utils.ValidationError(c, "File materi wajib diupload")
 		return
 	}
-	defer file.Close()
 
-	ext := strings.ToLower(filepath.Ext(header.Filename))
-	allowed := map[string]bool{".pdf": true, ".ppt": true, ".pptx": true, ".doc": true, ".docx": true, ".zip": true, ".jpg": true, ".jpeg": true, ".png": true}
-	if !allowed[ext] {
-		utils.ErrorResponse(c, http.StatusBadRequest, "Tipe file tidak diizinkan")
+	// Upload file ke database via UploadFileToDB
+	uploadID, filePath, uploadErr := UploadFileToDB(c, "file", dosenID, "dosen", "materi", nil, nil)
+	if uploadErr != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, uploadErr.Error())
 		return
 	}
-
-	filename := fmt.Sprintf("materi_%s_p%d_%s%s", courseID, pertemuan, utils.GenerateRandomString(8), ext)
-	dir := "./uploads/materi"
-	os.MkdirAll(dir, 0755)
-	fullPath := filepath.Join(dir, filename)
-	filePath := "/uploads/materi/" + filename
-
-	if err := c.SaveUploadedFile(header, fullPath); err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "Gagal menyimpan file")
-		return
-	}
+	log.Printf("[Materi] File uploaded to DB: id=%d, url=%s", uploadID, filePath)
 
 	// INSERT ke tabel tugas dengan type 'materi'
 	query := `
@@ -1544,11 +1529,14 @@ func UploadMateri(c *gin.Context) {
 		RETURNING id
 	`
 	var id int64
-	err = config.DB.QueryRow(query, courseID, pertemuan, title, desc, filePath).Scan(&id)
+	err := config.DB.QueryRow(query, courseID, pertemuan, title, desc, filePath).Scan(&id)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, "Gagal upload materi: "+err.Error())
 		return
 	}
+
+	// Update related_id di uploads table untuk referensi ke tugas
+	config.DB.Exec("UPDATE uploads SET related_id = $1, related_table = 'tugas' WHERE id = $2", id, uploadID)
 
 	// ========== OpenClaw: Publish event materi-uploaded ==========
 	event := utils.BuildTugasEvent(id, courseID, pertemuan, title, desc, time.Now().Add(30*24*time.Hour), dosenID)
@@ -1617,28 +1605,19 @@ func CreateTugas(c *gin.Context) {
 		dueDate = sql.NullTime{Time: time.Now().Add(7 * 24 * time.Hour), Valid: true}
 	}
 
-	// File tugas opsional
+	// File tugas opsional — upload ke database (BYTEA)
 	var filePath sql.NullString
-	file, header, err := c.Request.FormFile("file_tugas")
-	if err == nil {
-		defer file.Close()
-		ext := strings.ToLower(filepath.Ext(header.Filename))
-		if allowed := map[string]bool{".pdf": true, ".doc": true, ".docx": true, ".zip": true, ".jpg": true, ".jpeg": true, ".png": true}; !allowed[ext] {
-			utils.ErrorResponse(c, http.StatusBadRequest, "Tipe file tugas tidak diizinkan")
+	var uploadID int64
+	if _, _, fErr := c.Request.FormFile("file_tugas"); fErr == nil {
+		uID, fileURL, uploadErr := UploadFileToDB(c, "file_tugas", dosenID, "dosen", "tugas_dosen", nil, nil)
+		if uploadErr != nil {
+			utils.ErrorResponse(c, http.StatusBadRequest, "File tugas: "+uploadErr.Error())
 			return
 		}
-
-		filename := fmt.Sprintf("tugas_%s_p%d_%s%s", courseID, pertemuan, utils.GenerateRandomString(8), ext)
-		dir := "./uploads/tugas"
-		os.MkdirAll(dir, 0755)
-		path := filepath.Join(dir, filename)
-		filePath.String = "/uploads/tugas/" + filename
+		filePath.String = fileURL
 		filePath.Valid = true
-
-		if err := c.SaveUploadedFile(header, path); err != nil {
-			utils.ErrorResponse(c, http.StatusInternalServerError, "Gagal menyimpan file tugas")
-			return
-		}
+		uploadID = uID
+		log.Printf("[Tugas] File uploaded to DB: id=%d, url=%s", uploadID, fileURL)
 	}
 
 	// Insert ke tabel tugas dengan type 'tugas'
@@ -1649,10 +1628,15 @@ func CreateTugas(c *gin.Context) {
 		RETURNING id
 	`
 	var id int64
-	err = config.DB.QueryRow(query, courseID, pertemuan, title, desc, filePath, dueDate).Scan(&id)
+	err := config.DB.QueryRow(query, courseID, pertemuan, title, desc, filePath, dueDate).Scan(&id)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, "Gagal membuat tugas: "+err.Error())
 		return
+	}
+
+	// Update related_id di uploads table untuk referensi ke tugas
+	if uploadID > 0 {
+		config.DB.Exec("UPDATE uploads SET related_id = $1, related_table = 'tugas' WHERE id = $2", id, uploadID)
 	}
 
 	// ========== OpenClaw: Publish event tugas-created ==========
@@ -1953,11 +1937,12 @@ func DeleteMateri(c *gin.Context) {
 		return
 	}
 
-	// Hapus file dari sistem jika ada
+	// Soft-delete file dari uploads table jika ada
 	if filePath.Valid && filePath.String != "" {
-		fullPath := "." + filePath.String
-		if err := os.Remove(fullPath); err != nil && !os.IsNotExist(err) {
-			fmt.Printf("Warning: Gagal menghapus file: %v\n", err)
+		// Extract upload ID from /api/files/{id} URL pattern
+		var uploadIDFromURL int64
+		if _, scanErr := fmt.Sscanf(filePath.String, "/api/files/%d", &uploadIDFromURL); scanErr == nil {
+			config.DB.Exec("UPDATE uploads SET deleted_at = NOW() WHERE id = $1", uploadIDFromURL)
 		}
 	}
 
@@ -2007,11 +1992,11 @@ func DeleteTugas(c *gin.Context) {
 		return
 	}
 
-	// Hapus file dari sistem jika ada
+	// Soft-delete file dari uploads table jika ada
 	if filePath.Valid && filePath.String != "" {
-		fullPath := "." + filePath.String
-		if err := os.Remove(fullPath); err != nil && !os.IsNotExist(err) {
-			fmt.Printf("Warning: Gagal menghapus file: %v\n", err)
+		var uploadIDFromURL int64
+		if _, scanErr := fmt.Sscanf(filePath.String, "/api/files/%d", &uploadIDFromURL); scanErr == nil {
+			config.DB.Exec("UPDATE uploads SET deleted_at = NOW() WHERE id = $1", uploadIDFromURL)
 		}
 	}
 
@@ -2088,10 +2073,11 @@ func DeleteSubmission(c *gin.Context) {
 	// Hapus file submission jika ada
 	var fileURL sql.NullString
 	err = config.DB.QueryRow("SELECT file_url FROM submissions WHERE id = $1", submissionID).Scan(&fileURL)
+	// Soft-delete file dari uploads table jika ada
 	if err == nil && fileURL.Valid && fileURL.String != "" {
-		fullPath := "." + fileURL.String
-		if err := os.Remove(fullPath); err != nil && !os.IsNotExist(err) {
-			fmt.Printf("Warning: Gagal menghapus file submission: %v\n", err)
+		var uploadIDFromURL int64
+		if _, scanErr := fmt.Sscanf(fileURL.String, "/api/files/%d", &uploadIDFromURL); scanErr == nil {
+			config.DB.Exec("UPDATE uploads SET deleted_at = NOW() WHERE id = $1", uploadIDFromURL)
 		}
 	}
 

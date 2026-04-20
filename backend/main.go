@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"nf-student-hub-backend/config"
-	"nf-student-hub-backend/handlers"
 	"nf-student-hub-backend/middlewares"
 	openclawConfig "nf-student-hub-backend/openclaw/config"
 	"nf-student-hub-backend/openclaw/handler"
@@ -29,18 +28,6 @@ func main() {
 
 	// Initialize database
 	config.InitDB()
-
-	// Tentukan upload path — cek apakah dari root atau dari folder backend
-	uploadPath := "./uploads"
-	if _, err := os.Stat("./backend/uploads"); err == nil {
-		uploadPath = "./backend/uploads"
-	} else if _, err := os.Stat("./uploads"); os.IsNotExist(err) {
-		os.MkdirAll("uploads/posts", 0755)
-		os.MkdirAll("uploads/materi", 0755)
-		os.MkdirAll("uploads/tugas", 0755)
-		os.MkdirAll("uploads/tugasdosen", 0755)
-		os.MkdirAll("uploads/profile", 0755)
-	}
 
 	r := gin.Default()
 	r.SetTrustedProxies(nil)
@@ -71,11 +58,13 @@ func main() {
 	r.Use(middlewares.SecurityHeaders())
 	r.Use(middlewares.RateLimitMiddleware(200, 1*time.Minute)) // Global: 200 req/min per IP
 
-
-	imgOptimizer := handlers.NewImageOptimizer(uploadPath)
-	r.GET("/uploads/*filepath", func(c *gin.Context) {
-		imgOptimizer.ServeOptimized(c)
-	})
+	// ============================================================
+	// 📦 FILE SERVING — Database BYTEA (no filesystem)
+	// ============================================================
+	// All file uploads are stored in PostgreSQL BYTEA column.
+	// Files are served via /api/files/:id endpoint (in routes.go).
+	// No /uploads directory is needed or created.
+	// ============================================================
 
 	routes.SetupRoutes(r, config.GormDB)
 
@@ -114,18 +103,16 @@ func main() {
 	log.Println("Starting STUDENT HUB Server...")
 	log.Println("🔒 Security Headers: Active")
 	log.Println("🚦 Rate Limiter: Active (200 req/min per IP)")
-	log.Println("🖼️ Image Optimizer: Active (auto-compress to JPEG 75%)")
-	log.Println("Materi & Tugas System: Ready")
-	log.Println("Upload directories: Created")
+	log.Println("📦 Upload System: Database BYTEA (no filesystem)")
+	log.Println("🖼️ Image Compression: Auto JPEG 75% on upload")
+	log.Println("📡 File Serving: /api/files/:id (streaming from DB)")
 	log.Println("🦀 OpenClaw Reminder: Embedded & Running")
 
 	log.Printf("Selamat datang! Ini nama '%s' dalam bentuk besar.", nama)
 
 	log.Println("Server jalan → http://localhost:8080")
-	log.Println("Materi: http://localhost:8080/uploads/materi/...")
-	log.Println("Tugas Mahasiswa: http://localhost:8080/uploads/tugas/...")
-	log.Println("Tugas Dosen: http://localhost:8080/uploads/tugasdosen/...")
-	log.Println("Profile: http://localhost:8080/uploads/profile/...")
+	log.Println("Files: http://localhost:8080/api/files/{id}")
+	log.Println("Upload: POST http://localhost:8080/api/uploads")
 
 	port := os.Getenv("PORT")
 	if port == "" {
