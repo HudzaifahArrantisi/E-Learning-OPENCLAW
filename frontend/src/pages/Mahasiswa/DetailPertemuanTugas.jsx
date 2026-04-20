@@ -4,8 +4,13 @@ import Navbar from '../../components/Navbar'
 import Sidebar from '../../components/Sidebar'
 import useAuth from '../../hooks/useAuth'
 import api from '../../services/api'
-import { FaUpload, FaDownload, FaArrowLeft, FaBook, FaCheckCircle, FaClock } from 'react-icons/fa'
+import { 
+  FiUpload, FiDownload, FiArrowLeft, FiBook, 
+  FiCheckCircle, FiClock, FiXCircle, FiFileText, 
+  FiChevronRight, FiAlertCircle 
+} from 'react-icons/fi'
 import { resolveBackendAssetUrl } from '../../utils/assetUrl'
+import { motion, AnimatePresence } from 'framer-motion'
 
 const DetailPertemuanTugas = () => {
   const { user } = useAuth()
@@ -28,6 +33,7 @@ const DetailPertemuanTugas = () => {
 
   const fetchTugasDetail = async () => {
     try {
+      setLoading(true)
       const response = await api.getPertemuanDetail(courseId, pertemuan)
       const tugas = response.data.data.tugas || []
       setTugasList(tugas)
@@ -42,14 +48,11 @@ const DetailPertemuanTugas = () => {
             }))
           }
         } catch (error) {
-          console.log(`No submission found for task ${task.id}`)
+          // No submission found
         }
       }
     } catch (error) {
       console.error('Error fetching tugas detail:', error)
-      if (error.response?.status === 403) {
-        console.log('Access forbidden - mungkin perlu login ulang')
-      }
     } finally {
       setLoading(false)
     }
@@ -105,14 +108,14 @@ const DetailPertemuanTugas = () => {
   }
 
   const matkulData = {
-    'KP001': 'KOMPUTASI PARALEL & TERDISTRIBUSI',
-    'KW002': 'KEAMANAN WEB',
-    'PBO001': 'PEMROGRAMAN BERORIENTASI OBJEK',
-    'DEV001': 'DEVOPSSEC',
-    'RPL001': 'REKAYASA PERANGKAT LUNAK',
-    'KWU001': 'KEWIRAUSAHAAN',
-    'BI002': 'BAHASA INGGRIS 2',
-    'IR001': 'INCIDENT RESPONSE'
+    'KP001': 'Komputasi Paralel & Terdistribusi',
+    'KW002': 'Keamanan Web',
+    'PBO001': 'Pemrograman Berorientasi Objek',
+    'DEV001': 'DevOpsSec',
+    'RPL001': 'Rekayasa Perangkat Lunak',
+    'KWU001': 'Kewirausahaan',
+    'BI002': 'Bahasa Inggris 2',
+    'IR001': 'Incident Response'
   }
 
   // Frontend blocker for invalid course IDs
@@ -123,14 +126,14 @@ const DetailPertemuanTugas = () => {
 
   if (loading) {
     return (
-      <div className="flex h-screen bg-lp-bg">
+      <div className="flex min-h-screen bg-lp-bg">
         <Sidebar role="mahasiswa" isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-        <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 flex flex-col relative z-10 transition-all duration-300">
           <Navbar user={user} onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
-          <div className="flex-1 flex items-center justify-center">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-lp-text2 font-light">Memuat tugas...</p>
+          <div className="flex-1 flex items-center justify-center p-10">
+            <div className="flex flex-col items-center gap-6">
+               <div className="w-12 h-12 border-2 border-lp-text/10 border-t-lp-text rounded-full animate-spin"></div>
+               <p className="text-[11px] font-mono font-bold tracking-[0.2em] uppercase text-lp-text3 animate-pulse">Syncing Assignments...</p>
             </div>
           </div>
         </div>
@@ -139,265 +142,321 @@ const DetailPertemuanTugas = () => {
   }
 
   return (
-    <div className="flex h-screen bg-lp-bg">
+    <div className="flex min-h-screen bg-lp-bg relative overflow-hidden">
+      {/* Background Decorative Layer */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[60%] bg-lp-accent/5 blur-[120px] rounded-full" />
+        <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-purple-500/5 blur-[120px] rounded-full" />
+      </div>
+
       <Sidebar role="mahasiswa" isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col relative z-10 transition-all duration-300 min-w-0">
         <Navbar user={user} onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
         
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
+        <main className="flex-1 overflow-y-auto p-6 md:p-10 lg:p-14">
           <div className="max-w-4xl mx-auto">
-            {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-8 space-y-4 sm:space-y-0">
+            
+            {/* Header Section */}
+            <motion.div 
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-10 mb-16"
+            >
               <div>
                 <Link 
                   to={`/mahasiswa/matkul/${courseId}`}
-                  className="
-                    inline-flex items-center space-x-2 text-lp-atext hover:text-lp-accent 
-                    mb-4 transition-colors
-                  "
+                  className="inline-flex items-center gap-2 text-[11px] font-mono font-bold tracking-[0.2em] text-lp-text3 hover:text-lp-text transition-colors uppercase mb-6"
                 >
-                  <FaArrowLeft />
-                  <span>Kembali ke Mata Kuliah</span>
+                  <FiArrowLeft /> Back to Course Feed
                 </Link>
-                <h1 className="text-2xl md:text-3xl font-bold text-lp-text font-semibold tracking-tight">
+                
+                <h1 className="text-4xl md:text-5xl font-light text-lp-text tracking-tight mb-3">
                   {matkulData[courseId] || courseId}
+                  <span className="text-lp-text3 block text-lg font-normal mt-2">Meeting {pertemuan} Assessment Suite</span>
                 </h1>
-                <p className="text-lp-text2 font-light mt-1">Pertemuan {pertemuan} - Daftar Tugas</p>
+                <p className="text-lp-text2 font-light max-w-xl leading-relaxed">
+                  Lengkapi seluruh tugas yang tersedia pada pertemuan ini sebelum tenggat waktu yang ditentukan.
+                </p>
               </div>
               
-              <div className="flex space-x-2">
-                <Link 
-                  to={`/mahasiswa/matkul/${courseId}/pertemuan/${pertemuan}/materi`}
-                  className="
-                    flex items-center space-x-2 bg-lp-accent text-white 
-                    py-2 px-4 rounded-xl hover:bg-lp-accent 
-                    transition-all duration-300 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl
-                  "
-                >
-                  <FaBook />
-                  <span className="hidden sm:block">Lihat Materi</span>
-                </Link>
-              </div>
-            </div>
+              <Link 
+                to={`/mahasiswa/matkul/${courseId}/pertemuan/${pertemuan}/materi`}
+                className="group px-8 py-4 bg-lp-text text-lp-bg rounded-full text-[13px] font-bold hover:bg-lp-atext hover:-translate-y-1 transition-all duration-500 uppercase tracking-widest flex items-center gap-3 shadow-[0_12px_24px_rgba(0,0,0,0.1)]"
+              >
+                <FiBook className="text-lg" />
+                <span>Lecture Modules</span>
+              </Link>
+            </motion.div>
 
-            {/* Tugas List */}
-            <div className="space-y-6">
+            {/* Assignments Canvas */}
+            <div className="space-y-8">
               {tugasList.length > 0 ? (
                 tugasList.map((tugas, index) => {
                   const submission = submissionStatus[tugas.id]
                   return (
-                    <div 
+                    <motion.div 
                       key={index}
-                      className="bg-lp-surface rounded-2xl p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border border border-lp-border border hover:shadow-xl transition-all duration-300"
+                      initial={{ opacity: 0, y: 30 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                      className="group relative bg-white border border-lp-border rounded-[2.5rem] p-8 md:p-10 hover:shadow-[0_32px_64px_rgba(0,0,0,0.06)] transition-all duration-700 hover:-translate-y-1 overflow-hidden"
                     >
-                      <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between space-y-4 lg:space-y-0">
+                      {/* Status Indicator Bar */}
+                      <div className={`absolute top-0 left-0 w-full h-1.5 ${submission ? (submission.grade >= 80 ? 'bg-emerald-500' : 'bg-lp-tg') : 'bg-lp-border opacity-20'}`} />
+                      
+                      <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-10 relative z-10">
                         <div className="flex-1">
-                          <div className="flex items-start space-x-3 mb-4">
-                            <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
-                              <FaUpload className="text-lp-green text-lg" />
+                          <div className="flex items-center gap-4 mb-8">
+                            <div className={`p-4 rounded-2xl flex items-center justify-center ${submission ? 'bg-emerald-50 text-emerald-600' : 'bg-lp-surface text-lp-text3'}`}>
+                              <FiUpload className="text-xl" />
                             </div>
-                            <div className="flex-1">
-                              <h3 className="font-bold text-xl text-lp-text font-semibold tracking-tight mb-2">{tugas.title}</h3>
-                              {tugas.desc && (
-                                <p className="text-lp-text2 font-light mb-3 leading-relaxed">{tugas.desc}</p>
-                              )}
+                            <div>
+                              <p className="text-[11px] font-mono font-bold tracking-[0.2em] text-lp-text3 uppercase mb-1">TASK IDENTIFIER: {tugas.id}</p>
+                              <h3 className="text-2xl font-normal text-lp-text tracking-tight italic">{tugas.title}</h3>
                             </div>
                           </div>
 
-                          {tugas.due_date && (
-                            <div className="flex items-center space-x-2 text-sm text-orange-600 mb-4">
-                              <FaClock />
-                              <span>
-                                Batas pengumpulan: {tugas.due_date ? new Date(tugas.due_date).toLocaleDateString('id-ID') + ' ' + new Date(tugas.due_date).toLocaleTimeString('id-ID') : 'Tidak ditentukan'}
-                              </span>
-                            </div>
-                          )}
-                          
-                          {/* Submission Status */}
-                          {submission && (
-                            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4">
-                              <h4 className="font-semibold text-blue-800 mb-3 flex items-center space-x-2">
-                                <FaCheckCircle className="text-lp-atext" />
-                                <span>Status Pengumpulan:</span>
-                              </h4>
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                                {submission.file_url && (
-                                  <div className="flex items-center space-x-2">
-                                    <span className="font-medium text-lp-text2">File: </span>
-                                    <a 
-                                      href={resolveBackendAssetUrl(submission.file_url)}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="text-lp-atext hover:underline flex items-center space-x-1"
-                                    >
-                                      <FaDownload className="text-xs" />
-                                      <span>Lihat File</span>
-                                    </a>
-                                  </div>
-                                )}
-                                {submission.answer_text && (
-                                  <div>
-                                    <span className="font-medium text-lp-text2">Jawaban Text: </span>
-                                    <span className="text-lp-text2 font-light">{submission.answer_text.substring(0, 50)}...</span>
-                                  </div>
-                                )}
-                                {submission.grade > 0 && (
-                                  <div>
-                                    <span className="font-medium text-lp-text2">Nilai: </span>
-                                    <span className={`font-bold ${
-                                      submission.grade >= 80 ? 'text-lp-green' :
-                                      submission.grade >= 70 ? 'text-yellow-600' : 'text-red-600'
-                                    }`}>
-                                      {submission.grade}
-                                    </span>
-                                  </div>
-                                )}
-                                <div>
-                                  <span className="font-medium text-lp-text2">Dikumpulkan: </span>
-                                  <span className="text-lp-text2 font-light">
-                                    {submission.created_at ? new Date(submission.created_at).toLocaleDateString('id-ID') : 'Tidak diketahui'}
-                                  </span>
-                                </div>
+                          <p className="text-[15px] text-lp-text2 font-light leading-relaxed mb-10 max-w-[620px]">
+                            {tugas.desc || "No special instructions provided for this task."}
+                          </p>
+
+                          <div className="flex flex-wrap items-center gap-6 mb-10">
+                            {tugas.due_date && (
+                              <div className="flex items-center gap-2.5 px-4 py-2.5 bg-lp-accent/5 rounded-full border border-lp-border/50">
+                                <FiClock className="text-lp-atext text-lg" />
+                                <span className="text-[13px] font-medium text-lp-atext">
+                                  Deadline: {new Date(tugas.due_date).toLocaleString('id-ID')}
+                                </span>
                               </div>
-                            </div>
-                          )}
-                          
-                          {tugas.file_path && (
-                            <div className="flex items-center space-x-3">
+                            )}
+
+                            {tugas.file_path && (
                               <a 
                                 href={resolveBackendAssetUrl(tugas.file_path)}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="
-                                  flex items-center space-x-2 bg-lp-accent text-white
-                                  py-2 px-4 rounded-lg hover:bg-gray-600
-                                  transition-all duration-300
-                                "
+                                className="flex items-center gap-2.5 px-4 py-2.5 bg-lp-surface rounded-full border border-lp-border hover:bg-lp-text hover:text-white transition-all duration-300"
                               >
-                                <FaDownload />
-                                <span>Download File Tugas</span>
+                                <FiDownload className="text-lg" />
+                                <span className="text-[13px] font-medium">Download Resources</span>
                               </a>
-                              <span className="text-sm text-lp-text3 font-light">
-                                {tugas.file_path.split('.').pop().toUpperCase()} File
-                              </span>
-                            </div>
+                            )}
+                          </div>
+                          
+                          {/* Submission Insight */}
+                          {submission && (
+                            <motion.div 
+                              initial={{ opacity: 0, x: -10 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              className="bg-lp-surface/50 border border-lp-border rounded-3xl p-6 md:p-8"
+                            >
+                              <div className="flex items-center gap-3 mb-6">
+                                <FiCheckCircle className="text-emerald-500 text-xl" />
+                                <h4 className="text-[11px] font-mono font-bold tracking-[0.2em] text-lp-text uppercase">Submission Locked</h4>
+                              </div>
+                              
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                                <div className="space-y-4">
+                                  <div className="flex flex-col gap-1">
+                                    <span className="text-[11px] text-lp-text3 font-medium uppercase tracking-widest">Grading Status</span>
+                                    {submission.grade > 0 ? (
+                                      <span className="text-3xl font-bold text-lp-text">{submission.grade}<span className="text-lp-text3 text-sm font-light">/100</span></span>
+                                    ) : (
+                                      <span className="text-[13px] text-lp-text2 italic font-light italic">Waiting for feedback...</span>
+                                    )}
+                                  </div>
+                                  <div className="flex flex-col gap-1">
+                                    <span className="text-[11px] text-lp-text3 font-medium uppercase tracking-widest">Locked Date</span>
+                                    <span className="text-[14px] text-lp-text font-normal">{new Date(submission.created_at).toLocaleDateString('id-ID')}</span>
+                                  </div>
+                                </div>
+                                
+                                {submission.file_url && (
+                                   <div className="flex flex-col justify-end items-start sm:items-end">
+                                      <a 
+                                        href={resolveBackendAssetUrl(submission.file_url)}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-2 text-[13px] font-bold text-lp-atext hover:underline group"
+                                      >
+                                        Inspect Submitted Asset <FiChevronRight className="group-hover:translate-x-1 transition-transform" />
+                                      </a>
+                                   </div>
+                                )}
+                              </div>
+                            </motion.div>
                           )}
                         </div>
                         
                         <button
                           onClick={() => openSubmitModal(tugas)}
-                          className="
-                            flex items-center space-x-2 bg-lp-green text-white
-                            py-3 px-6 rounded-xl hover:bg-lp-green
-                            transform hover:scale-105 transition-all duration-300
-                            shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl w-full lg:w-auto justify-center
-                          "
+                          className={`
+                            px-10 py-5 rounded-full text-[13px] font-bold tracking-[0.1em] uppercase transition-all duration-500 shadow-lg shrink-0
+                            ${submission 
+                              ? 'bg-lp-surface text-lp-text border border-lp-border hover:bg-lp-text hover:text-white' 
+                              : 'bg-lp-text text-lp-bg hover:bg-lp-atext hover:-translate-y-1'
+                            }
+                          `}
                         >
-                          <FaUpload />
-                          <span>{submission ? 'Edit Tugas' : 'Kumpulkan Tugas'}</span>
+                          {submission ? 'Revise Submission' : 'Submit Progress →'}
                         </button>
                       </div>
-                    </div>
+                    </motion.div>
                   )
                 })
               ) : (
-                <div className="bg-lp-surface rounded-2xl p-8 text-center shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border border border-lp-border border">
-                  <div className="text-6xl mb-4">📝</div>
-                  <h3 className="text-xl font-semibold text-lp-text font-semibold tracking-tight mb-2">Belum ada tugas</h3>
-                  <p className="text-lp-text2 font-light">Tugas untuk pertemuan ini belum dibuat oleh dosen.</p>
+                <div className="py-24 text-center bg-lp-surface/30 border-2 border-dashed border-lp-border rounded-[3rem]">
+                   <FiAlertCircle className="text-5xl text-lp-text/10 mx-auto mb-6" />
+                   <h3 className="text-xl font-normal text-lp-text tracking-tight mb-2 italic">Belum Ada Tugas Tersedia</h3>
+                   <p className="text-[13px] text-lp-text3 font-light">Monitor kanal ini secara berkala untuk pembaruan tugas dari dosen.</p>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Submit Modal */}
-          {showSubmitModal && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-              <div className="bg-lp-surface rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-                <h3 className="text-xl font-bold text-lp-text font-semibold tracking-tight mb-4">
-                  {submissionStatus[selectedTugas?.id] ? 'Edit' : 'Kumpulkan'} Tugas: {selectedTugas?.title}
-                </h3>
-                
-                <form onSubmit={handleSubmitTugas} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-lp-text2 mb-2">
-                      Jawaban Text (Optional)
-                    </label>
-                    <textarea
-                      value={formData.answer_text}
-                      onChange={(e) => setFormData(prev => ({ ...prev, answer_text: e.target.value }))}
-                      className="
-                        w-full border border-lp-border border rounded-xl p-4
-                        focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
-                        transition-all duration-300 resize-none
-                      "
-                      rows="6"
-                      placeholder="Tulis jawaban tugas disini..."
-                    />
+          {/* Submission Portal Modal */}
+          <AnimatePresence>
+            {showSubmitModal && (
+              <div className="fixed inset-0 bg-lp-text/20 backdrop-blur-md flex items-center justify-center p-4 z-50 overflow-y-auto">
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                  className="bg-white border border-lp-border rounded-[3rem] p-8 md:p-14 w-full max-w-3xl my-auto shadow-[0_64px_128px_rgba(0,0,0,0.12)] relative overflow-hidden"
+                >
+                  {/* Decorative element */}
+                  <div className="absolute top-0 right-0 w-48 h-48 bg-lp-accent/5 blur-[60px] rounded-full translate-x-1/2 -translate-y-1/2" />
+                  
+                  <div className="absolute top-10 right-10 z-10">
+                     <button 
+                       onClick={() => setShowSubmitModal(false)} 
+                       className="w-12 h-12 rounded-full bg-lp-surface border border-lp-border flex items-center justify-center text-lp-text hover:bg-lp-text hover:text-white transition-all duration-500 shadow-sm"
+                     >
+                       <FiXCircle className="text-xl" />
+                     </button>
+                  </div>
+
+                  <div className="mb-12 relative z-10">
+                    <span className="text-[11px] font-mono font-bold tracking-[0.2em] uppercase text-lp-text3 mb-4 block">
+                       {submissionStatus[selectedTugas?.id] ? 'REVISION PORTAL' : 'STUDENT SUBMISSION'}
+                    </span>
+                    <h3 className="text-3xl md:text-5xl font-light text-lp-text tracking-tight leading-none italic mb-4">
+                      {selectedTugas?.title}
+                    </h3>
+                    <p className="text-lp-text2 font-light text-[15px]">Kumpulkan jawaban terbaik Anda untuk evaluasi ini.</p>
                   </div>
                   
-                  <div>
-                    <label className="block text-sm font-medium text-lp-text2 mb-2">
-                      Upload File (Optional)
-                    </label>
-                    <input
-                      type="file"
-                      onChange={handleFileChange}
-                      className="
-                        w-full border border-lp-border border rounded-xl p-3
-                        focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
-                        transition-all duration-300
-                      "
-                      accept=".pdf,.doc,.docx,.zip,.jpg,.jpeg,.png"
-                    />
-                    <p className="text-sm text-lp-text3 font-light mt-2">
-                      Format yang didukung: PDF, DOC, DOCX, ZIP, JPG, JPEG, PNG
-                    </p>
-                    {submissionStatus[selectedTugas?.id]?.file_url && (
-                      <p className="text-sm text-lp-atext mt-2">
-                        File sebelumnya: 
-                        <a 
-                          href={resolveBackendAssetUrl(submissionStatus[selectedTugas?.id].file_url)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="ml-1 hover:underline"
-                        >
-                          Lihat File
-                        </a>
-                      </p>
-                    )}
-                  </div>
-                  
-                  <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4 pt-4">
-                    <button
-                      type="button"
-                      onClick={() => setShowSubmitModal(false)}
-                      className="
-                        px-6 py-3 border border-lp-border border text-lp-text2 
-                        rounded-xl font-semibold hover:bg-lp-bg 
-                        transition-all duration-300 flex-1
-                      "
-                    >
-                      Batal
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={submitting || (!formData.answer_text && !formData.file)}
-                      className="
-                        bg-lp-green text-white px-6 py-3 rounded-xl 
-                        font-semibold hover:bg-lp-green transform hover:scale-105
-                        disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none
-                        transition-all duration-300 flex-1
-                      "
-                    >
-                      {submitting ? 'Mengumpulkan...' : (submissionStatus[selectedTugas?.id] ? 'Update Tugas' : 'Kumpulkan Tugas')}
-                    </button>
-                  </div>
-                </form>
+                  <form onSubmit={handleSubmitTugas} className="space-y-10 relative z-10">
+                    <div className="space-y-8">
+                      <div>
+                        <label className="block text-[11px] font-mono font-bold text-lp-text3 mb-4 tracking-widest uppercase">
+                          Narrative Answer <span className="font-sans lowercase opacity-50 font-normal italic ml-1">(Optional)</span>
+                        </label>
+                        <textarea
+                          value={formData.answer_text}
+                          onChange={(e) => setFormData(prev => ({ ...prev, answer_text: e.target.value }))}
+                          className="w-full bg-lp-surface border border-lp-border rounded-[2rem] p-8 text-lp-text text-[16px] font-light leading-relaxed focus:outline-none focus:ring-4 focus:ring-lp-accent/5 focus:border-lp-text transition-all duration-700 resize-none placeholder:text-lp-text3/50"
+                          rows="6"
+                          placeholder="Interpretasi atau narasi jawaban Anda..."
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-[11px] font-mono font-bold text-lp-text3 mb-4 tracking-widest uppercase">
+                          Asset Attachment <span className="font-sans lowercase opacity-50 font-normal italic ml-1">(Optional)</span>
+                        </label>
+                        
+                        <div className="relative group">
+                          <input
+                            type="file"
+                            id="file-upload"
+                            onChange={handleFileChange}
+                            className="hidden"
+                          />
+                          <label 
+                            htmlFor="file-upload"
+                            className={`
+                              relative flex flex-col items-center justify-center w-full min-h-[220px] 
+                              p-10 border-2 border-dashed rounded-[2.5rem] cursor-pointer
+                              transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]
+                              ${formData.file 
+                                ? 'border-emerald-500 bg-emerald-50/20' 
+                                : 'border-lp-border bg-lp-surface hover:border-lp-text hover:bg-lp-bg group'
+                              }
+                            `}
+                          >
+                             <div className="flex flex-col items-center text-center">
+                                <div className={`
+                                  w-16 h-16 rounded-[1.5rem] flex items-center justify-center mb-6 shadow-sm transition-transform duration-500 group-hover:scale-110
+                                  ${formData.file ? 'bg-emerald-500 text-white shadow-emerald-200' : 'bg-white border border-lp-border text-lp-text3'}
+                                `}>
+                                  {formData.file ? <FiCheckCircle className="text-2xl" /> : <FiUpload className="text-2xl" />}
+                                </div>
+                                
+                                {formData.file ? (
+                                  <>
+                                    <p className="text-[18px] font-normal text-lp-text mb-1 tracking-tight italic">Asset Captured Successfully</p>
+                                    <p className="text-[13px] text-lp-text2 font-mono uppercase tracking-wider">{formData.file.name}</p>
+                                  </>
+                                ) : (
+                                  <>
+                                    <p className="text-[18px] font-normal text-lp-text mb-1 tracking-tight">Drop file here or <em className="italic underline">browse</em>.</p>
+                                    <p className="text-[11px] text-lp-text3 font-medium uppercase tracking-[0.2em] mt-3 opacity-60">PDF · ZIP · PNG · DOC</p>
+                                  </>
+                                )}
+                             </div>
+                          </label>
+                        </div>
+
+                        {submissionStatus[selectedTugas?.id]?.file_url && (
+                          <motion.div 
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="mt-6 flex items-center gap-4 px-6 py-4 bg-lp-bg border border-lp-border rounded-2xl w-fit"
+                          >
+                            <span className="text-[11px] font-mono font-bold text-lp-text3 uppercase">Previous Upload:</span>
+                            <a 
+                              href={resolveBackendAssetUrl(submissionStatus[selectedTugas?.id].file_url)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[13px] text-lp-atext font-bold hover:underline flex items-center gap-2"
+                            >
+                              <FiDownload className="text-xs" /> Inspect Data
+                            </a>
+                          </motion.div>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-16 pt-10 border-t border-lp-border">
+                      <button
+                        type="button"
+                        onClick={() => setShowSubmitModal(false)}
+                        className="px-8 py-5 border border-lp-border text-lp-text2 rounded-full text-[13px] font-bold hover:bg-lp-surface transition-all duration-300 uppercase tracking-widest"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={submitting || (!formData.answer_text && !formData.file)}
+                        className="bg-lp-text text-lp-bg px-8 py-5 rounded-full text-[13px] font-bold hover:bg-lp-atext hover:-translate-y-1 disabled:opacity-40 transition-all duration-500 uppercase tracking-widest flex items-center justify-center gap-3 shadow-[0_12px_24px_rgba(0,0,0,0.1)]"
+                      >
+                        {submitting ? (
+                          <>
+                            <div className="w-4 h-4 border-2 border-lp-bg/30 border-t-lp-bg rounded-full animate-spin"></div>
+                            <span>ENCRYPTING...</span>
+                          </>
+                        ) : (
+                          <span>{submissionStatus[selectedTugas?.id] ? 'RE-UPLOAD NOW' : 'LOCK SUBMISSION'}</span>
+                        )}
+                      </button>
+                    </div>
+                  </form>
+                </motion.div>
               </div>
-            </div>
-          )}
+            )}
+          </AnimatePresence>
         </main>
       </div>
     </div>

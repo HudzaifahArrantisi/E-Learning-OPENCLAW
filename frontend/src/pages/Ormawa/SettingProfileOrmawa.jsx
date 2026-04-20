@@ -207,230 +207,240 @@ const SettingProfileOrmawa = () => {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
+    <div className="flex min-h-screen bg-lp-bg font-sans">
       <Sidebar role="ormawa" />
-      <div className="flex-1 max-w-2xl mx-auto pb-20">
+      <div className="flex-1 relative overflow-hidden">
         <Navbar user={user} />
         
-        <div className="p-6">
-          <h1 className="text-2xl font-bold mb-2">Pengaturan Profile Ormawa</h1>
-          <p className="text-lp-text2 font-light mb-6">Kelola informasi profile Ormawa Anda</p>
+        {/* Background Decorative Element */}
+        <div className="absolute top-[-10%] right-[-5%] w-[40%] h-[40%] bg-lp-surface rounded-full blur-[120px] opacity-50 pointer-events-none z-0"></div>
 
-          {/* Save Message */}
-          {saveMessage && (
-            <div className={`mb-4 p-3 rounded-lg ${
-              saveMessage.includes('Error') 
-                ? 'bg-red-100 border border-red-400 text-red-700'
-                : 'bg-green-100 border border-green-400 text-green-700'
-            }`}>
-              {saveMessage}
-            </div>
-          )}
+        <div className="max-w-4xl mx-auto p-6 sm:p-10 relative z-10">
+          {/* Header */}
+          <motion.div 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-12"
+          >
+            <span className="text-[11px] font-mono font-medium tracking-[0.2em] uppercase text-lp-text3 mb-3 block">MANAGEMENT CONSOLE</span>
+            <h1 className="text-4xl md:text-5xl font-light text-lp-text tracking-tight mb-3">Pengaturan Profile Ormawa</h1>
+            <p className="text-lg text-lp-text2 font-light">Konfigurasi representasi digital organisasi Anda.</p>
+          </motion.div>
 
-          {/* Preview Card */}
-          <div className="mb-6 bg-lp-surface rounded-lg shadow-sm border p-4">
-            <h3 className="font-bold mb-3">Preview Profile:</h3>
-            <div className="flex items-center space-x-4">
-              <div className="w-16 h-16 rounded-full bg-lp-bg flex items-center justify-center text-white text-xl font-bold">
-                {previewImage ? (
-                  <img src={previewImage} alt="Preview" className="w-16 h-16 rounded-full object-cover" />
-                ) : (
-                  formData.name?.[0]?.toUpperCase() || 'O'
-                )}
-              </div>
-              <div>
-                <div className="font-bold">{formData.name || 'Nama Ormawa'}</div>
-                <div className="text-sm text-lp-text3 font-light">@{formData.username || 'username'}</div>
-                <div className="text-xs text-gray-400">
-                  Akan terlihat di: {window.location.origin}/profile/ormawa/{formData.username || 'username'}
+          {/* Alert Messages */}
+          <AnimatePresence>
+            {saveMessage && (
+              <motion.div 
+                initial={{ opacity: 0, height: 0, mb: 0 }}
+                animate={{ opacity: 1, height: 'auto', mb: 24 }}
+                exit={{ opacity: 0, height: 0, mb: 0 }}
+                className={`overflow-hidden`}
+              >
+                <div className={`p-5 rounded-2xl border flex items-center gap-4 ${
+                  saveMessage.includes('Error') 
+                    ? 'bg-red-50/50 border-red-100 text-red-800'
+                    : 'bg-lp-surface border-lp-border text-lp-text'
+                }`}>
+                  <div className={`w-2 h-2 rounded-full ${saveMessage.includes('Error') ? 'bg-red-500' : 'bg-lp-text'}`}></div>
+                  <p className="text-[13px] font-bold tracking-wider uppercase">{saveMessage}</p>
                 </div>
-              </div>
-            </div>
-          </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-          <form onSubmit={handleSubmit} className="bg-lp-surface rounded-lg shadow-sm border p-6">
-            <div className="space-y-6">
-              {/* Profile Picture */}
-              <div className="flex items-center space-x-6">
-                <div className="relative">
-                  {previewImage ? (
-                    <img 
-                      src={previewImage} 
-                      alt="Profile preview" 
-                      className="w-24 h-24 rounded-full object-cover border-2 border-purple-500"
-                    />
-                  ) : (
-                    <div className="w-24 h-24 rounded-full bg-lp-bg flex items-center justify-center text-white text-2xl font-bold">
-                      {formData.name?.[0]?.toUpperCase() || 'O'}
-                    </div>
-                  )}
-                </div>
-                <div>
-                  <input
-                    type="file"
-                    id="profile-picture"
-                    accept="image/jpeg,image/png,image/jpg"
-                    onChange={handleFileChange}
-                    className="hidden"
-                  />
-                  <label 
-                    htmlFor="profile-picture" 
-                    className="bg-lp-accent text-white px-4 py-2 rounded-lg hover:bg-lp-atext cursor-pointer inline-block"
-                  >
-                    Ubah Foto Profile
-                  </label>
-                  <p className="text-sm text-lp-text3 font-light mt-2">Format: JPG, PNG. Maksimal 2MB</p>
-                </div>
-              </div>
-
-              {/* Form Fields */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-lp-text2 mb-2">
-                    Nama Ormawa *
-                  </label>
-                  <input
-                    type="text"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleChange}
-                    className="w-full border border-lp-border border rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    required
-                    placeholder="Contoh: BEM Fakultas"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-lp-text2 mb-2">
-                    Username *
-                  </label>
-                  <input
-                    type="text"
-                    name="username"
-                    value={formData.username}
-                    onChange={handleChange}
-                    className="w-full border border-lp-border border rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    required
-                    placeholder="bemfakultas"
-                  />
-                  <p className="text-xs text-lp-text3 font-light mt-1">
-                    URL: {window.location.origin}/profile/ormawa/{formData.username || 'username'}
-                  </p>
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-lp-text2 mb-2">
-                    Email *
-                  </label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    className="w-full border border-lp-border border rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    required
-                  />
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-lp-text2 mb-2">
-                    Bio
-                  </label>
-                  <textarea
-                    name="bio"
-                    value={formData.bio}
-                    onChange={handleChange}
-                    rows="3"
-                    className="w-full border border-lp-border border rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Deskripsikan Ormawa Anda..."
-                    maxLength="150"
-                  />
-                  <p className="text-xs text-lp-text3 font-light text-right mt-1">
-                    {formData.bio?.length || 0}/150 karakter
-                  </p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-lp-text2 mb-2">
-                    Website
-                  </label>
-                  <input
-                    type="url"
-                    name="website"
-                    value={formData.website}
-                    onChange={handleChange}
-                    className="w-full border border-lp-border border rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="https://example.com"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-lp-text2 mb-2">
-                    Telepon
-                  </label>
-                  <input
-                    type="tel"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleChange}
-                    className="w-full border border-lp-border border rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="+62 812-3456-7890"
-                  />
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex justify-between items-center pt-6 border-t">
-                <div className="text-sm text-lp-text3 font-light">
-                  Terakhir update: {localProfile?.updated_at ? new Date(localProfile.updated_at).toLocaleString('id-ID') : 'Belum pernah'}
-                </div>
-                <div className="flex space-x-4">
-                  <button
-                    type="button"
-                    onClick={() => window.history.back()}
-                    className="px-6 py-3 border border-lp-border border rounded-lg text-lp-text2 hover:bg-lp-bg"
-                    disabled={isSubmitting}
-                  >
-                    Batal
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="bg-lp-accent text-white px-6 py-3 rounded-lg hover:bg-lp-atext disabled:opacity-50 flex items-center"
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        Menyimpan...
-                      </>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            {/* Left Column: Preview Card */}
+            <motion.div 
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.1 }}
+              className="lg:col-span-4 lg:sticky lg:top-24"
+            >
+              <div className="bg-white border border-lp-border rounded-[2.5rem] p-8 shadow-[0_32px_64px_rgba(0,0,0,0.03)] text-center">
+                <div className="relative inline-block mb-6">
+                  <div className="w-32 h-32 rounded-full bg-lp-surface border border-lp-border p-1">
+                    {previewImage ? (
+                      <img src={previewImage} alt="Preview" className="w-full h-full rounded-full object-cover grayscale-[0.2]" />
                     ) : (
-                      'Simpan Perubahan'
+                      <div className="w-full h-full rounded-full bg-lp-bg flex items-center justify-center text-white text-3xl font-light" style={{ backgroundColor: 'black' }}>
+                        {formData.name?.[0]?.toUpperCase() || 'O'}
+                      </div>
                     )}
-                  </button>
+                  </div>
+                  <div className="absolute bottom-0 right-0 w-8 h-8 bg-lp-text text-white rounded-full flex items-center justify-center border-4 border-white">
+                    <span className="text-[10px] font-bold italic">PRO</span>
+                  </div>
+                </div>
+                
+                <h3 className="text-2xl font-normal text-lp-text tracking-tight truncate">{formData.name || 'Nama Ormawa'}</h3>
+                <p className="text-lp-text3 font-mono text-[11px] mb-8 mt-1 tracking-widest uppercase">@{formData.username || 'username'}</p>
+                
+                <div className="space-y-3 pt-8 border-t border-lp-border">
+                  <a
+                    href={`/profile/ormawa/${formData.username || 'username'}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block w-full py-4 bg-lp-text text-white rounded-full text-[12px] font-bold tracking-[0.15em] uppercase hover:bg-lp-atext transition-all"
+                  >
+                    View Public Profile
+                  </a>
                 </div>
               </div>
-            </div>
-          </form>
+            </motion.div>
 
-          {/* Quick Actions */}
-          <div className="mt-6 grid grid-cols-2 gap-4">
-            <a
-              href={`/profile/ormawa/${formData.username || 'username'}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-lp-green text-white py-3 px-4 rounded-lg text-center hover:bg-[rgb(21,128,61)]"
+            {/* Right Column: Settings Form */}
+            <motion.div 
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2 }}
+              className="lg:col-span-8"
             >
-              👀 Lihat Profile Publik
-            </a>
-            <a
-              href="/ormawa/akun"
-              className="bg-purple-600 text-white py-3 px-4 rounded-lg text-center hover:bg-purple-700"
-            >
-              📱 Lihat Akun Saya
-            </a>
+              <form onSubmit={handleSubmit} className="bg-white border border-lp-border rounded-[2.5rem] p-10 shadow-[0_32px_64px_rgba(0,0,0,0.03)]">
+                <div className="space-y-10">
+                  {/* Avatar Upload */}
+                  <div>
+                    <label className="block text-[11px] font-mono font-medium tracking-[0.2em] uppercase text-lp-text3 mb-5">PROFILE IMAGE</label>
+                    <div className="flex flex-col sm:flex-row items-center gap-10">
+                      <div className="w-24 h-24 rounded-full bg-lp-surface border border-lp-border overflow-hidden">
+                        {previewImage ? (
+                          <img src={previewImage} alt="Avatar" className="w-full h-full object-cover grayscale-[0.2]" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-lp-text text-2xl font-light">
+                             {formData.name?.[0]?.toUpperCase() || 'O'}
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 text-center sm:text-left">
+                        <input
+                          type="file"
+                          id="profile-picture"
+                          accept="image/*"
+                          onChange={handleFileChange}
+                          className="hidden"
+                        />
+                        <label 
+                          htmlFor="profile-picture" 
+                          className="inline-flex items-center gap-3 px-8 py-4 bg-lp-surface border border-lp-border text-lp-text rounded-full text-[12px] font-bold tracking-[0.15em] uppercase hover:bg-lp-bg cursor-pointer transition-all mb-4"
+                        >
+                          Upload New Photo
+                        </label>
+                        <p className="text-[11px] text-lp-text3 font-medium tracking-[0.05em] uppercase opacity-60">Minimal 400x400px · PNG or JPG · Max 2MB</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-10">
+                    <div className="group">
+                      <label className="block text-[11px] font-mono font-medium tracking-[0.2em] uppercase text-lp-text3 mb-3">NAME *</label>
+                      <input
+                        type="text"
+                        name="name"
+                        value={formData.name}
+                        onChange={handleChange}
+                        className="w-full bg-lp-surface border border-lp-border rounded-xl p-4 text-lp-text text-[15px] font-normal focus:outline-none focus:border-lp-text transition-all"
+                        required
+                        placeholder="BEM Fakultas Computer Science"
+                      />
+                    </div>
+
+                    <div className="group">
+                      <label className="block text-[11px] font-mono font-medium tracking-[0.2em] uppercase text-lp-text3 mb-3">USERNAME *</label>
+                      <input
+                        type="text"
+                        name="username"
+                        value={formData.username}
+                        onChange={handleChange}
+                        className="w-full bg-lp-surface border border-lp-border rounded-xl p-4 text-lp-text text-[15px] font-normal focus:outline-none focus:border-lp-text transition-all"
+                        required
+                        placeholder="bem_cs"
+                      />
+                    </div>
+
+                    <div className="md:col-span-2 group">
+                      <label className="block text-[11px] font-mono font-medium tracking-[0.2em] uppercase text-lp-text3 mb-3">EMAIL ADDRESS *</label>
+                      <input
+                        type="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleChange}
+                        className="w-full bg-lp-surface border border-lp-border rounded-xl p-4 text-lp-text text-[15px] font-normal focus:outline-none focus:border-lp-text transition-all"
+                        required
+                      />
+                    </div>
+
+                    <div className="md:col-span-2 group">
+                      <label className="block text-[11px] font-mono font-medium tracking-[0.2em] uppercase text-lp-text3 mb-3">ABOUT / BIO</label>
+                      <textarea
+                        name="bio"
+                        value={formData.bio}
+                        onChange={handleChange}
+                        rows="4"
+                        className="w-full bg-lp-surface border border-lp-border rounded-xl p-4 text-lp-text text-[15px] font-normal focus:outline-none focus:border-lp-text transition-all resize-none"
+                        placeholder="Short presentation of your organization..."
+                        maxLength="150"
+                      />
+                      <div className="text-right mt-2">
+                        <span className="text-[10px] font-mono text-lp-text3 tracking-widest uppercase opacity-60">
+                          {formData.bio?.length || 0} / 150
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="group">
+                      <label className="block text-[11px] font-mono font-medium tracking-[0.2em] uppercase text-lp-text3 mb-3">WEBSITE</label>
+                      <input
+                        type="url"
+                        name="website"
+                        value={formData.website}
+                        onChange={handleChange}
+                        className="w-full bg-lp-surface border border-lp-border rounded-xl p-4 text-lp-text text-[15px] font-normal focus:outline-none focus:border-lp-text transition-all"
+                        placeholder="https://bem.ac.id"
+                      />
+                    </div>
+
+                    <div className="group">
+                      <label className="block text-[11px] font-mono font-medium tracking-[0.2em] uppercase text-lp-text3 mb-3">PHONE CONTACT</label>
+                      <input
+                        type="tel"
+                        name="phone"
+                        value={formData.phone}
+                        onChange={handleChange}
+                        className="w-full bg-lp-surface border border-lp-border rounded-xl p-4 text-lp-text text-[15px] font-normal focus:outline-none focus:border-lp-text transition-all"
+                        placeholder="+62 800 000 000"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Submission Group */}
+                  <div className="flex flex-col sm:flex-row justify-between items-center gap-6 pt-10 border-t border-lp-border">
+                    <p className="text-[10px] font-mono text-lp-text3 tracking-[0.15em] uppercase opacity-40 order-2 sm:order-1">
+                      Last update: {localProfile?.updated_at ? new Date(localProfile.updated_at).toLocaleString('en-US', { dateStyle: 'medium'}) : 'Never'}
+                    </p>
+                    <div className="flex items-center gap-4 w-full sm:w-auto order-1 sm:order-2">
+                      <button
+                        type="button"
+                        onClick={() => window.history.back()}
+                        className="flex-1 sm:flex-none px-10 py-4 border border-lp-border text-lp-text2 rounded-full text-[12px] font-bold tracking-[0.15em] uppercase hover:bg-lp-surface transition-all"
+                        disabled={isSubmitting}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={isSubmitting}
+                        className="flex-1 sm:flex-none bg-lp-text text-white px-10 py-4 rounded-full text-[12px] font-bold tracking-[0.15em] uppercase hover:bg-lp-atext disabled:opacity-40 transition-all flex items-center justify-center gap-3 shadow-[0_12px_24px_rgba(0,0,0,0.1)]"
+                      >
+                        {isSubmitting ? (
+                          <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                        ) : (
+                          'Commit Changes'
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </form>
+            </motion.div>
           </div>
         </div>
       </div>

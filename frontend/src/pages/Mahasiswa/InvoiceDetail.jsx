@@ -83,11 +83,11 @@ const InvoiceDetail = () => {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'success': return 'bg-green-100 text-green-800 border-green-200'
-      case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-200'
-      case 'failed': return 'bg-gray-100 text-lp-text font-semibold tracking-tight border-lp-border border'
-      case 'expired': return 'bg-red-100 text-red-800 border-red-200'
-      default: return 'bg-gray-100 text-lp-text font-semibold tracking-tight border-lp-border border'
+      case 'success': return 'bg-lp-surface text-lp-text border-lp-border'
+      case 'pending': return 'bg-lp-surface text-lp-text border-lp-border'
+      case 'failed': return 'bg-lp-surface text-lp-text border-lp-border'
+      case 'expired': return 'bg-lp-surface text-lp-text border-lp-border'
+      default: return 'bg-lp-surface text-lp-text border-lp-border'
     }
   }
 
@@ -111,7 +111,7 @@ const InvoiceDetail = () => {
   if (isLoading) return (
     <div className="flex h-screen items-center justify-center">
       <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-lp-text mx-auto mb-4"></div>
         <p className="text-lp-text2 font-light">Loading invoice...</p>
       </div>
     </div>
@@ -125,7 +125,7 @@ const InvoiceDetail = () => {
         <p className="text-lp-text2 font-light mb-4">Invoice tidak ditemukan atau terjadi kesalahan</p>
         <button
           onClick={() => navigate('/mahasiswa/pembayaran-ukt')}
-          className="bg-lp-accent text-white px-4 py-2 rounded-lg hover:bg-lp-accent"
+          className="bg-lp-text text-white px-4 py-2 rounded-lg hover:bg-lp-atext"
         >
           Kembali ke Pembayaran
         </button>
@@ -143,7 +143,7 @@ const InvoiceDetail = () => {
           <div className="mb-6">
             <button
               onClick={() => navigate('/mahasiswa/pembayaran-ukt')}
-              className="flex items-center text-lp-atext hover:text-blue-800 mb-4"
+              className="flex items-center text-lp-text2 hover:text-lp-text mb-4"
             >
               <FaArrowLeft className="mr-2" />
               Kembali ke Pembayaran UKT
@@ -155,13 +155,13 @@ const InvoiceDetail = () => {
           {invoice ? (
             <div className="max-w-4xl mx-auto">
               {/* Invoice Card */}
-              <div className="bg-lp-surface rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border border border-lp-border border overflow-hidden">
+              <div className="bg-white rounded-2xl border border-lp-border overflow-hidden">
                 {/* Header */}
-                <div className="bg-lp-bg p-6">
+                <div className="bg-lp-surface p-6 border-b border-lp-border">
                   <div className="flex justify-between items-center">
                     <div>
-                      <h2 className="text-2xl font-bold text-white">Invoice #{uuid.substring(0, 8).toUpperCase()}</h2>
-                      <p className="text-blue-100">NFS Student Hub - Pembayaran UKT</p>
+                      <h2 className="text-2xl font-bold text-lp-text">Invoice #{uuid.substring(0, 8).toUpperCase()}</h2>
+                      <p className="text-lp-text2">NFS Student Hub - Pembayaran UKT</p>
                     </div>
                     <div className={`flex items-center space-x-2 px-4 py-2 rounded-full ${getStatusColor(invoice.status)} text-lg font-medium`}>
                       {getStatusIcon(invoice.status)}
@@ -194,9 +194,9 @@ const InvoiceDetail = () => {
                       </div>
                     </div>
 
-                    <div className="bg-lp-bg p-5 rounded-lg border border-blue-200">
+                    <div className="bg-lp-surface p-5 rounded-lg border border-lp-border">
                       <h3 className="font-bold text-lp-text font-semibold tracking-tight mb-4 flex items-center">
-                        <FaCalculator className="mr-2 text-lp-atext" />
+                        <FaCalculator className="mr-2 text-lp-text2" />
                         Rincian Pembayaran
                       </h3>
                       <div className="space-y-3">
@@ -206,12 +206,12 @@ const InvoiceDetail = () => {
                         </div>
                         <div className="flex justify-between items-center">
                           <span className="text-lp-text2 font-light">Biaya Admin</span>
-                          <span className="font-medium text-yellow-600">{formatRupiah(invoice.biaya_admin)}</span>
+                          <span className="font-medium">{formatRupiah(invoice.biaya_admin)}</span>
                         </div>
-                        <div className="pt-3 border-t border-blue-200">
+                        <div className="pt-3 border-t border-lp-border">
                           <div className="flex justify-between items-center">
                             <span className="text-lp-text font-semibold tracking-tight font-bold">Total Bayar</span>
-                            <span className="text-lp-atext font-bold text-lg">{formatRupiah(invoice.total_dibayar)}</span>
+                            <span className="text-lp-text font-bold text-lg">{formatRupiah(invoice.total_dibayar)}</span>
                           </div>
                         </div>
                       </div>
@@ -222,11 +222,11 @@ const InvoiceDetail = () => {
                   {invoice.payment_method === 'qris' && invoice.status === 'pending' && !invoice.is_expired && (
                     <div className="mb-8">
                       <div className="flex items-center mb-4">
-                        <FaQrcode className="text-lp-green text-xl mr-2" />
+                        <FaQrcode className="text-lp-text2 text-xl mr-2" />
                         <h3 className="text-xl font-bold text-lp-text font-semibold tracking-tight">QRIS Pembayaran</h3>
                       </div>
                       <div className="flex flex-col lg:flex-row items-center gap-8">
-                        <div className="bg-lp-surface p-6 rounded-xl border-2 border-green-200 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border">
+                        <div className="bg-lp-surface p-6 rounded-xl border border-lp-border">
                           {invoice.qrcode ? (
                             <QRCode
                               value={invoice.qrcode}
@@ -240,20 +240,20 @@ const InvoiceDetail = () => {
                           )}
                         </div>
                         <div className="flex-1">
-                          <div className="bg-green-50 border border-green-200 rounded-xl p-5">
-                            <h4 className="font-bold text-green-800 mb-3">Instruksi Pembayaran:</h4>
+                          <div className="bg-lp-surface border border-lp-border rounded-xl p-5">
+                            <h4 className="font-bold text-lp-text mb-3">Instruksi Pembayaran:</h4>
                             <ol className="space-y-3">
                               {invoice.instructions?.map((instruction, index) => (
                                 <li key={index} className="flex items-start">
-                                  <span className="bg-green-100 text-green-800 rounded-full w-6 h-6 flex items-center justify-center text-sm mr-3 flex-shrink-0">
+                                  <span className="bg-lp-bg text-lp-text rounded-full w-6 h-6 flex items-center justify-center text-sm mr-3 flex-shrink-0 border border-lp-border">
                                     {index + 1}
                                   </span>
-                                  <span className="text-green-700">{instruction}</span>
+                                  <span className="text-lp-text2">{instruction}</span>
                                 </li>
                               ))}
                             </ol>
-                            <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-                              <p className="text-sm text-blue-700 flex items-center">
+                            <div className="mt-4 p-3 bg-lp-bg rounded-lg border border-lp-border">
+                              <p className="text-sm text-lp-text2 flex items-center">
                                 <FaInfoCircle className="mr-2 flex-shrink-0" />
                                 QRIS ini berasal dari Pakasir.com dan kompatibel dengan semua e-wallet dan mobile banking.
                               </p>
@@ -264,7 +264,7 @@ const InvoiceDetail = () => {
                                   href={invoice.payment_url}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="inline-flex items-center space-x-2 bg-lp-green text-white px-4 py-2 rounded-lg hover:bg-lp-green transition-colors"
+                                  className="inline-flex items-center space-x-2 bg-lp-text text-white px-4 py-2 rounded-lg hover:bg-lp-atext transition-colors"
                                 >
                                   <FaExternalLinkAlt />
                                   <span>Buka Halaman Pembayaran Pakasir</span>
@@ -281,16 +281,16 @@ const InvoiceDetail = () => {
                   {invoice.payment_method !== 'qris' && invoice.status === 'pending' && !invoice.is_expired && (
                     <div className="mb-8">
                       <div className="flex items-center mb-4">
-                        <FaBuilding className="text-lp-atext text-xl mr-2" />
+                        <FaBuilding className="text-lp-text2 text-xl mr-2" />
                         <h3 className="text-xl font-bold text-lp-text font-semibold tracking-tight">Transfer Bank</h3>
                       </div>
-                      <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
+                      <div className="bg-lp-surface border border-lp-border rounded-xl p-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                          <div className="bg-lp-surface p-4 rounded-lg border border-blue-100">
+                          <div className="bg-white p-4 rounded-lg border border-lp-border">
                             <p className="text-lp-text2 font-light text-sm">Bank</p>
                             <p className="font-bold text-lp-text font-semibold tracking-tight text-lg">{invoice.bank_name || getBankName(invoice.payment_method)}</p>
                           </div>
-                          <div className="bg-lp-surface p-4 rounded-lg border border-blue-100">
+                          <div className="bg-white p-4 rounded-lg border border-lp-border">
                             <p className="text-lp-text2 font-light text-sm">Nomor Virtual Account</p>
                             <div className="flex items-center justify-between">
                               <p className="font-bold text-lp-text font-semibold tracking-tight text-lg font-mono">
@@ -298,24 +298,24 @@ const InvoiceDetail = () => {
                               </p>
                               <button
                                 onClick={() => copyToClipboard(invoice.account_number || '')}
-                                className="text-lp-atext hover:text-blue-800 ml-2"
+                                className="text-lp-text2 hover:text-lp-text ml-2"
                               >
                                 <FaCopy />
                               </button>
                             </div>
                           </div>
-                          <div className="bg-lp-surface p-4 rounded-lg border border-blue-100">
+                          <div className="bg-white p-4 rounded-lg border border-lp-border">
                             <p className="text-lp-text2 font-light text-sm">Nama Penerima</p>
                             <p className="font-bold text-lp-text font-semibold tracking-tight text-lg">Student Hub</p>
                           </div>
-                          <div className="bg-lp-surface p-4 rounded-lg border border-blue-100">
+                          <div className="bg-white p-4 rounded-lg border border-lp-border">
                             <p className="text-lp-text2 font-light text-sm">Total Transfer</p>
-                            <p className="font-bold text-lp-atext text-lg">{formatRupiah(invoice.total_dibayar)}</p>
+                            <p className="font-bold text-lp-text text-lg">{formatRupiah(invoice.total_dibayar)}</p>
                           </div>
                         </div>
-                        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-                          <h4 className="font-bold text-yellow-800 mb-2">Instruksi Transfer:</h4>
-                          <ol className="list-decimal list-inside space-y-2 text-sm text-yellow-700">
+                        <div className="bg-lp-bg border border-lp-border rounded-lg p-4 mb-4">
+                          <h4 className="font-bold text-lp-text mb-2">Instruksi Transfer:</h4>
+                          <ol className="list-decimal list-inside space-y-2 text-sm text-lp-text2">
                             <li>Buka aplikasi mobile banking atau internet banking Anda</li>
                             <li>Pilih menu "Transfer" → "Transfer ke Virtual Account"</li>
                             <li>Masukkan nomor Virtual Account di atas</li>
@@ -331,7 +331,7 @@ const InvoiceDetail = () => {
                               href={invoice.payment_url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center space-x-2 bg-lp-accent text-white px-4 py-2 rounded-lg hover:bg-lp-accent transition-colors"
+                              className="inline-flex items-center space-x-2 bg-lp-text text-white px-4 py-2 rounded-lg hover:bg-lp-atext transition-colors"
                             >
                               <FaExternalLinkAlt />
                               <span>Buka Halaman Pembayaran Pakasir</span>
@@ -344,8 +344,8 @@ const InvoiceDetail = () => {
 
                   {/* Expired Message */}
                   {invoice.is_expired && (
-                    <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
-                      <div className="flex items-center space-x-3 text-red-800">
+                    <div className="mb-6 p-4 bg-lp-bg border border-lp-border rounded-xl">
+                      <div className="flex items-center space-x-3 text-lp-text">
                         <FaExclamationTriangle className="flex-shrink-0 text-xl" />
                         <div>
                           <h4 className="font-bold">Pembayaran Telah Kadaluarsa</h4>
@@ -360,8 +360,8 @@ const InvoiceDetail = () => {
 
                   {/* Success Message */}
                   {invoice.status === 'success' && (
-                    <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl">
-                      <div className="flex items-center space-x-3 text-green-800">
+                    <div className="mb-6 p-4 bg-lp-bg border border-lp-border rounded-xl">
+                      <div className="flex items-center space-x-3 text-lp-text">
                         <FaCheckCircle className="flex-shrink-0 text-xl" />
                         <div>
                           <h4 className="font-bold">Pembayaran Berhasil!</h4>
@@ -388,12 +388,12 @@ const InvoiceDetail = () => {
                   )}
 
                   {/* Note */}
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                  <div className="bg-lp-bg border border-lp-border rounded-lg p-4 mb-6">
                     <div className="flex items-start space-x-3">
-                      <FaShieldAlt className="text-lp-atext text-xl flex-shrink-0 mt-1" />
+                      <FaShieldAlt className="text-lp-text2 text-xl flex-shrink-0 mt-1" />
                       <div>
-                        <h4 className="font-bold text-blue-800 mb-1">Keamanan Transaksi</h4>
-                        <p className="text-sm text-blue-700">
+                        <h4 className="font-bold text-lp-text mb-1">Keamanan Transaksi</h4>
+                        <p className="text-sm text-lp-text2">
                           Transaksi ini diproses melalui Pakasir.com dengan sistem keamanan terenkripsi. 
                           Pastikan Anda membayar sesuai dengan nominal yang tertera di atas.
                         </p>
@@ -408,13 +408,13 @@ const InvoiceDetail = () => {
                       <code className="font-mono text-lp-text font-semibold tracking-tight break-all">{uuid}</code>
                       <button
                         onClick={() => copyToClipboard(uuid)}
-                        className="text-lp-atext hover:text-blue-800 ml-4 flex-shrink-0"
+                        className="text-lp-text2 hover:text-lp-text ml-4 flex-shrink-0"
                         title="Copy to clipboard"
                       >
                         <FaCopy />
                       </button>
                     </div>
-                    {copied && <span className="text-lp-green text-xs mt-1">Disalin!</span>}
+                    {copied && <span className="text-lp-text2 text-xs mt-1">Disalin!</span>}
                   </div>
 
                   {/* Actions */}
@@ -428,7 +428,7 @@ const InvoiceDetail = () => {
                     </button>
                     <button
                       onClick={() => navigate('/mahasiswa/pembayaran-ukt')}
-                      className="flex items-center space-x-2 bg-lp-accent text-white px-4 py-2 rounded-lg hover:bg-lp-accent"
+                      className="flex items-center space-x-2 bg-lp-text text-white px-4 py-2 rounded-lg hover:bg-lp-atext"
                     >
                       <FaArrowLeft />
                       <span>Kembali ke Pembayaran</span>
@@ -436,7 +436,7 @@ const InvoiceDetail = () => {
                     {invoice.status === 'pending' && !invoice.is_expired && (
                       <button
                         onClick={() => refetch()}
-                        className="flex items-center space-x-2 bg-lp-green text-white px-4 py-2 rounded-lg hover:bg-lp-green"
+                        className="flex items-center space-x-2 bg-lp-text text-white px-4 py-2 rounded-lg hover:bg-lp-atext"
                       >
                         <FaSync />
                         <span>Cek Status</span>
@@ -453,7 +453,7 @@ const InvoiceDetail = () => {
               <p className="text-lp-text2 font-light mb-4">Invoice dengan ID tersebut tidak ditemukan</p>
               <button
                 onClick={() => navigate('/mahasiswa/pembayaran-ukt')}
-                className="bg-lp-accent text-white px-4 py-2 rounded-lg hover:bg-lp-accent"
+                className="bg-lp-text text-white px-4 py-2 rounded-lg hover:bg-lp-atext"
               >
                 Kembali ke Pembayaran
               </button>

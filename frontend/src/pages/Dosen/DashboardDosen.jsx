@@ -33,13 +33,13 @@ const DashboardDosen = () => {
 
   const statsComponent = (dashboardStats) => (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
-      <div className="bg-lp-accentS border border-lp-borderA p-5 rounded-2xl transition-all hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] hover:-translate-y-0.5">
-        <div className="text-2xl font-bold text-lp-atext">{stats.matkul_diajar}</div>
+      <div className="bg-lp-textS border border-lp-border p-5 rounded-2xl transition-all hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] hover:-translate-y-0.5">
+        <div className="text-2xl font-bold text-lp-text2">{stats.matkul_diajar}</div>
         <div className="text-[11px] text-lp-text2 font-semibold mt-2">Mata Kuliah</div>
         <div className="text-[10px] text-lp-text3 font-light">Yang diampu</div>
       </div>
-      <div className="bg-lp-green/8 border border-lp-green/15 p-5 rounded-2xl transition-all hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] hover:-translate-y-0.5">
-        <div className="text-2xl font-bold text-lp-green">{stats.mahasiswa_bimbingan}</div>
+      <div className="bg-lp-surface border border-lp-border p-5 rounded-2xl transition-all hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] hover:-translate-y-0.5">
+        <div className="text-2xl font-bold text-lp-text2">{stats.mahasiswa_bimbingan}</div>
         <div className="text-[11px] text-lp-text2 font-semibold mt-2">Mahasiswa</div>
         <div className="text-[10px] text-lp-text3 font-light">Total bimbingan</div>
       </div>

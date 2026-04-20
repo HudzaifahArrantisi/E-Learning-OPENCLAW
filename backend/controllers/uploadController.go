@@ -209,23 +209,23 @@ func UploadFile(c *gin.Context) {
 		visibility = "public"
 	}
 
-	// 11. Compress image if applicable
+	// 11. Optimize file via Python (image/pdf supported, others passthrough)
 	compressedBytes := fileBytes
 	originalSize := int64(len(fileBytes))
 	compressedSize := originalSize
 	compressionRatio := float32(0)
 
-	if strings.HasPrefix(detectedMime, "image/") && uploadType != "document" {
-		compressed, compErr := utils.CompressImage(fileBytes, 1200, 75)
-		if compErr == nil && int64(len(compressed)) < originalSize {
-			compressedBytes = compressed
-			compressedSize = int64(len(compressed))
-			compressionRatio = float32(100.0 - (float64(compressedSize) / float64(originalSize) * 100.0))
-			detectedMime = "image/jpeg"
-			ext = ".jpg"
-			log.Printf("[Upload] Image compressed: %dKB → %dKB (%.1f%% saved)",
-				originalSize/1024, compressedSize/1024, compressionRatio)
-		}
+	optimizedBytes, optimizedMime, optimizedExt, optimized, optimizeErr := utils.OptimizeFileWithPython(fileBytes, detectedMime, ext, 1200, 75)
+	if optimizeErr != nil {
+		log.Printf("[Upload] Python optimizer skipped (%s): %v", fileHeader.Filename, optimizeErr)
+	} else if optimized {
+		compressedBytes = optimizedBytes
+		compressedSize = int64(len(optimizedBytes))
+		compressionRatio = float32(100.0 - (float64(compressedSize) / float64(originalSize) * 100.0))
+		detectedMime = optimizedMime
+		ext = optimizedExt
+		log.Printf("[Upload] File optimized by Python: %dKB → %dKB (%.1f%% saved)",
+			originalSize/1024, compressedSize/1024, compressionRatio)
 	}
 
 	// 12. Insert ke database
@@ -715,21 +715,21 @@ func UploadFileToDB(c *gin.Context, formFieldName string, uploaderID int, upload
 		ext = ".bin"
 	}
 
-	// Compress image if applicable
+	// Optimize file via Python (image/pdf supported, others passthrough)
 	compressedBytes := fileBytes
 	originalSize := int64(len(fileBytes))
 	compressedSize := originalSize
 	compressionRatio := float32(0)
 
-	if strings.HasPrefix(detectedMime, "image/") {
-		compressed, compErr := utils.CompressImage(fileBytes, 1200, 75)
-		if compErr == nil && int64(len(compressed)) < originalSize {
-			compressedBytes = compressed
-			compressedSize = int64(len(compressed))
-			compressionRatio = float32(100.0 - (float64(compressedSize) / float64(originalSize) * 100.0))
-			detectedMime = "image/jpeg"
-			ext = ".jpg"
-		}
+	optimizedBytes, optimizedMime, optimizedExt, optimized, optimizeErr := utils.OptimizeFileWithPython(fileBytes, detectedMime, ext, 1200, 75)
+	if optimizeErr != nil {
+		log.Printf("[Upload] Python optimizer skipped (%s): %v", fileHeader.Filename, optimizeErr)
+	} else if optimized {
+		compressedBytes = optimizedBytes
+		compressedSize = int64(len(optimizedBytes))
+		compressionRatio = float32(100.0 - (float64(compressedSize) / float64(originalSize) * 100.0))
+		detectedMime = optimizedMime
+		ext = optimizedExt
 	}
 
 	// Insert ke database

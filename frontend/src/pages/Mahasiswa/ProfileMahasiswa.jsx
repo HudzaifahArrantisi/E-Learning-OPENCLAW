@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { motion } from 'framer-motion'
 import api from '../../services/api'
 import Sidebar from '../../components/Sidebar'
 import Navbar from '../../components/Navbar'
@@ -169,6 +170,8 @@ const ProfileMahasiswa = () => {
   }
 
   const displayPhoto = previewImage || (profile?.photo ? getProfilePhotoUrl(profile.photo) : null)
+  const displayName = (profile?.name || user?.name || '').trim()
+  const profileInitial = displayName ? displayName[0].toUpperCase() : 'U'
 
   const profileInfo = [
     {
@@ -203,178 +206,159 @@ const ProfileMahasiswa = () => {
   ]
 
   return (
-    <div className="bg-lp-bg text-lp-text font-sans font-light min-h-screen relative z-0">
-      {/* GLOBAL GRID BACKGROUND */}
-      <div className="fixed inset-0 pointer-events-none z-[-1] bg-lp-surface">
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.08)_1px,transparent_1px)] bg-[size:64px_64px]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,transparent_0%,rgba(255,255,255,0.85)_70%,#ffffff_100%)]" />
-      </div>
+    <div className="flex min-h-screen bg-lp-bg font-sans">
+      <Sidebar role="mahasiswa" isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <div className="flex-1 relative overflow-hidden">
+        <Navbar user={user} onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
+        
+        {/* Background Decorative Element */}
+        <div className="absolute top-[-10%] right-[-5%] w-[40%] h-[40%] bg-lp-surface rounded-full blur-[120px] opacity-50 pointer-events-none z-0"></div>
 
-      <div className="flex h-screen">
-        <Sidebar role="mahasiswa" isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+        <main className="max-w-5xl mx-auto p-6 sm:p-10 relative z-10 flex-1 overflow-y-auto">
+          {/* Header */}
+          <motion.div 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-12"
+          >
+            <span className="text-[11px] font-mono font-medium tracking-[0.2em] uppercase text-lp-text3 mb-3 block">STUDENT PORTAL</span>
+            <h1 className="text-4xl md:text-5xl font-light text-lp-text tracking-tight mb-3">Profil Mahasiswa</h1>
+            <p className="text-lg text-lp-text2 font-light">Informasi identitas akademik dan detail personal Anda.</p>
+          </motion.div>
 
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <Navbar user={user} onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            {/* Left Column: Preview & Avatar */}
+            <motion.div 
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.1 }}
+              className="lg:col-span-4 lg:sticky lg:top-24"
+            >
+              <div className="bg-white border border-lp-border rounded-[2.5rem] p-8 shadow-[0_32px_64px_rgba(0,0,0,0.03)] text-center">
+                <div className="relative inline-block mb-6 group">
+                  <div className="w-32 h-32 rounded-3xl bg-lp-surface border border-lp-border p-1 overflow-hidden transition-transform duration-500 group-hover:scale-[1.02]">
+                    {displayPhoto ? (
+                      <img src={displayPhoto} alt="Avatar" className="w-full h-full rounded-[1.2rem] object-cover grayscale-[0.2]" />
+                    ) : (
+                      <div className="w-full h-full rounded-[1.2rem] bg-lp-bg flex items-center justify-center text-white text-3xl font-light" style={{ backgroundColor: 'black' }}>
+                        {profileInitial}
+                      </div>
+                    )}
+                  </div>
+                  
+                  {isEditing && (
+                    <label className="absolute -bottom-2 -right-2 w-10 h-10 bg-lp-text text-white rounded-full flex items-center justify-center border-4 border-white cursor-pointer hover:bg-lp-atext transition-all shadow-lg scale-110">
+                      <FaCamera className="text-xs" />
+                      <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
+                    </label>
+                  )}
+                  
+                  {!isEditing && (
+                    <div className="absolute bottom-0 right-0 w-8 h-8 bg-lp-text text-white rounded-full flex items-center justify-center border-4 border-white">
+                      <span className="text-[10px] font-bold italic">STD</span>
+                    </div>
+                  )}
+                </div>
+                
+                <h3 className="text-2xl font-normal text-lp-text tracking-tight truncate px-2">{profile?.name || 'Mahasiswa'}</h3>
+                <p className="text-lp-text3 font-mono text-[11px] mb-8 mt-1 tracking-widest uppercase">{profile?.nim || 'NIM'}</p>
+                
+                <div className="space-y-3 pt-8 border-t border-lp-border">
+                  {!isEditing ? (
+                    <button
+                      onClick={() => setIsEditing(true)}
+                      className="block w-full py-4 bg-lp-text text-white rounded-full text-[12px] font-bold tracking-[0.15em] uppercase hover:bg-lp-atext transition-all shadow-[0_12px_24px_rgba(0,0,0,0.1)]"
+                    >
+                      Update Profile
+                    </button>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        onClick={handleCancelEdit}
+                        className="py-4 border border-lp-border text-lp-text2 rounded-full text-[11px] font-bold tracking-[0.1em] uppercase hover:bg-lp-surface transition-all"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleSubmit}
+                        disabled={updateProfileMutation.isPending}
+                        className="py-4 bg-lp-text text-white rounded-full text-[11px] font-bold tracking-[0.1em] uppercase hover:bg-lp-atext transition-all flex items-center justify-center gap-2"
+                      >
+                         {updateProfileMutation.isPending ? <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : 'Save'}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </motion.div>
 
-          <main className="flex-1 overflow-y-auto p-4 md:p-8 lg:p-10">
-            <div className="mx-auto w-full max-w-5xl space-y-6">
+            {/* Right Column: Academic Details */}
+            <motion.div 
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2 }}
+              className="lg:col-span-8"
+            >
+              <div className="bg-white border border-lp-border rounded-[2.5rem] p-10 shadow-[0_32px_64px_rgba(0,0,0,0.03)] mb-8">
+                <div className="flex items-center justify-between mb-8 pb-4 border-b border-lp-border/50">
+                   <h2 className="text-xl font-normal text-lp-text tracking-tight">Data Akademik</h2>
+                   <div className="px-3 py-1 bg-lp-surface border border-lp-border rounded-full text-[10px] font-mono tracking-widest text-lp-text3 uppercase">Official</div>
+                </div>
 
-              {/* Section label */}
-              <div className="flex items-center gap-4 text-[10px] font-mono font-medium tracking-[0.14em] uppercase text-lp-text3 after:content-[''] after:flex-1 after:h-px after:bg-lp-border">
-                <span>Profile</span>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-8">
+                  {profileInfo.slice(0, 3).map((item, index) => (
+                    <div key={index} className="group">
+                      <label className="block text-[10px] font-mono font-medium tracking-[0.2em] uppercase text-lp-text3 mb-2">{item.label}</label>
+                      <div className="flex items-center gap-4 py-1">
+                        <div className={`w-10 h-10 rounded-xl ${item.bg} flex items-center justify-center transition-transform group-hover:scale-110`}>
+                           <item.icon className={`${item.accent} text-sm`} />
+                        </div>
+                        <p className="text-[15px] text-lp-text font-normal tracking-tight">{item.value}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
 
-              {/* Profile Header Card */}
-              <section className="bg-lp-surface border border-lp-border rounded-2xl p-7 md:p-8 hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] transition-all duration-300">
-                <div className="flex flex-col gap-6 md:flex-row md:items-center">
-                  <div className="relative mx-auto md:mx-0">
-                    <div className="h-28 w-28 overflow-hidden rounded-2xl border-2 border-lp-border bg-lp-surface md:h-32 md:w-32">
-                      {displayPhoto ? (
-                        <img src={displayPhoto} alt="Foto Profil" className="h-full w-full object-cover" />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center bg-lp-accentS">
-                          <FaUser className="text-4xl text-lp-text3" />
-                        </div>
-                      )}
-                    </div>
-
-                    {isEditing && (
-                      <label className="absolute bottom-1 right-1 cursor-pointer rounded-full bg-lp-accent p-2.5 text-white shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border transition-all hover:bg-lp-atext hover:-translate-y-px">
-                        <FaCamera className="text-xs" />
-                        <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
-                      </label>
-                    )}
-                  </div>
-
-                  <div className="flex-1 text-center md:text-left">
-                    <h1 className="text-2xl font-semibold text-lp-text tracking-tight md:text-3xl">{profile?.name}</h1>
-                    <p className="mt-2 inline-flex items-center gap-2 rounded-full bg-lp-surface px-3.5 py-1.5 text-[12px] font-mono text-lp-text2 tracking-wider">
-                      <FaIdCard className="text-lp-atext text-xs" />
-                      <span>{profile?.nim}</span>
-                    </p>
-                    <p className="mt-2 text-[13px] text-lp-text3 font-light">{profile?.email}</p>
-                  </div>
-
-                  <div className="flex justify-center md:justify-end">
-                    {!isEditing && (
-                      <button
-                        onClick={() => setIsEditing(true)}
-                        className="inline-flex items-center gap-2 bg-lp-text text-white rounded-full px-5 py-3 text-[13px] font-semibold transition-all hover:bg-lp-atext hover:-translate-y-px"
-                      >
-                        <FaEdit className="text-xs" />
-                        <span>Edit Profil</span>
-                      </button>
-                    )}
-                  </div>
+              {/* Personal Details & Form */}
+              <div className="bg-white border border-lp-border rounded-[2.5rem] p-10 shadow-[0_32px_64px_rgba(0,0,0,0.03)]">
+                <div className="flex items-center justify-between mb-8 pb-4 border-b border-lp-border/50">
+                   <h2 className="text-xl font-normal text-lp-text tracking-tight">Detail Personal</h2>
+                   <div className="px-3 py-1 bg-lp-surface border border-lp-border rounded-full text-[10px] font-mono tracking-widest text-lp-text2 uppercase">{isEditing ? 'Editing' : 'Info'}</div>
                 </div>
-              </section>
-
-              {/* Profile Info Card */}
-              <section className="bg-lp-surface border border-lp-border rounded-2xl p-7 md:p-8 hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] transition-all duration-300">
-                <h2 className="text-lg font-semibold text-lp-text tracking-tight">
-                  {isEditing ? 'Perbarui Data Profil' : 'Informasi Profil'}
-                </h2>
 
                 {isEditing ? (
-                  <form onSubmit={handleSubmit} className="mt-6 space-y-5">
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                      {[
-                        { label: 'Nama Lengkap', value: profile?.name, icon: FaUser },
-                        { label: 'Nomor Induk Mahasiswa', value: profile?.nim, icon: FaIdCard },
-                        { label: 'Alamat Email', value: profile?.email, icon: FaEnvelope },
-                      ].map((field, index) => (
-                        <div key={index}>
-                          <label className="mb-2 block text-[10px] font-mono font-bold uppercase tracking-[0.1em] text-lp-text3">
-                            {field.label}
-                          </label>
-                          <div className="relative">
-                            <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-lp-text3">
-                              <field.icon className="text-xs" />
-                            </span>
-                            <input
-                              type="text"
-                              value={field.value || ''}
-                              className="w-full cursor-not-allowed rounded-xl border border-lp-border bg-lp-surface py-3 pl-9 pr-3 text-[13px] font-light text-lp-text3"
-                              readOnly
-                              disabled
-                            />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    <div>
-                      <label className="mb-2 block text-[10px] font-mono font-bold uppercase tracking-[0.1em] text-lp-text3">
-                        Alamat Lengkap
-                      </label>
-                      <div className="relative">
-                        <span className="pointer-events-none absolute left-3 top-3.5 text-lp-text3">
-                          <FaMapMarkerAlt className="text-xs" />
-                        </span>
-                        <textarea
-                          name="alamat"
-                          value={formData.alamat}
-                          onChange={handleInputChange}
-                          rows="4"
-                          className="w-full rounded-xl border border-lp-border bg-lp-surface py-3 pl-9 pr-3 text-[13px] font-light text-lp-text outline-none transition-all placeholder:text-lp-text3 focus:border-lp-borderA focus:ring-2 focus:ring-lp-accent/10"
-                          placeholder="Contoh: Jl. Margonda Raya No. 100, Depok, Jawa Barat"
-                        />
-                      </div>
-                      <p className="mt-2 text-[11px] font-light text-lp-text3">
-                        Untuk mengganti foto profil, klik ikon kamera pada foto.
-                      </p>
-                    </div>
-
-                    <div className="flex flex-col-reverse gap-3 border-t border-lp-border pt-5 sm:flex-row sm:justify-end">
-                      <button
-                        type="button"
-                        onClick={handleCancelEdit}
-                        className="rounded-full border border-lp-border px-5 py-2.5 text-[13px] font-medium text-lp-text2 transition-all hover:bg-lp-surface"
-                      >
-                        Batalkan
-                      </button>
-                      <button
-                        type="submit"
-                        disabled={updateProfileMutation.isPending}
-                        className="inline-flex items-center justify-center gap-2 bg-lp-text text-white rounded-full px-5 py-2.5 text-[13px] font-semibold transition-all hover:bg-lp-atext hover:-translate-y-px disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        {updateProfileMutation.isPending ? (
-                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                        ) : (
-                          <FaSave className="text-xs" />
-                        )}
-                        <span>{updateProfileMutation.isPending ? 'Menyimpan...' : 'Simpan Perubahan'}</span>
-                      </button>
+                  <form onSubmit={handleSubmit} className="space-y-8">
+                    <div className="group">
+                      <label className="block text-[10px] font-mono font-medium tracking-[0.2em] uppercase text-lp-text3 mb-3">ALAMAT LENGKAP</label>
+                      <textarea
+                        name="alamat"
+                        value={formData.alamat}
+                        onChange={handleInputChange}
+                        rows="4"
+                        className="w-full bg-lp-surface border border-lp-border rounded-2xl p-5 text-lp-text text-[15px] font-normal focus:outline-none focus:border-lp-text transition-all resize-none leading-relaxed"
+                        placeholder="Contoh: Jl. Margonda Raya No. 100, Depok, Jawa Barat"
+                      />
+                      <p className="mt-3 text-[11px] text-lp-text3 font-medium tracking-[0.05em] uppercase opacity-60">Pastikan alamat sesuai dengan KTP atau tempat tinggal saat ini.</p>
                     </div>
                   </form>
                 ) : (
-                  <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
-                    {profileInfo.map((item, index) => (
-                      <div
-                        key={index}
-                        className={`rounded-2xl border border-lp-border bg-lp-surface/50 p-5 hover:bg-lp-surface hover:border-lp-borderA transition-all duration-200 ${item.fullRow ? 'md:col-span-2' : ''}`}
-                      >
-                        <div className="flex items-start gap-4">
-                          <div className={`mt-0.5 flex h-9 w-9 items-center justify-center rounded-xl ${item.bg}`}>
-                            <item.icon className={`${item.accent} text-sm`} />
-                          </div>
-                          <div>
-                            <p className="text-[10px] font-mono font-medium uppercase tracking-[0.1em] text-lp-text3">{item.label}</p>
-                            <p
-                              className={`mt-1 text-[14px] font-medium text-lp-text ${item.label === 'Alamat Tempat Tinggal' && !profile?.alamat ? 'italic text-lp-text3 font-light' : ''}`}
-                            >
-                              {item.value}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
+                  <div className="group p-6 bg-lp-surface/50 border border-lp-border rounded-2xl hover:bg-lp-surface transition-all">
+                    <label className="block text-[10px] font-mono font-medium tracking-[0.2em] uppercase text-lp-text3 mb-3">ALAMAT TEMPAT TINGGAL</label>
+                    <div className="flex items-start gap-4">
+                       <div className="w-10 h-10 rounded-xl bg-lp-red/8 flex items-center justify-center shrink-0">
+                          <FaMapMarkerAlt className="text-lp-red text-sm" />
+                       </div>
+                       <p className={`text-[15px] text-lp-text font-normal leading-relaxed ${!profile?.alamat ? 'italic opacity-40' : ''}`}>
+                          {profile?.alamat || 'Alamat belum ditambahkan.'}
+                       </p>
+                    </div>
                   </div>
                 )}
-              </section>
-            </div>
-          </main>
-        </div>
+              </div>
+            </motion.div>
+          </div>
+        </main>
       </div>
     </div>
   )

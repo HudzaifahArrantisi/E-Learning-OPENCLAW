@@ -1,17 +1,21 @@
 // src/components/Sidebar.jsx
 import React, { useEffect, useMemo, useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import useAuth from '../hooks/useAuth'
 import { 
   FaHome, FaUser, FaBook, FaMoneyBill, FaCalendar, 
   FaComment, FaNewspaper, FaChartBar, FaCog, 
   FaTimes, FaGraduationCap, FaTasks, FaUpload,
-  FaInstagram, FaBookmark, FaUsers, FaStore
+  FaInstagram, FaBookmark, FaUsers, FaStore,
+  FaSignOutAlt
 } from 'react-icons/fa'
 import { IoIosSettings, IoIosPaper } from 'react-icons/io'
 import { MdDashboard, MdClass, MdPayment } from 'react-icons/md'
 
 const Sidebar = ({ role, isOpen, onClose }) => {
   const location = useLocation()
+  const navigate = useNavigate()
+  const { logout } = useAuth()
   const [internalOpen, setInternalOpen] = useState(false)
 
   const isControlled = useMemo(() => typeof isOpen === 'boolean', [isOpen])
@@ -39,6 +43,16 @@ const Sidebar = ({ role, isOpen, onClose }) => {
     setInternalOpen(false)
   }
 
+  const handleLogout = async () => {
+    try {
+      await logout()
+      navigate('/')
+    } catch (error) {
+      console.error('Logout error:', error)
+    }
+  }
+
+
   const isActive = (path) => location.pathname === path || location.pathname.startsWith(path + '/')
 
   const menuItems = {
@@ -52,7 +66,7 @@ const Sidebar = ({ role, isOpen, onClose }) => {
       { path: '/mahasiswa/cari-invoice', label: 'Invoice', icon: <FaMoneyBill className="text-lg" /> },
       { path: '/mahasiswa/scan-absensi', label: 'Jadwal dan Absensi', icon: <FaCalendar className="text-lg" /> },
       { path: '/mahasiswa/transkrip-nilai', label: 'Nilai', icon: <FaChartBar className="text-lg" /> },
-      { path: '/mahasiswa/pesan', label: 'Chat', icon: <FaComment className="text-lg" /> }
+      { path: '/mahasiswa/pesan', label: 'Chat', icon: <FaComment className="text-lg" /> },
     ],
     dosen: [
       { path: '/dosen', label: 'Dashboard', icon: <MdDashboard className="text-lg" /> },
@@ -160,6 +174,17 @@ const Sidebar = ({ role, isOpen, onClose }) => {
               )}
             </Link>
           ))}
+
+          {/* Logout Button */}
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group text-lp-text2 hover:bg-lp-surface hover:text-lp-text w-full mt-4 border-t border-lp-border pt-4"
+          >
+            <div className="text-base text-lp-text3 group-hover:text-red-500">
+              <FaSignOutAlt className="text-lg" />
+            </div>
+            <span className="text-[13px] font-light">Logout</span>
+          </button>
         </nav>
 
         {/* Footer Sidebar */}

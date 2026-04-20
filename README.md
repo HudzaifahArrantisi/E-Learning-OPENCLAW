@@ -94,6 +94,15 @@ NAMA=STUDENT HUB Server
 OPENCLAW_BASE_URL=http://localhost:9090
 TELEGRAM_BOT_TOKEN=token_bot_anda_dari_botfather
 TELEGRAM_CHANNEL_ID=@channel_target_reminder
+
+# Opsional: path interpreter Python untuk optimizer upload (default: python / py -3)
+PYTHON_BIN=python
+```
+
+Instal dependency Python untuk optimizer upload:
+
+```bash
+pip install pillow pypdf pikepdf
 ```
 
 ### 3. Menjalankan Ke-3 Servis Utamanya

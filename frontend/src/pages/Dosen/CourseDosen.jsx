@@ -129,10 +129,10 @@ const CourseDosen = () => {
               </button>
             </div>
             <div className="max-w-2xl mx-auto">
-              <div className="bg-lp-bg rounded-2xl p-8 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border border border-red-100">
+              <div className="bg-lp-bg rounded-2xl p-8 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border-lp-border">
                 <div className="text-center">
                   <div className="p-4 bg-lp-bg rounded-full w-20 h-20 mx-auto mb-6 flex items-center justify-center">
-                    <FiBookOpen className="text-3xl text-red-600" />
+                    <FiBookOpen className="text-3xl text-lp-text2" />
                   </div>
                   <h3 className="text-2xl font-bold text-lp-text font-semibold tracking-tight mb-3">Gagal Memuat Data</h3>
                   <p className="text-lp-text2 font-light mb-6">
@@ -141,7 +141,7 @@ const CourseDosen = () => {
                   <div className="flex flex-col sm:flex-row justify-center gap-3">
                     <button 
                       onClick={fetchDosenCourses} 
-                      className="group relative overflow-hidden px-6 py-3 bg-lp-accent text-white rounded-xl font-medium shadow-[0_8px_30px_rgba(0,0,0,0.04)] border-none hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2"
+                      className="group relative overflow-hidden px-6 py-3 bg-lp-text text-white rounded-xl font-medium shadow-[0_8px_30px_rgba(0,0,0,0.04)] border-none hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2"
                     >
                       <div className="absolute inset-0 bg-lp-surface/10 translate-x-[-100%] group-hover:translate-x-full transition-transform duration-1000"></div>
                       <FiRefreshCw className="relative z-10" />
@@ -149,7 +149,7 @@ const CourseDosen = () => {
                     </button>
                     <button 
                       onClick={() => window.location.reload()}
-                      className="px-6 py-3 bg-lp-surface/80 backdrop-blur-sm border border-lp-border border text-lp-text2 rounded-xl font-medium shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl transition-all duration-300 hover:bg-lp-surface flex items-center gap-2"
+                      className="px-6 py-3 bg-lp-surface/80 backdrop-blur-sm border border-lp-border text-lp-text2 rounded-xl font-medium shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl transition-all duration-300 hover:bg-lp-surface flex items-center gap-2"
                     >
                       <FiRefreshCw />
                       Refresh Halaman
@@ -182,7 +182,7 @@ const CourseDosen = () => {
               </button>
               <div>
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="p-3 bg-lp-accent rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.04)] border-none">
+                  <div className="p-3 bg-lp-text rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.04)] border-none">
                     <FiBookOpen className="text-2xl text-white" />
                   </div>
                   <div>
@@ -197,7 +197,7 @@ const CourseDosen = () => {
             <div className="flex flex-wrap gap-3">
               <button 
                 onClick={fetchDosenCourses}
-                className="group relative overflow-hidden px-6 py-3 bg-lp-accent text-white rounded-xl font-medium shadow-[0_8px_30px_rgba(0,0,0,0.04)] border-none hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2"
+                className="group relative overflow-hidden px-6 py-3 bg-lp-text text-white rounded-xl font-medium shadow-[0_8px_30px_rgba(0,0,0,0.04)] border-none hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2"
               >
                 <div className="absolute inset-0 bg-lp-surface/10 translate-x-[-100%] group-hover:translate-x-full transition-transform duration-1000"></div>
                 <FiRefreshCw className="relative z-10" />
@@ -208,64 +208,64 @@ const CourseDosen = () => {
 
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div className="bg-lp-surface/80 backdrop-blur-sm rounded-2xl p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border border border-lp-border border hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+            <div className="bg-lp-surface/80 backdrop-blur-sm rounded-2xl p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border-lp-border border hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-lp-text2 font-light text-sm mb-1">Total Mata Kuliah</p>
                   <h3 className="text-3xl font-bold text-lp-text font-semibold tracking-tight">{courses.length}</h3>
                 </div>
                 <div className="p-3 bg-lp-bg rounded-xl">
-                  <FiBook className="text-2xl text-lp-atext" />
+                  <FiBook className="text-2xl text-lp-text2" />
                 </div>
               </div>
             </div>
-            <div className="bg-lp-surface/80 backdrop-blur-sm rounded-2xl p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border border border-lp-border border hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+            <div className="bg-lp-surface/80 backdrop-blur-sm rounded-2xl p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border-lp-border border hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-lp-text2 font-light text-sm mb-1">Total Mahasiswa</p>
                   <h3 className="text-3xl font-bold text-lp-text font-semibold tracking-tight">{totalStudents}</h3>
                 </div>
                 <div className="p-3 bg-lp-bg rounded-xl">
-                  <FiUsers className="text-2xl text-emerald-600" />
+                  <FiUsers className="text-2xl text-lp-text2" />
                 </div>
               </div>
             </div>
-            <div className="bg-lp-surface/80 backdrop-blur-sm rounded-2xl p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border border border-lp-border border hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+            <div className="bg-lp-surface/80 backdrop-blur-sm rounded-2xl p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border-lp-border border hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-lp-text2 font-light text-sm mb-1">Total SKS</p>
                   <h3 className="text-3xl font-bold text-lp-text font-semibold tracking-tight">{totalSKS}</h3>
                 </div>
                 <div className="p-3 bg-lp-bg rounded-xl">
-                  <FiCreditCard className="text-2xl text-purple-600" />
+                  <FiCreditCard className="text-2xl text-lp-text2" />
                 </div>
               </div>
             </div>
-            <div className="bg-lp-surface/80 backdrop-blur-sm rounded-2xl p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border border border-lp-border border hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+            <div className="bg-lp-surface/80 backdrop-blur-sm rounded-2xl p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border-lp-border border hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-lp-text2 font-light text-sm mb-1">Matkul Aktif</p>
                   <h3 className="text-3xl font-bold text-lp-text font-semibold tracking-tight">{activeCourses}</h3>
                 </div>
                 <div className="p-3 bg-lp-bg rounded-xl">
-                  <FiCheckCircle className="text-2xl text-amber-600" />
+                  <FiCheckCircle className="text-2xl text-lp-text2" />
                 </div>
               </div>
             </div>
           </div>
 
           {/* Control Panel */}
-          <div className="bg-lp-surface/80 backdrop-blur-sm rounded-2xl p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border border border-lp-border border mb-8">
+          <div className="bg-lp-surface/80 backdrop-blur-sm rounded-2xl p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border-lp-border border mb-8">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div>
                 <label className="block text-sm font-semibold text-lp-text2 mb-2">Cari Mata Kuliah</label>
                 <div className="relative">
-                  <FiSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <FiSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-lp-text3" />
                   <input
                     type="text"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-12 pr-4 py-3 border border-lp-border border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-lp-surface/50 backdrop-blur-sm"
+                    className="w-full pl-12 pr-4 py-3 border border-lp-border rounded-xl focus:ring-2 focus:ring-lp-text/20 focus:border-transparent bg-lp-surface/50 backdrop-blur-sm"
                     placeholder="Nama atau kode matkul..."
                   />
                 </div>
@@ -274,14 +274,14 @@ const CourseDosen = () => {
               <div>
                 <label className="block text-sm font-semibold text-lp-text2 mb-2">Urutkan Berdasarkan</label>
                 <div className="relative">
-                  <FiTrendingUp className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <FiTrendingUp className="absolute left-4 top-1/2 transform -translate-y-1/2 text-lp-text3" />
                   <select
                     value={sortBy}
                     onChange={(e) => {
                       setSortBy(e.target.value)
                       fetchDosenCourses()
                     }}
-                    className="w-full pl-12 pr-4 py-3 border border-lp-border border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-lp-surface/50 backdrop-blur-sm"
+                    className="w-full pl-12 pr-4 py-3 border border-lp-border rounded-xl focus:ring-2 focus:ring-lp-text/20 focus:border-transparent bg-lp-surface/50 backdrop-blur-sm"
                   >
                     <option value="name">Nama Mata Kuliah</option>
                     <option value="code">Kode Mata Kuliah</option>
@@ -293,16 +293,16 @@ const CourseDosen = () => {
               <div>
                 <label className="block text-sm font-semibold text-lp-text2 mb-2">Tampilan</label>
                 <div className="flex items-center gap-2">
-                  <div className="bg-gray-100 rounded-xl p-1 flex items-center">
+                  <div className="bg-lp-surface rounded-xl p-1 flex items-center">
                     <button
                       onClick={() => setViewMode('grid')}
-                      className={`p-2 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-lp-surface text-lp-atext shadow-sm' : 'text-lp-text3 font-light hover:text-lp-text2'}`}
+                      className={`p-2 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-lp-surface text-lp-text2 shadow-sm' : 'text-lp-text3 font-light hover:text-lp-text2'}`}
                     >
                       <FiGrid className="text-lg" />
                     </button>
                     <button
                       onClick={() => setViewMode('list')}
-                      className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-lp-surface text-lp-atext shadow-sm' : 'text-lp-text3 font-light hover:text-lp-text2'}`}
+                      className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-lp-surface text-lp-text2 shadow-sm' : 'text-lp-text3 font-light hover:text-lp-text2'}`}
                     >
                       <FiList className="text-lg" />
                     </button>
@@ -320,11 +320,11 @@ const CourseDosen = () => {
             viewMode === 'grid' ? (
               <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                 {filteredCourses.map((course, index) => (
-                  <div key={index} className="group bg-lp-surface/80 backdrop-blur-sm rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border border border-lp-border border hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
+                  <div key={index} className="group bg-lp-surface/80 backdrop-blur-sm rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border-lp-border border hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
                     <div className="p-6">
                       <div className="flex items-start justify-between mb-4">
                         <div>
-                          <span className="inline-block px-3 py-1 bg-lp-bg text-blue-700 text-xs font-semibold rounded-full mb-2">
+                          <span className="inline-block px-3 py-1 bg-lp-bg text-lp-text2 text-xs font-semibold rounded-full mb-2">
                             {course.kode}
                           </span>
                           <h3 className="text-xl font-bold text-lp-text font-semibold tracking-tight mb-2 line-clamp-2">
@@ -332,19 +332,19 @@ const CourseDosen = () => {
                           </h3>
                           <p className="text-lp-text2 font-light text-sm">Semester 3</p>
                         </div>
-                        <div className={`p-2 rounded-lg ${course.student_count > 0 ? 'bg-emerald-100 text-emerald-600' : 'bg-gray-100 text-lp-text2 font-light'}`}>
+                        <div className={`p-2 rounded-lg ${course.student_count > 0 ? 'bg-lp-bg text-lp-text2' : 'bg-lp-surface text-lp-text2 font-light'}`}>
                           <FiUsers />
                         </div>
                       </div>
                       
                       <div className="grid grid-cols-2 gap-4 mb-6">
-                        <div className="bg-lp-bg p-3 rounded-xl border border-lp-border border">
+                        <div className="bg-lp-bg p-3 rounded-xl border border-lp-border">
                           <div className="text-sm text-lp-text2 font-light mb-1">SKS</div>
                           <div className="text-lg font-bold text-lp-text font-semibold tracking-tight">{course.sks} SKS</div>
                         </div>
-                        <div className="bg-lp-bg p-3 rounded-xl border border-lp-border border">
+                        <div className="bg-lp-bg p-3 rounded-xl border border-lp-border">
                           <div className="text-sm text-lp-text2 font-light mb-1">Mahasiswa</div>
-                          <div className={`text-lg font-bold ${course.student_count > 0 ? 'text-emerald-600' : 'text-lp-text2 font-light'}`}>
+                          <div className={`text-lg font-bold ${course.student_count > 0 ? 'text-lp-text2' : 'text-lp-text2 font-light'}`}>
                             {course.student_count}
                           </div>
                         </div>
@@ -354,7 +354,7 @@ const CourseDosen = () => {
                         <div className="grid grid-cols-2 gap-3">
                           <Link 
                             to={`/dosen/matkul/${course.kode}`}
-                            className="group/btn relative overflow-hidden px-4 py-3 bg-lp-accent text-white rounded-xl font-medium hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border-none transition-all duration-300 hover:-translate-y-0.5 flex items-center justify-center gap-2"
+                            className="group/btn relative overflow-hidden px-4 py-3 bg-lp-text text-white rounded-xl font-medium hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border-none transition-all duration-300 hover:-translate-y-0.5 flex items-center justify-center gap-2"
                           >
                             <div className="absolute inset-0 bg-lp-surface/10 translate-x-[-100%] group-hover/btn:translate-x-full transition-transform duration-1000"></div>
                             <FiEdit2 className="relative z-10" />
@@ -362,7 +362,7 @@ const CourseDosen = () => {
                           </Link>
                           <Link 
                             to={`/dosen/penilaian/${course.kode}`}
-                            className="px-4 py-3 bg-lp-accent text-white rounded-xl font-medium hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border-none transition-all duration-300 hover:-translate-y-0.5 flex items-center justify-center gap-2"
+                            className="px-4 py-3 bg-lp-text text-white rounded-xl font-medium hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border-none transition-all duration-300 hover:-translate-y-0.5 flex items-center justify-center gap-2"
                           >
                             <FiBarChart2 />
                             <span className="text-sm">Nilai</span>
@@ -374,7 +374,7 @@ const CourseDosen = () => {
                 ))}
               </div>
             ) : (
-              <div className="bg-lp-surface/80 backdrop-blur-sm rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border border border-lp-border border overflow-hidden">
+              <div className="bg-lp-surface/80 backdrop-blur-sm rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border-lp-border border overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full min-w-[800px]">
                     <thead className="bg-lp-bg">
@@ -400,14 +400,14 @@ const CourseDosen = () => {
                             </div>
                           </td>
                           <td className="px-6 py-4">
-                            <span className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-lp-bg text-blue-800 border border-blue-200">
+                            <span className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-lp-bg text-lp-text border border-lp-border">
                               {course.sks} SKS
                             </span>
                           </td>
                           <td className="px-6 py-4">
                             <span className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium border ${
                               course.student_count > 0 
-                                ? 'bg-lp-bg text-emerald-800 border-emerald-200' 
+                                ? 'bg-lp-bg text-lp-text2 border-lp-border' 
                                 : 'bg-lp-bg text-lp-text font-semibold tracking-tight border-lp-border border'
                             }`}>
                               <FiUsers className="text-sm" />
@@ -416,7 +416,7 @@ const CourseDosen = () => {
                           </td>
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-2">
-                              <div className={`w-2 h-2 rounded-full ${course.student_count > 0 ? 'bg-emerald-500' : 'bg-gray-400'}`}></div>
+                              <div className={`w-2 h-2 rounded-full ${course.student_count > 0 ? 'bg-lp-text' : 'bg-gray-400'}`}></div>
                               <span className="text-sm text-lp-text2 font-light">
                                 {course.student_count > 0 ? 'Aktif' : 'Non-Aktif'}
                               </span>
@@ -426,7 +426,7 @@ const CourseDosen = () => {
                             <div className="flex items-center gap-2">
                               <Link 
                                 to={`/dosen/matkul/${course.kode}`}
-                                className="group/btn relative overflow-hidden px-4 py-2 bg-lp-accent text-white rounded-lg font-medium hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border-none transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2"
+                                className="group/btn relative overflow-hidden px-4 py-2 bg-lp-text text-white rounded-lg font-medium hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border-none transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2"
                               >
                                 <div className="absolute inset-0 bg-lp-surface/10 translate-x-[-100%] group-hover/btn:translate-x-full transition-transform duration-1000"></div>
                                 <FiEdit2 className="relative z-10 text-sm" />
@@ -434,7 +434,7 @@ const CourseDosen = () => {
                               </Link>
                               <Link 
                                 to={`/dosen/penilaian/${course.kode}`}
-                                className="px-4 py-2 bg-lp-accent text-white rounded-lg font-medium hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border-none transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2"
+                                className="px-4 py-2 bg-lp-text text-white rounded-lg font-medium hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border-none transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2"
                               >
                                 <FiBarChart2 className="text-sm" />
                                 <span className="text-sm">Nilai</span>
@@ -451,7 +451,7 @@ const CourseDosen = () => {
           ) : (
             <div className="text-center py-16">
               <div className="p-4 bg-lp-bg rounded-full w-24 h-24 mx-auto mb-6 flex items-center justify-center">
-                <FiBookOpen className="text-4xl text-gray-400" />
+                <FiBookOpen className="text-4xl text-lp-text3" />
               </div>
               <h3 className="text-2xl font-bold text-lp-text2 mb-3">
                 {searchTerm ? 'Mata Kuliah Tidak Ditemukan' : 'Belum ada mata kuliah'}
@@ -465,7 +465,7 @@ const CourseDosen = () => {
               <div className="flex flex-col sm:flex-row justify-center gap-3">
                 <button 
                   onClick={fetchDosenCourses}
-                  className="px-6 py-3 bg-lp-accent text-white rounded-xl font-medium shadow-[0_8px_30px_rgba(0,0,0,0.04)] border-none hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2"
+                  className="px-6 py-3 bg-lp-text text-white rounded-xl font-medium shadow-[0_8px_30px_rgba(0,0,0,0.04)] border-none hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2"
                 >
                   <FiRefreshCw />
                   Muat Ulang
@@ -473,7 +473,7 @@ const CourseDosen = () => {
                 {searchTerm && (
                   <button 
                     onClick={() => setSearchTerm('')}
-                    className="px-6 py-3 bg-lp-surface/80 backdrop-blur-sm border border-lp-border border text-lp-text2 rounded-xl font-medium hover:shadow-xl transition-all duration-300 hover:bg-lp-surface flex items-center gap-2"
+                    className="px-6 py-3 bg-lp-surface/80 backdrop-blur-sm border border-lp-border text-lp-text2 rounded-xl font-medium hover:shadow-xl transition-all duration-300 hover:bg-lp-surface flex items-center gap-2"
                   >
                     <FiFilter />
                     Reset Pencarian
@@ -485,7 +485,7 @@ const CourseDosen = () => {
 
           {/* Quick Stats */}
           {filteredCourses.length > 0 && (
-            <div className="mt-8 p-6 bg-lp-bg rounded-2xl border border-blue-100">
+            <div className="mt-8 p-6 bg-lp-bg rounded-2xl border border-lp-border">
               <div className="flex items-center justify-between">
                 <div>
                   <h4 className="text-lg font-semibold text-lp-text font-semibold tracking-tight mb-2">Statistik Singkat</h4>

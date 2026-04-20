@@ -99,7 +99,7 @@ export default function Login() {
                 className={`w-full h-[46px] bg-lp-surface border ${error ? 'border-lp-red/40' : 'border-lp-border'} rounded-xl pl-10 pr-4 text-lp-text text-sm font-sans outline-none transition-all duration-200 placeholder:text-lp-text3 placeholder:text-[13.5px] hover:border-lp-borderA focus:border-lp-borderA focus:bg-lp-accentS/30 focus:ring-2 focus:ring-lp-accent/10`}
                 type="text"
                 name="identifier"
-                placeholder="email@nurulfikri.ac.id"
+                placeholder="NIM@nurulfikri.ac.id"
                 value={form.identifier}
                 onChange={handleChange}
                 autoComplete="username"
@@ -124,7 +124,7 @@ export default function Login() {
                 className={`w-full h-[46px] bg-lp-surface border ${error ? 'border-lp-red/40' : 'border-lp-border'} rounded-xl pl-10 pr-11 text-lp-text text-sm font-sans outline-none transition-all duration-200 placeholder:text-lp-text3 placeholder:text-[13.5px] hover:border-lp-borderA focus:border-lp-borderA focus:bg-lp-accentS/30 focus:ring-2 focus:ring-lp-accent/10`}
                 type={showPw ? 'text' : 'password'}
                 name="password"
-                placeholder="••••••••"
+                placeholder=""
                 value={form.password}
                 onChange={handleChange}
                 autoComplete="current-password"

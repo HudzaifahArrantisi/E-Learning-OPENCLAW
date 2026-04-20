@@ -4,7 +4,7 @@ import api from '../../services/api'
 import Navbar from '../../components/Navbar'
 import Sidebar from '../../components/Sidebar'
 import useAuth from '../../hooks/useAuth'
-import { FaTimes, FaUpload, FaCheckCircle, FaExclamationCircle } from 'react-icons/fa'
+import { FiX, FiUpload, FiCheckCircle, FiAlertCircle, FiChevronRight, FiTerminal } from 'react-icons/fi'
 import { motion, AnimatePresence } from 'framer-motion'
 
 const PostingPemberitahuan = () => {
@@ -82,7 +82,6 @@ const PostingPemberitahuan = () => {
         setShowError(errorMessage)
       }
       setTimeout(() => setShowError(''), 4000)
-      console.error('Posting error:', err)
     }
   })
 
@@ -132,333 +131,294 @@ const PostingPemberitahuan = () => {
   }, [previews])
 
   return (
-    <div className="flex min-h-screen bg-lp-bg font-sans font-light">
-      <Sidebar role="admin" />
-      <div className="flex-1 relative">
-        <Navbar user={user} />
-        
-        {/* Background Decorative Layer */}
-        <div className="absolute top-0 left-0 w-full h-[400px] bg-gradient-to-b from-blue-50/50 via-white to-transparent pointer-events-none z-0" />
-        
-        <div className="max-w-3xl mx-auto p-4 sm:p-6 lg:p-8 mt-4 relative z-10">
-          
-          {/* Header Section */}
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-8 text-center"
-          >
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-blue-100/50 text-blue-600 mb-4 ring-1 ring-blue-100">
-              <FaUpload className="text-2xl" />
-            </div>
-            <h1 className="text-3xl font-bold text-lp-text tracking-tight mb-2">Posting Pemberitahuan</h1>
-            <p className="text-lp-text2 font-light">Sebarkan pengumuman resmi ke seluruh civitas akademika</p>
-          </motion.div>
-
-          {/* Form Section -> Optimistic Feed UI or Normal Form */}
-          {isUploading || showSuccess ? (
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="max-w-xl mx-auto bg-white rounded-3xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-lp-border"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold">
-                    {user?.name?.charAt(0) || 'A'}
-                  </div>
-                  <div>
-                    <p className="font-bold text-lp-text text-sm">{user?.name || 'Admin'}</p>
-                    <p className="text-xs text-blue-600 font-medium">Berapa detik yang lalu</p>
-                  </div>
-                </div>
-                {!showSuccess && isUploading && uploadProgress < 100 && (
-                  <button onClick={handleCancel} className="text-xs font-semibold text-red-500 hover:text-red-600 px-3 py-1.5 bg-red-50 rounded-full transition-colors">
-                    Batalkan
-                  </button>
-                )}
-              </div>
-
-              <div className="mb-4">
-                <h3 className="font-bold text-lp-text text-lg mb-1">{title}</h3>
-                <p className="text-sm text-lp-text2 whitespace-pre-wrap">{content}</p>
-              </div>
-
-              {previews.length > 0 && (
-                <div className="relative rounded-2xl overflow-hidden bg-gray-100 aspect-video group shadow-inner">
-                  <img 
-                    src={previews[0]} 
-                    alt="uploading preview" 
-                    className={`w-full h-full object-cover transition-all duration-700 ease-in-out ${
-                      uploadProgress < 100 ? 'blur-md scale-105 grayscale-[20%]' : 'blur-0 scale-100 grayscale-0'
-                    }`} 
-                  />
-                  
-                  {previews.length > 1 && (
-                    <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md text-white text-xs font-bold px-2.5 py-1 rounded-full">
-                      1/{previews.length}
-                    </div>
-                  )}
-
-                  {uploadProgress < 100 && (
-                    <div className="absolute inset-0 bg-black/30 flex flex-col items-center justify-center transition-opacity duration-300">
-                      <div className="relative flex items-center justify-center">
-                        <svg className="w-16 h-16 transform -rotate-90">
-                          <circle cx="32" cy="32" r="28" stroke="currentColor" strokeWidth="5" fill="transparent" className="text-white/20" />
-                          <circle 
-                            cx="32" 
-                            cy="32" 
-                            r="28" 
-                            stroke="currentColor" 
-                            strokeWidth="5" 
-                            fill="transparent" 
-                            strokeDasharray={28 * 2 * Math.PI} 
-                            strokeDashoffset={28 * 2 * Math.PI - (uploadProgress / 100) * 28 * 2 * Math.PI} 
-                            className="text-white transition-all duration-300" 
-                            strokeLinecap="round" 
-                          />
-                        </svg>
-                        <span className="absolute text-sm font-bold text-white drop-shadow-md">{uploadProgress}%</span>
-                      </div>
-                      <p className="text-white mt-3 font-medium text-sm drop-shadow-md">Mengunggah gambar...</p>
-                    </div>
-                  )}
-
-                  {isProcessing && !showSuccess && (
-                    <div className="absolute inset-0 bg-black/20 flex flex-col items-center justify-center transition-opacity duration-300">
-                      <div className="bg-white/95 backdrop-blur-md px-5 py-3 rounded-2xl shadow-xl flex items-center gap-3">
-                        <svg className="w-5 h-5 animate-spin text-blue-600" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        <span className="text-sm font-bold text-blue-600">Memproses Posting...</span>
-                      </div>
-                    </div>
-                  )}
-
-                  {showSuccess && (
-                    <div className="absolute inset-0 bg-green-500/20 flex items-center justify-center backdrop-blur-[1px]">
-                       <motion.div 
-                         initial={{ scale: 0.5, opacity: 0 }} 
-                         animate={{ scale: 1, opacity: 1 }} 
-                         className="w-16 h-16 bg-green-500 text-white rounded-full flex items-center justify-center shadow-2xl"
-                       >
-                         <FaCheckCircle className="text-3xl" />
-                       </motion.div>
-                    </div>
-                  )}
-                </div>
-              )}
-              {previews.length === 0 && (
-                <div className="py-8 flex flex-col items-center justify-center bg-gray-50 rounded-2xl mt-4 border border-gray-100">
-                   {uploadProgress < 100 ? (
-                     <div className="w-full max-w-xs">
-                       <div className="bg-gray-200 rounded-full h-2.5 mb-2 overflow-hidden shadow-inner">
-                         <div className="bg-blue-600 h-full rounded-full transition-all duration-300" style={{ width: `${uploadProgress}%` }}></div>
-                       </div>
-                       <p className="text-center text-xs font-semibold text-blue-600">{uploadProgress}% Mengunggah...</p>
-                     </div>
-                   ) : isProcessing && !showSuccess ? (
-                     <div className="flex items-center gap-2 text-blue-600">
-                        <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                       <span className="text-sm font-semibold">Memproses data...</span>
-                     </div>
-                   ) : showSuccess ? (
-                     <div className="flex items-center gap-2 text-green-600">
-                        <FaCheckCircle className="text-lg" />
-                       <span className="text-sm font-bold">Berhasil!</span>
-                     </div>
-                   ) : null}
-                </div>
-              )}
-            </motion.div>
-          ) : (
-          <motion.form 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            onSubmit={handleSubmit} 
-            className="bg-white rounded-[2rem] p-6 sm:p-8 md:p-10 shadow-sm border border-gray-100/80"
-          >
-            <div className="space-y-6">
-              {/* Title Input */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5 flex items-center gap-1">
-                  Judul Pemberitahuan <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Contoh: Libur Semester Ganjil 2025"
-                  className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-50 transition-all outline-none text-gray-800 placeholder-gray-400 font-medium"
-                  required
-                />
-              </div>
-
-              {/* Content Input */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5 flex items-center gap-1">
-                  Isi Pemberitahuan <span className="text-red-500">*</span>
-                </label>
-                <textarea
-                  value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                  rows={5}
-                  placeholder="Ketikkan penjabaran lengkap pengumuman di sini..."
-                  className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-50 transition-all outline-none resize-none text-gray-800 placeholder-gray-400 leading-relaxed max-h-[300px]"
-                  required
-                />
-              </div>
-
-              {/* File Upload Section */}
-              <div>
-                <div className="flex items-end justify-between mb-2">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Lampiran Gambar
-                  </label>
-                  <span className="text-gray-400 text-xs font-medium bg-gray-100 px-2 py-1 rounded-md">Maks. 10 gambar</span>
-                </div>
-                
-                <div className="relative border-2 border-dashed border-gray-300 rounded-2xl p-8 sm:p-10 hover:bg-blue-50/50 hover:border-blue-300 transition-colors group text-center cursor-pointer overflow-hidden bg-gray-50">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={handleFileChange}
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                    id="file-upload"
-                  />
-                  <div className="relative z-0 flex flex-col items-center">
-                    <div className="w-12 h-12 bg-white shadow-sm border border-gray-100 rounded-full flex items-center justify-center mb-3 group-hover:-translate-y-1 transition-transform duration-300">
-                      <FaUpload className="text-lg text-blue-500" />
-                    </div>
-                    <p className="text-gray-800 font-semibold mb-1 text-sm sm:text-base">Tarik & Lepas gambar ke sini</p>
-                    <p className="text-xs sm:text-sm text-gray-500">atau klik untuk menelusuri (JPG, PNG. Maks 10MB)</p>
-                  </div>
-                </div>
-
-                {/* File Counter & Quick Action */}
-                {files.length > 0 && (
-                  <div className="mt-3 flex items-center justify-between px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl">
-                    <span className="text-gray-700 text-sm font-medium flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                      {files.length} gambar siap diunggah
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        files.forEach((_, index) => removeFile(index))
-                      }}
-                      className="text-red-500 hover:text-red-600 text-sm font-semibold transition-colors px-2 py-1 hover:bg-red-50 rounded-lg"
-                    >
-                      Bersihkan Semua
-                    </button>
-                  </div>
-                )}
-
-                {/* Preview Grid */}
-                {previews.length > 0 && (
-                  <div className="mt-4 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
-                    <AnimatePresence>
-                      {previews.map((preview, index) => (
-                        <motion.div 
-                          initial={{ opacity: 0, scale: 0.8 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          exit={{ opacity: 0, scale: 0.8 }}
-                          key={preview} 
-                          className="relative group rounded-xl overflow-hidden shadow-sm border border-gray-200 aspect-square bg-gray-100"
-                        >
-                          <img 
-                            src={preview} 
-                            alt={`Preview ${index + 1}`} 
-                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                          />
-                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                            <button
-                              type="button"
-                              onClick={() => removeFile(index)}
-                              className="bg-white/20 hover:bg-red-500 text-white rounded-full p-2 backdrop-blur-md transition-colors"
-                            >
-                              <FaTimes className="text-sm" />
-                            </button>
-                          </div>
-                        </motion.div>
-                      ))}
-                    </AnimatePresence>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t border-gray-100 mt-8">
-              <button
-                type="button"
-                onClick={() => window.history.back()}
-                className="w-full sm:w-auto px-8 py-3.5 font-semibold text-gray-500 hover:text-gray-800 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-xl transition-colors shrink-0"
-              >
-                Kembali
-              </button>
-              <button
-                type="submit"
-                disabled={mutation.isPending}
-                 className="flex-1 py-3.5 font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-sm hover:shadow-[0_4px_12px_rgba(37,99,235,0.3)] hover:-translate-y-0.5 transition-all disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none flex justify-center items-center"
-              >
-                {mutation.isPending ? (
-                  <div className="flex items-center justify-center gap-2">
-                    <svg className="w-5 h-5 animate-spin text-white" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    <span>Memproses...</span>
-                  </div>
-                ) : (
-                  'Publikasikan Sekarang'
-                )}
-              </button>
-            </div>
-          </motion.form>
-          )}
-        </div>
+    <div className="flex min-h-screen bg-lp-bg relative overflow-hidden">
+      {/* Background Decorative Elements */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[60%] bg-lp-accent/5 blur-[120px] rounded-full" />
+        <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-purple-500/5 blur-[120px] rounded-full" />
       </div>
 
-      {/* Modern Toast / Alerts */}
-      <AnimatePresence>
-        {showSuccess && (
-          <motion.div 
-            initial={{ opacity: 0, y: 50, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 50, scale: 0.9 }}
-            className="fixed bottom-10 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-lp-bg text-lp-text py-4 px-6 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] ring-1 ring-lp-border border border-lp-borderA"
-          >
-            <div className="w-8 h-8 bg-green-100 text-green-600 rounded-full flex items-center justify-center">
-              <FaCheckCircle className="text-xl" />
-            </div>
-            <div>
-              <h4 className="font-bold text-sm tracking-tight border-b-0">Berhasil Dikirim!</h4>
-              <p className="text-xs text-lp-text2">Pemberitahuan telah mengudara di feed kampus.</p>
-            </div>
-          </motion.div>
-        )}
+      <Sidebar role="admin" />
+      
+      <div className="flex-1 flex flex-col relative z-10 transition-all duration-300 min-w-0">
+        <Navbar user={user} />
+        
+        <main className="flex-1 overflow-y-auto p-6 md:p-10 lg:p-14">
+          <div className="max-w-4xl mx-auto">
+            
+            {/* Header Section */}
+            <motion.div 
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-16"
+            >
+              <span className="text-[11px] font-mono font-bold tracking-[0.2em] uppercase text-lp-text3 mb-4 block">Official Communication</span>
+              <h1 className="text-4xl md:text-5xl font-light text-lp-text tracking-tight mb-4 italic">
+                Posting Pemberitahuan
+              </h1>
+              <p className="text-lp-text2 font-light text-lg max-w-2xl leading-relaxed">
+                Siarkan informasi penting dan berita kampus kepada seluruh ekosistem akademik secara instan.
+              </p>
+            </motion.div>
 
+            {/* Posting Status View */}
+            <AnimatePresence mode="wait">
+              {isUploading || showSuccess ? (
+                <motion.div 
+                  key="uploading-state"
+                  initial={{ opacity: 0, scale: 0.98 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.98 }}
+                  className="bg-white border border-lp-border rounded-[3rem] p-10 md:p-14 shadow-[0_64px_128px_rgba(0,0,0,0.06)] relative overflow-hidden"
+                >
+                  <div className="flex items-center justify-between mb-10">
+                    <div className="flex items-center gap-4">
+                      <div className="w-14 h-14 rounded-full bg-lp-text text-lp-bg flex items-center justify-center font-bold text-xl shadow-lg ring-4 ring-lp-surface">
+                        {user?.name?.charAt(0) || 'A'}
+                      </div>
+                      <div>
+                        <p className="font-bold text-lp-text text-[16px] tracking-tight">{user?.name || 'Administrator'}</p>
+                        <p className="text-[11px] text-lp-text3 font-mono tracking-widest uppercase">SYSLOG · NOW ACTIVE</p>
+                      </div>
+                    </div>
+                    {!showSuccess && isUploading && uploadProgress < 100 && (
+                      <button onClick={handleCancel} className="text-[10px] font-mono font-bold tracking-[0.2em] uppercase text-red-500 hover:text-red-700 transition-colors">
+                        ABORT TRANSMISSION
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="mb-12">
+                    <h3 className="text-3xl font-normal text-lp-text mb-6 tracking-tight italic">{title}</h3>
+                    <p className="text-[16px] text-lp-text2 leading-relaxed font-light whitespace-pre-wrap">{content}</p>
+                  </div>
+
+                  {previews.length > 0 && (
+                    <div className="relative rounded-[2rem] overflow-hidden bg-lp-surface border border-lp-border aspect-video shadow-inner mb-12">
+                      <img 
+                        src={previews[0]} 
+                        alt="uploading preview" 
+                        className={`w-full h-full object-cover transition-all duration-1000 ease-out ${
+                          uploadProgress < 100 ? 'blur-2xl scale-110 grayscale' : 'blur-0 scale-100'
+                        }`} 
+                      />
+                      
+                      {uploadProgress < 100 && (
+                        <div className="absolute inset-0 bg-lp-bg/40 flex flex-col items-center justify-center backdrop-blur-md">
+                           <div className="w-24 h-24 relative flex items-center justify-center">
+                              <svg className="w-full h-full transform -rotate-90">
+                                <circle cx="48" cy="48" r="42" stroke="rgba(0,0,0,0.05)" strokeWidth="6" fill="transparent" />
+                                <circle 
+                                  cx="48" 
+                                  cy="48" 
+                                  r="42" 
+                                  stroke="black" 
+                                  strokeWidth="6" 
+                                  fill="transparent" 
+                                  strokeDasharray={2 * Math.PI * 42} 
+                                  strokeDashoffset={(1 - uploadProgress / 100) * 2 * Math.PI * 42} 
+                                  className="transition-all duration-300" 
+                                  strokeLinecap="round" 
+                                />
+                              </svg>
+                              <span className="absolute text-[14px] font-mono font-bold">{uploadProgress}%</span>
+                           </div>
+                           <p className="text-[11px] font-mono tracking-[0.3em] font-bold uppercase mt-6 text-lp-text">Transmitting Data</p>
+                        </div>
+                      )}
+
+                      {isProcessing && !showSuccess && (
+                        <div className="absolute inset-0 bg-lp-bg/80 flex flex-col items-center justify-center backdrop-blur-xl">
+                          <div className="w-8 h-8 border-2 border-lp-text border-t-transparent rounded-full animate-spin mb-6"></div>
+                          <p className="text-[11px] font-mono tracking-[0.3em] font-bold uppercase text-lp-text">Finalizing Broadcast</p>
+                        </div>
+                      )}
+
+                      {showSuccess && (
+                        <div className="absolute inset-0 bg-emerald-500/10 flex items-center justify-center backdrop-blur-sm">
+                           <motion.div 
+                             initial={{ scale: 0.5, opacity: 0 }} 
+                             animate={{ scale: 1, opacity: 1 }} 
+                             className="w-20 h-20 bg-lp-text text-white rounded-full flex items-center justify-center shadow-2xl"
+                           >
+                             <FiCheckCircle className="text-3xl" />
+                           </motion.div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="pt-10 border-t border-lp-border flex flex-col items-center gap-4">
+                     {showSuccess ? (
+                       <motion.div 
+                         initial={{ opacity: 0, y: 10 }}
+                         animate={{ opacity: 1, y: 0 }}
+                         className="flex flex-col items-center gap-2"
+                       >
+                         <span className="text-[13px] font-mono font-bold tracking-[0.4em] uppercase text-lp-text">BROADCAST SUCCESSFUL</span>
+                         <p className="text-[13px] text-lp-text2 font-light">Redirecting to system feed...</p>
+                       </motion.div>
+                     ) : (
+                       <div className="flex items-center gap-3">
+                         <div className="w-2 h-2 rounded-full bg-lp-text animate-pulse"></div>
+                         <span className="text-[11px] font-mono font-bold tracking-[0.3em] uppercase text-lp-text3">UPLINK ACTIVE</span>
+                       </div>
+                     )}
+                  </div>
+                </motion.div>
+              ) : (
+                <motion.div 
+                  key="form-state"
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-white border border-lp-border rounded-[3rem] p-10 md:p-14 shadow-[0_32px_64px_rgba(0,0,0,0.03)]"
+                >
+                  <form onSubmit={handleSubmit} className="space-y-12">
+                    <div className="space-y-10">
+                      <div className="group">
+                        <label className="block text-[11px] font-mono font-bold tracking-[0.2em] uppercase text-lp-text3 mb-4">Announcement Title *</label>
+                        <input
+                          type="text"
+                          value={title}
+                          onChange={(e) => setTitle(e.target.value)}
+                          placeholder="Headline pengumuman Anda..."
+                          className="w-full bg-lp-surface border border-lp-border rounded-2xl p-6 text-lp-text text-[17px] font-light tracking-tight focus:outline-none focus:ring-4 focus:ring-lp-accent/5 focus:border-lp-text transition-all duration-700"
+                          required
+                        />
+                      </div>
+
+                      <div className="group">
+                        <label className="block text-[11px] font-mono font-bold tracking-[0.2em] uppercase text-lp-text3 mb-4">Detailed Narrative *</label>
+                        <textarea
+                          value={content}
+                          onChange={(e) => setContent(e.target.value)}
+                          rows={8}
+                          placeholder="Interpretasi detail informasi yang ingin disampaikan..."
+                          className="w-full bg-lp-surface border border-lp-border rounded-3xl p-8 text-lp-text text-[17px] font-light leading-relaxed focus:outline-none focus:ring-4 focus:ring-lp-accent/5 focus:border-lp-text transition-all duration-700 resize-none"
+                          required
+                        />
+                      </div>
+
+                      {/* Premium Upload Zone */}
+                      <div>
+                        <label className="block text-[11px] font-mono font-bold tracking-[0.2em] uppercase text-lp-text3 mb-6 text-center">Visual Media Assets <span className="font-sans lowercase opacity-50 font-normal italic ml-1">(Max 10)</span></label>
+                        <div className="relative group">
+                          <div className="absolute inset-0 bg-lp-text/5 blur-3xl rounded-[2.5rem] opacity-0 group-hover:opacity-100 transition-opacity duration-1000 -z-10"></div>
+                          <div className="relative border-2 border-dashed border-lp-border bg-lp-surface/50 backdrop-blur-md rounded-[2.5rem] p-16 hover:border-lp-text transition-all duration-700 flex flex-col items-center cursor-pointer overflow-hidden group">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              multiple
+                              onChange={handleFileChange}
+                              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                              id="file-upload"
+                            />
+                            <div className="w-20 h-20 bg-white border border-lp-border rounded-[1.5rem] flex items-center justify-center mb-6 shadow-sm transition-transform duration-700 group-hover:scale-110 group-hover:rotate-6">
+                              <FiUpload className="text-lp-text text-2xl" />
+                            </div>
+                            <p className="text-[18px] font-normal text-lp-text mb-2 tracking-tight">Drop visual assets or <em className="italic underline">browse</em>.</p>
+                            <p className="text-[11px] text-lp-text3 font-medium tracking-[0.2em] uppercase opacity-60">High Resolution PNG or JPEG</p>
+                          </div>
+                        </div>
+
+                        {/* Preview Management */}
+                        <AnimatePresence>
+                          {previews.length > 0 && (
+                            <motion.div 
+                              initial={{ opacity: 0, y: 20 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, y: 20 }}
+                              className="mt-10 pt-10 border-t border-lp-border"
+                            >
+                              <div className="flex items-center justify-between mb-8">
+                                 <span className="text-[11px] font-mono font-bold tracking-[0.2em] uppercase text-lp-text">{files.length} Assets Synchronized</span>
+                                 <button 
+                                   type="button" 
+                                   onClick={() => { setFiles([]); setPreviews([]); }}
+                                   className="text-[10px] font-mono font-bold tracking-[0.2em] text-red-500 uppercase hover:text-red-700 flex items-center gap-2"
+                                 >
+                                   <FiX className="text-sm" /> Clear All Data
+                                 </button>
+                              </div>
+                              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
+                                {previews.map((preview, index) => (
+                                  <motion.div 
+                                    layout
+                                    initial={{ opacity: 0, scale: 0.8 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    className="relative group aspect-square rounded-2xl overflow-hidden border border-lp-border bg-lp-surface shadow-sm"
+                                    key={preview}
+                                  >
+                                    <img src={preview} alt="Asset" className="w-full h-full object-cover grayscale-[0.3] group-hover:grayscale-0 transition-all duration-700 group-hover:scale-115" />
+                                    <div className="absolute inset-0 bg-lp-text/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
+                                      <button type="button" onClick={() => removeFile(index)} className="w-10 h-10 bg-white/20 hover:bg-lp-text text-white rounded-full flex items-center justify-center backdrop-blur-md transition-all">
+                                        <FiX className="text-lg" />
+                                      </button>
+                                    </div>
+                                  </motion.div>
+                                ))}
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    </div>
+
+                    {/* Footer Actions */}
+                    <div className="flex flex-col sm:flex-row justify-between items-center gap-6 pt-12 border-t border-lp-border">
+                      <button
+                        type="button"
+                        onClick={() => window.history.back()}
+                        className="w-full sm:w-auto px-12 py-5 border border-lp-border text-lp-text2 rounded-full text-[13px] font-bold tracking-[0.2em] uppercase hover:bg-lp-surface transition-all duration-500"
+                      >
+                        Discard
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={mutation.isPending}
+                        className="w-full sm:w-auto bg-lp-text text-lp-bg px-12 py-5 rounded-full text-[13px] font-bold tracking-[0.2em] uppercase hover:bg-lp-atext hover:-translate-y-1 transition-all duration-500 flex items-center justify-center gap-4 shadow-[0_12px_24px_rgba(0,0,0,0.1)] group"
+                      >
+                        {mutation.isPending ? (
+                          <div className="w-5 h-5 border-2 border-lp-bg/30 border-t-lp-bg rounded-full animate-spin"></div>
+                        ) : (
+                          <>
+                            <span>Authorize Broadcast</span>
+                            <FiChevronRight className="group-hover:translate-x-1 transition-transform" />
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </form>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </main>
+      </div>
+
+      {/* Global Terminal Messages */}
+      <AnimatePresence>
         {showError && (
           <motion.div 
-            initial={{ opacity: 0, y: 50, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 50, scale: 0.9 }}
-            className="fixed bottom-10 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-red-50 text-red-800 py-4 px-6 rounded-2xl shadow-[0_20px_50px_rgba(220,38,38,0.15)] ring-1 ring-red-100"
+            initial={{ opacity: 0, x: 50, scale: 0.9 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="fixed bottom-10 right-10 z-[100] w-full max-w-sm"
           >
-            <div className="w-8 h-8 bg-red-100 text-red-600 rounded-full flex items-center justify-center">
-              <FaExclamationCircle className="text-xl" />
-            </div>
-            <div>
-              <h4 className="font-bold text-sm tracking-tight border-b-0">Gagal Mempublikasikan</h4>
-              <p className="text-xs text-red-700">{showError}</p>
-            </div>
+             <div className="bg-lp-bg border border-lp-border rounded-[2rem] p-6 shadow-[0_32px_64px_rgba(0,0,0,0.15)] flex items-start gap-5 ring-1 ring-lp-borderA">
+                <div className="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center shrink-0 border border-red-100">
+                  <FiAlertCircle className="text-red-500 text-xl" />
+                </div>
+                <div className="flex-1">
+                   <h5 className="text-[12px] font-bold text-lp-text uppercase tracking-widest mb-1 flex items-center gap-2">
+                     <FiTerminal className="text-lp-text3" /> Transmission Error
+                   </h5>
+                   <p className="text-[14px] text-lp-text2 font-light leading-relaxed">{showError}</p>
+                </div>
+                <button onClick={() => setShowError('')} className="text-lp-text3 hover:text-lp-text transition-colors">
+                  <FiX />
+                </button>
+             </div>
           </motion.div>
         )}
       </AnimatePresence>

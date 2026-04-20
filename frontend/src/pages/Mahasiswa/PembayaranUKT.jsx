@@ -349,12 +349,21 @@ const PembayaranUKT = () => {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'success': return 'bg-green-100 text-green-800 border-green-200'
-      case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-200'
-      case 'failed': return 'bg-gray-100 text-lp-text font-semibold tracking-tight border-lp-border border'
-      case 'expired': return 'bg-red-100 text-red-800 border-red-200'
-      default: return 'bg-gray-100 text-lp-text font-semibold tracking-tight border-lp-border border'
+      case 'success': return 'bg-lp-surface text-lp-text border-lp-border'
+      case 'pending': return 'bg-lp-surface text-lp-text border-lp-border'
+      case 'failed': return 'bg-lp-surface text-lp-text border-lp-border'
+      case 'expired': return 'bg-lp-surface text-lp-text border-lp-border'
+      default: return 'bg-lp-surface text-lp-text border-lp-border'
     }
+  }
+
+  const getMethodButtonClass = (method) => {
+    const isActive = paymentMethod === method
+    return `p-4 rounded-xl border flex flex-col items-center justify-center space-y-2 transition-colors ${
+      isActive
+        ? 'border-lp-text bg-lp-bg text-lp-text'
+        : 'border-lp-border bg-white text-lp-text2 hover:border-lp-text2'
+    }`
   }
 
   const formatRupiah = (number) => {
@@ -439,20 +448,20 @@ const PembayaranUKT = () => {
 
         {/* Notification Card */}
         <div className={`relative ${animationClasses[webhookAnimation]} transform transition-all duration-300`}>
-          <div className="bg-lp-bg rounded-3xl p-1 max-w-md w-full shadow-2xl border-2 border-emerald-200">
+          <div className="bg-lp-bg rounded-3xl p-1 max-w-md w-full shadow-2xl border border-lp-border">
             <div className="relative bg-lp-surface rounded-2xl p-6 overflow-hidden">
               {/* Decorative elements */}
-              <div className="absolute -top-6 -right-6 w-24 h-24 bg-emerald-100 rounded-full opacity-20"></div>
-              <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-emerald-50 rounded-full opacity-20"></div>
+              <div className="absolute -top-6 -right-6 w-24 h-24 bg-lp-bg rounded-full opacity-20"></div>
+              <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-lp-surface rounded-full opacity-20"></div>
 
               <div className="relative text-center">
                 {/* Animated success icon */}
                 <div className="relative inline-block mb-5">
-                  <div className="w-24 h-24 bg-lp-bg rounded-full flex items-center justify-center mx-auto shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border">
-                    <div className="absolute inset-0 bg-emerald-300 rounded-full animate-ping opacity-20"></div>
-                    <FaCheckCircle className="text-white text-4xl z-10 animate-[bounce_1s_ease-in-out]" />
+                  <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center mx-auto shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border">
+                    <div className="absolute inset-0 bg-lp-bg rounded-full animate-ping opacity-20"></div>
+                    <FaCheckCircle className="text-lp-text text-4xl z-10 animate-[bounce_1s_ease-in-out]" />
                   </div>
-                  <div className="absolute -top-2 -right-2 w-10 h-10 bg-yellow-400 rounded-full flex items-center justify-center animate-pulse">
+                  <div className="absolute -top-2 -right-2 w-10 h-10 bg-lp-text rounded-full flex items-center justify-center animate-pulse">
                     <FaRocket className="text-white text-sm" />
                   </div>
                 </div>
@@ -463,23 +472,23 @@ const PembayaranUKT = () => {
                 <p className="text-lp-text2 mb-6 text-lg font-medium">{webhookMessage}</p>
 
                 {/* Payment Details Card */}
-                <div className="bg-gradient-to-r from-emerald-50/80 to-green-50/80 border border-emerald-200 rounded-2xl p-5 mb-5 backdrop-blur-sm">
+                <div className="bg-lp-bg border border-lp-border rounded-2xl p-5 mb-5 backdrop-blur-sm">
                   <div className="space-y-4">
                     <div className="flex justify-between items-center">
                       <span className="text-lp-text2 font-light font-medium">Invoice:</span>
-                      <span className="font-mono text-sm bg-emerald-100 px-2 py-1 rounded">
+                      <span className="font-mono text-sm bg-white border border-lp-border px-2 py-1 rounded">
                         {webhookData.invoice_uuid?.substring(0, 8) || webhookData.uuid?.substring(0, 8)}...
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-lp-text2 font-light font-medium">Nominal:</span>
-                      <span className="font-bold text-2xl text-emerald-600 animate-[pulse_2s_ease-in-out_infinite]">
+                      <span className="font-bold text-2xl text-lp-text animate-[pulse_2s_ease-in-out_infinite]">
                         {formatRupiah(webhookData.nominal || webhookData.total_dibayar)}
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-lp-text2 font-light font-medium">Metode:</span>
-                      <span className="font-bold text-emerald-700 bg-emerald-100 px-3 py-1 rounded-full">
+                      <span className="font-bold text-lp-text bg-white border border-lp-border px-3 py-1 rounded-full">
                         {webhookData.payment_method === 'qris' ? 'QRIS' : getBankName(webhookData.payment_method)}
                       </span>
                     </div>
@@ -487,22 +496,22 @@ const PembayaranUKT = () => {
                 </div>
 
                 {/* Status Card */}
-                <div className="bg-lp-bg border border-blue-200 rounded-2xl p-4 mb-5">
+                <div className="bg-lp-bg border border-lp-border rounded-2xl p-4 mb-5">
                   <div className="flex items-center justify-center space-x-3">
-                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                      <FaBellIcon className="text-lp-atext text-lg" />
+                    <div className="w-10 h-10 bg-white border border-lp-border rounded-full flex items-center justify-center">
+                      <FaBellIcon className="text-lp-text2 text-lg" />
                     </div>
                     <div className="text-left">
-                      <p className="text-sm text-blue-700 font-semibold">
+                      <p className="text-sm text-lp-text font-semibold">
                         ✅ <span className="font-bold">Webhook Pakasir.com Aktif!</span>
                       </p>
-                      <p className="text-xs text-lp-atext">
+                      <p className="text-xs text-lp-text2">
                         Sisa UKT telah diperbarui secara otomatis
                       </p>
                     </div>
                   </div>
                   <div className="mt-3 text-center">
-                    <div className="inline-flex items-center space-x-2 text-xs text-lp-atext bg-blue-100 px-3 py-1 rounded-full">
+                    <div className="inline-flex items-center space-x-2 text-xs text-lp-text2 bg-white border border-lp-border px-3 py-1 rounded-full">
                       <FaSync className="animate-spin" />
                       <span>Status terdeteksi dalam 1-2 detik</span>
                     </div>
@@ -521,7 +530,7 @@ const PembayaranUKT = () => {
                         refetchRiwayat()
                       }, 300)
                     }}
-                    className="flex-1 bg-lp-accent text-white border-none px-5 py-3 rounded-xl font-semibold hover:from-emerald-600 hover:to-emerald-700 transition-all duration-300 transform hover:scale-105 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-emerald-200"
+                    className="flex-1 bg-lp-text text-white border-none px-5 py-3 rounded-xl font-semibold hover:bg-lp-atext transition-all duration-300 transform hover:scale-105 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border"
                   >
                     Tutup & Refresh Data
                   </button>
@@ -534,7 +543,7 @@ const PembayaranUKT = () => {
                         navigate(`/mahasiswa/invoice/${webhookData.invoice_uuid || webhookData.uuid}`)
                       }, 300)
                     }}
-                    className="flex-1 bg-lp-accent text-white border-none px-5 py-3 rounded-xl font-semibold hover:from-blue-600 hover:to-blue-700 transition-all duration-300 transform hover:scale-105 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-blue-200"
+                    className="flex-1 bg-lp-text text-white border-none px-5 py-3 rounded-xl font-semibold hover:bg-lp-atext transition-all duration-300 transform hover:scale-105 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border"
                   >
                     Lihat Detail Invoice
                   </button>
@@ -582,13 +591,13 @@ const PembayaranUKT = () => {
     if (!confirmData || !showConfirmModal) return null
     return (
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-        <div className="bg-lp-surface rounded-2xl max-w-md w-full animate-[fadeIn_0.3s_ease-out]">
+          <div className="bg-lp-surface rounded-2xl max-w-md w-full animate-[fadeIn_0.3s_ease-out] border border-lp-border">
           {/* Header */}
-          <div className="p-6 border-b border-lp-border border">
-            <div className="flex items-center space-x-3 mb-4">
-              <div className="w-12 h-12 bg-lp-bg rounded-xl flex items-center justify-center">
-                <FaShieldAlt className="text-white text-xl" />
-              </div>
+            <div className="p-6 border-b border-lp-border">
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="w-12 h-12 bg-white border border-lp-border rounded-xl flex items-center justify-center">
+                  <FaShieldAlt className="text-lp-text2 text-xl" />
+                </div>
               <div>
                 <h2 className="text-xl font-bold text-lp-text font-semibold tracking-tight">Konfirmasi Pembayaran</h2>
                 <p className="text-lp-text2 font-light text-sm">Tinjau rincian sebelum melanjutkan</p>
@@ -596,10 +605,10 @@ const PembayaranUKT = () => {
             </div>
           </div>
           {/* Body */}
-          <div className="p-6">
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-5 mb-4">
+            <div className="p-6">
+             <div className="bg-lp-bg border border-lp-border rounded-xl p-5 mb-4">
               <h3 className="font-semibold text-lp-text font-semibold tracking-tight mb-3 flex items-center">
-                <FaCalculator className="mr-2 text-lp-atext" />
+                 <FaCalculator className="mr-2 text-lp-text2" />
                 Rincian Pembayaran
               </h3>
               <div className="space-y-3">
@@ -613,34 +622,34 @@ const PembayaranUKT = () => {
                   <span className="text-lp-text2 font-light">Nominal UKT</span>
                   <span className="font-bold text-lp-text font-semibold tracking-tight">{formatRupiah(confirmData.nominal)}</span>
                 </div>
-                <div className="pt-3 border-t border-blue-200">
+                 <div className="pt-3 border-t border-lp-border">
                   <p className="text-sm text-lp-text2 font-light mb-2">
                     Biaya admin akan ditentukan oleh Pakasir.com
                   </p>
                   <div className="flex justify-between items-center">
                     <span className="text-lp-text font-semibold tracking-tight font-bold">Total yang akan dibayar</span>
-                    <span className="font-bold text-lp-atext text-lg">
-                      {formatRupiah(confirmData.nominal)} + biaya admin
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <p className="text-sm text-yellow-700 flex items-center">
+                     <span className="font-bold text-lp-text text-lg">
+                       {formatRupiah(confirmData.nominal)} + biaya admin
+                     </span>
+                   </div>
+                 </div>
+               </div>
+               <div className="mt-4 p-3 bg-white border border-lp-border rounded-lg">
+                 <p className="text-sm text-lp-text2 flex items-center">
                   <FaInfoCircle className="mr-2 flex-shrink-0" />
                   Biaya admin dari Pakasir akan ditambahkan otomatis. Total akhir akan ditampilkan setelah pembayaran dibuat.
                 </p>
               </div>
             </div>
             <div className="text-sm text-lp-text2 font-light mb-4">
-              <p className="flex items-center">
-                <FaCheck className="text-lp-green mr-2" />
-                Data yang dimasukkan akan dikirim ke server Pakasir.com
-              </p>
-            </div>
-          </div>
-          {/* Footer */}
-          <div className="p-6 border-t border-lp-border border">
+               <p className="flex items-center">
+                 <FaCheck className="text-lp-text2 mr-2" />
+                 Data yang dimasukkan akan dikirim ke server Pakasir.com
+               </p>
+             </div>
+           </div>
+           {/* Footer */}
+           <div className="p-6 border-t border-lp-border">
             <div className="flex space-x-3">
               <button
                 onClick={() => setShowConfirmModal(false)}
@@ -651,7 +660,7 @@ const PembayaranUKT = () => {
               <button
                 onClick={handleConfirmPayment}
                 disabled={createPaymentMutation.isPending}
-                className="flex-1 bg-lp-accent text-white border-none py-3 px-4 rounded-xl font-medium hover:from-green-600 hover:to-green-700 transition-colors flex items-center justify-center"
+                className="flex-1 bg-lp-text text-white border-none py-3 px-4 rounded-xl font-medium hover:bg-lp-atext transition-colors flex items-center justify-center"
               >
                 {createPaymentMutation.isPending ? (
                   <>
@@ -690,9 +699,9 @@ const PembayaranUKT = () => {
 
     return (
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-        <div className="bg-lp-surface rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto animate-[fadeIn_0.3s_ease-out]">
+        <div className="bg-lp-surface rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto animate-[fadeIn_0.3s_ease-out] border border-lp-border">
           {/* Header */}
-          <div className="sticky top-0 bg-lp-surface p-6 border-b border-lp-border border rounded-t-2xl">
+          <div className="sticky top-0 bg-lp-surface p-6 border-b border-lp-border rounded-t-2xl">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold text-lp-text font-semibold tracking-tight">
                 Instruksi Pembayaran
@@ -713,14 +722,14 @@ const PembayaranUKT = () => {
                 Selesaikan pembayaran sebelum {paymentDetails.expired_time ? formatDate(paymentDetails.expired_time) : '24 jam'}
               </p>
               {isExpired && (
-                <span className="px-3 py-1 bg-red-100 text-red-800 text-sm font-medium rounded-full">
+                <span className="px-3 py-1 bg-lp-bg text-lp-text text-sm font-medium rounded-full border border-lp-border">
                   Expired
                 </span>
               )}
             </div>
             {!isExpired && paymentDetails.expired_time && (
               <div className="mt-2">
-                <div className="flex items-center text-lp-atext">
+                <div className="flex items-center text-lp-text2">
                   <FaClock className="mr-2" />
                   <span className="text-sm">
                     Sisa waktu: {calculateTimeLeft(paymentDetails.expired_time)}
@@ -730,7 +739,7 @@ const PembayaranUKT = () => {
             )}
             {/* Fast Polling Indicator */}
             {fastPollingActive && !isExpired && (
-              <div className="mt-2 flex items-center text-lp-green bg-green-50 p-2 rounded-lg">
+              <div className="mt-2 flex items-center text-lp-text2 bg-lp-bg border border-lp-border p-2 rounded-lg">
                 <FaSync className="animate-spin mr-2" />
                 <span className="text-sm font-medium">
                   🔥 <span className="font-bold">FAST POLLING AKTIF:</span> Memantau status pembayaran secara real-time (deteksi dalam 1-2 detik)
@@ -742,9 +751,9 @@ const PembayaranUKT = () => {
           {/* Payment Details */}
           <div className="p-6">
             {/* Payment Summary */}
-            <div className="bg-lp-bg rounded-xl p-5 mb-6 border border-blue-100">
+            <div className="bg-lp-bg rounded-xl p-5 mb-6 border border-lp-border">
               <h3 className="font-semibold text-lp-text font-semibold tracking-tight mb-4 flex items-center">
-                <FaFileInvoice className="mr-2 text-lp-atext" />
+                <FaFileInvoice className="mr-2 text-lp-text2" />
                 Rincian Pembayaran dari Pakasir.com
               </h3>
               <div className="grid grid-cols-2 gap-4">
@@ -760,14 +769,14 @@ const PembayaranUKT = () => {
                 </div>
                 <div>
                   <p className="text-lp-text2 font-light text-sm">Biaya Admin Pakasir</p>
-                  <p className="font-bold text-yellow-600">{formatRupiah(paymentDetails.biaya_admin)}</p>
+                  <p className="font-bold text-lp-text">{formatRupiah(paymentDetails.biaya_admin)}</p>
                 </div>
                 <div>
                   <p className="text-lp-text2 font-light text-sm">Total Bayar</p>
-                  <p className="font-bold text-lp-atext">{formatRupiah(paymentDetails.total_dibayar)}</p>
+                  <p className="font-bold text-lp-text">{formatRupiah(paymentDetails.total_dibayar)}</p>
                 </div>
               </div>
-              <div className="mt-4 pt-4 border-t border-blue-100">
+              <div className="mt-4 pt-4 border-t border-lp-border">
                 <p className="text-lp-text2 font-light text-sm">ID Transaksi</p>
                 <div className="flex items-center justify-between">
                   <code className="font-mono text-lp-text font-semibold tracking-tight text-sm">{paymentDetails.uuid}</code>
@@ -777,12 +786,12 @@ const PembayaranUKT = () => {
                       setCopied(true)
                       setTimeout(() => setCopied(false), 2000)
                     }}
-                    className="text-lp-atext hover:text-blue-800"
+                    className="text-lp-text2 hover:text-lp-text"
                   >
                     <FaCopy />
                   </button>
                 </div>
-                {copied && <span className="text-lp-green text-xs mt-1">Disalin!</span>}
+                {copied && <span className="text-lp-text2 text-xs mt-1">Disalin!</span>}
               </div>
             </div>
 
@@ -790,11 +799,11 @@ const PembayaranUKT = () => {
             {paymentDetails.payment_method === 'qris' && paymentDetails.qrcode && !isExpired && (
               <div className="mb-6">
                 <h3 className="font-semibold text-lp-text font-semibold tracking-tight mb-4 flex items-center">
-                  <FaQrcode className="mr-2 text-lp-green" />
+                  <FaQrcode className="mr-2 text-lp-text2" />
                   Pembayaran QRIS
                 </h3>
                 <div className="flex flex-col md:flex-row items-center gap-8">
-                  <div className="bg-lp-surface p-4 rounded-lg border border-lp-border border shadow-sm">
+                  <div className="bg-white p-4 rounded-lg border border-lp-border shadow-sm">
                     <QRCode
                       value={paymentDetails.qrcode}
                       size={200}
@@ -802,14 +811,14 @@ const PembayaranUKT = () => {
                     />
                   </div>
                   <div className="flex-1">
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
-                      <h4 className="font-semibold text-green-800 mb-2">Instruksi Pembayaran:</h4>
-                      <ol className="list-decimal list-inside space-y-2 text-sm text-green-700">
+                    <div className="bg-lp-bg border border-lp-border rounded-lg p-4 mb-4">
+                      <h4 className="font-semibold text-lp-text mb-2">Instruksi Pembayaran:</h4>
+                      <ol className="list-decimal list-inside space-y-2 text-sm text-lp-text2">
                         <li>Scan QR Code di atas menggunakan aplikasi e-wallet atau mobile banking</li>
                         <li>Atau klik link pembayaran di bawah untuk membuka halaman Pakasir</li>
                         <li>Pastikan nominal sesuai: {formatRupiah(paymentDetails.total_dibayar)}</li>
                         <li>Konfirmasi dan selesaikan pembayaran</li>
-                        <li className="font-bold text-green-800">Status akan otomatis terupdate via webhook Pakasir dalam 1-5 menit</li>
+                        <li className="font-bold text-lp-text">Status akan otomatis terupdate via webhook Pakasir dalam 1-5 menit</li>
                       </ol>
                     </div>
                     <div className="mt-4">
@@ -818,7 +827,7 @@ const PembayaranUKT = () => {
                           href={paymentDetails.payment_url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center space-x-2 bg-lp-green text-white px-4 py-2 rounded-lg hover:bg-lp-green transition-colors"
+                          className="inline-flex items-center space-x-2 bg-lp-text text-white px-4 py-2 rounded-lg hover:bg-lp-atext transition-colors"
                         >
                           <FaExternalLinkAlt />
                           <span>Buka Halaman Pembayaran Pakasir</span>
@@ -834,18 +843,18 @@ const PembayaranUKT = () => {
             {paymentDetails.payment_method !== 'qris' && !isExpired && (
               <div className="mb-6">
                 <h3 className="font-semibold text-lp-text font-semibold tracking-tight mb-4 flex items-center">
-                  <FaBuilding className="mr-2 text-lp-atext" />
+                  <FaBuilding className="mr-2 text-lp-text2" />
                   {getBankName(paymentDetails.payment_method)}
                 </h3>
-                <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
+                <div className="bg-lp-bg border border-lp-border rounded-xl p-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                    <div className="bg-lp-surface p-4 rounded-lg border border-blue-100">
+                    <div className="bg-white p-4 rounded-lg border border-lp-border">
                       <p className="text-lp-text2 font-light text-sm">Bank</p>
                       <p className="font-bold text-lp-text font-semibold tracking-tight text-lg">
                         {getBankName(paymentDetails.payment_method)}
                       </p>
                     </div>
-                    <div className="bg-lp-surface p-4 rounded-lg border border-blue-100">
+                    <div className="bg-white p-4 rounded-lg border border-lp-border">
                       <p className="text-lp-text2 font-light text-sm">Nomor Virtual Account</p>
                       <div className="flex items-center justify-between">
                         <p className="font-bold text-lp-text font-semibold tracking-tight text-lg font-mono">
@@ -858,35 +867,35 @@ const PembayaranUKT = () => {
                               setCopied(true)
                               setTimeout(() => setCopied(false), 2000)
                             }}
-                            className="text-lp-atext hover:text-blue-800 ml-2"
+                            className="text-lp-text2 hover:text-lp-text ml-2"
                           >
                             <FaCopy />
                           </button>
                         )}
                       </div>
                     </div>
-                    <div className="bg-lp-surface p-4 rounded-lg border border-blue-100">
+                    <div className="bg-white p-4 rounded-lg border border-lp-border">
                       <p className="text-lp-text2 font-light text-sm">Nama Penerima</p>
                       <p className="font-bold text-lp-text font-semibold tracking-tight text-lg">Student Hub</p>
                     </div>
-                    <div className="bg-lp-surface p-4 rounded-lg border border-blue-100">
+                    <div className="bg-white p-4 rounded-lg border border-lp-border">
                       <p className="text-lp-text2 font-light text-sm">Total Transfer</p>
-                      <p className="font-bold text-lp-atext text-lg">{formatRupiah(paymentDetails.total_dibayar)}</p>
+                      <p className="font-bold text-lp-text text-lg">{formatRupiah(paymentDetails.total_dibayar)}</p>
                     </div>
                   </div>
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-                    <h4 className="font-semibold text-yellow-800 mb-2 flex items-center">
+                  <div className="bg-white border border-lp-border rounded-lg p-4 mb-4">
+                    <h4 className="font-semibold text-lp-text mb-2 flex items-center">
                       <FaInfoCircle className="mr-2" />
                       Instruksi Transfer:
                     </h4>
-                    <ol className="list-decimal list-inside space-y-2 text-sm text-yellow-700">
+                    <ol className="list-decimal list-inside space-y-2 text-sm text-lp-text2">
                       <li>Buka aplikasi mobile banking atau internet banking Anda</li>
                       <li>Pilih menu "Transfer" → "Transfer ke Virtual Account"</li>
                       <li>Masukkan nomor Virtual Account di atas</li>
                       <li>Bank penerima: {getBankName(paymentDetails.payment_method)}</li>
                       <li>Masukkan nominal: {formatRupiah(paymentDetails.total_dibayar)}</li>
                       <li>Konfirmasi dan selesaikan transfer</li>
-                      <li className="font-bold text-yellow-800">Status akan otomatis terupdate via webhook Pakasir dalam 1-5 menit</li>
+                      <li className="font-bold text-lp-text">Status akan otomatis terupdate via webhook Pakasir dalam 1-5 menit</li>
                     </ol>
                   </div>
                   {paymentDetails.payment_url && (
@@ -895,7 +904,7 @@ const PembayaranUKT = () => {
                         href={paymentDetails.payment_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center space-x-2 bg-lp-accent text-white px-4 py-2 rounded-lg hover:bg-lp-accent transition-colors"
+                        className="inline-flex items-center space-x-2 bg-lp-text text-white px-4 py-2 rounded-lg hover:bg-lp-atext transition-colors"
                       >
                         <FaExternalLinkAlt />
                         <span>Buka Halaman Pembayaran Pakasir</span>
@@ -908,8 +917,8 @@ const PembayaranUKT = () => {
 
             {/* Expired Message */}
             {isExpired && (
-              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
-                <div className="flex items-center space-x-3 text-red-800">
+              <div className="mb-6 p-4 bg-lp-bg border border-lp-border rounded-xl">
+                <div className="flex items-center space-x-3 text-lp-text">
                   <FaExclamationTriangle className="flex-shrink-0 text-xl" />
                   <div>
                     <h4 className="font-bold">Pembayaran Telah Kadaluarsa</h4>
@@ -922,7 +931,7 @@ const PembayaranUKT = () => {
             )}
 
             {/* Note */}
-            <div className="bg-lp-bg border border-lp-border border rounded-lg p-4">
+            <div className="bg-lp-bg border border-lp-border rounded-lg p-4">
               <p className="text-lp-text2 text-sm">
                 <span className="font-semibold">Catatan Penting:</span> Setelah menyelesaikan pembayaran, sistem akan otomatis menerima webhook dari Pakasir.com dan memperbarui status pembayaran serta sisa UKT Anda.
               </p>
@@ -933,7 +942,7 @@ const PembayaranUKT = () => {
           </div>
 
           {/* Footer */}
-          <div className="sticky bottom-0 bg-lp-surface p-6 border-t border-lp-border border rounded-b-2xl">
+          <div className="sticky bottom-0 bg-lp-surface p-6 border-t border-lp-border rounded-b-2xl">
             <div className="flex flex-col md:flex-row gap-3">
               <button
                 onClick={() => {
@@ -942,7 +951,7 @@ const PembayaranUKT = () => {
                   stopFastPolling()
                   // TIDAK melakukan refresh data saat tombol tutup ditekan
                 }}
-                className="flex-1 bg-lp-accent text-white border-none py-3 px-6 rounded-xl font-semibold hover:from-gray-500 hover:to-gray-600 transition-all duration-300"
+                className="flex-1 bg-lp-text text-white border-none py-3 px-6 rounded-xl font-semibold hover:bg-lp-atext transition-all duration-300"
               >
                 Tutup
               </button>
@@ -955,7 +964,7 @@ const PembayaranUKT = () => {
                     }
                   }}
                   disabled={cancelPaymentMutation.isPending}
-                  className="flex-1 bg-lp-accent text-white border-none py-3 px-6 rounded-xl font-semibold hover:from-red-600 hover:to-red-700 transition-all duration-300 flex items-center justify-center space-x-2"
+                  className="flex-1 bg-lp-text text-white border-none py-3 px-6 rounded-xl font-semibold hover:bg-lp-atext transition-all duration-300 flex items-center justify-center space-x-2"
                 >
                   {cancelPaymentMutation.isPending ? <FaSpinner className="animate-spin" /> : <FaBan />}
                   <span>{cancelPaymentMutation.isPending ? 'Membatalkan...' : 'Batalkan Pembayaran'}</span>
@@ -971,7 +980,7 @@ const PembayaranUKT = () => {
                     stopFastPolling()
                     document.getElementById('payment-form')?.scrollIntoView({ behavior: 'smooth' })
                   }}
-                  className="text-lp-atext hover:text-blue-800 font-medium"
+                  className="text-lp-text2 hover:text-lp-text font-medium"
                 >
                   Buat Pembayaran Baru →
                 </button>
@@ -986,10 +995,10 @@ const PembayaranUKT = () => {
   if (authLoading) {
     return (
       <div className="flex h-screen items-center justify-center bg-lp-bg">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-lp-text2 font-light">Memuat halaman pembayaran...</p>
-        </div>
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-lp-text mx-auto mb-4"></div>
+            <p className="text-lp-text2 font-light">Memuat halaman pembayaran...</p>
+          </div>
       </div>
     )
   }
@@ -1017,7 +1026,7 @@ const PembayaranUKT = () => {
                   }
                 </p>
                 {fastPollingActive && (
-                  <div className="mt-2 flex items-center text-lp-green bg-green-50 p-2 rounded-lg inline-flex animate-pulse">
+                  <div className="mt-2 flex items-center text-lp-text2 bg-lp-surface border border-lp-border p-2 rounded-lg inline-flex animate-pulse">
                     <FaSync className="animate-spin mr-2" />
                     <span className="text-sm font-medium">🔥 Sedang memantau pembayaran secara real-time...</span>
                   </div>
@@ -1026,8 +1035,8 @@ const PembayaranUKT = () => {
 
               {/* Error Display */}
               {errorMessage && (
-                <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl animate-[fadeIn_0.3s_ease-out]">
-                  <div className="flex items-center space-x-3 text-red-800">
+                <div className="mb-6 p-4 bg-lp-bg border border-lp-border rounded-xl animate-[fadeIn_0.3s_ease-out]">
+                  <div className="flex items-center space-x-3 text-lp-text">
                     <FaExclamationTriangle className="flex-shrink-0" />
                     <div>
                       <span className="font-medium">Error:</span>
@@ -1039,8 +1048,8 @@ const PembayaranUKT = () => {
 
               {/* Success Display */}
               {successMessage && (
-                <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl animate-[fadeIn_0.3s_ease-out]">
-                  <div className="flex items-center space-x-3 text-green-800">
+                <div className="mb-6 p-4 bg-lp-bg border border-lp-border rounded-xl animate-[fadeIn_0.3s_ease-out]">
+                  <div className="flex items-center space-x-3 text-lp-text">
                     <FaCheckCircle className="flex-shrink-0" />
                     <div>
                       <span className="font-medium">Sukses:</span>
@@ -1051,20 +1060,20 @@ const PembayaranUKT = () => {
               )}
 
               {/* Sisa UKT Card */}
-              <div className="bg-lp-surface rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border border border-lp-border border p-6 mb-6">
+              <div className="bg-white rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border p-6 mb-6">
                 <div className="flex justify-between items-center mb-6">
                   <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-lp-bg rounded-xl flex items-center justify-center">
-                      <FaUniversity className="text-white text-lg" />
+                    <div className="w-10 h-10 bg-lp-surface rounded-xl border border-lp-border flex items-center justify-center">
+                      <FaUniversity className="text-lp-text2 text-lg" />
                     </div>
                     <h3 className="text-lg font-semibold text-lp-text font-semibold tracking-tight">Informasi UKT</h3>
                   </div>
-                  <button
+                    <button
                     onClick={() => {
                       refetchSisaUKT()
                       refetchRiwayat()
                     }}
-                    className="flex items-center space-x-2 text-lp-atext hover:text-blue-800 transition-colors"
+                    className="flex items-center space-x-2 text-lp-text2 hover:text-lp-text transition-colors"
                     disabled={sisaLoading}
                   >
                     <FaSync className={`${sisaLoading ? 'animate-spin' : ''}`} />
@@ -1072,12 +1081,12 @@ const PembayaranUKT = () => {
                   </button>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="bg-blue-50 p-4 rounded-xl border border-blue-200">
-                    <p className="text-lp-atext text-sm font-medium">Total UKT</p>
+                  <div className="bg-lp-surface p-4 rounded-xl border border-lp-border">
+                    <p className="text-lp-text2 text-sm font-medium">Total UKT</p>
                     <p className="text-2xl font-bold text-lp-text font-semibold tracking-tight">Rp 7.000.000</p>
                   </div>
-                  <div className="bg-green-50 p-4 rounded-xl border border-green-200">
-                    <p className="text-lp-green text-sm font-medium">Sisa UKT</p>
+                  <div className="bg-lp-surface p-4 rounded-xl border border-lp-border">
+                    <p className="text-lp-text2 text-sm font-medium">Sisa UKT</p>
                     <p className="text-2xl font-bold text-lp-text font-semibold tracking-tight">
                       {sisaLoading ? 'Loading...' : formatRupiah(sisaUKTData?.sisa_ukt || 0)}
                     </p>
@@ -1085,8 +1094,8 @@ const PembayaranUKT = () => {
                       ✅ Auto-update via webhook Pakasir saat pembayaran berhasil
                     </p>
                   </div>
-                  <div className="bg-purple-50 p-4 rounded-xl border border-purple-200">
-                    <p className="text-purple-600 text-sm font-medium">Progress</p>
+                  <div className="bg-lp-surface p-4 rounded-xl border border-lp-border">
+                    <p className="text-lp-text2 text-sm font-medium">Progress</p>
                     <p className="text-2xl font-bold text-lp-text font-semibold tracking-tight">
                       {sisaLoading ? '0%' : `${Math.round(((7000000 - (sisaUKTData?.sisa_ukt || 0)) / 7000000) * 100)}%`}
                     </p>
@@ -1095,10 +1104,10 @@ const PembayaranUKT = () => {
               </div>
 
               {/* Create Payment Card */}
-              <div id="payment-form" className="bg-lp-surface rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border border border-lp-border border p-6 mb-8">
+              <div id="payment-form" className="bg-white rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border p-6 mb-8">
                 <div className="flex items-center space-x-3 mb-6">
-                  <div className="w-10 h-10 bg-lp-bg rounded-xl flex items-center justify-center">
-                    <FaWallet className="text-white text-lg" />
+                  <div className="w-10 h-10 bg-lp-surface border border-lp-border rounded-xl flex items-center justify-center">
+                    <FaWallet className="text-lp-text2 text-lg" />
                   </div>
                   <div>
                     <h3 className="text-xl font-bold text-lp-text font-semibold tracking-tight">
@@ -1118,10 +1127,10 @@ const PembayaranUKT = () => {
                         value={amountFormatted}
                         onChange={handleAmountChange}
                         className="
-                          w-full pl-12 pr-4 py-3 border border-lp-border border rounded-xl
-                          focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
+                          w-full pl-12 pr-4 py-3 border border-lp-border rounded-xl
+                          focus:outline-none focus:ring-2 focus:ring-lp-text/20 focus:border-transparent
                           transition-all duration-300
-                          bg-lp-bg focus:bg-lp-surface text-lg font-medium
+                          bg-lp-surface focus:bg-white text-lg font-medium
                         "
                         placeholder="Masukan Nominal"
                         required
@@ -1140,7 +1149,7 @@ const PembayaranUKT = () => {
                             setAmountFormatted(formatNumber(sisaUKTData.sisa_ukt.toString()))
                           }
                         }}
-                        className="text-sm text-lp-atext hover:text-blue-800 font-medium"
+                        className="text-sm text-lp-text2 hover:text-lp-text font-medium"
                       >
                         Bayar Semua
                       </button>
@@ -1156,13 +1165,7 @@ const PembayaranUKT = () => {
                       <button
                         type="button"
                         onClick={() => setPaymentMethod('qris')}
-                        className={`
-                          p-4 rounded-xl border-2 flex flex-col items-center justify-center space-y-2
-                          ${paymentMethod === 'qris' 
-                            ? 'border-green-500 bg-green-50 text-green-700' 
-                            : 'border-lp-border border bg-lp-surface text-lp-text2 hover:border-green-300'
-                          }
-                        `}
+                        className={getMethodButtonClass('qris')}
                       >
                         <FaQrcode className="text-2xl" />
                         <span className="text-sm font-medium">QRIS</span>
@@ -1171,13 +1174,7 @@ const PembayaranUKT = () => {
                       <button
                         type="button"
                         onClick={() => setPaymentMethod('bri_va')}
-                        className={`
-                          p-4 rounded-xl border-2 flex flex-col items-center justify-center space-y-2
-                          ${paymentMethod === 'bri_va' 
-                            ? 'border-blue-500 bg-blue-50 text-blue-700' 
-                            : 'border-lp-border border bg-lp-surface text-lp-text2 hover:border-blue-300'
-                          }
-                        `}
+                        className={getMethodButtonClass('bri_va')}
                       >
                         <FaBuilding className="text-2xl" />
                         <span className="text-sm font-medium">BRI VA</span>
@@ -1186,13 +1183,7 @@ const PembayaranUKT = () => {
                       <button
                         type="button"
                         onClick={() => setPaymentMethod('bni_va')}
-                        className={`
-                          p-4 rounded-xl border-2 flex flex-col items-center justify-center space-y-2
-                          ${paymentMethod === 'bni_va' 
-                            ? 'border-yellow-500 bg-yellow-50 text-yellow-700' 
-                            : 'border-lp-border border bg-lp-surface text-lp-text2 hover:border-yellow-300'
-                          }
-                        `}
+                        className={getMethodButtonClass('bni_va')}
                       >
                         <FaBuilding className="text-2xl" />
                         <span className="text-sm font-medium">BNI VA</span>
@@ -1201,13 +1192,7 @@ const PembayaranUKT = () => {
                       <button
                         type="button"
                         onClick={() => setPaymentMethod('mandiri_va')}
-                        className={`
-                          p-4 rounded-xl border-2 flex flex-col items-center justify-center space-y-2
-                          ${paymentMethod === 'mandiri_va' 
-                            ? 'border-red-500 bg-red-50 text-red-700' 
-                            : 'border-lp-border border bg-lp-surface text-lp-text2 hover:border-red-300'
-                          }
-                        `}
+                        className={getMethodButtonClass('mandiri_va')}
                       >
                         <FaBuilding className="text-2xl" />
                         <span className="text-sm font-medium">Mandiri VA</span>
@@ -1218,9 +1203,9 @@ const PembayaranUKT = () => {
 
                   {/* Payment Preview */}
                   {amount >= 500 && (
-                    <div className="bg-lp-bg rounded-xl p-5 border border-blue-200">
+                    <div className="bg-lp-bg rounded-xl p-5 border border-lp-border">
                       <h4 className="font-semibold text-lp-text font-semibold tracking-tight mb-4 flex items-center">
-                        <FaCalculator className="mr-2 text-lp-atext" />
+                        <FaCalculator className="mr-2 text-lp-text2" />
                         Preview Pembayaran:
                       </h4>
                       <div className="space-y-3">
@@ -1234,14 +1219,14 @@ const PembayaranUKT = () => {
                           <span className="text-lp-text2 font-light">Nominal UKT</span>
                           <span className="font-semibold">{formatRupiah(amount)}</span>
                         </div>
-                        <div className="pt-3 border-t border-blue-200">
+                        <div className="pt-3 border-t border-lp-border">
                           <p className="text-sm text-lp-text2 font-light">
                             Biaya admin akan ditentukan oleh Pakasir.com dan ditampilkan setelah pembayaran dibuat
                           </p>
                         </div>
                       </div>
-                      <div className="mt-4 p-3 bg-lp-bg rounded-lg border border-green-200">
-                        <p className="text-sm text-green-700 flex items-center">
+                      <div className="mt-4 p-3 bg-white rounded-lg border border-lp-border">
+                        <p className="text-sm text-lp-text2 flex items-center">
                           <FaInfoCircle className="mr-2" />
                         Pembayaran akan diproses tanpa refresh halaman
                         </p>
@@ -1261,9 +1246,9 @@ const PembayaranUKT = () => {
                       (paymentMethod !== 'qris' && amount < 50000)
                     }
                     className="
-                      w-full bg-lp-accent text-white border-none
+                      w-full bg-lp-text text-white border-none
                       py-4 px-6 rounded-xl font-semibold text-lg
-                      hover:from-green-600 hover:to-green-700 transform hover:scale-[1.02]
+                      hover:bg-lp-atext transform hover:scale-[1.02]
                       disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none
                       transition-all duration-300 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl
                       flex items-center justify-center space-x-3
@@ -1285,11 +1270,11 @@ const PembayaranUKT = () => {
               </div>
 
               {/* Riwayat Pembayaran */}
-              <div className="bg-lp-surface rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border border border-lp-border border p-6">
+              <div className="bg-white rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border p-6">
                 <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
                   <div className="flex items-center space-x-3 mb-4 md:mb-0">
-                    <div className="w-10 h-10 bg-lp-bg rounded-xl flex items-center justify-center">
-                      <FaHistory className="text-white text-lg" />
+                    <div className="w-10 h-10 bg-lp-surface border border-lp-border rounded-xl flex items-center justify-center">
+                      <FaHistory className="text-lp-text2 text-lg" />
                     </div>
                     <div>
                       <h3 className="text-xl font-bold text-lp-text font-semibold tracking-tight">
@@ -1307,7 +1292,7 @@ const PembayaranUKT = () => {
                         value={filter}
                         onChange={(e) => setFilter(e.target.value)}
                         className="
-                          appearance-none bg-lp-surface border border-lp-border border rounded-lg py-2 pl-3 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
+                          appearance-none bg-white border border-lp-border rounded-lg py-2 pl-3 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-lp-text/20 focus:border-transparent
                           min-w-[120px] cursor-pointer
                         "
                       >
@@ -1325,10 +1310,10 @@ const PembayaranUKT = () => {
                 </div>
 
                 {riwayatLoading ? (
-                  <div className="text-center py-12">
-                    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-purple-600 mx-auto mb-4"></div>
-                    <p className="text-lp-text2 font-light">Memuat riwayat pembayaran...</p>
-                  </div>
+                    <div className="text-center py-12">
+                      <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-lp-text mx-auto mb-4"></div>
+                      <p className="text-lp-text2 font-light">Memuat riwayat pembayaran...</p>
+                    </div>
                 ) : riwayat && riwayat.length > 0 ? (
                   <div className="space-y-4">
                     {riwayat.map(transaksi => {
@@ -1345,15 +1330,7 @@ const PembayaranUKT = () => {
                       return (
                         <div 
                           key={transaksi.id}
-                          className={`border rounded-xl p-5 transition-all duration-300 ${
-                            status === 'success' 
-                              ? 'border-green-200 bg-lp-bg' 
-                              : status === 'pending' && !isExpired
-                              ? 'border-yellow-200 bg-lp-bg'
-                              : status === 'failed'
-                              ? 'border-lp-border border bg-lp-bg'
-                              : 'border-red-200 bg-lp-bg' // expired
-                          }`}
+                          className="border border-lp-border rounded-xl p-5 transition-all duration-300 bg-lp-surface"
                         >
                           <div className="flex justify-between items-start mb-4">
                             <div className="flex-1">
@@ -1361,7 +1338,7 @@ const PembayaranUKT = () => {
                                 <span className="font-bold text-lp-text font-semibold tracking-tight">
                                   Invoice #{transaksi.invoice_uuid?.substring(0, 8).toUpperCase() || 'N/A'}
                                 </span>
-                                <span className="text-xs text-lp-text3 font-light bg-gray-100 px-2 py-1 rounded-full">
+                                <span className="text-xs text-lp-text3 font-light bg-white border border-lp-border px-2 py-1 rounded-full">
                                   {formatDate(transaksi.tanggal)}
                                 </span>
                               </div>
@@ -1375,24 +1352,24 @@ const PembayaranUKT = () => {
                             </div>
                           </div>
                           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                            <div className="bg-lp-surface p-3 rounded-lg border border-lp-border border">
-                              <span className="text-lp-atext text-xs font-medium">NOMINAL UKT</span>
+                            <div className="bg-white p-3 rounded-lg border border-lp-border">
+                              <span className="text-lp-text2 text-xs font-medium">NOMINAL UKT</span>
                               <p className="font-bold text-lp-text font-semibold tracking-tight">{formatRupiah(transaksi.nominal || 0)}</p>
                             </div>
-                            <div className="bg-lp-surface p-3 rounded-lg border border-lp-border border">
-                              <span className="text-yellow-600 text-xs font-medium">BIAYA ADMIN</span>
+                            <div className="bg-white p-3 rounded-lg border border-lp-border">
+                              <span className="text-lp-text2 text-xs font-medium">BIAYA ADMIN</span>
                               <p className="font-bold text-lp-text font-semibold tracking-tight">{formatRupiah(transaksi.biaya_admin || 0)}</p>
                             </div>
-                            <div className="bg-lp-surface p-3 rounded-lg border border-lp-border border">
-                              <span className="text-lp-green text-xs font-medium">TOTAL BAYAR</span>
+                            <div className="bg-white p-3 rounded-lg border border-lp-border">
+                              <span className="text-lp-text2 text-xs font-medium">TOTAL BAYAR</span>
                               <p className="font-bold text-lp-text font-semibold tracking-tight">{formatRupiah(transaksi.total_dibayar || 0)}</p>
                             </div>
-                            <div className="bg-lp-surface p-3 rounded-lg border border-lp-border border">
-                              <span className="text-purple-600 text-xs font-medium">METODE</span>
+                            <div className="bg-white p-3 rounded-lg border border-lp-border">
+                              <span className="text-lp-text2 text-xs font-medium">METODE</span>
                               <div className="flex items-center space-x-2">
                                 {transaksi.payment_method === 'qris' ? 
-                                  <FaQrcode className="text-lp-green" /> : 
-                                  <FaBuilding className="text-lp-atext" />
+                                  <FaQrcode className="text-lp-text2" /> : 
+                                  <FaBuilding className="text-lp-text2" />
                                 }
                                 <span className="font-bold text-lp-text font-semibold tracking-tight capitalize">
                                   {transaksi.payment_method === 'qris' ? 'QRIS' : getBankName(transaksi.payment_method)}
@@ -1404,7 +1381,7 @@ const PembayaranUKT = () => {
                           {status === 'pending' && !isExpired && transaksi.expired_at && (
                             <div className="mt-4 pt-4 border-t border-lp-border border">
                               <div className="flex items-center justify-between">
-                                <div className="flex items-center space-x-2 text-yellow-600">
+                              <div className="flex items-center space-x-2 text-lp-text2">
                                   <FaClock />
                                   <span className="text-sm">
                                     Sisa waktu: {calculateTimeLeft(transaksi.expired_at)}
@@ -1423,14 +1400,14 @@ const PembayaranUKT = () => {
                                           setErrorMessage('Gagal memuat detail pembayaran')
                                         })
                                     }}
-                                    className="bg-lp-accent text-white py-2 px-4 rounded-lg hover:bg-lp-accent transition-colors flex items-center space-x-2"
+                                    className="bg-lp-text text-white py-2 px-4 rounded-lg hover:bg-lp-atext transition-colors flex items-center space-x-2"
                                   >
                                     <FaInfoCircle />
                                     <span>Detail</span>
                                   </button>
                                   <button
                                     onClick={() => handleCancelPayment(transaksi.invoice_uuid)}
-                                    className="bg-red-500 text-white py-2 px-4 rounded-lg hover:bg-red-600 transition-colors flex items-center space-x-2"
+                                    className="bg-lp-text text-white py-2 px-4 rounded-lg hover:bg-lp-atext transition-colors flex items-center space-x-2"
                                   >
                                     <FaBan />
                                     <span>Batalkan</span>
@@ -1441,8 +1418,8 @@ const PembayaranUKT = () => {
                           )}
                           {/* Expired message */}
                           {isExpired && (
-                            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                              <div className="flex items-center space-x-2 text-red-600">
+                            <div className="mt-4 p-3 bg-lp-bg border border-lp-border rounded-lg">
+                              <div className="flex items-center space-x-2 text-lp-text">
                                 <FaExclamationTriangle />
                                 <span className="text-sm">
                                   Pembayaran telah kadaluarsa pada {formatDate(transaksi.expired_at)}
@@ -1452,20 +1429,20 @@ const PembayaranUKT = () => {
                           )}
                           {/* Success message */}
                           {status === 'success' && (
-                            <div className="mt-4 p-3 bg-lp-bg border border-green-200 rounded-lg">
-                              <div className="flex items-center space-x-2 text-lp-green">
+                            <div className="mt-4 p-3 bg-lp-bg border border-lp-border rounded-lg">
+                              <div className="flex items-center space-x-2 text-lp-text">
                                 <FaCheckCircle />
                                 <span className="text-sm">
                                   Pembayaran berhasil dikonfirmasi
                                 </span>
                               </div>
-                              <div className="mt-2 text-sm text-green-700">
+                              <div className="mt-2 text-sm text-lp-text2">
                                 Sisa UKT telah otomatis diperbarui -{formatRupiah(transaksi.nominal)}
                               </div>
                             </div>
                           )}
                           {status === 'failed' && (
-                            <div className="mt-4 p-3 bg-lp-bg border border-lp-border border rounded-lg">
+                            <div className="mt-4 p-3 bg-lp-bg border border-lp-border rounded-lg">
                               <div className="flex items-center space-x-2 text-lp-text2 font-light">
                                 <FaBan />
                                 <span className="text-sm">
@@ -1504,7 +1481,7 @@ const PembayaranUKT = () => {
                             form.scrollIntoView({ behavior: 'smooth' })
                           }
                         }}
-                        className="inline-flex items-center space-x-2 bg-lp-accent text-white px-4 py-2 rounded-lg hover:bg-lp-accent transition-colors"
+                        className="inline-flex items-center space-x-2 bg-lp-text text-white px-4 py-2 rounded-lg hover:bg-lp-atext transition-colors"
                       >
                         <FaMoneyBillWave />
                         <span>Buat Pembayaran Pertama</span>

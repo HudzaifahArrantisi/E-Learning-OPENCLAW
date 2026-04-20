@@ -153,10 +153,10 @@ const PenilaianDosen = () => {
     : 0
 
   const getGradeColor = (grade) => {
-    if (grade >= 80) return 'text-emerald-600 bg-emerald-100 border-emerald-200'
-    if (grade >= 70) return 'text-amber-600 bg-amber-100 border-amber-200'
+    if (grade >= 80) return 'text-lp-text2 bg-lp-bg border-lp-border'
+    if (grade >= 70) return 'text-lp-text2 bg-lp-bg border-lp-border'
     if (grade >= 60) return 'text-orange-600 bg-orange-100 border-orange-200'
-    return 'text-red-600 bg-red-100 border-red-200'
+    return 'text-lp-text2 bg-lp-bg border-lp-border'
   }
 
   if (loading) {
@@ -237,7 +237,7 @@ const PenilaianDosen = () => {
             <div className="flex flex-wrap gap-3">
               <Link 
                 to={`/dosen/matkul/${courseId}`}
-                className="group relative overflow-hidden px-6 py-3 bg-lp-accent text-white border-none rounded-xl font-medium shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-3"
+                className="group relative overflow-hidden px-6 py-3 bg-lp-text text-white border-none rounded-xl font-medium shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-3"
               >
                 <div className="absolute inset-0 bg-lp-surface/10 translate-x-[-100%] group-hover:translate-x-full transition-transform duration-1000"></div>
                 <FiBookOpen className="relative z-10" />
@@ -245,7 +245,7 @@ const PenilaianDosen = () => {
               </Link>
               <Link 
                 to="/dosen/course/"
-                className="px-6 py-3 bg-lp-surface/80 backdrop-blur-sm border border-lp-border border text-lp-text2 rounded-xl font-medium shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl transition-all duration-300 hover:bg-lp-surface flex items-center gap-3"
+                className="px-6 py-3 bg-lp-surface/80 backdrop-blur-sm border border-lp-border text-lp-text2 rounded-xl font-medium shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl transition-all duration-300 hover:bg-lp-surface flex items-center gap-3"
               >
                 <FiArrowLeft />
                 Daftar Matkul
@@ -256,47 +256,47 @@ const PenilaianDosen = () => {
           {/* Stats Cards */}
           {showStats && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              <div className="bg-lp-surface/80 backdrop-blur-sm rounded-2xl p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border border border-lp-border border">
+              <div className="bg-lp-surface/80 backdrop-blur-sm rounded-2xl p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border-lp-border border">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-lp-text2 font-light text-sm mb-1">Total Pengumpulan</p>
                     <h3 className="text-3xl font-bold text-lp-text font-semibold tracking-tight">{submissions.length}</h3>
                   </div>
                   <div className="p-3 bg-lp-bg rounded-xl">
-                    <FiFileText className="text-2xl text-lp-atext" />
+                    <FiFileText className="text-2xl text-lp-text2" />
                   </div>
                 </div>
               </div>
-              <div className="bg-lp-surface/80 backdrop-blur-sm rounded-2xl p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border border border-lp-border border">
+              <div className="bg-lp-surface/80 backdrop-blur-sm rounded-2xl p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border-lp-border border">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-lp-text2 font-light text-sm mb-1">Sudah Dinilai</p>
                     <h3 className="text-3xl font-bold text-lp-text font-semibold tracking-tight">{gradedCount}</h3>
                   </div>
                   <div className="p-3 bg-lp-bg rounded-xl">
-                    <FiCheckCircle className="text-2xl text-emerald-600" />
+                    <FiCheckCircle className="text-2xl text-lp-text2" />
                   </div>
                 </div>
               </div>
-              <div className="bg-lp-surface/80 backdrop-blur-sm rounded-2xl p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border border border-lp-border border">
+              <div className="bg-lp-surface/80 backdrop-blur-sm rounded-2xl p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border-lp-border border">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-lp-text2 font-light text-sm mb-1">Belum Dinilai</p>
                     <h3 className="text-3xl font-bold text-lp-text font-semibold tracking-tight">{submissions.length - gradedCount}</h3>
                   </div>
                   <div className="p-3 bg-lp-bg rounded-xl">
-                    <FiClock className="text-2xl text-amber-600" />
+                    <FiClock className="text-2xl text-lp-text2" />
                   </div>
                 </div>
               </div>
-              <div className="bg-lp-surface/80 backdrop-blur-sm rounded-2xl p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border border border-lp-border border">
+              <div className="bg-lp-surface/80 backdrop-blur-sm rounded-2xl p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border-lp-border border">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-lp-text2 font-light text-sm mb-1">Rata-rata Nilai</p>
                     <h3 className="text-3xl font-bold text-lp-text font-semibold tracking-tight">{averageGrade}</h3>
                   </div>
                   <div className="p-3 bg-lp-bg rounded-xl">
-                    <FiPercent className="text-2xl text-purple-600" />
+                    <FiPercent className="text-2xl text-lp-text2" />
                   </div>
                 </div>
               </div>
@@ -304,16 +304,16 @@ const PenilaianDosen = () => {
           )}
 
           {/* Control Panel */}
-          <div className="bg-lp-surface/80 backdrop-blur-sm rounded-2xl p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border border border-lp-border border mb-8">
+          <div className="bg-lp-surface/80 backdrop-blur-sm rounded-2xl p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border-lp-border border mb-8">
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
               <div>
                 <label className="block text-sm font-semibold text-lp-text2 mb-2">Filter Pertemuan</label>
                 <div className="relative">
-                  <FiFilter className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <FiFilter className="absolute left-4 top-1/2 transform -translate-y-1/2 text-lp-text3" />
                   <select
                     value={filterPertemuan}
                     onChange={(e) => setFilterPertemuan(e.target.value)}
-                    className="w-full pl-12 pr-4 py-3 border border-lp-border border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-lp-surface/50 backdrop-blur-sm"
+                    className="w-full pl-12 pr-4 py-3 border border-lp-border rounded-xl focus:ring-2 focus:ring-lp-text/20 focus:border-transparent bg-lp-surface/50 backdrop-blur-sm"
                   >
                     <option value="">Semua Pertemuan</option>
                     {Array.from({ length: 16 }, (_, i) => i + 1).map(pertemuan => (
@@ -328,14 +328,14 @@ const PenilaianDosen = () => {
               <div>
                 <label className="block text-sm font-semibold text-lp-text2 mb-2">Urutkan Berdasarkan</label>
                 <div className="relative">
-                  <FiTrendingUp className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <FiTrendingUp className="absolute left-4 top-1/2 transform -translate-y-1/2 text-lp-text3" />
                   <select
                     value={sortBy}
                     onChange={(e) => {
                       setSortBy(e.target.value)
                       fetchSubmissions()
                     }}
-                    className="w-full pl-12 pr-4 py-3 border border-lp-border border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-lp-surface/50 backdrop-blur-sm"
+                    className="w-full pl-12 pr-4 py-3 border border-lp-border rounded-xl focus:ring-2 focus:ring-lp-text/20 focus:border-transparent bg-lp-surface/50 backdrop-blur-sm"
                   >
                     <option value="latest">Terbaru</option>
                     <option value="grade">Nilai Tertinggi</option>
@@ -347,12 +347,12 @@ const PenilaianDosen = () => {
               <div>
                 <label className="block text-sm font-semibold text-lp-text2 mb-2">Cari Mahasiswa/Tugas</label>
                 <div className="relative">
-                  <FiSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <FiSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-lp-text3" />
                   <input
                     type="text"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-12 pr-4 py-3 border border-lp-border border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-lp-surface/50 backdrop-blur-sm"
+                    className="w-full pl-12 pr-4 py-3 border border-lp-border rounded-xl focus:ring-2 focus:ring-lp-text/20 focus:border-transparent bg-lp-surface/50 backdrop-blur-sm"
                     placeholder="Nama, NIM, atau judul tugas"
                   />
                 </div>
@@ -361,7 +361,7 @@ const PenilaianDosen = () => {
               <div className="flex items-end">
                 <button
                   onClick={fetchSubmissions}
-                  className="group relative overflow-hidden w-full px-6 py-3 bg-lp-accent text-white border-none rounded-xl font-medium shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 flex items-center justify-center gap-2"
+                  className="group relative overflow-hidden w-full px-6 py-3 bg-lp-text text-white border-none rounded-xl font-medium shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 flex items-center justify-center gap-2"
                 >
                   <div className="absolute inset-0 bg-lp-surface/10 translate-x-[-100%] group-hover:translate-x-full transition-transform duration-1000"></div>
                   <FiRefreshCw className="relative z-10" />
@@ -374,7 +374,7 @@ const PenilaianDosen = () => {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setShowStats(!showStats)}
-                  className="px-4 py-2 text-sm bg-gray-100 text-lp-text2 rounded-lg hover:bg-gray-200 transition-colors"
+                  className="px-4 py-2 text-sm bg-lp-surface text-lp-text2 rounded-lg hover:bg-lp-bg transition-colors"
                 >
                   {showStats ? 'Sembunyikan Stats' : 'Tampilkan Stats'}
                 </button>
@@ -386,7 +386,7 @@ const PenilaianDosen = () => {
           </div>
 
           {/* Submissions Table */}
-          <div className="bg-lp-surface/80 backdrop-blur-sm rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border border border-lp-border border overflow-hidden">
+          <div className="bg-lp-surface/80 backdrop-blur-sm rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border-lp-border border overflow-hidden">
             {filteredSubmissions.length > 0 ? (
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[1000px]">
@@ -407,7 +407,7 @@ const PenilaianDosen = () => {
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
                             <div className="p-2 bg-lp-bg rounded-lg">
-                              <FiUser className="text-lp-atext" />
+                              <FiUser className="text-lp-text2" />
                             </div>
                             <div>
                               <div className="font-medium text-lp-text font-bold tracking-tight">{submission.student_name}</div>
@@ -424,7 +424,7 @@ const PenilaianDosen = () => {
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <span className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-lp-bg text-blue-800 border border-blue-200">
+                          <span className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-lp-bg text-lp-text border border-lp-border">
                             P{submission.pertemuan}
                           </span>
                         </td>
@@ -434,13 +434,13 @@ const PenilaianDosen = () => {
                               href={resolveBackendAssetUrl(submission.file_url)}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-2 px-4 py-2 bg-lp-bg text-emerald-700 rounded-lg font-medium hover:shadow-sm border border-lp-border transition-all duration-300 hover:-translate-y-0.5 border border-emerald-200"
+                              className="inline-flex items-center gap-2 px-4 py-2 bg-lp-bg text-lp-text2 rounded-lg font-medium hover:shadow-sm border border-lp-border transition-all duration-300 hover:-translate-y-0.5 border border-lp-border"
                             >
                               <FiDownload />
                               Download
                             </a>
                           ) : (
-                            <span className="text-gray-400 text-sm flex items-center gap-2">
+                            <span className="text-lp-text3 text-sm flex items-center gap-2">
                               <FiX />
                               Tidak ada file
                             </span>
@@ -453,13 +453,13 @@ const PenilaianDosen = () => {
                                 type="number"
                                 value={gradeInputs[submission.id] || ''}
                                 onChange={(e) => handleGradeChange(submission.id, e.target.value)}
-                                className="w-24 border border-lp-border border rounded-xl px-4 py-2.5 text-center focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-lp-surface/50 backdrop-blur-sm"
+                                className="w-24 border border-lp-border rounded-xl px-4 py-2.5 text-center focus:ring-2 focus:ring-lp-text/20 focus:border-transparent bg-lp-surface/50 backdrop-blur-sm"
                                 min="0"
                                 max="100"
                                 step="0.1"
                                 placeholder="0-100"
                               />
-                              <div className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400">
+                              <div className="absolute right-2 top-1/2 transform -translate-y-1/2 text-lp-text3">
                                 <FiPercent className="text-sm" />
                               </div>
                             </div>
@@ -472,7 +472,7 @@ const PenilaianDosen = () => {
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-2">
-                            <div className={`w-2 h-2 rounded-full ${submission.grade ? 'bg-emerald-500' : 'bg-amber-500'}`}></div>
+                            <div className={`w-2 h-2 rounded-full ${submission.grade ? 'bg-lp-text' : 'bg-lp-text2'}`}></div>
                             <span className="text-sm text-lp-text2 font-light">
                               {submission.grade ? 'Sudah Dinilai' : 'Belum Dinilai'}
                             </span>
@@ -485,8 +485,8 @@ const PenilaianDosen = () => {
                               disabled={grading[submission.id]}
                               className={`px-4 py-2 rounded-lg font-medium transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2 ${
                                 grading[submission.id]
-                                  ? 'bg-blue-100 text-lp-atext'
-                                  : 'bg-lp-accent text-white border-none hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border'
+                                  ? 'bg-lp-bg text-lp-text2'
+                                  : 'bg-lp-text text-white border-none hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border'
                               }`}
                             >
                               {grading[submission.id] ? (
@@ -504,7 +504,7 @@ const PenilaianDosen = () => {
                             {submission.answer_text && (
                               <button
                                 onClick={() => showAnswer(submission.answer_text)}
-                                className="px-4 py-2 bg-lp-bg text-amber-700 rounded-lg font-medium hover:shadow-sm border border-lp-border transition-all duration-300 hover:-translate-y-0.5 border border-amber-200 flex items-center gap-2"
+                                className="px-4 py-2 bg-lp-bg text-lp-text2 rounded-lg font-medium hover:shadow-sm border border-lp-border transition-all duration-300 hover:-translate-y-0.5 border border-lp-border flex items-center gap-2"
                               >
                                 <FiEye />
                                 Jawaban
@@ -520,7 +520,7 @@ const PenilaianDosen = () => {
             ) : (
               <div className="text-center py-16">
                 <div className="p-4 bg-lp-bg rounded-full w-24 h-24 mx-auto mb-6 flex items-center justify-center">
-                  <FiFileText className="text-4xl text-gray-400" />
+                  <FiFileText className="text-4xl text-lp-text3" />
                 </div>
                 <h3 className="text-2xl font-bold text-lp-text2 mb-3">Belum ada pengumpulan tugas</h3>
                 <p className="text-lp-text3 font-light mb-8 max-w-md mx-auto">
@@ -532,14 +532,14 @@ const PenilaianDosen = () => {
                 <div className="flex flex-col sm:flex-row justify-center gap-3">
                   <button
                     onClick={fetchSubmissions}
-                    className="px-6 py-3 bg-lp-accent text-white border-none rounded-xl font-medium shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2"
+                    className="px-6 py-3 bg-lp-text text-white border-none rounded-xl font-medium shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2"
                   >
                     <FiRefreshCw />
                     Refresh Data
                   </button>
                   <Link 
                     to={`/dosen/matkul/${courseId}`}
-                    className="px-6 py-3 bg-lp-accent text-white border-none rounded-xl font-medium shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2"
+                    className="px-6 py-3 bg-lp-text text-white border-none rounded-xl font-medium shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2"
                   >
                     <FiBookOpen />
                     Kelola Materi & Tugas
@@ -551,16 +551,16 @@ const PenilaianDosen = () => {
 
           {/* Bulk Actions (for future implementation) */}
           {filteredSubmissions.length > 0 && (
-            <div className="mt-6 p-4 bg-lp-bg rounded-2xl border border-blue-100">
+            <div className="mt-6 p-4 bg-lp-bg rounded-2xl border border-lp-border">
               <div className="flex items-center justify-between">
                 <div className="text-sm text-lp-text2 font-light">
                   <strong>Tips:</strong> Klik pada kolom nilai untuk mengedit, lalu tekan Simpan untuk menyimpan perubahan.
                 </div>
                 <div className="flex items-center gap-3">
-                  <button className="px-4 py-2 text-sm bg-lp-surface border border-lp-border border text-lp-text2 rounded-lg hover:bg-lp-bg transition-colors">
+                  <button className="px-4 py-2 text-sm bg-lp-surface border border-lp-border text-lp-text2 rounded-lg hover:bg-lp-bg transition-colors">
                     Export Excel
                   </button>
-                  <button className="px-4 py-2 text-sm bg-lp-accent text-white border-none rounded-lg hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border transition-all duration-300">
+                  <button className="px-4 py-2 text-sm bg-lp-text text-white border-none rounded-lg hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border transition-all duration-300">
                     Print Laporan
                   </button>
                 </div>
@@ -574,8 +574,8 @@ const PenilaianDosen = () => {
               <div className="bg-lp-surface rounded-2xl p-8 w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col shadow-2xl animate-slideUp">
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-amber-100 rounded-lg">
-                      <FiEye className="text-xl text-amber-600" />
+                    <div className="p-2 bg-lp-bg rounded-lg">
+                      <FiEye className="text-xl text-lp-text2" />
                     </div>
                     <div>
                       <h3 className="text-xl font-bold text-lp-text font-semibold tracking-tight">Jawaban Mahasiswa</h3>
@@ -584,13 +584,13 @@ const PenilaianDosen = () => {
                   </div>
                   <button
                     onClick={() => setShowAnswerModal(false)}
-                    className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
+                    className="p-2 hover:bg-lp-surface rounded-xl transition-colors"
                   >
-                    <FiX className="text-2xl text-gray-400 hover:text-lp-text2 font-light" />
+                    <FiX className="text-2xl text-lp-text3 hover:text-lp-text2 font-light" />
                   </button>
                 </div>
                 <div className="flex-1 overflow-y-auto">
-                  <div className="bg-lp-bg rounded-xl p-6 border border-lp-border border">
+                  <div className="bg-lp-bg rounded-xl p-6 border border-lp-border">
                     <div className="prose max-w-none">
                       <div className="whitespace-pre-wrap text-lp-text2 leading-relaxed">
                         {selectedAnswer || 'Tidak ada jawaban teks yang disubmit.'}
@@ -601,7 +601,7 @@ const PenilaianDosen = () => {
                 <div className="flex justify-end gap-3 pt-6 border-t border-lp-border border mt-6">
                   <button
                     onClick={() => setShowAnswerModal(false)}
-                    className="px-6 py-3 bg-lp-surface border border-lp-border border text-lp-text2 rounded-xl font-medium hover:bg-lp-bg transition-all duration-300"
+                    className="px-6 py-3 bg-lp-surface border border-lp-border text-lp-text2 rounded-xl font-medium hover:bg-lp-bg transition-all duration-300"
                   >
                     Tutup
                   </button>

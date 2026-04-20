@@ -9,6 +9,7 @@ import {
   FiGrid, FiList, FiClock, FiCheckCircle, FiXCircle,
   FiEdit2, FiMoreVertical, FiBookOpen, FiFile, FiFilter
 } from 'react-icons/fi'
+import { motion, AnimatePresence } from 'framer-motion'
 
 const KelolaMatkulDosen = () => {
   const { courseId } = useParams()
@@ -181,38 +182,22 @@ const KelolaMatkulDosen = () => {
     return (
       <div className="flex min-h-screen bg-lp-bg">
         <Sidebar role="dosen" isOpen={sidebarOpen} onClose={toggleSidebar} />
-        <div className="flex-1 lg:ml-0 transition-all duration-300">
-          <div className="p-6 lg:p-8">
+        <div className="flex-1 lg:ml-0 transition-all duration-300 relative z-10">
+          <div className="p-6 lg:p-10 max-w-7xl mx-auto">
             {/* Skeleton Header */}
-            <div className="flex items-center justify-between mb-8">
-              <div className="flex items-center gap-4">
-                <div className="lg:hidden p-3 rounded-xl bg-lp-surface/50 backdrop-blur-sm shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border animate-pulse">
-                  <div className="w-6 h-6 bg-gray-200 rounded"></div>
-                </div>
-                <div>
-                  <div className="h-8 w-64 bg-lp-bg rounded-lg animate-pulse mb-2"></div>
-                  <div className="h-4 w-48 bg-gray-200 rounded animate-pulse"></div>
-                </div>
+            <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8 mb-12 animate-pulse">
+              <div className="space-y-4">
+                <div className="h-4 w-32 bg-lp-border rounded-full"></div>
+                <div className="h-12 w-96 bg-lp-border rounded-2xl"></div>
+                <div className="h-4 w-64 bg-lp-border rounded-full"></div>
               </div>
-              <div className="flex gap-3">
-                <div className="h-12 w-32 bg-gray-200 rounded-xl animate-pulse"></div>
-                <div className="h-12 w-32 bg-gray-200 rounded-xl animate-pulse"></div>
-              </div>
+              <div className="h-14 w-48 bg-lp-border rounded-full"></div>
             </div>
 
-            {/* Skeleton Cards */}
+            {/* Skeleton Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {[1,2,3,4,5,6,7,8].map(item => (
-                <div key={item} className="bg-lp-surface/50 backdrop-blur-sm rounded-2xl p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border animate-pulse">
-                  <div className="flex justify-between items-center mb-4">
-                    <div className="h-6 w-24 bg-gray-200 rounded"></div>
-                    <div className="w-8 h-8 bg-gray-200 rounded-full"></div>
-                  </div>
-                  <div className="space-y-3">
-                    <div className="h-4 w-full bg-gray-200 rounded"></div>
-                    <div className="h-4 w-3/4 bg-gray-200 rounded"></div>
-                  </div>
-                </div>
+                <div key={item} className="h-64 bg-white border border-lp-border rounded-[2.5rem] animate-pulse"></div>
               ))}
             </div>
           </div>
@@ -223,770 +208,642 @@ const KelolaMatkulDosen = () => {
 
   return (
     <div className="flex min-h-screen bg-lp-bg">
+       {/* Background Decorative Layer */}
+       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+        <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[60%] bg-lp-text/5 blur-[120px] rounded-full" />
+        <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-lp-text/5 blur-[120px] rounded-full" />
+      </div>
+
       <Sidebar role="dosen" isOpen={sidebarOpen} onClose={toggleSidebar} />
       
       {/* Main Content */}
-      <div className="flex-1 lg:ml-0 transition-all duration-300 min-w-0">
-        <div className="p-6 lg:p-8">
-          {/* Header */}
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-8">
-            <div className="flex items-center gap-4">
-              <button 
-                onClick={toggleSidebar}
-                className="lg:hidden p-3 rounded-xl bg-lp-surface/80 backdrop-blur-sm shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl transition-all duration-300 hover:scale-105"
-              >
-                <FiChevronRight className="text-xl text-lp-text2" />
-              </button>
-              <div>
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="p-3 bg-lp-bg rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border">
-                    <FiBookOpen className="text-2xl text-white" />
-                  </div>
-                  <h1 className="text-3xl lg:text-4xl font-bold bg-lp-bg bg-clip-text text-transparent">
-                    {matkulData[courseId] || courseId}
-                  </h1>
-                </div>
-                <p className="text-lp-text2 font-light ml-16">Kelola materi dan tugas untuk setiap pertemuan</p>
+      <div className="flex-1 transition-all duration-300 min-w-0 relative z-10">
+        <div className="p-6 lg:p-10 max-w-7xl mx-auto">
+          
+          {/* Header Section */}
+          <motion.div 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8 mb-12"
+          >
+            <div>
+              <div className="flex items-center gap-3 mb-4">
+                <button 
+                  onClick={toggleSidebar}
+                  className="lg:hidden p-3 rounded-xl bg-white border border-lp-border hover:bg-lp-surface transition-all"
+                >
+                  <FiChevronRight className="text-lp-text" />
+                </button>
+                <Link 
+                  to="/dosen/course"
+                  className="text-[11px] font-mono font-medium tracking-[0.2em] uppercase text-lp-text3 hover:text-lp-text transition-colors flex items-center gap-2"
+                >
+                  <FiChevronLeft /> BACK TO COURSES
+                </Link>
               </div>
+              
+              <h1 className="text-4xl md:text-5xl font-light text-lp-text tracking-tight mb-3">
+                {matkulData[courseId] || courseId}
+                <span className="text-lp-text3 block text-lg font-normal mt-2">Course Management Suite</span>
+              </h1>
+              <p className="text-lp-text2 font-light max-w-xl">
+                Otomasi distribusi materi dan tugas untuk setiap pertemuan kelas guna meningkatkan efektivitas pengajaran.
+              </p>
             </div>
-            <div className="flex flex-wrap gap-3">
+            
+            <div className="flex items-center gap-4">
               <Link 
                 to={`/dosen/penilaian/${courseId}`}
-                className="group relative overflow-hidden px-6 py-3 bg-lp-accent text-white border-none rounded-xl font-medium shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-3"
+                className="group px-8 py-4 bg-lp-text text-lp-bg rounded-full text-[13px] font-bold hover:bg-lp-atext hover:-translate-y-1 transition-all duration-500 uppercase tracking-widest flex items-center gap-3 shadow-[0_12px_24px_rgba(0,0,0,0.1)]"
               >
-                <div className="absolute inset-0 bg-lp-surface/10 translate-x-[-100%] group-hover:translate-x-full transition-transform duration-1000"></div>
-                <FiEye className="relative z-10" />
-                <span className="relative z-10">Lihat Penilaian</span>
+                <FiEye className="text-lg" />
+                <span>Monitoring Penilaian</span>
               </Link>
+            </div>
+          </motion.div>
 
+          {/* Stats & Quick Actions Overview */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-12">
+            
+            {/* Stats Grid */}
+            <div className="lg:col-span-8 grid grid-cols-2 sm:grid-cols-4 gap-6">
+               {[
+                 { label: 'Sessions', val: pertemuanList.length, icon: FiGrid },
+                 { label: 'Modules', val: pertemuanList.filter(p => p.has_materi).length, icon: FiFileText },
+                 { label: 'Assessments', val: pertemuanList.filter(p => p.has_tugas).length, icon: FiCalendar },
+                 { label: 'Active', val: pertemuanList.filter(p => p.has_materi || p.has_tugas).length, icon: FiCheckCircle }
+               ].map((stat, i) => (
+                 <motion.div 
+                   key={i}
+                   initial={{ opacity: 0, y: 20 }}
+                   animate={{ opacity: 1, y: 0 }}
+                   transition={{ delay: i * 0.1 }}
+                   className="bg-white border border-lp-border rounded-[2rem] p-6 hover:shadow-[0_24px_48px_rgba(0,0,0,0.04)] transition-all duration-500"
+                 >
+                    <div className="p-3 bg-lp-surface/50 rounded-xl w-fit mb-4">
+                      <stat.icon className="text-lp-text2" />
+                    </div>
+                    <p className="text-[11px] font-mono uppercase tracking-wider text-lp-text3 mb-1">{stat.label}</p>
+                    <h3 className="text-2xl font-bold text-lp-text">{stat.val}</h3>
+                 </motion.div>
+               ))}
+            </div>
+
+            {/* Quick Action Block */}
+            <div className="lg:col-span-4 flex flex-col gap-4">
+               <motion.button
+                 initial={{ opacity: 0, x: 20 }}
+                 animate={{ opacity: 1, x: 0 }}
+                 onClick={() => setShowUploadMateri(true)}
+                 className="flex-1 group relative overflow-hidden bg-white border border-lp-border rounded-[2rem] p-6 flex items-center justify-between hover:border-lp-text transition-all duration-500"
+               >
+                 <div className="flex items-center gap-4">
+                   <div className="p-3 bg-lp-surface group-hover:bg-lp-text group-hover:text-white transition-all duration-500 rounded-2xl">
+                     <FiUpload />
+                   </div>
+                   <div className="text-left">
+                     <p className="font-bold text-lp-text text-[15px] tracking-tight">Upload Materi</p>
+                     <p className="text-[12px] text-lp-text3 font-light">Distribusi modul baru</p>
+                   </div>
+                 </div>
+                 <FiPlus className="text-lp-text3 group-hover:translate-x-1 transition-transform" />
+               </motion.button>
+               <motion.button
+                 initial={{ opacity: 0, x: 20 }}
+                 animate={{ opacity: 1, x: 0 }}
+                 transition={{ delay: 0.1 }}
+                 onClick={() => setShowCreateTugas(true)}
+                 className="flex-1 group relative overflow-hidden bg-white border border-lp-border rounded-[2rem] p-6 flex items-center justify-between hover:border-lp-text transition-all duration-500"
+               >
+                 <div className="flex items-center gap-4">
+                   <div className="p-3 bg-lp-surface group-hover:bg-lp-text group-hover:text-white transition-all duration-500 rounded-2xl">
+                     <FiFileText />
+                   </div>
+                   <div className="text-left">
+                     <p className="font-bold text-lp-text text-[15px] tracking-tight">Buat Tugas</p>
+                     <p className="text-[12px] text-lp-text3 font-light">Rancang evaluasi mahasiswa</p>
+                   </div>
+                 </div>
+                 <FiPlus className="text-lp-text3 group-hover:translate-x-1 transition-transform" />
+               </motion.button>
             </div>
           </div>
 
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div className="bg-lp-surface/80 backdrop-blur-sm rounded-2xl p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border border border-lp-border border">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-lp-text2 font-light text-sm mb-1">Total Pertemuan</p>
-                  <h3 className="text-3xl font-bold text-lp-text font-semibold tracking-tight">{pertemuanList.length}</h3>
-                </div>
-                <div className="p-3 bg-blue-100 rounded-xl">
-                  <FiGrid className="text-2xl text-lp-atext" />
-                </div>
-              </div>
+          {/* Section Divider */}
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center gap-4">
+              <h2 className="text-2xl font-light text-lp-text tracking-tight">Syllabus Overview</h2>
+              <div className="h-px w-32 bg-lp-border" />
             </div>
-            <div className="bg-lp-surface/80 backdrop-blur-sm rounded-2xl p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border border border-lp-border border">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-lp-text2 font-light text-sm mb-1">Materi Tersedia</p>
-                  <h3 className="text-3xl font-bold text-lp-text font-semibold tracking-tight">
-                    {pertemuanList.filter(p => p.has_materi).length}
-                  </h3>
-                </div>
-                <div className="p-3 bg-emerald-100 rounded-xl">
-                  <FiFileText className="text-2xl text-emerald-600" />
-                </div>
-              </div>
-            </div>
-            <div className="bg-lp-surface/80 backdrop-blur-sm rounded-2xl p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border border border-lp-border border">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-lp-text2 font-light text-sm mb-1">Tugas Tersedia</p>
-                  <h3 className="text-3xl font-bold text-lp-text font-semibold tracking-tight">
-                    {pertemuanList.filter(p => p.has_tugas).length}
-                  </h3>
-                </div>
-                <div className="p-3 bg-amber-100 rounded-xl">
-                  <FiCalendar className="text-2xl text-amber-600" />
-                </div>
-              </div>
-            </div>
-            <div className="bg-lp-surface/80 backdrop-blur-sm rounded-2xl p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border border border-lp-border border">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-lp-text2 font-light text-sm mb-1">Status Aktif</p>
-                  <h3 className="text-3xl font-bold text-lp-text font-semibold tracking-tight">
-                    {pertemuanList.filter(p => p.has_materi || p.has_tugas).length}
-                  </h3>
-                </div>
-                <div className="p-3 bg-purple-100 rounded-xl">
-                  <FiCheckCircle className="text-2xl text-purple-600" />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="bg-lp-surface/80 backdrop-blur-sm rounded-2xl p-8 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border border border-lp-border border mb-8">
-            <h3 className="text-xl font-semibold text-lp-text font-semibold tracking-tight mb-6">Aksi Cepat</h3>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <button
-                onClick={() => setShowUploadMateri(true)}
-                className="group relative overflow-hidden bg-lp-accent text-white border-none rounded-2xl p-6 text-left shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
-              >
-                <div className="absolute inset-0 bg-lp-surface/10 translate-x-[-100%] group-hover:translate-x-full transition-transform duration-1000"></div>
-                <div className="relative flex items-start gap-4">
-                  <div className="p-3 bg-lp-surface/20 rounded-xl">
-                    <FiUpload className="text-2xl" />
-                  </div>
-                  <div>
-                    <div className="text-xl font-semibold mb-2">Upload Materi</div>
-                    <div className="text-blue-100">Tambah materi pembelajaran baru</div>
-                  </div>
-                </div>
-              </button>
-              <button
-                onClick={() => setShowCreateTugas(true)}
-                className="group relative overflow-hidden bg-lp-accent text-white border-none rounded-2xl p-6 text-left shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
-              >
-                <div className="absolute inset-0 bg-lp-surface/10 translate-x-[-100%] group-hover:translate-x-full transition-transform duration-1000"></div>
-                <div className="relative flex items-start gap-4">
-                  <div className="p-3 bg-lp-surface/20 rounded-xl">
-                    <FiFileText className="text-2xl" />
-                  </div>
-                  <div>
-                    <div className="text-xl font-semibold mb-2">Buat Tugas</div>
-                    <div className="text-emerald-100">Buat tugas dan penilaian baru</div>
-                  </div>
-                </div>
-              </button>
-            </div>
-          </div>
-
-          {/* Daftar Pertemuan Header */}
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold bg-lp-bg bg-clip-text text-transparent">
-              Daftar Pertemuan
-            </h2>
+            
             <div className="flex items-center gap-3">
-              <div className="bg-lp-surface/80 backdrop-blur-sm rounded-xl p-2 flex items-center gap-1">
-                <button
-                  onClick={() => setViewMode('grid')}
-                  className={`p-2 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-blue-100 text-lp-atext' : 'text-lp-text3 font-light hover:bg-gray-100'}`}
-                >
-                  <FiGrid className="text-lg" />
-                </button>
-                <button
-                  onClick={() => setViewMode('list')}
-                  className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-blue-100 text-lp-atext' : 'text-lp-text3 font-light hover:bg-gray-100'}`}
-                >
-                  <FiList className="text-lg" />
-                </button>
-              </div>
-              <button
-                onClick={fetchPertemuanList}
-                className="p-3 bg-lp-surface/80 backdrop-blur-sm rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl transition-all duration-300 hover:rotate-180"
-              >
-                <FiClock className="text-lg text-lp-text2" />
-              </button>
+               <div className="bg-white border border-lp-border rounded-full p-1.5 flex items-center gap-1">
+                 <button
+                   onClick={() => setViewMode('grid')}
+                   className={`p-2.5 rounded-full transition-all duration-300 ${viewMode === 'grid' ? 'bg-lp-text text-white shadow-lg' : 'text-lp-text3 hover:bg-lp-surface'}`}
+                 >
+                   <FiGrid className="text-sm" />
+                 </button>
+                 <button
+                   onClick={() => setViewMode('list')}
+                   className={`p-2.5 rounded-full transition-all duration-300 ${viewMode === 'list' ? 'bg-lp-text text-white shadow-lg' : 'text-lp-text3 hover:bg-lp-surface'}`}
+                 >
+                   <FiList className="text-sm" />
+                 </button>
+               </div>
+               <button
+                 onClick={fetchPertemuanList}
+                 className="p-3.5 bg-white border border-lp-border rounded-full text-lp-text3 hover:text-lp-text hover:rotate-180 transition-all duration-700 shadow-sm"
+               >
+                 <FiClock />
+               </button>
             </div>
           </div>
 
-          {/* Daftar Pertemuan Grid */}
+          {/* Pertemuan Grid */}
           <div className={`grid ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'grid-cols-1'} gap-6`}>
             {pertemuanList.map((pertemuan, index) => (
-              <div 
+              <motion.div 
                 key={index}
-                className="group bg-lp-surface/80 backdrop-blur-sm rounded-2xl p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border border border-lp-border border hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 hover:border-blue-200 cursor-pointer"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05 }}
+                className="group relative bg-white border border-lp-border rounded-[2.5rem] p-8 hover:shadow-[0_32px_64px_rgba(0,0,0,0.06)] transition-all duration-700 hover:-translate-y-2 cursor-pointer overflow-hidden"
                 onClick={() => fetchPertemuanDetail(pertemuan.pertemuan)}
               >
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-3 h-3 rounded-full ${pertemuan.has_materi && pertemuan.has_tugas ? 'bg-emerald-500' : pertemuan.has_materi || pertemuan.has_tugas ? 'bg-amber-500' : 'bg-gray-300'}`}></div>
-                    <h3 className="font-bold text-lg text-lp-text font-semibold tracking-tight">Pertemuan {pertemuan.pertemuan}</h3>
-                  </div>
-                  <FiChevronRight className="text-gray-400 group-hover:text-lp-atext transition-colors" />
-                </div>
+                {/* Visual Accent */}
+                <div className={`absolute top-0 right-0 w-32 h-32 blur-[40px] opacity-10 transition-opacity duration-700 group-hover:opacity-30 ${pertemuan.has_materi && pertemuan.has_tugas ? 'bg-lp-text' : 'bg-lp-text'}`} />
                 
-                <div className="space-y-4 mb-6">
-                  <div className="flex items-center justify-between">
-                    <span className="text-lp-text2 font-light text-sm flex items-center gap-2">
-                      <FiFileText className="text-gray-400" /> Materi
-                    </span>
-                    <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${pertemuan.has_materi ? "bg-emerald-100 text-emerald-800 border border-emerald-200" : "bg-gray-100 text-lp-text font-semibold tracking-tight border border-lp-border border"}`}>
-                      {pertemuan.has_materi ? <FiCheckCircle /> : <FiXCircle />}
-                      {pertemuan.has_materi ? "Tersedia" : "Belum"}
-                    </span>
+                <div className="relative z-10">
+                  <div className="flex items-center justify-between mb-8">
+                    <div>
+                      <span className="text-[11px] font-mono font-bold tracking-[0.2em] text-lp-text3 uppercase mb-1 block">LECTURE {pertemuan.pertemuan}</span>
+                      <h3 className="text-[22px] font-normal text-lp-text tracking-tight italic">Pertemuan {pertemuan.pertemuan}</h3>
+                    </div>
+                    <div className={`w-3 h-3 rounded-full ${pertemuan.has_materi && pertemuan.has_tugas ? 'bg-lp-text ring-4 ring-lp-surface' : pertemuan.has_materi || pertemuan.has_tugas ? 'bg-lp-text2 ring-4 ring-lp-surface' : 'bg-lp-border'}`}></div>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-lp-text2 font-light text-sm flex items-center gap-2">
-                      <FiCalendar className="text-gray-400" /> Tugas
-                    </span>
-                    <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${pertemuan.has_tugas ? "bg-amber-100 text-amber-800 border border-amber-200" : "bg-gray-100 text-lp-text font-semibold tracking-tight border border-lp-border border"}`}>
-                      {pertemuan.has_tugas ? <FiCheckCircle /> : <FiXCircle />}
-                      {pertemuan.has_tugas ? "Tersedia" : "Belum"}
-                    </span>
+                  
+                  <div className="space-y-4 mb-8">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[13px] text-lp-text2 font-light flex items-center gap-2">
+                        <FiFileText className="text-lp-text3" /> Module
+                      </span>
+                      <span className={`text-[11px] font-bold tracking-widest uppercase px-3 py-1.5 rounded-full ${pertemuan.has_materi ? "text-lp-text2 bg-lp-surface" : "text-lp-text3 bg-lp-surface"}`}>
+                        {pertemuan.has_materi ? "Ready" : "Empty"}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[13px] text-lp-text2 font-light flex items-center gap-2">
+                        <FiCalendar className="text-lp-text3" /> Task
+                      </span>
+                      <span className={`text-[11px] font-bold tracking-widest uppercase px-3 py-1.5 rounded-full ${pertemuan.has_tugas ? "text-lp-text2 bg-lp-textS" : "text-lp-text3 bg-lp-surface"}`}>
+                        {pertemuan.has_tugas ? "Active" : "Empty"}
+                      </span>
+                    </div>
                   </div>
-                </div>
-                
-                <div className="pt-4 border-t border-lp-border border">
+                  
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       fetchPertemuanDetail(pertemuan.pertemuan);
                     }}
-                    className="w-full py-3 bg-lp-bg text-lp-text2 rounded-xl font-medium shadow-sm hover:shadow-sm border border-lp-border transition-all duration-300 hover:text-lp-atext flex items-center justify-center gap-2 border border-lp-border border hover:border-blue-300"
+                    className="w-full py-4 bg-lp-surface text-lp-text rounded-2xl text-[13px] font-bold tracking-[0.1em] uppercase hover:bg-lp-text hover:text-white transition-all duration-500 flex items-center justify-center gap-2"
                   >
-                    <FiEye />
-                    Lihat Detail
+                    Manage Session <FiChevronRight />
                   </button>
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
 
-          {/* Modal Upload Materi */}
-          {showUploadMateri && (
-            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fadeIn">
-              <div className="bg-lp-surface rounded-2xl p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl animate-slideUp">
-                <div className="flex items-center justify-between mb-8">
-                  <div className="flex items-center gap-4">
-                    <div className="p-3 bg-lp-bg rounded-xl">
-                      <FiUpload className="text-2xl text-white" />
-                    </div>
-                    <div>
-                      <h3 className="text-2xl font-bold text-lp-text font-semibold tracking-tight">Upload Materi Baru</h3>
-                      <p className="text-lp-text2 font-light">Tambahkan materi pembelajaran untuk mahasiswa</p>
-                    </div>
+          {/* Modals Container */}
+          <AnimatePresence>
+            {/* Modal Upload Materi */}
+            {showUploadMateri && (
+              <div className="fixed inset-0 bg-lp-text/20 backdrop-blur-md flex items-center justify-center p-4 z-50 overflow-y-auto">
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                  className="bg-white border border-lp-border rounded-[2.5rem] p-8 md:p-12 w-full max-w-2xl my-auto shadow-[0_32px_64px_rgba(0,0,0,0.12)] relative"
+                >
+                  <div className="absolute top-8 right-8">
+                     <button onClick={() => setShowUploadMateri(false)} className="w-10 h-10 rounded-full bg-lp-surface border border-lp-border flex items-center justify-center text-lp-text hover:bg-lp-text hover:text-white transition-all duration-300">✕</button>
                   </div>
-                  <button
-                    onClick={() => setShowUploadMateri(false)}
-                    className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
-                  >
-                    <FiXCircle className="text-2xl text-gray-400 hover:text-lp-text2 font-light" />
-                  </button>
-                </div>
-                
-                <form onSubmit={handleUploadMateri} className="space-y-6">
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-semibold text-lp-text2 mb-2">Pertemuan *</label>
-                      <div className="relative">
-                        <select
-                          value={formData.pertemuan}
-                          onChange={(e) => setFormData(prev => ({ ...prev, pertemuan: e.target.value }))}
-                          className="w-full border border-lp-border border rounded-xl px-4 py-3.5 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-lp-surface/50 backdrop-blur-sm"
-                          required
-                        >
-                          <option value="">Pilih Pertemuan</option>
-                          {Array.from({ length: 16 }, (_, i) => i + 1).map(pertemuan => (
-                            <option key={pertemuan} value={pertemuan}>
-                              Pertemuan {pertemuan}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-semibold text-lp-text2 mb-2">Judul Materi *</label>
-                      <input
-                        type="text"
-                        value={formData.title}
-                        onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                        className="w-full border border-lp-border border rounded-xl px-4 py-3.5 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-lp-surface/50 backdrop-blur-sm"
-                        placeholder="Contoh: Pengenalan Python"
-                        required
-                      />
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-semibold text-lp-text2 mb-2">Deskripsi</label>
-                    <textarea
-                      value={formData.desc}
-                      onChange={(e) => setFormData(prev => ({ ...prev, desc: e.target.value }))}
-                      className="w-full border border-lp-border border rounded-xl px-4 py-3.5 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-lp-surface/50 backdrop-blur-sm"
-                      rows="4"
-                      placeholder="Deskripsi materi..."
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-semibold text-lp-text2 mb-2">File Materi *</label>
-                    <div className="border-2 border-dashed border-lp-border border rounded-2xl p-8 text-center bg-lp-bg/50 hover:border-blue-400 transition-colors cursor-pointer">
-                      <input
-                        type="file"
-                        onChange={(e) => handleFileChange(e, 'file')}
-                        className="hidden"
-                        id="file-upload"
-                        accept=".pdf,.ppt,.pptx,.doc,.docx,.zip,.jpg,.jpeg,.png"
-                        required
-                      />
-                      <label htmlFor="file-upload" className="cursor-pointer">
-                        <div className="p-4 bg-blue-100 rounded-full w-20 h-20 mx-auto mb-4 flex items-center justify-center">
-                          <FiUpload className="text-3xl text-lp-atext" />
-                        </div>
-                        <div className="text-lp-text2 font-medium mb-2">Klik untuk upload file</div>
-                        <div className="text-sm text-lp-text3 font-light">
-                          PDF, PPT, DOC, ZIP, JPG, PNG (Max: 32MB)
-                        </div>
-                      </label>
-                    </div>
-                    {formData.file && (
-                      <div className="mt-4 p-4 bg-lp-bg rounded-xl border border-emerald-200 shadow-sm">
-                        <div className="flex items-center gap-3">
-                          <div className="p-2 bg-emerald-100 rounded-lg">
-                            <FiFile className="text-emerald-600" />
-                          </div>
-                          <div className="flex-1">
-                            <div className="font-medium text-lp-text font-semibold tracking-tight">{formData.file.name}</div>
-                            <div className="text-sm text-lp-text3 font-light">
-                              {(formData.file.size / (1024 * 1024)).toFixed(2)} MB
-                            </div>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => setFormData(prev => ({ ...prev, file: null }))}
-                            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                          >
-                            <FiTrash2 className="text-gray-400 hover:text-red-500" />
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="flex justify-end gap-3 pt-6 border-t border-lp-border border">
-                    <button
-                      type="button"
-                      onClick={() => setShowUploadMateri(false)}
-                      className="px-8 py-3 bg-lp-surface border border-lp-border border text-lp-text2 rounded-xl font-medium shadow-sm hover:shadow-sm border border-lp-border transition-all duration-300 hover:bg-lp-bg"
-                    >
-                      Batal
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={submitting}
-                      className="group relative overflow-hidden px-8 py-3 bg-lp-accent text-white border-none rounded-xl font-medium shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2"
-                    >
-                      <div className="absolute inset-0 bg-lp-surface/10 translate-x-[-100%] group-hover:translate-x-full transition-transform duration-1000"></div>
-                      {submitting ? (
-                        <>
-                          <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                          Mengupload...
-                        </>
-                      ) : (
-                        <>
-                          <FiUpload className="relative z-10" />
-                          <span className="relative z-10">Upload Materi</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          )}
 
-          {/* Modal Buat Tugas */}
-          {showCreateTugas && (
-            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fadeIn">
-              <div className="bg-lp-surface rounded-2xl p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl animate-slideUp">
-                <div className="flex items-center justify-between mb-8">
-                  <div className="flex items-center gap-4">
-                    <div className="p-3 bg-lp-bg rounded-xl">
-                      <FiFileText className="text-2xl text-white" />
-                    </div>
-                    <div>
-                      <h3 className="text-2xl font-bold text-lp-text font-semibold tracking-tight">Buat Tugas Baru</h3>
-                      <p className="text-lp-text2 font-light">Buat tugas dan tentukan deadline pengumpulan</p>
-                    </div>
+                  <div className="mb-10">
+                    <span className="text-[11px] font-mono font-medium tracking-[0.2em] uppercase text-lp-text3 mb-3 block">LECTURE MATERIAL</span>
+                    <h3 className="text-3xl md:text-4xl font-normal text-lp-text tracking-tight leading-none italic">
+                      Upload Materi Baru
+                    </h3>
                   </div>
-                  <button
-                    onClick={() => setShowCreateTugas(false)}
-                    className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
-                  >
-                    <FiXCircle className="text-2xl text-gray-400 hover:text-lp-text2 font-light" />
-                  </button>
-                </div>
-                
-                <form onSubmit={handleCreateTugas} className="space-y-6">
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-semibold text-lp-text2 mb-2">Pertemuan *</label>
-                      <div className="relative">
+                  
+                  <form onSubmit={handleUploadMateri} className="space-y-8">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                      <div>
+                        <label className="block text-[11px] font-mono font-semibold text-lp-text3 mb-3 tracking-widest uppercase">Pertemuan *</label>
                         <select
                           value={formData.pertemuan}
                           onChange={(e) => setFormData(prev => ({ ...prev, pertemuan: e.target.value }))}
-                          className="w-full border border-lp-border border rounded-xl px-4 py-3.5 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-lp-surface/50 backdrop-blur-sm"
+                          className="w-full bg-lp-surface font-light text-[15px] border border-lp-border rounded-2xl px-5 py-4 focus:outline-none focus:ring-2 focus:ring-lp-accent/5 focus:border-lp-text transition-all duration-500 appearance-none"
                           required
                         >
-                          <option value="">Pilih Pertemuan</option>
+                          <option value="">Select Session</option>
                           {Array.from({ length: 16 }, (_, i) => i + 1).map(pertemuan => (
-                            <option key={pertemuan} value={pertemuan}>
-                              Pertemuan {pertemuan}
-                            </option>
+                            <option key={pertemuan} value={pertemuan}>Pertemuan {pertemuan}</option>
                           ))}
                         </select>
+                      </div>
+                      
+                      <div>
+                        <label className="block text-[11px] font-mono font-semibold text-lp-text3 mb-3 tracking-widest uppercase">Judul Materi *</label>
+                        <input
+                          type="text"
+                          value={formData.title}
+                          onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                          className="w-full bg-lp-surface font-light text-[15px] border border-lp-border rounded-2xl px-5 py-4 focus:outline-none focus:ring-2 focus:ring-lp-accent/5 focus:border-lp-text transition-all duration-500"
+                          placeholder="Introduction to Calculus..."
+                          required
+                        />
                       </div>
                     </div>
                     
                     <div>
-                      <label className="block text-sm font-semibold text-lp-text2 mb-2">Judul Tugas *</label>
-                      <input
-                        type="text"
-                        value={formData.title}
-                        onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                        className="w-full border border-lp-border border rounded-xl px-4 py-3.5 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-lp-surface/50 backdrop-blur-sm"
-                        placeholder="Contoh: Tugas Pemrograman 1"
+                      <label className="block text-[11px] font-mono font-semibold text-lp-text3 mb-3 tracking-widest uppercase">Deskripsi</label>
+                      <textarea
+                        value={formData.desc}
+                        onChange={(e) => setFormData(prev => ({ ...prev, desc: e.target.value }))}
+                        className="w-full bg-lp-surface font-light text-[15px] border border-lp-border rounded-2xl px-5 py-4 focus:outline-none focus:ring-2 focus:ring-lp-accent/5 focus:border-lp-text transition-all duration-500 resize-none"
+                        rows="3"
+                        placeholder="Detail tentang materi yang dibagikan..."
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-[11px] font-mono font-semibold text-lp-text3 mb-3 tracking-widest uppercase">File Materi *</label>
+                      <div className="relative group">
+                        <input
+                          type="file"
+                          onChange={(e) => handleFileChange(e, 'file')}
+                          className="hidden"
+                          id="file-upload-materi"
+                          accept=".pdf,.ppt,.pptx,.doc,.docx,.zip,.jpg,.jpeg,.png"
+                          required={!formData.file}
+                        />
+                        <label 
+                          htmlFor="file-upload-materi"
+                          className={`
+                            relative flex flex-col items-center justify-center w-full min-h-[180px] 
+                            p-10 border-2 border-dashed rounded-[2rem] cursor-pointer
+                            transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]
+                            ${formData.file 
+                              ? 'border-lp-text bg-lp-surface' 
+                              : 'border-lp-border bg-lp-surface hover:border-lp-text hover:bg-lp-bg'
+                            }
+                          `}
+                        >
+                           <div className="flex flex-col items-center text-center">
+                              <div className={`
+                                w-14 h-14 rounded-2xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-500
+                                ${formData.file ? 'bg-lp-text text-white' : 'bg-white border border-lp-border text-lp-text3'}
+                              `}>
+                                {formData.file ? <FiCheckCircle className="text-2xl" /> : <FiUpload className="text-2xl animate-bounce" />}
+                              </div>
+                              {formData.file ? (
+                                <>
+                                  <p className="text-[16px] font-normal text-lp-text mb-1 tracking-tight italic">Resource Locked & Loaded</p>
+                                  <p className="text-[12px] text-lp-text3 font-mono uppercase">{formData.file.name}</p>
+                                </>
+                              ) : (
+                                <>
+                                  <p className="text-[16px] font-normal text-lp-text mb-1 tracking-tight">Drop module here or <em className="italic underline">browse</em>.</p>
+                                  <p className="text-[10px] text-lp-text3 font-mono font-medium tracking-widest mt-2 uppercase">PDF · PPT · DOC · ZIP</p>
+                                </>
+                              )}
+                           </div>
+                        </label>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
+                      <button
+                        type="button"
+                        onClick={() => setShowUploadMateri(false)}
+                        className="px-8 py-4 border border-lp-border text-lp-text2 rounded-full text-[13px] font-bold hover:bg-lp-surface transition-all duration-300 uppercase tracking-widest"
+                      >
+                        Batal
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={submitting}
+                        className="bg-lp-text text-lp-bg px-8 py-4 rounded-full text-[13px] font-bold hover:bg-lp-atext hover:-translate-y-1 disabled:opacity-40 transition-all duration-500 uppercase tracking-widest flex items-center justify-center gap-3 shadow-[0_12px_24px_rgba(0,0,0,0.1)]"
+                      >
+                        {submitting && <div className="w-4 h-4 border-2 border-lp-bg/30 border-t-lp-bg rounded-full animate-spin"></div>}
+                        <span>{submitting ? 'RELEASING' : 'RELEASE MODULE'}</span>
+                      </button>
+                    </div>
+                  </form>
+                </motion.div>
+              </div>
+            )}
+
+            {/* Modal Buat Tugas */}
+            {showCreateTugas && (
+              <div className="fixed inset-0 bg-lp-text/20 backdrop-blur-md flex items-center justify-center p-4 z-50 overflow-y-auto">
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                  className="bg-white border border-lp-border rounded-[2.5rem] p-8 md:p-12 w-full max-w-2xl my-auto shadow-[0_32px_64px_rgba(0,0,0,0.12)] relative"
+                >
+                  <div className="absolute top-8 right-8">
+                     <button onClick={() => setShowCreateTugas(false)} className="w-10 h-10 rounded-full bg-lp-surface border border-lp-border flex items-center justify-center text-lp-text hover:bg-lp-text hover:text-white transition-all duration-300">✕</button>
+                  </div>
+
+                  <div className="mb-10">
+                    <span className="text-[11px] font-mono font-medium tracking-[0.2em] uppercase text-lp-text3 mb-3 block">ASSESSMENT TASK</span>
+                    <h3 className="text-3xl md:text-4xl font-normal text-lp-text tracking-tight leading-none italic">
+                      Buat Tugas Baru
+                    </h3>
+                  </div>
+                  
+                  <form onSubmit={handleCreateTugas} className="space-y-8">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                      <div>
+                        <label className="block text-[11px] font-mono font-semibold text-lp-text3 mb-3 tracking-widest uppercase">Pertemuan *</label>
+                        <select
+                          value={formData.pertemuan}
+                          onChange={(e) => setFormData(prev => ({ ...prev, pertemuan: e.target.value }))}
+                          className="w-full bg-lp-surface font-light text-[15px] border border-lp-border rounded-2xl px-5 py-4 focus:outline-none focus:ring-2 focus:ring-lp-accent/5 focus:border-lp-text transition-all duration-500 appearance-none"
+                          required
+                        >
+                          <option value="">Select Session</option>
+                          {Array.from({ length: 16 }, (_, i) => i + 1).map(pertemuan => (
+                            <option key={pertemuan} value={pertemuan}>Pertemuan {pertemuan}</option>
+                          ))}
+                        </select>
+                      </div>
+                      
+                      <div>
+                        <label className="block text-[11px] font-mono font-semibold text-lp-text3 mb-3 tracking-widest uppercase">Judul Tugas *</label>
+                        <input
+                          type="text"
+                          value={formData.title}
+                          onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                          className="w-full bg-lp-surface font-light text-[15px] border border-lp-border rounded-2xl px-5 py-4 focus:outline-none focus:ring-2 focus:ring-lp-accent/5 focus:border-lp-text transition-all duration-500"
+                          placeholder="Project Milestone 1..."
+                          required
+                        />
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-[11px] font-mono font-semibold text-lp-text3 mb-3 tracking-widest uppercase">Instruksi Tugas *</label>
+                      <textarea
+                        value={formData.desc}
+                        onChange={(e) => setFormData(prev => ({ ...prev, desc: e.target.value }))}
+                        className="w-full bg-lp-surface font-light text-[15px] border border-lp-border rounded-2xl px-5 py-4 focus:outline-none focus:ring-2 focus:ring-lp-accent/5 focus:border-lp-text transition-all duration-500 resize-none"
+                        rows="4"
+                        placeholder="Deskripsikan tantangan bagi mahasiswa..."
                         required
                       />
                     </div>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-semibold text-lp-text2 mb-2">Deskripsi Tugas *</label>
-                    <textarea
-                      value={formData.desc}
-                      onChange={(e) => setFormData(prev => ({ ...prev, desc: e.target.value }))}
-                      className="w-full border border-lp-border border rounded-xl px-4 py-3.5 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-lp-surface/50 backdrop-blur-sm"
-                      rows="4"
-                      placeholder="Instruksi dan ketentuan tugas..."
-                      required
-                    />
-                  </div>
-                  
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-semibold text-lp-text2 mb-2">Batas Pengumpulan</label>
-                      <div className="relative">
-                        <FiCalendar className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                      <div>
+                        <label className="block text-[11px] font-mono font-semibold text-lp-text3 mb-3 tracking-widest uppercase">Submission Deadline</label>
                         <input
                           type="datetime-local"
                           value={formData.due_date}
                           onChange={(e) => setFormData(prev => ({ ...prev, due_date: e.target.value }))}
-                          className="w-full border border-lp-border border rounded-xl pl-12 pr-4 py-3.5 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-lp-surface/50 backdrop-blur-sm"
+                          className="w-full bg-lp-surface font-light text-[15px] border border-lp-border rounded-2xl px-5 py-4 focus:outline-none focus:ring-2 focus:ring-lp-accent/5 focus:border-lp-text transition-all duration-500 appearance-none"
                         />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-[11px] font-mono font-semibold text-lp-text3 mb-3 tracking-widest uppercase">Reference File <span className="font-sans lowercase opacity-50 font-normal ml-1">(Optional)</span></label>
+                        <div className="relative group">
+                          <input
+                            type="file"
+                            onChange={(e) => handleFileChange(e, 'file_tugas')}
+                            className="hidden"
+                            id="file-upload-tugas"
+                            accept=".pdf,.doc,.docx,.zip,.jpg,.jpeg,.png"
+                          />
+                          <label 
+                            htmlFor="file-upload-tugas"
+                            className={`
+                              relative flex flex-col items-center justify-center w-full min-h-[140px] 
+                              p-6 border-2 border-dashed rounded-[2rem] cursor-pointer
+                              transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]
+                              ${formData.file_tugas 
+                                ? 'border-lp-text bg-lp-surface' 
+                                : 'border-lp-border bg-lp-surface hover:border-lp-text hover:bg-lp-bg'
+                              }
+                            `}
+                          >
+                             <div className="flex flex-col items-center text-center">
+                                <div className={`
+                                  w-10 h-10 rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-500
+                                  ${formData.file_tugas ? 'bg-lp-text text-white' : 'bg-white border border-lp-border text-lp-text3'}
+                                `}>
+                                  {formData.file_tugas ? <FiCheckCircle /> : <FiUpload />}
+                                </div>
+                                {formData.file_tugas ? (
+                                  <p className="text-[12px] text-lp-text font-mono uppercase truncate max-w-[160px]">{formData.file_tugas.name}</p>
+                                ) : (
+                                  <p className="text-[12px] text-lp-text3 font-medium uppercase tracking-[0.1em]">Upload Guide</p>
+                                )}
+                             </div>
+                          </label>
+                        </div>
                       </div>
                     </div>
                     
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
+                      <button
+                        type="button"
+                        onClick={() => setShowCreateTugas(false)}
+                        className="px-8 py-4 border border-lp-border text-lp-text2 rounded-full text-[13px] font-bold hover:bg-lp-surface transition-all duration-300 uppercase tracking-widest"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={submitting}
+                        className="bg-lp-text text-lp-bg px-8 py-4 rounded-full text-[13px] font-bold hover:bg-lp-atext hover:-translate-y-1 disabled:opacity-40 transition-all duration-500 uppercase tracking-widest flex items-center justify-center gap-3 shadow-[0_12px_24px_rgba(0,0,0,0.1)]"
+                      >
+                        {submitting && <div className="w-4 h-4 border-2 border-lp-bg/30 border-t-lp-bg rounded-full animate-spin"></div>}
+                        <span>{submitting ? 'ACTIVATING' : 'ACTIVATE TASK'}</span>
+                      </button>
+                    </div>
+                  </form>
+                </motion.div>
+              </div>
+            )}
+
+            {/* Modal Detail Pertemuan */}
+            {showDetailPertemuan && (
+              <div className="fixed inset-0 bg-lp-text/30 backdrop-blur-md flex items-center justify-center p-4 z-50 overflow-y-auto">
+                <motion.div 
+                  initial={{ opacity: 0, y: 50 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 50 }}
+                  className="bg-lp-bg border border-lp-border rounded-[3rem] p-8 md:p-14 w-full max-w-5xl my-auto shadow-[0_64px_128px_rgba(0,0,0,0.15)] relative overflow-hidden"
+                >
+                  <div className="absolute top-0 right-0 w-64 h-64 bg-lp-text/5 blur-[80px] rounded-full translate-x-1/2 -translate-y-1/2" />
+                  
+                  <div className="flex items-start justify-between mb-12 relative z-10">
                     <div>
-                      <label className="block text-sm font-semibold text-lp-text2 mb-2">File Tugas (Opsional)</label>
-                      <div className="border-2 border-dashed border-lp-border border rounded-2xl p-6 text-center bg-lp-bg/50 hover:border-blue-400 transition-colors cursor-pointer">
-                        <input
-                          type="file"
-                          onChange={(e) => handleFileChange(e, 'file_tugas')}
-                          className="hidden"
-                          id="file-tugas-upload"
-                          accept=".pdf,.doc,.docx,.zip,.jpg,.jpeg,.png"
-                        />
-                        <label htmlFor="file-tugas-upload" className="cursor-pointer">
-                          <div className="p-3 bg-emerald-100 rounded-full w-16 h-16 mx-auto mb-3 flex items-center justify-center">
-                            <FiUpload className="text-xl text-emerald-600" />
-                          </div>
-                          <div className="text-lp-text2 font-medium mb-1">Klik untuk upload file tugas</div>
-                          <div className="text-sm text-lp-text3 font-light">
-                            PDF, DOC, ZIP, JPG, PNG (Max: 32MB)
-                          </div>
-                        </label>
+                      <span className="text-[11px] font-mono font-bold tracking-[0.2em] text-lp-text3 uppercase mb-4 block">SESSION DETAILS</span>
+                      <h3 className="text-4xl md:text-5xl font-light text-lp-text tracking-tight mb-3">
+                        Pertemuan {selectedPertemuan}
+                      </h3>
+                      <div className="flex items-center gap-2 text-lp-text2 font-light">
+                        <FiBookOpen className="text-lp-text3" />
+                        <span>{matkulData[courseId] || courseId}</span>
                       </div>
                     </div>
+                    <button
+                      onClick={() => setShowDetailPertemuan(false)}
+                      className="w-12 h-12 rounded-full bg-white border border-lp-border flex items-center justify-center text-lp-text hover:bg-lp-text hover:text-white transition-all duration-500 shadow-sm"
+                    >
+                      <FiXCircle className="text-xl" />
+                    </button>
                   </div>
                   
-                  {formData.file_tugas && (
-                    <div className="p-4 bg-lp-bg rounded-xl border border-emerald-200 shadow-sm">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-emerald-100 rounded-lg">
-                          <FiFile className="text-emerald-600" />
-                        </div>
-                        <div className="flex-1">
-                          <div className="font-medium text-lp-text font-semibold tracking-tight">{formData.file_tugas.name}</div>
-                          <div className="text-sm text-lp-text3 font-light">
-                            {(formData.file_tugas.size / (1024 * 1024)).toFixed(2)} MB
+                  {detailLoading ? (
+                    <div className="flex flex-col items-center justify-center py-20 relative z-10">
+                      <div className="w-12 h-12 border-2 border-lp-text/10 border-t-lp-text rounded-full animate-spin mb-6"></div>
+                      <p className="text-[11px] font-mono font-bold tracking-widest text-lp-text3 uppercase">Synchronizing Modules...</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 relative z-10">
+                      
+                      {/* Materi Section */}
+                      <div className="space-y-8">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <h4 className="text-[11px] font-mono font-bold tracking-[0.2em] uppercase text-lp-text3">Modules</h4>
+                            <div className="h-px w-12 bg-lp-border" />
                           </div>
+                          <button
+                            onClick={() => setShowUploadMateri(true)}
+                            className="text-[10px] font-mono font-bold tracking-widest uppercase text-lp-text2 hover:text-lp-accent flex items-center gap-1.5"
+                          >
+                            <FiPlus /> New Asset
+                          </button>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => setFormData(prev => ({ ...prev, file_tugas: null }))}
-                          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                        >
-                          <FiTrash2 className="text-gray-400 hover:text-red-500" />
-                        </button>
+                        
+                        <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                          {pertemuanDetail.materi && pertemuanDetail.materi.length > 0 ? (
+                            pertemuanDetail.materi.map((materi, index) => (
+                              <div key={index} className="group bg-white border border-lp-border rounded-[2rem] p-6 hover:shadow-xl hover:-translate-y-1 transition-all duration-500">
+                                <div className="flex justify-between items-start gap-4">
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-[10px] font-mono font-bold text-lp-text3 tracking-widest uppercase mb-2">MOD-{materi.id}</p>
+                                    <h5 className="text-[18px] font-normal text-lp-text tracking-tight mb-2 truncate italic">{materi.title}</h5>
+                                    <p className="text-[13px] text-lp-text2 font-light line-clamp-2">{materi.desc || "No description."}</p>
+                                  </div>
+                                  <div className="flex flex-col gap-2">
+                                    {materi.file_path && (
+                                      <a 
+                                        href={resolveBackendAssetUrl(materi.file_path)}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="p-3 bg-lp-surface text-lp-text3 rounded-2xl hover:bg-lp-text hover:text-white transition-all shadow-sm"
+                                      >
+                                        <FiDownload />
+                                      </a>
+                                    )}
+                                    <button
+                                      onClick={() => handleDeleteMateri(materi.id)}
+                                      className="p-3 bg-lp-surface text-lp-red/60 rounded-2xl hover:bg-lp-red hover:text-white transition-all shadow-sm"
+                                    >
+                                      <FiTrash2 />
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            ))
+                          ) : (
+                            <div className="py-16 text-center border-2 border-dashed border-lp-border rounded-[2rem]">
+                              <FiFileText className="text-4xl text-lp-text/10 mx-auto mb-4" />
+                              <p className="text-[11px] font-mono font-bold text-lp-text3 uppercase">No modules</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Tugas Section */}
+                      <div className="space-y-8">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <h4 className="text-[11px] font-mono font-bold tracking-[0.2em] uppercase text-lp-text3">Evaluations</h4>
+                            <div className="h-px w-12 bg-lp-border" />
+                          </div>
+                          <button
+                            onClick={() => setShowCreateTugas(true)}
+                            className="text-[10px] font-mono font-bold tracking-widest uppercase text-lp-text2 hover:text-lp-accent flex items-center gap-1.5"
+                          >
+                            <FiPlus /> New Assessment
+                          </button>
+                        </div>
+                        
+                        <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                          {pertemuanDetail.tugas && pertemuanDetail.tugas.length > 0 ? (
+                            pertemuanDetail.tugas.map((tugas, index) => (
+                              <div key={index} className="group bg-white border border-lp-border rounded-[2rem] p-6 hover:shadow-xl hover:-translate-y-1 transition-all duration-500">
+                                <div className="flex justify-between items-start gap-4 mb-4">
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-[10px] font-mono font-bold text-lp-text3 tracking-widest uppercase mb-2">TASK-{tugas.id}</p>
+                                    <h5 className="text-[18px] font-normal text-lp-text tracking-tight italic">{tugas.title}</h5>
+                                  </div>
+                                  <div className="flex flex-col gap-2">
+                                    <Link 
+                                      to={`/dosen/penilaian/${courseId}?taskId=${tugas.id}`}
+                                      className="p-3 bg-lp-surface text-lp-text2 rounded-2xl hover:bg-lp-text hover:text-white transition-all shadow-sm flex items-center justify-center"
+                                    >
+                                      <FiEye />
+                                    </Link>
+                                    <button
+                                      onClick={() => handleDeleteTugas(tugas.id)}
+                                      className="p-3 bg-lp-surface text-lp-red/60 rounded-2xl hover:bg-lp-red hover:text-white transition-all shadow-sm"
+                                    >
+                                      <FiTrash2 />
+                                    </button>
+                                  </div>
+                                </div>
+                                <div className="space-y-2">
+                                  <div className="flex items-center gap-2 text-[12px] text-lp-text2 font-light">
+                                    <FiClock className="opacity-60" />
+                                    <span>Deadline: {tugas.due_date ? new Date(tugas.due_date).toLocaleString('id-ID') : 'Flexible'}</span>
+                                  </div>
+                                  {tugas.file_path && (
+                                    <div className="flex items-center gap-2 text-[12px] text-lp-text2 font-light">
+                                      <FiFile className="opacity-60" />
+                                      <a href={resolveBackendAssetUrl(tugas.file_path)} className="underline hover:text-lp-text2">Reference Asset</a>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            ))
+                          ) : (
+                            <div className="py-16 text-center border-2 border-dashed border-lp-border rounded-[2rem]">
+                              <FiCalendar className="text-4xl text-lp-text/10 mx-auto mb-4" />
+                              <p className="text-[11px] font-mono font-bold text-lp-text3 uppercase">No tasks</p>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   )}
-                  
-                  <div className="flex justify-end gap-3 pt-6 border-t border-lp-border border">
-                    <button
-                      type="button"
-                      onClick={() => setShowCreateTugas(false)}
-                      className="px-8 py-3 bg-lp-surface border border-lp-border border text-lp-text2 rounded-xl font-medium shadow-sm hover:shadow-sm border border-lp-border transition-all duration-300 hover:bg-lp-bg"
-                    >
-                      Batal
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={submitting}
-                      className="group relative overflow-hidden px-8 py-3 bg-lp-accent text-white border-none rounded-xl font-medium shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2"
-                    >
-                      <div className="absolute inset-0 bg-lp-surface/10 translate-x-[-100%] group-hover:translate-x-full transition-transform duration-1000"></div>
-                      {submitting ? (
-                        <>
-                          <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                          Membuat...
-                        </>
-                      ) : (
-                        <>
-                          <FiPlus className="relative z-10" />
-                          <span className="relative z-10">Buat Tugas</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </form>
+                </motion.div>
               </div>
-            </div>
-          )}
-
-          {/* Modal Detail Pertemuan */}
-          {showDetailPertemuan && (
-            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fadeIn">
-              <div className="bg-lp-surface rounded-2xl p-8 w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl animate-slideUp">
-                <div className="flex items-center justify-between mb-8">
-                  <div className="flex items-center gap-4">
-                    <div className="p-3 bg-lp-bg rounded-xl">
-                      <FiBookOpen className="text-2xl text-white" />
-                    </div>
-                    <div>
-                      <h3 className="text-2xl font-bold text-lp-text font-semibold tracking-tight">
-                        Pertemuan {selectedPertemuan}
-                      </h3>
-                      <p className="text-lp-text2 font-light">{matkulData[courseId] || courseId}</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setShowDetailPertemuan(false)}
-                    className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
-                  >
-                    <FiXCircle className="text-2xl text-gray-400 hover:text-lp-text2 font-light" />
-                  </button>
-                </div>
-                
-                {detailLoading ? (
-                  <div className="flex flex-col items-center justify-center py-12">
-                    <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4"></div>
-                    <p className="text-lp-text2 font-light">Memuat detail pertemuan...</p>
-                  </div>
-                ) : (
-                  <div className="space-y-8">
-                    {/* Materi Section */}
-                    <div>
-                      <div className="flex items-center justify-between mb-6">
-                        <div className="flex items-center gap-3">
-                          <div className="p-2 bg-blue-100 rounded-lg">
-                            <FiFileText className="text-xl text-lp-atext" />
-                          </div>
-                          <h4 className="text-xl font-semibold text-lp-text font-semibold tracking-tight">Materi</h4>
-                          <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
-                            {pertemuanDetail.materi?.length || 0} item
-                          </span>
-                        </div>
-                        <button
-                          onClick={() => setShowUploadMateri(true)}
-                          className="px-4 py-2 bg-lp-accent text-white border-none rounded-lg font-medium hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border transition-all duration-300 flex items-center gap-2"
-                        >
-                          <FiPlus />
-                          Tambah Materi
-                        </button>
-                      </div>
-                      
-                      {pertemuanDetail.materi && pertemuanDetail.materi.length > 0 ? (
-                        <div className="grid gap-4">
-                          {pertemuanDetail.materi.map((materi, index) => (
-                            <div key={index} className="bg-lp-bg border border-lp-border border rounded-2xl p-6 hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5">
-                              <div className="flex justify-between items-start mb-4">
-                                <div className="flex-1">
-                                  <h5 className="font-bold text-lp-text font-semibold tracking-tight text-lg mb-2">{materi.title}</h5>
-                                  {materi.desc && <p className="text-lp-text2 font-light mb-3">{materi.desc}</p>}
-                                </div>
-                                <div className="flex gap-2">
-                                  {materi.file_path && (
-                                    <a 
-                                      href={resolveBackendAssetUrl(materi.file_path)}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="p-2 bg-blue-100 text-lp-atext rounded-lg hover:bg-blue-200 transition-colors"
-                                      title="Download"
-                                    >
-                                      <FiDownload />
-                                    </a>
-                                  )}
-                                  <button
-                                    onClick={() => handleDeleteMateri(materi.id)}
-                                    className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors"
-                                    title="Hapus"
-                                  >
-                                    <FiTrash2 />
-                                  </button>
-                                </div>
-                              </div>
-                              <div className="flex items-center justify-between text-sm text-lp-text3 font-light pt-4 border-t border-lp-border border">
-                                <span className="flex items-center gap-2">
-                                  <FiClock />
-                                  Diupload: {new Date(materi.created_at).toLocaleString('id-ID')}
-                                </span>
-                                <span className="px-2 py-1 bg-gray-100 rounded-md text-xs">
-                                  {materi.file_path?.split('.').pop().toUpperCase()}
-                                </span>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="text-center py-12 border-2 border-dashed border-lp-border border rounded-2xl bg-lp-bg/50">
-                          <div className="p-4 bg-blue-100 rounded-full w-20 h-20 mx-auto mb-4 flex items-center justify-center">
-                            <FiFileText className="text-3xl text-lp-atext" />
-                          </div>
-                          <p className="text-lp-text3 font-light">Belum ada materi untuk pertemuan ini.</p>
-                          <button
-                            onClick={() => {
-                              setShowDetailPertemuan(false)
-                              setShowUploadMateri(true)
-                            }}
-                            className="mt-4 px-4 py-2 bg-lp-accent text-white border-none rounded-lg font-medium hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border transition-all duration-300 flex items-center gap-2 mx-auto"
-                          >
-                            <FiPlus />
-                            Tambah Materi Pertama
-                          </button>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Tugas Section */}
-                    <div>
-                      <div className="flex items-center justify-between mb-6">
-                        <div className="flex items-center gap-3">
-                          <div className="p-2 bg-emerald-100 rounded-lg">
-                            <FiCalendar className="text-xl text-emerald-600" />
-                          </div>
-                          <h4 className="text-xl font-semibold text-lp-text font-semibold tracking-tight">Tugas</h4>
-                          <span className="bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full text-sm font-medium">
-                            {pertemuanDetail.tugas?.length || 0} item
-                          </span>
-                        </div>
-                        <button
-                          onClick={() => setShowCreateTugas(true)}
-                          className="px-4 py-2 bg-lp-accent text-white border-none rounded-lg font-medium hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border transition-all duration-300 flex items-center gap-2"
-                        >
-                          <FiPlus />
-                          Buat Tugas
-                        </button>
-                      </div>
-                      
-                      {pertemuanDetail.tugas && pertemuanDetail.tugas.length > 0 ? (
-                        <div className="grid gap-4">
-                          {pertemuanDetail.tugas.map((tugas, index) => (
-                            <div key={index} className="bg-lp-bg border border-lp-border border rounded-2xl p-6 hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5">
-                              <div className="flex justify-between items-start mb-4">
-                                <div className="flex-1">
-                                  <h5 className="font-bold text-lp-text font-semibold tracking-tight text-lg mb-2">{tugas.title}</h5>
-                                  {tugas.desc && <p className="text-lp-text2 font-light mb-3">{tugas.desc}</p>}
-                                </div>
-                                <div className="flex gap-2">
-                                  {tugas.file_path && (
-                                    <a 
-                                      href={resolveBackendAssetUrl(tugas.file_path)}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="p-2 bg-emerald-100 text-emerald-600 rounded-lg hover:bg-emerald-200 transition-colors"
-                                      title="File Tugas"
-                                    >
-                                      <FiFile />
-                                    </a>
-                                  )}
-                                  <Link
-                                    to={`/dosen/penilaian/${courseId}?pertemuan=${selectedPertemuan}`}
-                                    className="p-2 bg-blue-100 text-lp-atext rounded-lg hover:bg-blue-200 transition-colors"
-                                    title="Lihat Pengumpulan"
-                                  >
-                                    <FiEye />
-                                  </Link>
-                                  <button
-                                    onClick={() => handleDeleteTugas(tugas.id)}
-                                    className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors"
-                                    title="Hapus"
-                                  >
-                                    <FiTrash2 />
-                                  </button>
-                                </div>
-                              </div>
-                              
-                              {tugas.due_date && (
-                                <div className="flex items-center gap-2 mb-3 px-3 py-2 bg-lp-bg border border-amber-200 rounded-lg">
-                                  <FiClock className="text-amber-600" />
-                                  <span className="text-sm font-medium text-amber-800">
-                                    Batas: {new Date(tugas.due_date).toLocaleString('id-ID')}
-                                  </span>
-                                </div>
-                              )}
-                              
-                              <div className="flex items-center justify-between text-sm text-lp-text3 font-light pt-4 border-t border-lp-border border">
-                                <span className="flex items-center gap-2">
-                                  <FiClock />
-                                  Dibuat: {new Date(tugas.created_at).toLocaleString('id-ID')}
-                                </span>
-                                <Link
-                                  to={`/dosen/penilaian/${courseId}?pertemuan=${selectedPertemuan}`}
-                                  className="px-3 py-1.5 bg-lp-accent text-white border-none rounded-lg text-sm font-medium hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border transition-all duration-300 flex items-center gap-2"
-                                >
-                                  <FiEye />
-                                  Lihat Pengumpulan
-                                </Link>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="text-center py-12 border-2 border-dashed border-lp-border border rounded-2xl bg-lp-bg/50">
-                          <div className="p-4 bg-emerald-100 rounded-full w-20 h-20 mx-auto mb-4 flex items-center justify-center">
-                            <FiCalendar className="text-3xl text-emerald-600" />
-                          </div>
-                          <p className="text-lp-text3 font-light">Belum ada tugas untuk pertemuan ini.</p>
-                          <button
-                            onClick={() => {
-                              setShowDetailPertemuan(false)
-                              setShowCreateTugas(true)
-                            }}
-                            className="mt-4 px-4 py-2 bg-lp-accent text-white border-none rounded-lg font-medium hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border transition-all duration-300 flex items-center gap-2 mx-auto"
-                          >
-                            <FiPlus />
-                            Buat Tugas Pertama
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+            )}
+          </AnimatePresence>
         </div>
       </div>
-
-      {/* Custom CSS for animations */}
-      <style jsx>{`
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        @keyframes slideUp {
-          from { 
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to { 
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        .animate-fadeIn {
-          animation: fadeIn 0.3s ease-out;
-        }
-        .animate-slideUp {
-          animation: slideUp 0.4s ease-out;
-        }
-      `}</style>
     </div>
   )
 }

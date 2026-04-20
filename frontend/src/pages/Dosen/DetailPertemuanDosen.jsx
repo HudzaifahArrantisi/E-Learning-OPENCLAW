@@ -112,7 +112,7 @@ const DetailPertemuanDosen = () => {
                   <div className="h-6 w-32 bg-gray-200 rounded mb-4"></div>
                   <div className="space-y-4">
                     {[1, 2, 3].map(sub => (
-                      <div key={sub} className="border border-lp-border border rounded-xl p-4">
+                      <div key={sub} className="border border-lp-border rounded-xl p-4">
                         <div className="h-4 w-3/4 bg-gray-200 rounded mb-3"></div>
                         <div className="h-3 w-1/2 bg-gray-200 rounded"></div>
                       </div>
@@ -160,7 +160,7 @@ const DetailPertemuanDosen = () => {
             <div className="flex flex-wrap gap-3">
               <Link 
                 to={`/dosen/matkul/${courseId}`}
-                className="group relative overflow-hidden px-6 py-3 bg-lp-accent text-white border-none rounded-xl font-medium shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-3"
+                className="group relative overflow-hidden px-6 py-3 bg-lp-text text-white border-none rounded-xl font-medium shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-3"
               >
                 <div className="absolute inset-0 bg-lp-surface/10 translate-x-[-100%] group-hover:translate-x-full transition-transform duration-1000"></div>
                 <FiArrowLeft className="relative z-10" />
@@ -168,7 +168,7 @@ const DetailPertemuanDosen = () => {
               </Link>
               <Link 
                 to={`/dosen/penilaian/${courseId}?pertemuan=${pertemuan}`}
-                className="px-6 py-3 bg-lp-accent text-white border-none rounded-xl font-medium shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-3"
+                className="px-6 py-3 bg-lp-text text-white border-none rounded-xl font-medium shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-3"
               >
                 <FiBarChart2 />
                 Lihat Penilaian
@@ -178,29 +178,29 @@ const DetailPertemuanDosen = () => {
 
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div className="bg-lp-surface/80 backdrop-blur-sm rounded-2xl p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border border border-lp-border border">
+            <div className="bg-lp-surface/80 backdrop-blur-sm rounded-2xl p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border-lp-border border">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-lp-text2 font-light text-sm mb-1">Total Materi</p>
                   <h3 className="text-3xl font-bold text-lp-text font-semibold tracking-tight">{detail.materi.length}</h3>
                 </div>
                 <div className="p-3 bg-lp-bg rounded-xl">
-                  <FiFileText className="text-2xl text-lp-atext" />
+                  <FiFileText className="text-2xl text-lp-text2" />
                 </div>
               </div>
             </div>
-            <div className="bg-lp-surface/80 backdrop-blur-sm rounded-2xl p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border border border-lp-border border">
+            <div className="bg-lp-surface/80 backdrop-blur-sm rounded-2xl p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border-lp-border border">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-lp-text2 font-light text-sm mb-1">Total Tugas</p>
                   <h3 className="text-3xl font-bold text-lp-text font-semibold tracking-tight">{detail.tugas.length}</h3>
                 </div>
                 <div className="p-3 bg-lp-bg rounded-xl">
-                  <FiCalendar className="text-2xl text-emerald-600" />
+                  <FiCalendar className="text-2xl text-lp-text2" />
                 </div>
               </div>
             </div>
-            <div className="bg-lp-surface/80 backdrop-blur-sm rounded-2xl p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border border border-lp-border border">
+            <div className="bg-lp-surface/80 backdrop-blur-sm rounded-2xl p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border-lp-border border">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-lp-text2 font-light text-sm mb-1">File Tersedia</p>
@@ -209,11 +209,11 @@ const DetailPertemuanDosen = () => {
                   </h3>
                 </div>
                 <div className="p-3 bg-lp-bg rounded-xl">
-                  <FiFile className="text-2xl text-purple-600" />
+                  <FiFile className="text-2xl text-lp-text2" />
                 </div>
               </div>
             </div>
-            <div className="bg-lp-surface/80 backdrop-blur-sm rounded-2xl p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border border border-lp-border border">
+            <div className="bg-lp-surface/80 backdrop-blur-sm rounded-2xl p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border-lp-border border">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-lp-text2 font-light text-sm mb-1">Status Pertemuan</p>
@@ -222,20 +222,20 @@ const DetailPertemuanDosen = () => {
                   </h3>
                 </div>
                 <div className="p-3 bg-lp-bg rounded-xl">
-                  <FiCheckCircle className="text-2xl text-amber-600" />
+                  <FiCheckCircle className="text-2xl text-lp-text2" />
                 </div>
               </div>
             </div>
           </div>
 
           {/* Tab Navigation */}
-          <div className="bg-lp-surface/80 backdrop-blur-sm rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border border border-lp-border border mb-6">
+          <div className="bg-lp-surface/80 backdrop-blur-sm rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border-lp-border border mb-6">
             <div className="flex border-b border-lp-border border">
               <button
                 onClick={() => setActiveTab('materi')}
                 className={`flex-1 py-4 px-6 text-center font-medium transition-all duration-300 ${
                   activeTab === 'materi' 
-                    ? 'text-lp-atext border-b-2 border-blue-600 bg-lp-bg' 
+                    ? 'text-lp-text2 border-b-2 border-lp-text bg-lp-bg' 
                     : 'text-lp-text3 font-light hover:text-lp-text2 hover:bg-lp-bg'
                 }`}
               >
@@ -248,7 +248,7 @@ const DetailPertemuanDosen = () => {
                 onClick={() => setActiveTab('tugas')}
                 className={`flex-1 py-4 px-6 text-center font-medium transition-all duration-300 ${
                   activeTab === 'tugas' 
-                    ? 'text-emerald-600 border-b-2 border-emerald-600 bg-lp-bg' 
+                    ? 'text-lp-text2 border-b-2 border-lp-text bg-lp-bg' 
                     : 'text-lp-text3 font-light hover:text-lp-text2 hover:bg-lp-bg'
                 }`}
               >
@@ -264,17 +264,17 @@ const DetailPertemuanDosen = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Materi Section */}
             <div className={`transition-all duration-500 ${activeTab === 'materi' ? 'opacity-100' : 'opacity-70'}`}>
-              <div className="bg-lp-surface/80 backdrop-blur-sm rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border border border-lp-border border p-6">
+              <div className="bg-lp-surface/80 backdrop-blur-sm rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border-lp-border border p-6">
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-blue-100 rounded-lg">
-                      <FiFileText className="text-xl text-lp-atext" />
+                    <div className="p-2 bg-lp-bg rounded-lg">
+                      <FiFileText className="text-xl text-lp-text2" />
                     </div>
                     <h2 className="text-xl font-bold text-lp-text font-semibold tracking-tight">Materi Pembelajaran</h2>
                   </div>
                   <Link
                     to={`/dosen/matkul/${courseId}?upload=materi&pertemuan=${pertemuan}`}
-                    className="px-4 py-2 bg-lp-accent text-white border-none rounded-lg font-medium hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2"
+                    className="px-4 py-2 bg-lp-text text-white border-none rounded-lg font-medium hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2"
                   >
                     <FiFileText />
                     Tambah Materi
@@ -284,13 +284,13 @@ const DetailPertemuanDosen = () => {
                 {detail.materi.length > 0 ? (
                   <div className="space-y-4">
                     {detail.materi.map((materi, index) => (
-                      <div key={index} className="group bg-lp-bg border border-lp-border border rounded-xl p-5 hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5">
+                      <div key={index} className="group bg-lp-bg border border-lp-border rounded-xl p-5 hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5">
                         <div className="flex items-start justify-between mb-4">
                           <div className="flex-1">
                             <div className="flex items-center gap-3 mb-2">
                               <h3 className="font-semibold text-lp-text font-semibold tracking-tight text-lg">{materi.title}</h3>
                               {materi.file_path && (
-                                <span className="px-2 py-1 bg-gray-100 text-lp-text2 font-light text-xs rounded-md">
+                                <span className="px-2 py-1 bg-lp-surface text-lp-text2 font-light text-xs rounded-md">
                                   {materi.file_path.split('.').pop().toUpperCase()}
                                 </span>
                               )}
@@ -305,7 +305,7 @@ const DetailPertemuanDosen = () => {
                                 href={resolveBackendAssetUrl(materi.file_path)}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="p-2 bg-blue-100 text-lp-atext rounded-lg hover:bg-blue-200 transition-colors"
+                                className="p-2 bg-lp-bg text-lp-text2 rounded-lg hover:bg-lp-surface transition-colors"
                                 title="Download"
                               >
                                 <FiDownload />
@@ -313,7 +313,7 @@ const DetailPertemuanDosen = () => {
                             )}
                             <button
                               onClick={() => setShowDeleteConfirm({ type: 'materi', id: materi.id })}
-                              className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors"
+                              className="p-2 bg-lp-bg text-lp-text2 rounded-lg hover:bg-lp-surface transition-colors"
                               title="Hapus"
                             >
                               <FiTrash2 />
@@ -330,7 +330,7 @@ const DetailPertemuanDosen = () => {
                               day: 'numeric'
                             })}
                           </span>
-                          <span className="text-xs px-2 py-1 bg-gray-100 rounded">
+                          <span className="text-xs px-2 py-1 bg-lp-surface rounded">
                             ID: {materi.id}
                           </span>
                         </div>
@@ -339,14 +339,14 @@ const DetailPertemuanDosen = () => {
                   </div>
                 ) : (
                   <div className="text-center py-12">
-                    <div className="p-4 bg-blue-100 rounded-full w-20 h-20 mx-auto mb-4 flex items-center justify-center">
-                      <FiFileText className="text-3xl text-lp-atext" />
+                    <div className="p-4 bg-lp-bg rounded-full w-20 h-20 mx-auto mb-4 flex items-center justify-center">
+                      <FiFileText className="text-3xl text-lp-text2" />
                     </div>
                     <h3 className="text-lg font-semibold text-lp-text2 mb-2">Belum ada materi</h3>
                     <p className="text-lp-text3 font-light mb-6">Tambahkan materi untuk pertemuan ini</p>
                     <Link
                       to={`/dosen/matkul/${courseId}?upload=materi&pertemuan=${pertemuan}`}
-                      className="inline-flex items-center gap-2 px-6 py-3 bg-lp-accent text-white border-none rounded-xl font-medium hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border transition-all duration-300 hover:-translate-y-0.5"
+                      className="inline-flex items-center gap-2 px-6 py-3 bg-lp-text text-white border-none rounded-xl font-medium hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border transition-all duration-300 hover:-translate-y-0.5"
                     >
                       <FiFileText />
                       Tambah Materi Pertama
@@ -358,17 +358,17 @@ const DetailPertemuanDosen = () => {
 
             {/* Tugas Section */}
             <div className={`transition-all duration-500 ${activeTab === 'tugas' ? 'opacity-100' : 'opacity-70'}`}>
-              <div className="bg-lp-surface/80 backdrop-blur-sm rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border border border-lp-border border p-6">
+              <div className="bg-lp-surface/80 backdrop-blur-sm rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border-lp-border border p-6">
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-emerald-100 rounded-lg">
-                      <FiCalendar className="text-xl text-emerald-600" />
+                    <div className="p-2 bg-lp-bg rounded-lg">
+                      <FiCalendar className="text-xl text-lp-text2" />
                     </div>
                     <h2 className="text-xl font-bold text-lp-text font-semibold tracking-tight">Tugas & Penilaian</h2>
                   </div>
                   <Link
                     to={`/dosen/matkul/${courseId}?create=tugas&pertemuan=${pertemuan}`}
-                    className="px-4 py-2 bg-lp-accent text-white border-none rounded-lg font-medium hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2"
+                    className="px-4 py-2 bg-lp-text text-white border-none rounded-lg font-medium hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2"
                   >
                     <FiCalendar />
                     Buat Tugas
@@ -378,13 +378,13 @@ const DetailPertemuanDosen = () => {
                 {detail.tugas.length > 0 ? (
                   <div className="space-y-4">
                     {detail.tugas.map((tugas, index) => (
-                      <div key={index} className="group bg-lp-bg border border-lp-border border rounded-xl p-5 hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5">
+                      <div key={index} className="group bg-lp-bg border border-lp-border rounded-xl p-5 hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5">
                         <div className="flex items-start justify-between mb-4">
                           <div className="flex-1">
                             <div className="flex items-center gap-3 mb-2">
                               <h3 className="font-semibold text-lp-text font-semibold tracking-tight text-lg">{tugas.title}</h3>
                               {tugas.file_path && (
-                                <span className="px-2 py-1 bg-emerald-100 text-emerald-600 text-xs rounded-md">
+                                <span className="px-2 py-1 bg-lp-bg text-lp-text2 text-xs rounded-md">
                                   FILE
                                 </span>
                               )}
@@ -399,7 +399,7 @@ const DetailPertemuanDosen = () => {
                                 href={resolveBackendAssetUrl(tugas.file_path)}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="p-2 bg-emerald-100 text-emerald-600 rounded-lg hover:bg-emerald-200 transition-colors"
+                                className="p-2 bg-lp-bg text-lp-text2 rounded-lg hover:bg-lp-surface transition-colors"
                                 title="File Tugas"
                               >
                                 <FiFile />
@@ -407,7 +407,7 @@ const DetailPertemuanDosen = () => {
                             )}
                             <button
                               onClick={() => setShowDeleteConfirm({ type: 'tugas', id: tugas.id })}
-                              className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors"
+                              className="p-2 bg-lp-bg text-lp-text2 rounded-lg hover:bg-lp-surface transition-colors"
                               title="Hapus"
                             >
                               <FiTrash2 />
@@ -416,9 +416,9 @@ const DetailPertemuanDosen = () => {
                         </div>
                         
                         {tugas.due_date && (
-                          <div className="flex items-center gap-2 mb-3 px-3 py-2 bg-lp-bg border border-amber-200 rounded-lg">
-                            <FiClock className="text-amber-600" />
-                            <span className="text-sm font-medium text-amber-800">
+                          <div className="flex items-center gap-2 mb-3 px-3 py-2 bg-lp-bg border border-lp-border rounded-lg">
+                            <FiClock className="text-lp-text2" />
+                            <span className="text-sm font-medium text-lp-text2">
                               Batas: {new Date(tugas.due_date).toLocaleString('id-ID')}
                             </span>
                           </div>
@@ -432,13 +432,13 @@ const DetailPertemuanDosen = () => {
                             </span>
                             <Link
                               to={`/dosen/penilaian/${courseId}?pertemuan=${pertemuan}`}
-                              className="px-3 py-1.5 bg-lp-accent text-white border-none rounded-lg text-sm font-medium hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2"
+                              className="px-3 py-1.5 bg-lp-text text-white border-none rounded-lg text-sm font-medium hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2"
                             >
                               <FiEye />
                               Lihat Pengumpulan
                             </Link>
                           </div>
-                          <span className="text-xs px-2 py-1 bg-gray-100 rounded">
+                          <span className="text-xs px-2 py-1 bg-lp-surface rounded">
                             ID: {tugas.id}
                           </span>
                         </div>
@@ -447,14 +447,14 @@ const DetailPertemuanDosen = () => {
                   </div>
                 ) : (
                   <div className="text-center py-12">
-                    <div className="p-4 bg-emerald-100 rounded-full w-20 h-20 mx-auto mb-4 flex items-center justify-center">
-                      <FiCalendar className="text-3xl text-emerald-600" />
+                    <div className="p-4 bg-lp-bg rounded-full w-20 h-20 mx-auto mb-4 flex items-center justify-center">
+                      <FiCalendar className="text-3xl text-lp-text2" />
                     </div>
                     <h3 className="text-lg font-semibold text-lp-text2 mb-2">Belum ada tugas</h3>
                     <p className="text-lp-text3 font-light mb-6">Buat tugas untuk mengukur pemahaman mahasiswa</p>
                     <Link
                       to={`/dosen/matkul/${courseId}?create=tugas&pertemuan=${pertemuan}`}
-                      className="inline-flex items-center gap-2 px-6 py-3 bg-lp-accent text-white border-none rounded-xl font-medium hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border transition-all duration-300 hover:-translate-y-0.5"
+                      className="inline-flex items-center gap-2 px-6 py-3 bg-lp-text text-white border-none rounded-xl font-medium hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border transition-all duration-300 hover:-translate-y-0.5"
                     >
                       <FiCalendar />
                       Buat Tugas Pertama
@@ -466,7 +466,7 @@ const DetailPertemuanDosen = () => {
           </div>
 
           {/* Quick Actions */}
-          <div className="mt-8 bg-lp-bg rounded-2xl p-6 border border-blue-100">
+          <div className="mt-8 bg-lp-bg rounded-2xl p-6 border border-lp-border">
             <h3 className="text-lg font-semibold text-lp-text font-semibold tracking-tight mb-4 flex items-center gap-2">
               <FiExternalLink />
               Aksi Cepat
@@ -474,11 +474,11 @@ const DetailPertemuanDosen = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Link
                 to={`/dosen/matkul/${courseId}?upload=materi&pertemuan=${pertemuan}`}
-                className="p-4 bg-lp-surface border border-lp-border border rounded-xl hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border transition-all duration-300 hover:-translate-y-1 hover:border-blue-300 group"
+                className="p-4 bg-lp-surface border border-lp-border rounded-xl hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border transition-all duration-300 hover:-translate-y-1 hover:border-lp-text2 group"
               >
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-100 rounded-lg group-hover:bg-blue-200 transition-colors">
-                    <FiFileText className="text-lp-atext" />
+                  <div className="p-2 bg-lp-bg rounded-lg group-hover:bg-lp-surface transition-colors">
+                    <FiFileText className="text-lp-text2" />
                   </div>
                   <div>
                     <div className="font-medium text-lp-text font-semibold tracking-tight">Tambah Materi</div>
@@ -488,11 +488,11 @@ const DetailPertemuanDosen = () => {
               </Link>
               <Link
                 to={`/dosen/matkul/${courseId}?create=tugas&pertemuan=${pertemuan}`}
-                className="p-4 bg-lp-surface border border-lp-border border rounded-xl hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border transition-all duration-300 hover:-translate-y-1 hover:border-emerald-300 group"
+                className="p-4 bg-lp-surface border border-lp-border rounded-xl hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border transition-all duration-300 hover:-translate-y-1 hover:border-lp-text2 group"
               >
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-emerald-100 rounded-lg group-hover:bg-emerald-200 transition-colors">
-                    <FiCalendar className="text-emerald-600" />
+                  <div className="p-2 bg-lp-bg rounded-lg group-hover:bg-lp-surface transition-colors">
+                    <FiCalendar className="text-lp-text2" />
                   </div>
                   <div>
                     <div className="font-medium text-lp-text font-semibold tracking-tight">Buat Tugas</div>
@@ -502,11 +502,11 @@ const DetailPertemuanDosen = () => {
               </Link>
               <Link
                 to={`/dosen/penilaian/${courseId}?pertemuan=${pertemuan}`}
-                className="p-4 bg-lp-surface border border-lp-border border rounded-xl hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border transition-all duration-300 hover:-translate-y-1 hover:border-purple-300 group"
+                className="p-4 bg-lp-surface border border-lp-border rounded-xl hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border transition-all duration-300 hover:-translate-y-1 hover:border-lp-text2 group"
               >
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-purple-100 rounded-lg group-hover:bg-purple-200 transition-colors">
-                    <FiBarChart2 className="text-purple-600" />
+                  <div className="p-2 bg-lp-bg rounded-lg group-hover:bg-lp-surface transition-colors">
+                    <FiBarChart2 className="text-lp-text2" />
                   </div>
                   <div>
                     <div className="font-medium text-lp-text font-semibold tracking-tight">Lihat Penilaian</div>
@@ -522,8 +522,8 @@ const DetailPertemuanDosen = () => {
             <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fadeIn">
               <div className="bg-lp-surface rounded-2xl p-8 w-full max-w-md shadow-2xl animate-slideUp">
                 <div className="text-center mb-6">
-                  <div className="p-3 bg-red-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                    <FiTrash2 className="text-2xl text-red-600" />
+                  <div className="p-3 bg-lp-bg rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                    <FiTrash2 className="text-2xl text-lp-text2" />
                   </div>
                   <h3 className="text-xl font-bold text-lp-text font-semibold tracking-tight mb-2">
                     Konfirmasi Penghapusan
@@ -538,7 +538,7 @@ const DetailPertemuanDosen = () => {
                 <div className="flex justify-center gap-3">
                   <button
                     onClick={() => setShowDeleteConfirm(null)}
-                    className="px-6 py-3 bg-lp-surface border border-lp-border border text-lp-text2 rounded-xl font-medium hover:bg-lp-bg transition-all duration-300"
+                    className="px-6 py-3 bg-lp-surface border border-lp-border text-lp-text2 rounded-xl font-medium hover:bg-lp-bg transition-all duration-300"
                   >
                     Batal
                   </button>
@@ -551,7 +551,7 @@ const DetailPertemuanDosen = () => {
                       }
                       setShowDeleteConfirm(null)
                     }}
-                    className="px-6 py-3 bg-lp-accent text-white border-none rounded-xl font-medium hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border transition-all duration-300 hover:-translate-y-0.5"
+                    className="px-6 py-3 bg-lp-text text-white border-none rounded-xl font-medium hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border transition-all duration-300 hover:-translate-y-0.5"
                   >
                     Ya, Hapus
                   </button>

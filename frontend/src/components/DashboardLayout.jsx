@@ -46,6 +46,17 @@ const formatDateTime = (dateString) => {
   })
 }
 
+const getDaysRemaining = (dateString) => {
+  if (!dateString) return null
+  const now = new Date()
+  const due = new Date(dateString)
+  const diffTime = due - now
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+  
+  if (diffDays <= 0) return null
+  return `${diffDays} hari lagi`
+}
+
 const getFileUrl = (filePath) => {
   return resolveBackendAssetUrl(filePath)
 }
@@ -324,11 +335,20 @@ const DashboardLayout = ({
                             <h3 className="text-[15px] font-semibold text-lp-text tracking-tight">{task.title}</h3>
                             <p className="text-[13px] text-lp-text2 font-light mt-1">{task.course_name} • Pertemuan {task.pertemuan}</p>
                           </div>
-                          {task.is_overdue ? (
-                            <span className="text-[10px] font-mono font-medium px-3 py-1 rounded-full bg-lp-red/8 text-lp-red tracking-wider uppercase">Terlambat</span>
-                          ) : (
-                            <span className="text-[10px] font-mono font-medium px-3 py-1 rounded-full bg-lp-green/8 text-lp-green tracking-wider uppercase">Aktif</span>
-                          )}
+                          <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
+                            {task.is_overdue ? (
+                              <span className="text-[10px] font-mono font-medium px-3 py-1 rounded-full bg-lp-red/8 text-lp-red tracking-wider uppercase">Terlambat</span>
+                            ) : (
+                              <>
+                                <span className="text-[10px] font-mono font-medium px-3 py-1 rounded-full bg-lp-green/8 text-lp-green tracking-wider uppercase">Aktif</span>
+                                {task.due_date && getDaysRemaining(task.due_date) && (
+                                  <span className="text-[10px] text-lp-text3 font-medium font-mono uppercase tracking-tight">
+                                    {getDaysRemaining(task.due_date)}
+                                  </span>
+                                )}
+                              </>
+                            )}
+                          </div>
                         </div>
 
                         <div className="mt-4 grid gap-2 text-[13px] text-lp-text2 font-light">

@@ -97,6 +97,28 @@ const ProfilePublic = () => {
     fetchPosts()
   }, [profile, role, username])
 
+  // Helper untuk memproses media_url agar konsisten dengan PostCard.jsx
+  const getMediaUrls = (mediaUrl) => {
+    if (!mediaUrl) return []
+    // Jika sudah berupa array (misal sudah di-parse oleh axios)
+    if (Array.isArray(mediaUrl)) return mediaUrl
+    
+    // Jika berupa string, coba cek apakah JSON array
+    if (typeof mediaUrl === 'string') {
+      const trimmed = mediaUrl.trim()
+      if (trimmed.startsWith('[') || trimmed.startsWith('{')) {
+        try {
+          const parsed = JSON.parse(trimmed)
+          return Array.isArray(parsed) ? parsed : [parsed]
+        } catch (e) {
+          return [trimmed]
+        }
+      }
+      return [trimmed]
+    }
+    return []
+  }
+
   // Filter posts berdasarkan tipe
   useEffect(() => {
     if (!userPosts.length) {
@@ -106,18 +128,10 @@ const ProfilePublic = () => {
 
     switch (activeFilter) {
       case 'foto':
-        setFilteredPosts(userPosts.filter(post => 
-          post.media_url && 
-          (post.media_url.match(/\.(jpg|jpeg|png|gif|webp)$/i) || 
-           post.media_type === 'image')
-        ))
+        setFilteredPosts(userPosts.filter(post => isImagePost(post)))
         break
       case 'text':
-        setFilteredPosts(userPosts.filter(post => 
-          !post.media_url || 
-          (!post.media_url.match(/\.(jpg|jpeg|png|gif|webp)$/i) && 
-           post.media_type !== 'image')
-        ))
+        setFilteredPosts(userPosts.filter(post => !isImagePost(post)))
         break
       default:
         setFilteredPosts(userPosts)
@@ -126,7 +140,8 @@ const ProfilePublic = () => {
 
   // Fungsi untuk mendapatkan URL gambar yang benar
   const getImageUrl = (mediaUrl) => {
-    return resolveBackendAssetUrl(mediaUrl)
+    const urls = getMediaUrls(mediaUrl)
+    return urls.length > 0 ? resolveBackendAssetUrl(urls[0]) : null
   }
 
   // Fungsi untuk handle error gambar profil
@@ -310,11 +325,13 @@ const ProfilePublic = () => {
       .trim()
   }
 
-  // Check if post is image
+  // Check if post is image/content
   const isImagePost = (post) => {
-    return post.media_url && 
-           (post.media_url.match(/\.(jpg|jpeg|png|gif|webp)$/i) || 
-            post.media_type === 'image')
+    if (!post) return false
+    if (post.media_type === 'image') return true
+    
+    const urls = getMediaUrls(post.media_url)
+    return urls.length > 0
   }
 
   // Truncate text for preview
@@ -357,23 +374,26 @@ const ProfilePublic = () => {
   }
 
   return (
-    <div className="flex min-h-screen bg-lp-bg font-sans font-light">
+    <div className="flex min-h-screen bg-[#fafafa] font-sans">
       <Sidebar role={user ? user.role : 'mahasiswa'} />
       
       {/* Main Content - Diperbaiki untuk responsif */}
       <div className="flex-1 w-full relative">
-        
-        {/* Header Profil - Diperbaiki untuk lebih responsif dan aesthetically pleasing */}
-        <header className="bg-white border-b border-lp-border relative">
-          {/* Banner */}
-          <div className="h-24 sm:h-36 lg:h-48 bg-gradient-to-r from-lp-accentS to-lp-surface w-full absolute top-0 left-0 z-0"></div>
+                {/* Header Profil Premium */}
+        <header className="bg-white border-b border-lp-border relative overflow-hidden">
+          {/* Enhanced Banner */}
+          <div className="h-32 sm:h-48 lg:h-64 bg-lp-accentS relative w-full overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-lp-accent/20 to-lp-surface/40 z-0"></div>
+            <div className="absolute inset-0 opacity-[0.03] z-0" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, black 1px, transparent 0)', backgroundSize: '24px 24px' }}></div>
+            <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-white to-transparent z-10"></div>
+          </div>
           
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 pt-16 sm:pt-24 lg:pt-32 pb-4 sm:pb-6 relative z-10">
-            <div className="flex flex-col sm:flex-row items-center sm:items-end gap-4 sm:gap-6">
-              {/* Foto Profil */}
-              <div className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-full border-4 border-white overflow-hidden flex-shrink-0 shadow-sm bg-lp-surface relative -mt-12 sm:-mt-16 z-20">
-                <div className="w-full h-full bg-lp-surface">
-                  <div className="w-full h-full overflow-hidden bg-lp-surface relative">
+          <div className="max-w-4xl mx-auto px-4 sm:px-8 relative z-20">
+            <div className="flex flex-col sm:flex-row items-center sm:items-end gap-6 sm:gap-10 -mt-16 sm:-mt-24 pb-8">
+              {/* Foto Profil with premium border */}
+              <div className="relative group">
+                <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-full border-4 border-white overflow-hidden shadow-xl bg-white relative z-20 transition-transform duration-500 hover:scale-[1.02]">
+                  <div className="w-full h-full bg-lp-surface relative">
                     {profile.profile_picture ? (
                       <>
                         <img
@@ -383,99 +403,113 @@ const ProfilePublic = () => {
                           onError={handleProfileImageError}
                         />
                         <div 
-                          className="absolute inset-0 hidden items-center justify-center bg-gray-200"
+                          className="absolute inset-0 hidden items-center justify-center bg-lp-surface"
                           style={{ display: 'none' }}
                         >
-                          <div className="text-3xl sm:text-4xl font-bold text-lp-text3">
-                            {profile.name && profile.name[0] ? profile.name[0].toUpperCase() : 'U'}
+                          <div className="text-4xl font-bold text-lp-text3">
+                            {profile.name?.[0]?.toUpperCase() || 'U'}
                           </div>
                         </div>
                       </>
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-3xl sm:text-4xl font-bold text-lp-text3 bg-lp-accentS">
-                        {profile.name && profile.name[0] ? profile.name[0].toUpperCase() : 'U'}
+                      <div className="w-full h-full flex items-center justify-center text-4xl font-bold text-lp-text3 bg-gradient-to-br from-lp-accentS to-lp-surface">
+                        {profile.name?.[0]?.toUpperCase() || 'U'}
                       </div>
                     )}
                   </div>
                 </div>
+                {/* Decorative ring */}
+                <div className="absolute -inset-1 bg-gradient-to-tr from-lp-accent/30 to-transparent rounded-full z-10 blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
               </div>
 
               {/* Info Profil */}
-              <div className="text-center sm:text-left flex-1 w-full pb-2">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-center sm:justify-start gap-2 mb-1">
-                  <h1 className="text-xl sm:text-2xl font-bold text-lp-text tracking-tight truncate">{profile.name}</h1>
-                  <span className="inline-flex w-max mx-auto sm:mx-0 px-3 py-1 bg-lp-accentS text-lp-atext text-[10px] font-mono tracking-wider uppercase rounded-full border border-lp-borderA whitespace-nowrap">
-                    {getRoleDisplay(role)}
-                  </span>
+              <div className="text-center sm:text-left flex-1 min-w-0">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
+                  <h1 className="text-2xl sm:text-3xl font-bold text-lp-text tracking-tight">{profile.name}</h1>
+                  <div className="flex items-center justify-center sm:justify-start gap-2">
+                    <span className="px-3 py-1 bg-lp-accent/10 text-lp-accent text-[10px] font-bold tracking-wider uppercase rounded-lg border border-lp-accent/20">
+                      {getRoleDisplay(role)}
+                    </span>
+                    {user?.id === profile.user_id && (
+                      <button className="px-4 py-1.5 bg-lp-surface border border-lp-border rounded-lg text-[12px] font-semibold text-lp-text hover:bg-white transition-all">
+                        Edit Profil
+                      </button>
+                    )}
+                  </div>
                 </div>
                 
-                <p className="text-lp-text3 mb-3 text-[12px] font-mono">@{profile.username}</p>
-
-                <div className="flex gap-4 sm:gap-8 justify-center sm:justify-start mb-3">
-                  <div className="text-center sm:text-left">
-                    <div className="font-bold text-base sm:text-lg text-lp-text">{userPosts.length}</div>
-                    <div className="text-lp-text3 text-[10px] sm:text-[11px] font-mono tracking-wider uppercase">Postingan</div>
+                <div className="flex items-center justify-center sm:justify-start gap-6 mb-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
+                    <span className="font-bold text-lg text-lp-text">{userPosts.length}</span>
+                    <span className="text-lp-text3 text-[12px] uppercase tracking-wide">Postingan</span>
                   </div>
-                  <div className="text-center sm:text-left">
-                    <div className="font-bold text-base sm:text-lg text-lp-text">{profile.followers_count || 0}</div>
-                    <div className="text-lp-text3 text-[10px] sm:text-[11px] font-mono tracking-wider uppercase">Pengikut</div>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2 cursor-pointer hover:opacity-70 transition-opacity">
+                    <span className="font-bold text-lg text-lp-text">{profile.followers_count || 0}</span>
+                    <span className="text-lp-text3 text-[12px] uppercase tracking-wide">Pengikut</span>
                   </div>
-                  <div className="text-center sm:text-left">
-                    <div className="font-bold text-base sm:text-lg text-lp-text">{profile.following_count || 0}</div>
-                    <div className="text-lp-text3 text-[10px] sm:text-[11px] font-mono tracking-wider uppercase">Mengikuti</div>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2 cursor-pointer hover:opacity-70 transition-opacity">
+                    <span className="font-bold text-lg text-lp-text">{profile.following_count || 0}</span>
+                    <span className="text-lp-text3 text-[12px] uppercase tracking-wide">Mengikuti</span>
                   </div>
                 </div>
 
-                {profile.bio && (
-                  <p className="text-lp-text2 text-[13px] font-light max-w-md text-center sm:text-left mx-auto sm:mx-0 leading-relaxed mt-2">{profile.bio}</p>
-                )}
+                <div className="space-y-1">
+                  <p className="text-lp-text3 text-[13px] font-medium">@{profile.username}</p>
+                  {profile.bio && (
+                    <p className="text-lp-text2 text-[14px] leading-relaxed max-w-lg mx-auto sm:mx-0 py-1">
+                      {profile.bio}
+                    </p>
+                  )}
+                  {profile.website && (
+                    <a href={profile.website} target="_blank" rel="noopener noreferrer" className="text-lp-accent text-[13px] font-semibold hover:underline block w-fit mx-auto sm:mx-0">
+                      {profile.website.replace(/^https?:\/\//, '')}
+                    </a>
+                  )}
+                </div>
               </div>
             </div>
           </div>
         </header>
 
-        {/* Filter Tabs */}
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 pt-4">
-          <div className="flex border-b border-lp-border">
-            <button
-              onClick={() => setActiveFilter('semua')}
-              className={`flex-1 py-3 px-4 text-center font-medium text-[12px] transition-colors ${
-                activeFilter === 'semua'
-                  ? 'text-lp-text font-semibold border-b-2 border-lp-accent'
-                  : 'text-lp-text3 hover:text-lp-text2'
-              }`}
-            >
-              <div className="flex items-center justify-center gap-2">
-                <FaEllipsisH className="text-xs" />
-                <span>Semua</span>
-              </div>
-            </button>
-            <button
-              onClick={() => setActiveFilter('foto')}
-              className={`flex-1 py-3 px-4 text-center font-medium text-[12px] transition-colors ${
-                activeFilter === 'foto'
-                  ? 'text-lp-text font-semibold border-b-2 border-lp-accent'
-                  : 'text-lp-text3 hover:text-lp-text2'
-              }`}
-            >
-              <div className="flex items-center justify-center gap-2">
-                <FaImage className="text-xs" />
+
+        {/* Filter Tabs - Premium Glass Effect */}
+        <div className="max-w-4xl mx-auto px-4 sm:px-8 mt-6">
+          <div className="flex justify-center border-t border-lp-border">
+            <div className="flex gap-12 sm:gap-16">
+              <button
+                onClick={() => setActiveFilter('semua')}
+                className={`py-4 flex items-center gap-2 text-[12px] font-bold uppercase tracking-widest transition-all ${
+                  activeFilter === 'semua'
+                    ? 'text-lp-text border-t-2 border-lp-text -mt-[2px]'
+                    : 'text-lp-text3 hover:text-lp-text2'
+                }`}
+              >
+                <FaEllipsisH className="text-[10px]" />
+                <span>Postingan</span>
+              </button>
+              <button
+                onClick={() => setActiveFilter('foto')}
+                className={`py-4 flex items-center gap-2 text-[12px] font-bold uppercase tracking-widest transition-all ${
+                  activeFilter === 'foto'
+                    ? 'text-lp-text border-t-2 border-lp-text -mt-[2px]'
+                    : 'text-lp-text3 hover:text-lp-text2'
+                }`}
+              >
+                <FaImage className="text-[10px]" />
                 <span>Foto</span>
-              </div>
-            </button>
-            <button
-              onClick={() => setActiveFilter('text')}
-              className={`flex-1 py-3 px-4 text-center font-medium text-[12px] transition-colors ${
-                activeFilter === 'text'
-                  ? 'text-lp-text font-semibold border-b-2 border-lp-accent'
-                  : 'text-lp-text3 hover:text-lp-text2'
-              }`}
-            >
-              <div className="flex items-center justify-center gap-2">
-                <FaFileAlt className="text-xs" />
-                <span>Text</span>
-              </div>
-            </button>
+              </button>
+              <button
+                onClick={() => setActiveFilter('text')}
+                className={`py-4 flex items-center gap-2 text-[12px] font-bold uppercase tracking-widest transition-all ${
+                  activeFilter === 'text'
+                    ? 'text-lp-text border-t-2 border-lp-text -mt-[2px]'
+                    : 'text-lp-text3 hover:text-lp-text2'
+                }`}
+              >
+                <FaFileAlt className="text-[10px]" />
+                <span>Teks</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -518,70 +552,61 @@ const ProfilePublic = () => {
                       isImage ? 'bg-lp-surface' : 'bg-lp-accentS'
                     } rounded-xl border border-lp-border cursor-pointer hover:border-lp-borderA transition-all`}
                   >
+                    {/* Content */}
                     {isImage ? (
-                      // Tampilan untuk postingan foto
                       <>
                         <img
                           src={imageUrl}
                           alt={`Post by ${post.author_name}`}
-                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                           loading="lazy"
                           onError={handlePostImageError}
                         />
-                        <div 
-                          className="absolute inset-0 hidden items-center justify-center bg-gray-200"
-                          style={{ display: 'none' }}
-                        >
-                          <svg className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                          </svg>
+                        {/* Overlay ala Instagram Feed */}
+                        <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center backdrop-blur-[2px]">
+                          <div className="flex gap-6 text-white font-bold">
+                            <span className="flex items-center gap-2">
+                              <FaHeart /> {post.likes_count || 0}
+                            </span>
+                            <span className="flex items-center gap-2">
+                              <FaComment className="scale-x-[-1]" /> {post.comments_count || 0}
+                            </span>
+                          </div>
                         </div>
+                        {getMediaUrls(post.media_url).length > 1 && (
+                          <div className="absolute top-2 right-2 bg-white/20 backdrop-blur-md rounded-lg p-1.5 z-10 shadow-sm border border-white/30">
+                            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9l-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                            </svg>
+                          </div>
+                        )}
                       </>
                     ) : (
-                      // Tampilan untuk postingan teks
-                      <div className="w-full h-full p-3 sm:p-4 flex flex-col">
-                        <div className="mb-2 flex items-center gap-2">
-                          <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-lp-accentS border border-lp-borderA flex items-center justify-center">
-                            <FaFileAlt className="text-lp-accent text-xs" />
-                          </div>
-                          <span className="text-[10px] font-mono font-medium text-lp-atext tracking-wider uppercase">Postingan Teks</span>
+                      <div className="w-full h-full p-4 sm:p-6 flex flex-col bg-white">
+                        <div className="mb-3 flex items-center gap-2">
+                           <div className="w-2 h-2 rounded-full bg-lp-accent"></div>
+                           <span className="text-[10px] font-bold text-lp-text3 uppercase tracking-widest">Teks</span>
                         </div>
                         
-                        <div className="flex-1 overflow-hidden">
+                        <div className="flex-1 overflow-hidden space-y-2">
                           {post.title && (
-                            <h3 className="font-semibold text-lp-text text-sm mb-1 line-clamp-1 tracking-tight">
+                            <h3 className="font-bold text-lp-text text-[15px] line-clamp-1 tracking-tight">
                               {post.title}
                             </h3>
                           )}
-                          
-                          <p className="text-lp-text2 text-[11px] font-light leading-relaxed line-clamp-4">
-                            {truncateText(post.content, 150)}
+                          <p className="text-lp-text2 text-[12px] font-normal leading-relaxed line-clamp-5">
+                            {post.content}
                           </p>
                         </div>
                         
-                        <div className="mt-2 pt-2 border-t border-lp-border">
-                          <div className="flex items-center justify-between text-lp-text3 text-[10px] font-mono">
-                            <span className="flex items-center gap-1">
-                              ❤️ {post.likes_count || 0}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              💬 {post.comments_count || 0}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Overlay untuk likes dan comments (hanya untuk foto) */}
-                    {isImage && (
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                        <div className="flex gap-2 sm:gap-4 text-white text-xs sm:text-sm font-bold">
-                          <span className="flex items-center gap-1">
-                            ❤️ {post.likes_count || 0}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            💬 {post.comments_count || 0}
-                          </span>
+                        <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
+                            <div className="flex gap-3 text-lp-text3 text-[11px] font-bold">
+                                <span>{post.likes_count || 0} Suka</span>
+                                <span>{post.comments_count || 0} Komentar</span>
+                            </div>
+                            <div className="w-6 h-6 rounded-lg bg-lp-surface flex items-center justify-center opacity-40 group-hover:opacity-100 transition-opacity">
+                                <FaFileAlt className="text-[10px] text-lp-text" />
+                            </div>
                         </div>
                       </div>
                     )}
@@ -606,34 +631,52 @@ const ProfilePublic = () => {
 
           <div className="bg-white w-full h-[100dvh] md:w-auto md:h-auto md:max-h-[90vh] flex flex-col md:inline-block md:rounded-bl-none overflow-hidden shadow-2xl relative md:pr-[350px] lg:pr-[400px]">
             
-            {/* Bagian Gambar/Content - Menyesuaikan ukuran foto asli (Shrink-wrap) */}
-            <div className={`w-full md:w-auto bg-lp-surface flex items-center justify-center flex-shrink-0 h-[45vh] md:h-full relative border-b md:border-b-0 border-lp-border`}>
+            {/* Bagian Gambar/Content - Premium Carousel (Instagram Style) */}
+            <div className={`w-full md:w-auto bg-black flex items-center justify-center flex-shrink-0 h-[50vh] md:h-full relative overflow-hidden`}>
               {isImagePost(selectedPost) ? (
-                <div className="w-full h-full md:w-auto md:h-auto flex items-center justify-center bg-lp-surface">
-                  <img
-                    src={getImageUrl(selectedPost.media_url)}
-                    alt={`Post by ${selectedPost.author_name}`}
-                    className="w-full h-full md:w-auto md:h-auto md:max-w-[calc(95vw-350px)] lg:max-w-[calc(95vw-400px)] md:max-h-[90vh] md:min-h-[400px] object-contain block"
-                  />
-                </div>
-              ) : (
-                <div className="w-full h-full md:w-[400px] lg:w-[500px] md:min-h-[450px] flex flex-col items-center justify-center p-6 sm:p-12 bg-lp-surface">
-                  <div className="mb-4 sm:mb-6 flex items-center gap-3">
-                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-white border border-lp-border flex items-center justify-center shadow-sm">
-                      <FaFileAlt className="text-lp-text2 text-lg sm:text-xl" />
-                    </div>
-                    <h2 className="text-lg sm:text-xl font-semibold text-lp-text tracking-tight">Postingan Teks</h2>
+                <div className="w-full h-full relative group">
+                  {/* Media Content */}
+                  <div className="w-full h-full flex items-center justify-center">
+                    {(() => {
+                      const urls = getMediaUrls(selectedPost.media_url)
+                      // Sederhananya kita tampilkan yang pertama, tapi bisa dikembangkan ke carousel
+                      return (
+                        <img
+                          src={resolveBackendAssetUrl(urls[0])}
+                          alt={`Post by ${selectedPost.author_name}`}
+                          className="max-w-full max-h-full md:max-w-[calc(90vw-400px)] md:max-h-[90vh] object-contain block shadow-2xl"
+                        />
+                      )
+                    })()}
                   </div>
                   
-                  {selectedPost.title && (
-                    <h1 className="text-xl sm:text-2xl font-semibold text-lp-text mb-4 text-center tracking-tight">
-                      {selectedPost.title}
-                    </h1>
+                  {/* Media count indicator if multiple */}
+                  {getMediaUrls(selectedPost.media_url).length > 1 && (
+                    <div className="absolute top-4 right-4 bg-black/50 backdrop-blur-md px-3 py-1 rounded-full text-white text-[11px] font-bold">
+                      1 / {getMediaUrls(selectedPost.media_url).length}
+                    </div>
                   )}
+                </div>
+              ) : (
+                <div className="w-full h-full md:w-[450px] lg:w-[550px] flex flex-col items-center justify-center p-8 sm:p-14 bg-white">
+                  <div className="mb-8 flex items-center gap-4">
+                    <div className="w-14 h-14 rounded-2xl bg-lp-accent/5 border border-lp-accent/10 flex items-center justify-center shadow-sm">
+                      <FaFileAlt className="text-lp-accent text-2xl" />
+                    </div>
+                    <div className="h-0.5 w-12 bg-lp-border rounded-full"></div>
+                    <span className="text-[12px] font-bold text-lp-text3 uppercase tracking-[0.2em]">Postingan Teks</span>
+                  </div>
                   
-                  <div className="max-w-md w-full">
-                    <div className="bg-white p-6 sm:p-8 rounded-xl border border-lp-border shadow-sm">
-                      <p className="text-lp-text text-[14px] font-normal leading-relaxed whitespace-pre-line text-center">
+                  <div className="w-full max-w-md relative">
+                    {selectedPost.title && (
+                      <h1 className="text-2xl font-bold text-lp-text mb-6 text-center leading-tight tracking-tight">
+                        {selectedPost.title}
+                      </h1>
+                    )}
+                    
+                    <div className="bg-lp-bg p-8 sm:p-10 rounded-[1.5rem] border border-lp-border shadow-sm relative overflow-hidden">
+                      <div className="absolute top-0 left-0 w-1.5 h-full bg-lp-accent opacity-40"></div>
+                      <p className="text-lp-text text-[15px] font-normal leading-[1.7] whitespace-pre-line text-center">
                         {selectedPost.content}
                       </p>
                     </div>
@@ -645,21 +688,35 @@ const ProfilePublic = () => {
             {/* Bagian Sidebar Konten */}
             <div className="w-full md:w-[350px] lg:w-[400px] flex flex-col h-[55vh] md:h-full bg-white relative md:absolute md:top-0 md:bottom-0 md:right-0 border-l border-lp-border">
               
-              {/* Header Post */}
-              <div className="flex items-center justify-between p-3 sm:p-4 border-b border-lp-border bg-white flex-shrink-0">
-                <Link 
-                  to={`/profile/${selectedPost.role}/${cleanUsername(selectedPost.author_username || selectedPost.author_name)}`}
-                  className="flex items-center space-x-3 hover:opacity-80 transition-opacity"
-                >
-                  <div className="w-8 h-8 bg-lp-accentS border border-lp-borderA rounded-full flex items-center justify-center text-lp-atext text-xs font-bold overflow-hidden shrink-0">
-                    {selectedPost.author_name?.[0]?.toUpperCase() || 'U'}
+              {/* Header Post Premium (Instagram Desktop Style) */}
+              <div className="flex items-center justify-between p-4 border-b border-lp-border bg-white sticky top-0 z-10">
+                <div className="flex items-center space-x-3">
+                  <Link 
+                    to={`/profile/${selectedPost.role}/${cleanUsername(selectedPost.author_username || selectedPost.author_name)}`}
+                    className="w-10 h-10 rounded-full p-[1.5px] bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-600"
+                  >
+                    <div className="w-full h-full rounded-full bg-white p-[1.5px]">
+                      <div className="w-full h-full rounded-full bg-lp-surface flex items-center justify-center text-lp-text font-bold text-sm overflow-hidden">
+                        {selectedPost.author_name?.[0]?.toUpperCase() || 'U'}
+                      </div>
+                    </div>
+                  </Link>
+                  <div className="flex flex-col">
+                    <div className="flex items-center gap-1.5">
+                      <Link 
+                        to={`/profile/${selectedPost.role}/${cleanUsername(selectedPost.author_username || selectedPost.author_name)}`}
+                        className="font-bold text-lp-text text-[14px] leading-tight hover:opacity-70 transition-opacity"
+                      >
+                        {selectedPost.author_username || cleanUsername(selectedPost.author_name)}
+                      </Link>
+                      <span className="text-lp-text3">•</span>
+                      <button className="text-lp-accent text-[14px] font-bold hover:text-lp-atext">Ikuti</button>
+                    </div>
+                    <span className="text-[11px] text-lp-text3 leading-tight">{getRoleDisplay(selectedPost.role)}</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold text-lp-text text-[14px] tracking-tight">{selectedPost.author_name}</span>
-                  </div>
-                </Link>
-                <button className="text-lp-text3 hover:text-lp-text2 p-1 font-bold tracking-widest leading-none pb-2">
-                  ...
+                </div>
+                <button className="text-lp-text hover:text-gray-500 p-2">
+                  <FaEllipsisH className="text-sm" />
                 </button>
               </div>
 
