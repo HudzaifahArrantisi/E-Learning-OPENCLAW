@@ -28,6 +28,10 @@ Secara pengalaman pengguna (*User Experience*), STUDENT HUB mengadopsi pola inte
 
 > **One platform. One ecosystem. One academic experience.**
 
+### 🔄 Pembaruan Terbaru
+- Modul **Chatbot** telah dihapus dari frontend dan backend.
+- Seluruh endpoint dan fungsi **API health check** yang terkait chatbot/OpenClaw telah dihapus karena tidak digunakan.
+
 ---
 
 ## ✨ Fitur Utama (Berdasarkan Role)
@@ -175,5 +179,5 @@ STUDENT-HUB/
   <p><strong>Lisensi Penggunaan</strong><br>
   Proyek ini berada di bawah jalur pengunaan Akademik (STT Terpadu Nurul Fikri).</p>
 
-  <p><em>Terakhir diperbarui: April 2026 — v1.0.1</em></p>
+  <p><em>Terakhir diperbarui: April 2026 — v1.0.2</em></p>
 </div>

@@ -58,12 +58,12 @@ const NotFound = () => {
         </div>
       </div>
 
-      {/* Human-readable message */}
+      {/* Human-readable message */}  
       <p className="relative z-10 font-sans text-[clamp(1.1rem,2.5vw,1.45rem)] text-lp-text max-w-[380px] mx-auto mb-3 leading-relaxed">
         Halaman atau Layanannya <em className="italic text-lp-text/40">sedang bermasalah.</em>
       </p>
       <p className="relative z-10 text-[13px] font-mono text-lp-text3 tracking-[0.04em] mb-10">
-        Periksa kembali alamat URL atau kembali ke halaman utama.
+        Periksa kembali alamat   URL atau kembali ke halaman utama.
       </p>
 
       {/* Actions */}

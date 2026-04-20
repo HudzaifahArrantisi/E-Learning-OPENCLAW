@@ -163,16 +163,6 @@ func (h *EventHandler) getCourseName(courseID string) string {
 	return courseName
 }
 
-// HealthCheck handles the health check endpoint
-func HealthCheck(w http.ResponseWriter, r *http.Request) {
-	writeJSON(w, http.StatusOK, map[string]interface{}{
-		"success": true,
-		"service": "openclaw",
-		"status":  "healthy",
-		"time":    time.Now().Format("2006-01-02T15:04:05Z07:00"),
-	})
-}
-
 func writeJSON(w http.ResponseWriter, status int, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)

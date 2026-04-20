@@ -114,3 +114,63 @@ func GetOrmawaPosts(c *gin.Context) {
 
 	utils.SuccessResponse(c, posts, "Berhasil mengambil postingan ormawa")
 }
+
+// GetOrmawaProfile - Get profile for Ormawa
+func GetOrmawaProfile(c *gin.Context) {
+	userID, exists := c.Get("user_id")
+	if !exists {
+		utils.ErrorResponse(c, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	var ormawa struct {
+		ID       int    `json:"id"`
+		Name     string `json:"name"`
+		Username string `json:"username"`
+		Bio      string `json:"bio"`
+		Email    string `json:"email"`
+		Avatar   string `json:"avatar"`
+	}
+
+	err := config.DB.QueryRow(`
+		SELECT COALESCE(o_profile.id, 0), COALESCE(o_profile.name, 'Ormawa'), 
+		       COALESCE(o_profile.username, ''), COALESCE(o_profile.bio, ''), 
+		       u.email, COALESCE(o_profile.avatar, '')
+		FROM users u
+		LEFT JOIN ormawa o_profile ON u.id = o_profile.user_id
+		WHERE u.id = $1
+	`, userID).Scan(&ormawa.ID, &ormawa.Name, &ormawa.Username, &ormawa.Bio, &ormawa.Email, &ormawa.Avatar)
+
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusNotFound, "User not found")
+		return
+	}
+
+	utils.SuccessResponse(c, ormawa, "Ormawa profile retrieved")
+}
+
+// GetOrmawaStats - Dashboard statistics for ormawa
+func GetOrmawaStats(c *gin.Context) {
+	userID, exists := c.Get("user_id")
+	if !exists {
+		utils.ErrorResponse(c, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	var postsCount, followersCount, membersCount, eventsCount int
+
+	// Get stats from posts
+	config.DB.QueryRow("SELECT COUNT(*) FROM posts WHERE user_id = $1", userID).Scan(&postsCount)
+	
+	// Default values
+	followersCount = 0
+	membersCount = 0
+	eventsCount = 0
+
+	utils.SuccessResponse(c, gin.H{
+		"posts_count":     postsCount,
+		"followers_count": followersCount,
+		"members_count":   membersCount,
+		"events_count":    eventsCount,
+	}, "Ormawa statistics retrieved")
+}

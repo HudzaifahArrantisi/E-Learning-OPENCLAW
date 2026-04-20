@@ -31,20 +31,85 @@ func GetMahasiswaProfile(c *gin.Context) {
 		Email  string `json:"email"`
 	}
 
-	// Query dengan join ke tabel users untuk mendapatkan email
+	// Query dengan LEFT JOIN ke tabel users agar tetap dapat info email jika record mahasiswa belum ada
 	err := config.DB.QueryRow(`
-		SELECT m.id, m.name, m.nim, COALESCE(m.alamat, ''), COALESCE(m.photo, ''), u.email
-		FROM mahasiswa m
-		JOIN users u ON m.user_id = u.id
-		WHERE m.user_id = $1
+		SELECT COALESCE(m.id, 0), COALESCE(m.name, 'Mahasiswa'), COALESCE(m.nim, ''), 
+		       COALESCE(m.alamat, ''), COALESCE(m.photo, ''), u.email
+		FROM users u
+		LEFT JOIN mahasiswa m ON u.id = m.user_id
+		WHERE u.id = $1
 	`, userID).Scan(&mahasiswa.ID, &mahasiswa.Name, &mahasiswa.NIM, &mahasiswa.Alamat, &mahasiswa.Photo, &mahasiswa.Email)
 
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusNotFound, "Profile not found: "+err.Error())
+		utils.ErrorResponse(c, http.StatusNotFound, "User not found")
 		return
 	}
 
 	utils.SuccessResponse(c, mahasiswa, "Profile retrieved")
+}
+
+// GetMahasiswaStats - Dashboard statistics for mahasiswa
+func GetMahasiswaStats(c *gin.Context) {
+	userID, exists := c.Get("user_id")
+	if !exists {
+		utils.ErrorResponse(c, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	// Get mahasiswa ID
+	var mahasiswaID int
+	err := config.DB.QueryRow("SELECT id FROM mahasiswa WHERE user_id = $1", userID).Scan(&mahasiswaID)
+	if err != nil {
+		// If not found in mahasiswa table, return empty stats instead of 404
+		utils.SuccessResponse(c, gin.H{
+			"total_courses":     0,
+			"total_assignments": 0,
+			"pending_tasks":     0,
+			"attendance_rate":   0,
+		}, "Stats empty (Profile not initialized)")
+		return
+	}
+
+	var totalCourses, totalAssignments, pendingTasks int
+	var attendanceRate float64
+
+	// 1. Total Courses
+	config.DB.QueryRow("SELECT COUNT(*) FROM mahasiswa_mata_kuliah WHERE mahasiswa_id = $1", mahasiswaID).Scan(&totalCourses)
+
+	// 2. Total Assignments
+	config.DB.QueryRow(`
+		SELECT COUNT(*) FROM tugas t
+		JOIN mahasiswa_mata_kuliah mmk ON t.course_id = mmk.mata_kuliah_kode
+		WHERE mmk.mahasiswa_id = $1 AND t.type = 'tugas' AND t.deleted_at IS NULL
+	`, mahasiswaID).Scan(&totalAssignments)
+
+	// 3. Pending Tasks (not submitted yet)
+	config.DB.QueryRow(`
+		SELECT COUNT(*) FROM tugas t
+		JOIN mahasiswa_mata_kuliah mmk ON t.course_id = mmk.mata_kuliah_kode
+		WHERE mmk.mahasiswa_id = $1 AND t.type = 'tugas' AND t.deleted_at IS NULL
+		AND NOT EXISTS (SELECT 1 FROM submissions s WHERE s.task_id = t.id AND s.student_id = $2)
+	`, mahasiswaID, mahasiswaID).Scan(&pendingTasks)
+
+	// 4. Attendance Rate
+	config.DB.QueryRow(`
+		SELECT 
+			CASE WHEN COUNT(DISTINCT asess.id) > 0 
+				 THEN (COUNT(DISTINCT a.id)::float / COUNT(DISTINCT asess.id)::float) * 100 
+				 ELSE 0 
+			END as rate
+		FROM attendance_sessions asess
+		JOIN mahasiswa_mata_kuliah mmk ON asess.course_id = mmk.mata_kuliah_kode
+		LEFT JOIN attendance a ON asess.id = a.session_id AND a.student_id = mmk.mahasiswa_id
+		WHERE mmk.mahasiswa_id = $1
+	`, mahasiswaID).Scan(&attendanceRate)
+
+	utils.SuccessResponse(c, gin.H{
+		"total_courses":     totalCourses,
+		"total_assignments": totalAssignments,
+		"pending_tasks":     pendingTasks,
+		"attendance_rate":   attendanceRate,
+	}, "Mahasiswa statistics retrieved")
 }
 
 // UpdateMahasiswaProfile - Update mahasiswa profile dengan support file upload

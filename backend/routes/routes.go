@@ -61,6 +61,7 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB) {
 		// Profile & anak
 		ortu.GET("/profile/anak", controllers.GetChildUKTInfo)
 		ortu.GET("/profile", controllers.GetOrtuProfile)
+		ortu.GET("/stats", controllers.GetOrtuStats)
 		ortu.GET("/anak/absensi/:student_id", controllers.GetChildAttendance)
 		ortu.GET("/anak/absensi/hari-ini", controllers.GetChildAttendanceToday)
 		ortu.GET("/anak/profile", controllers.GetChildProfile)
@@ -99,6 +100,8 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB) {
 	// UKM
 	ukm := api.Group("/ukm")
 	{
+		ukm.GET("/profile", controllers.GetUKMProfile)
+		ukm.GET("/stats", controllers.GetUKMStats)
 		ukm.GET("/posts", controllers.GetUKMPosts)
 		ukm.POST("/posts", controllers.CreateUKMPost)
 	}
@@ -106,6 +109,8 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB) {
 	// Ormawa
 	ormawa := api.Group("/ormawa")
 	{
+		ormawa.GET("/profile", controllers.GetOrmawaProfile)
+		ormawa.GET("/stats", controllers.GetOrmawaStats)
 		ormawa.GET("/posts", controllers.GetOrmawaPosts)
 		ormawa.POST("/posts", controllers.CreateOrmawaPost)
 	}
@@ -116,6 +121,7 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB) {
 	{
 		mahasiswa.GET("/profile", controllers.GetMahasiswaProfile)
 		mahasiswa.PUT("/profile", controllers.UpdateMahasiswaProfile)
+		mahasiswa.GET("/stats", controllers.GetMahasiswaStats)
 		mahasiswa.GET("/absensi/summary", controllers.GetAttendanceSummary)
 		mahasiswa.POST("/absensi/scan", controllers.ScanAttendance)
 		mahasiswa.GET("/jadwal/hari-ini", controllers.GetMahasiswaJadwalHariIni)
@@ -197,6 +203,7 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB) {
 	admin.Use(middlewares.RoleMiddleware("admin"))
 	{
 		admin.GET("/profile", controllers.GetAdminProfile)
+		admin.GET("/stats", controllers.GetAdminStats)
 		admin.POST("/posts", controllers.CreateAdminPost)
 		admin.GET("/invoices/unpaid", controllers.GetUnpaidInvoices)
 		// Route khusus untuk Admin Kemahasiswaan
@@ -231,13 +238,4 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB) {
 		chat.DELETE("/conversations/:conversation_id/pin", chatController.UnpinConversation)
 	}
 
-	// Chatbot (dilindungi auth agar tidak disalahgunakan)
-	chatbot := api.Group("/chatbot")
-	{
-		chatbot.POST("/chat", handlers.HandleChat)
-		chatbot.GET("/history/:conversationId", handlers.GetChatHistory)
-		chatbot.DELETE("/history/:conversationId", handlers.DeleteChatHistory)
-		chatbot.GET("/health", handlers.HealthCheck)
-		chatbot.GET("/stats", handlers.GetStats)
-	}
 }

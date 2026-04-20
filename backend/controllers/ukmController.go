@@ -119,15 +119,61 @@ func GetUKMPosts(c *gin.Context) {
 	utils.SuccessResponse(c, posts, "Berhasil mengambil postingan UKM")
 }
 
-func GetUKMStats(c *gin.Context) {
-	query := `
-		SELECT COUNT(*) FROM posts WHERE role = 'ukm'
-	`
-
-	var postsCount int
-	err := config.DB.QueryRow(query).Scan(&postsCount)
-	if err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "Gagal mengambil data statistik")
+// GetUKMProfile - Get profile for UKM
+func GetUKMProfile(c *gin.Context) {
+	userID, exists := c.Get("user_id")
+	if !exists {
+		utils.ErrorResponse(c, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
+
+	var ukm struct {
+		ID       int    `json:"id"`
+		Name     string `json:"name"`
+		Username string `json:"username"`
+		Bio      string `json:"bio"`
+		Email    string `json:"email"`
+		Avatar   string `json:"avatar"`
+	}
+
+	err := config.DB.QueryRow(`
+		SELECT COALESCE(u_profile.id, 0), COALESCE(u_profile.name, 'UKM'), 
+		       COALESCE(u_profile.username, ''), COALESCE(u_profile.bio, ''), 
+		       u.email, COALESCE(u_profile.avatar, '')
+		FROM users u
+		LEFT JOIN ukm u_profile ON u.id = u_profile.user_id
+		WHERE u.id = $1
+	`, userID).Scan(&ukm.ID, &ukm.Name, &ukm.Username, &ukm.Bio, &ukm.Email, &ukm.Avatar)
+
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusNotFound, "User not found")
+		return
+	}
+
+	utils.SuccessResponse(c, ukm, "UKM profile retrieved")
+}
+
+func GetUKMStats(c *gin.Context) {
+	userID, exists := c.Get("user_id")
+	if !exists {
+		utils.ErrorResponse(c, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	var postsCount, followersCount, membersCount, eventsCount int
+
+	// Get stats
+	config.DB.QueryRow("SELECT COUNT(*) FROM posts WHERE user_id = $1", userID).Scan(&postsCount)
+	
+	// Default values for now, can be expanded if tables exist
+	followersCount = 0
+	membersCount = 0
+	eventsCount = 0
+
+	utils.SuccessResponse(c, gin.H{
+		"posts_count":     postsCount,
+		"followers_count": followersCount,
+		"members_count":   membersCount,
+		"events_count":    eventsCount,
+	}, "UKM statistics retrieved")
 }

@@ -1191,10 +1191,11 @@ func GetDosenProfile(c *gin.Context) {
 	}
 
 	query := `
-		SELECT d.id, d.name, d.nidn, u.email, d.phone, d.avatar, d.created_at
-		FROM dosen d
-		JOIN users u ON d.user_id = u.id
-		WHERE d.user_id = $1
+		SELECT COALESCE(d.id, 0), COALESCE(d.name, 'Dosen'), COALESCE(d.nidn, ''), 
+		       u.email, COALESCE(d.phone, ''), COALESCE(d.avatar, ''), u.created_at
+		FROM users u
+		LEFT JOIN dosen d ON u.id = d.user_id
+		WHERE u.id = $1
 	`
 
 	err := config.DB.QueryRow(query, userID).Scan(

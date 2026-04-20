@@ -164,7 +164,6 @@ func startOpenClaw(r *gin.Engine) {
 	internal.Use(middlewares.InternalAPIKeyMiddleware())
 	{
 		internal.POST("/events/tugas-created", gin.WrapF(eventHandler.HandleTugasCreated))
-		internal.GET("/health", gin.WrapF(handler.HealthCheck))
 	}
 
 	log.Println("------------------------------------------------")

@@ -456,9 +456,35 @@ func SendReminder(c *gin.Context) {
 	fmt.Printf("Mengirim email pengingat ke %s (%s) - Sisa UKT: Rp %.0f\n", 
 		mahasiswa.Name, mahasiswa.Email, mahasiswa.SisaUKT)
 
+	utils.SuccessResponse(c, mahasiswa.Name, "Pengingat telah dikirim")
+}
+
+// GetAdminStats - Dashboard statistics for admin
+func GetAdminStats(c *gin.Context) {
+	_, exists := c.Get("user_id")
+	if !exists {
+		utils.ErrorResponse(c, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	var totalMahasiswa, totalDosen, uktBelumBayar, totalUkmOrmawa int
+
+	// 1. Total Mahasiswa
+	config.DB.QueryRow("SELECT COUNT(*) FROM mahasiswa").Scan(&totalMahasiswa)
+
+	// 2. Total Dosen
+	config.DB.QueryRow("SELECT COUNT(*) FROM dosen").Scan(&totalDosen)
+
+	// 3. UKT Belum Bayar
+	config.DB.QueryRow("SELECT COUNT(*) FROM ukt_invoices WHERE status = 'pending'").Scan(&uktBelumBayar)
+
+	// 4. Total UKM & Ormawa (Combined or simplified)
+	config.DB.QueryRow("SELECT (SELECT COUNT(*) FROM ukm) + (SELECT COUNT(*) FROM ormawa)").Scan(&totalUkmOrmawa)
+
 	utils.SuccessResponse(c, gin.H{
-		"mahasiswa": mahasiswa.Name,
-		"email": mahasiswa.Email,
-		"sisa_ukt": mahasiswa.SisaUKT,
-	}, "Pengingat telah dikirim")
+		"totalMahasiswa":  totalMahasiswa,
+		"totalDosen":      totalDosen,
+		"uktBelumBayar":   uktBelumBayar,
+		"totalUkmOrmawa":  totalUkmOrmawa,
+	}, "Admin statistics retrieved")
 }

@@ -28,17 +28,18 @@ func GetOrtuProfile(c *gin.Context) {
 		ChildNIM  string `json:"child_nim"`
 	}
 
-	// Query dengan join ke users dan mahasiswa
+	// Query dengan LEFT JOIN ke users dan mahasiswa
 	err := config.DB.QueryRow(`
-		SELECT o.id, o.name, u.email, o.child_id, m.name as child_name, m.nim as child_nim
-		FROM ortu o
-		JOIN users u ON o.user_id = u.id
-		JOIN mahasiswa m ON o.child_id = m.id
-		WHERE o.user_id = $1
+		SELECT COALESCE(o.id, 0), COALESCE(o.name, 'Orang Tua'), u.email, 
+		       COALESCE(o.child_id, 0), COALESCE(m.name, 'Anak'), COALESCE(m.nim, '')
+		FROM users u
+		LEFT JOIN ortu o ON u.id = o.user_id
+		LEFT JOIN mahasiswa m ON o.child_id = m.id
+		WHERE u.id = $1
 	`, userID).Scan(&ortu.ID, &ortu.Name, &ortu.Email, &ortu.ChildID, &ortu.ChildName, &ortu.ChildNIM)
 
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusNotFound, "Profile orangtua tidak ditemukan")
+		utils.ErrorResponse(c, http.StatusNotFound, "User not found")
 		return
 	}
 
@@ -406,4 +407,60 @@ func GetChildAcademicInfo(c *gin.Context) {
 	utils.SuccessResponse(c, gin.H{
 		"courses": courses,
 	}, "Informasi akademik anak retrieved")
+}
+
+// GetOrtuStats - Dashboard statistics for orangtua
+func GetOrtuStats(c *gin.Context) {
+	userID, exists := c.Get("user_id")
+	if !exists {
+		utils.ErrorResponse(c, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	var childID int
+	err := config.DB.QueryRow("SELECT child_id FROM ortu WHERE user_id = $1", userID).Scan(&childID)
+	if err != nil {
+		utils.SuccessResponse(c, gin.H{
+			"attendance_rate": 0,
+			"ukt_status":      "N/A",
+			"active_courses":  0,
+		}, "Child not linked")
+		return
+	}
+
+	var attendanceRate float64
+	var uktStatus string
+	var activeCourses int
+
+	// 1. Attendance Rate
+	config.DB.QueryRow(`
+		SELECT 
+			CASE WHEN COUNT(DISTINCT asess.id) > 0 
+				 THEN (COUNT(DISTINCT a.id)::float / COUNT(DISTINCT asess.id)::float) * 100 
+				 ELSE 0 
+			END as rate
+		FROM attendance_sessions asess
+		JOIN mahasiswa_mata_kuliah mmk ON asess.course_id = mmk.mata_kuliah_kode
+		LEFT JOIN attendance a ON asess.id = a.session_id AND a.student_id = mmk.mahasiswa_id
+		WHERE mmk.mahasiswa_id = $1
+	`, childID).Scan(&attendanceRate)
+
+	// 2. UKT Status
+	config.DB.QueryRow(`
+		SELECT status FROM ukt_invoices 
+		WHERE mahasiswa_id = $1 
+		ORDER BY created_at DESC LIMIT 1
+	`, childID).Scan(&uktStatus)
+	if uktStatus == "" {
+		uktStatus = "Lunas"
+	}
+
+	// 3. Active Courses
+	config.DB.QueryRow("SELECT COUNT(*) FROM mahasiswa_mata_kuliah WHERE mahasiswa_id = $1", childID).Scan(&activeCourses)
+
+	utils.SuccessResponse(c, gin.H{
+		"attendance_rate": attendanceRate,
+		"ukt_status":      uktStatus,
+		"active_courses":  activeCourses,
+	}, "Orangtua statistics retrieved")
 }

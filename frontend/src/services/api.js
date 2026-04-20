@@ -33,8 +33,11 @@ api.interceptors.response.use(
     const status = error.response ? error.response.status : 0;
     const isErrorRedirectable = status === 500 || status === 404 || status === 403 || status === 400 || status === 0;
 
+    // Jangan redirect jika error berasal dari endpoint 'stats' atau 'profile' (biarkan komponen menangani loading/error state sendiri)
+    const isStatsOrProfile = error.config && error.config.url && (error.config.url.includes('stats') || error.config.url.includes('profile'));
+
     // Jangan redirect jika error 400 dari login (agar pesan error username/password salah bisa muncul)
-    if (isErrorRedirectable && (!isLoginEndpoint || status !== 400)) {
+    if (isErrorRedirectable && (!isLoginEndpoint || status !== 400) && !isStatsOrProfile) {
       if (!window.location.pathname.includes('/not-found')) {
         window.location.href = '/not-found';
       }

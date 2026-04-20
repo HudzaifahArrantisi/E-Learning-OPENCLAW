@@ -1,5 +1,5 @@
 // src/components/DashboardLayout.jsx
-import React, { Suspense, lazy, useState } from 'react'
+import React, { useState } from 'react'
 import { useQuery } from "@tanstack/react-query"
 import { useNavigate, Link } from 'react-router-dom'
 import api from '../services/api'
@@ -15,8 +15,6 @@ import { BsPeopleFill } from 'react-icons/bs'
 import { getProfilePhotoUrl, getInitials, cleanUsername } from '../utils/profileUtils'
 import { resolveBackendAssetUrl } from '../utils/assetUrl'
 import Loading from './Loading'
-
-const Chatbot = lazy(() => import('./Chatbot'))
 
 const getRelativeTime = (dateString) => {
   const rtf = new Intl.RelativeTimeFormat('id', { numeric: 'auto' })
@@ -531,11 +529,6 @@ const DashboardLayout = ({
             </div>
           </div>
         </div>
-
-        {/* CHATBOT COMPONENT */}
-        <Suspense fallback={null}>
-          <Chatbot />
-        </Suspense>
 
         {/* Logout Confirmation Modal */}
         {showLogoutConfirm && (
