@@ -396,7 +396,7 @@ const KelolaMatkulDosen = () => {
                       <span className="text-[13px] text-lp-text2 font-light flex items-center gap-2">
                         <FiCalendar className="text-lp-text3" /> Task
                       </span>
-                      <span className={`text-[11px] font-bold tracking-widest uppercase px-3 py-1.5 rounded-full ${pertemuan.has_tugas ? "text-lp-text2 bg-lp-textS" : "text-lp-text3 bg-lp-surface"}`}>
+                      <span className={`text-[11px] font-bold tracking-widest uppercase px-3 py-1.5 rounded-full ${pertemuan.has_tugas ? "text-lp-text2 bg-lp-surface" : "text-lp-text3 bg-lp-surface"}`}>
                         {pertemuan.has_tugas ? "Active" : "Empty"}
                       </span>
                     </div>
@@ -758,7 +758,7 @@ const KelolaMatkulDosen = () => {
                                     )}
                                     <button
                                       onClick={() => handleDeleteMateri(materi.id)}
-                                      className="p-3 bg-lp-surface text-lp-red/60 rounded-2xl hover:bg-lp-red hover:text-white transition-all shadow-sm"
+                                      className="p-3 bg-lp-surface text-lp-text2/60 rounded-2xl hover:bg-lp-text hover:text-white transition-all shadow-sm"
                                     >
                                       <FiTrash2 />
                                     </button>
@@ -808,7 +808,7 @@ const KelolaMatkulDosen = () => {
                                     </Link>
                                     <button
                                       onClick={() => handleDeleteTugas(tugas.id)}
-                                      className="p-3 bg-lp-surface text-lp-red/60 rounded-2xl hover:bg-lp-red hover:text-white transition-all shadow-sm"
+                                      className="p-3 bg-lp-surface text-lp-text2/60 rounded-2xl hover:bg-lp-text hover:text-white transition-all shadow-sm"
                                     >
                                       <FiTrash2 />
                                     </button>

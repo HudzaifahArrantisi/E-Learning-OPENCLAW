@@ -80,7 +80,7 @@ const CourseDosen = () => {
                   <div className="w-6 h-6 bg-gray-200 rounded"></div>
                 </div>
                 <div>
-                  <div className="h-8 w-64 bg-lp-bg rounded-lg animate-pulse mb-2"></div>
+                  <div className="h-8 w-64 bg-lp-bg rounded-xl animate-pulse mb-2"></div>
                   <div className="h-4 w-48 bg-gray-200 rounded animate-pulse"></div>
                 </div>
               </div>
@@ -293,16 +293,16 @@ const CourseDosen = () => {
               <div>
                 <label className="block text-sm font-semibold text-lp-text2 mb-2">Tampilan</label>
                 <div className="flex items-center gap-2">
-                  <div className="bg-lp-surface rounded-xl p-1 flex items-center">
+                  <div className="bg-white rounded-xl p-1 flex items-center">
                     <button
                       onClick={() => setViewMode('grid')}
-                      className={`p-2 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-lp-surface text-lp-text2 shadow-sm' : 'text-lp-text3 font-light hover:text-lp-text2'}`}
+                      className={`p-2 rounded-xl transition-all ${viewMode === 'grid' ? 'bg-lp-surface text-lp-text2 shadow-sm' : 'text-lp-text3 font-light hover:text-lp-text2'}`}
                     >
                       <FiGrid className="text-lg" />
                     </button>
                     <button
                       onClick={() => setViewMode('list')}
-                      className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-lp-surface text-lp-text2 shadow-sm' : 'text-lp-text3 font-light hover:text-lp-text2'}`}
+                      className={`p-2 rounded-xl transition-all ${viewMode === 'list' ? 'bg-lp-surface text-lp-text2 shadow-sm' : 'text-lp-text3 font-light hover:text-lp-text2'}`}
                     >
                       <FiList className="text-lg" />
                     </button>
@@ -332,7 +332,7 @@ const CourseDosen = () => {
                           </h3>
                           <p className="text-lp-text2 font-light text-sm">Semester 3</p>
                         </div>
-                        <div className={`p-2 rounded-lg ${course.student_count > 0 ? 'bg-lp-bg text-lp-text2' : 'bg-lp-surface text-lp-text2 font-light'}`}>
+                        <div className={`p-2 rounded-xl ${course.student_count > 0 ? 'bg-lp-bg text-lp-text2' : 'bg-lp-surface text-lp-text2 font-light'}`}>
                           <FiUsers />
                         </div>
                       </div>
@@ -426,7 +426,7 @@ const CourseDosen = () => {
                             <div className="flex items-center gap-2">
                               <Link 
                                 to={`/dosen/matkul/${course.kode}`}
-                                className="group/btn relative overflow-hidden px-4 py-2 bg-lp-text text-white rounded-lg font-medium hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border-none transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2"
+                                className="group/btn relative overflow-hidden px-4 py-2 bg-lp-text text-white rounded-xl font-medium hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border-none transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2"
                               >
                                 <div className="absolute inset-0 bg-lp-surface/10 translate-x-[-100%] group-hover/btn:translate-x-full transition-transform duration-1000"></div>
                                 <FiEdit2 className="relative z-10 text-sm" />
@@ -434,7 +434,7 @@ const CourseDosen = () => {
                               </Link>
                               <Link 
                                 to={`/dosen/penilaian/${course.kode}`}
-                                className="px-4 py-2 bg-lp-text text-white rounded-lg font-medium hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border-none transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2"
+                                className="px-4 py-2 bg-lp-text text-white rounded-xl font-medium hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border-none transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2"
                               >
                                 <FiBarChart2 className="text-sm" />
                                 <span className="text-sm">Nilai</span>

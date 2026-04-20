@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { motion, AnimatePresence } from 'framer-motion'
 import api from '../../services/api'
 import Navbar from '../../components/Navbar'
 import Sidebar from '../../components/Sidebar'
@@ -442,9 +443,6 @@ const SettingProfileAdmin = () => {
               </form>
             </motion.div>
           </div>
-        </div>
-      </div>
-    </div>
         </div>
       </div>
     </div>

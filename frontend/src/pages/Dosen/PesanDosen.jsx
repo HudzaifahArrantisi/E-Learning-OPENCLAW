@@ -88,7 +88,7 @@ const ChatDosen = () => {
           <div className="flex items-center gap-4 mb-6 lg:mb-8">
             <button 
               onClick={toggleSidebar}
-              className="lg:hidden p-3 rounded-xl bg-lp-surface shadow-sm border border-lp-border hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border transition-shadow"
+              className="lg:hidden p-3 rounded-xl bg-lp-surface border border-lp-border shadow-[0_8px_30px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border transition-shadow"
             >
               <span className="text-xl">☰</span>
             </button>
@@ -106,7 +106,7 @@ const ChatDosen = () => {
           </div>
 
           <div className="mb-8">
-            <div className="bg-lp-surface rounded-2xl shadow-sm border border-lp-border p-6">
+            <div className="bg-lp-surface rounded-2xl border border-lp-border shadow-[0_8px_30px_rgba(0,0,0,0.04)] p-6">
               <div className="flex items-center justify-between mb-6">
                 <div>
                   <h2 className="text-xl font-bold text-lp-text font-semibold tracking-tight">Grup Mata Kuliah</h2>
@@ -143,7 +143,7 @@ const ChatDosen = () => {
                     const groupStatus = getGroupStatus(matkul.id)
                     
                     return (
-                      <div key={matkul.id} className="bg-lp-bg rounded-xl border border-lp-border p-5 hover:shadow-sm border border-lp-border transition-shadow">
+                      <div key={matkul.id} className="bg-lp-bg rounded-xl border border-lp-border p-5 hover:border border-lp-border shadow-[0_8px_30px_rgba(0,0,0,0.04)] transition-shadow">
                         <div className="flex items-start justify-between mb-4">
                           <div>
                             <h3 className="font-bold text-lg text-lp-text font-semibold tracking-tight">{matkul.nama}</h3>
@@ -215,7 +215,7 @@ const ChatDosen = () => {
 
           {/* Stats */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-            <div className="bg-lp-surface rounded-xl p-6 border border-lp-border">
+            <div className="bg-white rounded-xl p-6 border border-lp-border">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-lp-bg rounded-full flex items-center justify-center">
                   <i className="fas fa-book text-lp-text2 text-xl"></i>
@@ -227,7 +227,7 @@ const ChatDosen = () => {
               </div>
             </div>
             
-            <div className="bg-lp-surface rounded-xl p-6 border border-lp-border">
+            <div className="bg-white rounded-xl p-6 border border-lp-border">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-lp-bg rounded-full flex items-center justify-center">
                   <i className="fas fa-users text-lp-text2 text-xl"></i>
@@ -241,7 +241,7 @@ const ChatDosen = () => {
               </div>
             </div>
             
-            <div className="bg-lp-surface rounded-xl p-6 border border-lp-border">
+            <div className="bg-white rounded-xl p-6 border border-lp-border">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-lp-bg rounded-full flex items-center justify-center">
                   <i className="fas fa-comment-dots text-lp-text2 text-xl"></i>
@@ -285,7 +285,7 @@ const ChatDosen = () => {
       {/* Create Group Modal */}
       {showCreateGroupModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-lp-surface rounded-xl w-full max-w-md max-h-[90vh] overflow-hidden flex flex-col">
+          <div className="bg-white rounded-xl w-full max-w-md max-h-[90vh] overflow-hidden flex flex-col">
             <div className="p-6 border-b">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-bold text-lp-text font-semibold tracking-tight">Buat Grup Chat Mata Kuliah</h3>
@@ -302,7 +302,7 @@ const ChatDosen = () => {
               
               {selectedMatkul ? (
                 <div>
-                  <div className="bg-lp-surface border border-lp-border rounded-lg p-4 mb-4">
+                  <div className="bg-lp-surface border border-lp-border rounded-xl p-4 mb-4">
                     <h4 className="font-bold text-lp-text">{selectedMatkul.nama}</h4>
                     <p className="text-sm text-lp-text2">Kode: {selectedMatkul.kode} | SKS: {selectedMatkul.sks}</p>
                     <p className="text-sm text-lp-text2 mt-1">
@@ -311,7 +311,7 @@ const ChatDosen = () => {
                   </div>
                   
                   <div className="space-y-3">
-                    <div className="flex items-center p-3 bg-lp-bg rounded-lg">
+                    <div className="flex items-center p-3 bg-lp-bg rounded-xl">
                       <i className="fas fa-users text-lp-text2 mr-3"></i>
                       <div>
                         <p className="font-medium">Semua Mahasiswa</p>
@@ -319,7 +319,7 @@ const ChatDosen = () => {
                       </div>
                     </div>
                     
-                    <div className="flex items-center p-3 bg-lp-bg rounded-lg">
+                    <div className="flex items-center p-3 bg-lp-bg rounded-xl">
                       <i className="fas fa-user-tie text-lp-text2 mr-3"></i>
                       <div>
                         <p className="font-medium">Anda sebagai Admin</p>
@@ -327,7 +327,7 @@ const ChatDosen = () => {
                       </div>
                     </div>
                     
-                    <div className="flex items-center p-3 bg-lp-bg rounded-lg">
+                    <div className="flex items-center p-3 bg-lp-bg rounded-xl">
                       <i className="fas fa-comments text-lp-text2 mr-3"></i>
                       <div>
                         <p className="font-medium">Pesan Sistem</p>
@@ -363,7 +363,7 @@ const ChatDosen = () => {
                       return (
                         <div
                           key={matkul.id}
-                          className={`p-4 border rounded-lg cursor-pointer transition-colors ${
+                          className={`p-4 border rounded-xl cursor-pointer transition-colors ${
                             groupStatus.exists
                               ? 'border-lp-border bg-lp-surface hover:bg-lp-bg'
                               : 'border-lp-border border hover:bg-lp-bg'
@@ -389,7 +389,7 @@ const ChatDosen = () => {
                   </div>
                   
                   {matkulList.every(matkul => getGroupStatus(matkul.id).exists) && (
-                    <div className="mt-4 p-3 bg-lp-surface border border-lp-border rounded-lg">
+                    <div className="mt-4 p-3 bg-lp-surface border border-lp-border rounded-xl">
                       <p className="text-sm text-lp-text">
                         <i className="fas fa-info-circle mr-2"></i>
                         Semua mata kuliah sudah memiliki grup chat

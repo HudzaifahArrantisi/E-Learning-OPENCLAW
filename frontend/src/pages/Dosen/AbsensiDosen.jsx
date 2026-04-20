@@ -311,7 +311,7 @@ const AbsensiDosen = () => {
           <div className="flex items-center gap-4 mb-6 lg:mb-8">
             <button 
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="lg:hidden p-3 rounded-xl bg-lp-surface shadow-sm border border-lp-border hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border transition-shadow"
+              className="lg:hidden p-3 rounded-xl bg-lp-surface border border-lp-border shadow-[0_8px_30px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border transition-shadow"
             >
               <span className="text-xl">☰</span>
             </button>
@@ -322,7 +322,7 @@ const AbsensiDosen = () => {
           </div>
 
           {/* Filter Section */}
-          <div className="bg-lp-surface rounded-2xl shadow-sm border border-lp-border p-6 mb-6">
+          <div className="bg-lp-surface rounded-2xl border border-lp-border shadow-[0_8px_30px_rgba(0,0,0,0.04)] p-6 mb-6">
             <div className="flex flex-wrap gap-4 items-center">
               <div className="flex items-center gap-2">
                 <FaFilter className="text-lp-text3 font-light" />
@@ -331,7 +331,7 @@ const AbsensiDosen = () => {
               <select
                 value={filterPertemuan}
                 onChange={(e) => setFilterPertemuan(e.target.value)}
-                className="border border-lp-border rounded-lg px-3 py-2 text-sm"
+                className="border border-lp-border rounded-xl px-3 py-2 text-sm"
               >
                 <option value="">Semua Pertemuan</option>
                 {pertemuanList.map(p => (
@@ -341,7 +341,7 @@ const AbsensiDosen = () => {
               <select
                 value={filterCourse}
                 onChange={(e) => setFilterCourse(e.target.value)}
-                className="border border-lp-border rounded-lg px-3 py-2 text-sm"
+                className="border border-lp-border rounded-xl px-3 py-2 text-sm"
               >
                 <option value="">Semua Mata Kuliah</option>
                 {courses?.map((course) => (
@@ -366,7 +366,7 @@ const AbsensiDosen = () => {
             {/* Panel Kiri - Buat Sesi & Mata Kuliah */}
             <div className="lg:col-span-2 space-y-6">
               {/* Buat Sesi Baru */}
-              <div className="bg-lp-surface rounded-2xl shadow-sm border border-lp-border p-6">
+              <div className="bg-lp-surface rounded-2xl border border-lp-border shadow-[0_8px_30px_rgba(0,0,0,0.04)] p-6">
                 <h3 className="text-xl font-bold text-lp-text font-semibold tracking-tight mb-4 flex items-center gap-3">
                   <FaQrcode className="text-lp-text2" />
                   Buat Sesi Absensi Baru
@@ -423,7 +423,7 @@ const AbsensiDosen = () => {
                       min="5"
                       max="120"
                       step="5"
-                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                      className="w-full h-2 bg-gray-200 rounded-xl appearance-none cursor-pointer"
                     />
                     <div className="flex justify-between text-sm text-lp-text2 font-light mt-1">
                       <span>5m</span>
@@ -455,7 +455,7 @@ const AbsensiDosen = () => {
 
               {/* Sesi Aktif */}
               {activeSession && (
-                <div className="bg-lp-surface rounded-2xl shadow-sm border border-lp-border p-6">
+                <div className="bg-lp-surface rounded-2xl border border-lp-border shadow-[0_8px_30px_rgba(0,0,0,0.04)] p-6">
                   <div className="flex justify-between items-start mb-6">
                     <div>
                       <h3 className="text-xl font-bold text-lp-text font-semibold tracking-tight flex items-center gap-3">
@@ -480,14 +480,14 @@ const AbsensiDosen = () => {
                       <button
                         onClick={handleManualRefresh}
                         disabled={refreshTokenMutation.isPending}
-                        className="bg-lp-text text-white px-4 py-2 rounded-lg hover:bg-lp-text transition-colors flex items-center gap-2"
+                        className="bg-lp-text text-white px-4 py-2 rounded-xl hover:bg-lp-text transition-colors flex items-center gap-2"
                       >
                         <FaSync className={refreshTokenMutation.isPending ? "animate-spin" : ""} />
                         Refresh QR
                       </button>
                       <button
                         onClick={handleCloseSession}
-                        className="bg-lp-text text-white px-4 py-2 rounded-lg hover:bg-lp-atext transition-colors flex items-center gap-2"
+                        className="bg-lp-text text-white px-4 py-2 rounded-xl hover:bg-lp-atext transition-colors flex items-center gap-2"
                         disabled={closeSessionMutation.isPending}
                       >
                         {closeSessionMutation.isPending ? (
@@ -553,19 +553,19 @@ const AbsensiDosen = () => {
                   {/* Status Info */}
                   {sessionStudents && (
                     <div className="grid grid-cols-4 gap-2 mb-6">
-                      <div className="bg-lp-bg p-3 rounded-lg text-center">
+                      <div className="bg-lp-bg p-3 rounded-xl text-center">
                         <p className="text-lg font-bold text-lp-text">{sessionStudents.hadir_count || 0}</p>
                         <p className="text-xs text-lp-text2">Hadir</p>
                       </div>
-                      <div className="bg-lp-bg p-3 rounded-lg text-center">
+                      <div className="bg-lp-bg p-3 rounded-xl text-center">
                         <p className="text-lg font-bold text-lp-text">{sessionStudents.izin_count || 0}</p>
                         <p className="text-xs text-lp-text2">Izin</p>
                       </div>
-                      <div className="bg-lp-bg p-3 rounded-lg text-center">
+                      <div className="bg-lp-bg p-3 rounded-xl text-center">
                         <p className="text-lg font-bold text-lp-text">{sessionStudents.sakit_count || 0}</p>
                         <p className="text-xs text-lp-text2">Sakit</p>
                       </div>
-                      <div className="bg-lp-bg p-3 rounded-lg text-center">
+                      <div className="bg-lp-bg p-3 rounded-xl text-center">
                         <p className="text-lg font-bold text-lp-text">{sessionStudents.alpa_count || 0}</p>
                         <p className="text-xs text-lp-text2">Alpa</p>
                       </div>
@@ -575,7 +575,7 @@ const AbsensiDosen = () => {
               )}
 
               {/* Daftar Sesi Aktif */}
-              <div className="bg-lp-surface rounded-2xl shadow-sm border border-lp-border p-6">
+              <div className="bg-lp-surface rounded-2xl border border-lp-border shadow-[0_8px_30px_rgba(0,0,0,0.04)] p-6">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-xl font-bold text-lp-text font-semibold tracking-tight flex items-center gap-3">
                     <FaCalendarAlt className="text-lp-text2" />
@@ -594,7 +594,7 @@ const AbsensiDosen = () => {
                 ) : activeSessions?.sessions && activeSessions.sessions.length > 0 ? (
                   <div className="space-y-4">
                     {activeSessions.sessions.map((session) => (
-                      <div key={session.id} className="border border-lp-border rounded-xl p-4 hover:shadow-sm border border-lp-border transition-shadow">
+                      <div key={session.id} className="border border-lp-border rounded-xl p-4 hover:border border-lp-border shadow-[0_8px_30px_rgba(0,0,0,0.04)] transition-shadow">
                         <div className="flex justify-between items-start mb-3">
                           <div>
                             <div className="flex items-center gap-2 mb-1">
@@ -640,7 +640,7 @@ const AbsensiDosen = () => {
                               setQrToken(session.session_token)
                               startAutoRefresh(session.id)
                             }}
-                            className="px-4 py-2 bg-lp-bg text-lp-text2 rounded-lg text-sm hover:bg-lp-surface transition-colors flex items-center gap-1"
+                            className="px-4 py-2 bg-lp-bg text-lp-text2 rounded-xl text-sm hover:bg-lp-surface transition-colors flex items-center gap-1"
                           >
                             <FaQrcode />
                             Tampilkan QR
@@ -650,7 +650,7 @@ const AbsensiDosen = () => {
                               // Navigate to session detail
                               window.location.href = `/dosen/absensi/${session.id}`
                             }}
-                            className="px-4 py-2 bg-lp-surface text-lp-text2 rounded-lg text-sm hover:bg-lp-bg transition-colors flex items-center gap-1"
+                            className="px-4 py-2 bg-lp-surface text-lp-text2 rounded-xl text-sm hover:bg-lp-bg transition-colors flex items-center gap-1"
                           >
                             <FaEye />
                             Detail
@@ -661,7 +661,7 @@ const AbsensiDosen = () => {
                                 closeSessionMutation.mutate(session.id)
                               }
                             }}
-                            className="px-4 py-2 bg-lp-bg text-lp-text2 rounded-lg text-sm hover:bg-lp-surface transition-colors flex items-center gap-1"
+                            className="px-4 py-2 bg-lp-bg text-lp-text2 rounded-xl text-sm hover:bg-lp-surface transition-colors flex items-center gap-1"
                           >
                             <FaStopCircle />
                             Tutup
@@ -682,7 +682,7 @@ const AbsensiDosen = () => {
               </div>
 
               {/* Riwayat Pertemuan */}
-              <div className="bg-lp-surface rounded-2xl shadow-sm border border-lp-border p-6">
+              <div className="bg-lp-surface rounded-2xl border border-lp-border shadow-[0_8px_30px_rgba(0,0,0,0.04)] p-6">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-xl font-bold text-lp-text font-semibold tracking-tight flex items-center gap-3">
                     <FaHistory className="text-lp-text2" />
@@ -699,7 +699,7 @@ const AbsensiDosen = () => {
                 <div className="space-y-3">
                   {pertemuanHistory && pertemuanHistory.length > 0 ? (
                     pertemuanHistory.slice(0, 5).map((item, index) => (
-                      <div key={index} className="border border-lp-border rounded-lg p-3">
+                      <div key={index} className="border border-lp-border rounded-xl p-3">
                         <div className="flex justify-between items-center">
                           <div>
                             <p className="font-medium text-lp-text font-semibold tracking-tight">{item.course_name}</p>
@@ -726,7 +726,7 @@ const AbsensiDosen = () => {
             {/* Panel Kanan - Daftar Mahasiswa & Statistik */}
             <div className="space-y-6">
               {/* Statistik Pertemuan */}
-              <div className="bg-lp-surface rounded-2xl shadow-sm border border-lp-border p-6">
+              <div className="bg-lp-surface rounded-2xl border border-lp-border shadow-[0_8px_30px_rgba(0,0,0,0.04)] p-6">
                 <h3 className="text-xl font-bold text-lp-text font-semibold tracking-tight mb-4 flex items-center gap-3">
                   <FaChartBar className="text-lp-text2" />
                   Statistik Pertemuan
@@ -735,7 +735,7 @@ const AbsensiDosen = () => {
                   {pertemuanList.slice(0, 6).map(pertemuan => {
                     const sessionCount = activeSessions?.sessions?.filter(s => s.pertemuan_ke === pertemuan).length || 0
                     return (
-                      <div key={pertemuan} className="flex items-center justify-between p-3 border border-lp-border rounded-lg hover:bg-lp-bg">
+                      <div key={pertemuan} className="flex items-center justify-between p-3 border border-lp-border rounded-xl hover:bg-lp-bg">
                         <div>
                           <span className="font-medium text-lp-text font-semibold tracking-tight">Pertemuan {pertemuan}</span>
                           <p className="text-sm text-lp-text2 font-light">{sessionCount} sesi aktif</p>
@@ -745,7 +745,7 @@ const AbsensiDosen = () => {
                             setFilterPertemuan(pertemuan.toString())
                             setPertemuanKe(pertemuan)
                           }}
-                          className={`px-3 py-1 rounded-lg text-sm transition-colors ${
+                          className={`px-3 py-1 rounded-xl text-sm transition-colors ${
                             filterPertemuan === pertemuan.toString() 
                               ? 'bg-lp-bg text-lp-text2' 
                               : 'bg-lp-surface text-lp-text2 hover:bg-lp-bg'
@@ -767,7 +767,7 @@ const AbsensiDosen = () => {
 
               {/* Daftar Mahasiswa untuk Sesi Aktif */}
               {activeSession && (
-                <div className="bg-lp-surface rounded-2xl shadow-sm border border-lp-border p-6">
+                <div className="bg-lp-surface rounded-2xl border border-lp-border shadow-[0_8px_30px_rgba(0,0,0,0.04)] p-6">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-xl font-bold text-lp-text font-semibold tracking-tight flex items-center gap-3">
                       <FaUsers className="text-lp-text2" />
@@ -796,7 +796,7 @@ const AbsensiDosen = () => {
                     <>
                       <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
                         {sessionStudents.students.map((student, index) => (
-                          <div key={student.id} className="border border-lp-border rounded-lg p-3 hover:bg-lp-bg transition-colors">
+                          <div key={student.id} className="border border-lp-border rounded-xl p-3 hover:bg-lp-bg transition-colors">
                             <div className="flex justify-between items-center">
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2">
@@ -820,7 +820,7 @@ const AbsensiDosen = () => {
                             <div className="flex gap-1 ml-2">
                               <button
                                 onClick={() => handleStatusUpdate(student.id, 'hadir')}
-                                className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+                                className={`w-8 h-8 rounded-xl flex items-center justify-center transition-colors ${
                                   student.attendance_status === 'hadir' 
                                     ? 'bg-lp-bg text-lp-text2 border border-lp-border' 
                                     : 'bg-lp-bg text-lp-text2 hover:bg-lp-surface'
@@ -831,7 +831,7 @@ const AbsensiDosen = () => {
                               </button>
                               <button
                                 onClick={() => handleStatusUpdate(student.id, 'izin')}
-                                className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+                                className={`w-8 h-8 rounded-xl flex items-center justify-center transition-colors ${
                                   student.attendance_status === 'izin' 
                                     ? 'bg-lp-bg text-lp-text2 border border-lp-border' 
                                     : 'bg-lp-bg text-lp-text2 hover:bg-lp-surface'
@@ -842,7 +842,7 @@ const AbsensiDosen = () => {
                               </button>
                               <button
                                 onClick={() => handleStatusUpdate(student.id, 'sakit')}
-                                className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+                                className={`w-8 h-8 rounded-xl flex items-center justify-center transition-colors ${
                                   student.attendance_status === 'sakit' 
                                     ? 'bg-lp-bg text-lp-text2 border border-lp-border' 
                                     : 'bg-lp-bg text-lp-text2 hover:bg-lp-surface'
@@ -853,7 +853,7 @@ const AbsensiDosen = () => {
                               </button>
                               <button
                                 onClick={() => handleStatusUpdate(student.id, 'alpa')}
-                                className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+                                className={`w-8 h-8 rounded-xl flex items-center justify-center transition-colors ${
                                   student.attendance_status === 'alpa' 
                                     ? 'bg-lp-bg text-lp-text2 border border-lp-border' 
                                     : 'bg-lp-bg text-lp-text2 hover:bg-lp-surface'
@@ -864,7 +864,7 @@ const AbsensiDosen = () => {
                               </button>
                               <button
                                 onClick={() => handleManualStatus(student)}
-                                className="w-8 h-8 rounded-lg flex items-center justify-center bg-lp-surface text-lp-text2 font-light hover:bg-lp-bg transition-colors"
+                                className="w-8 h-8 rounded-xl flex items-center justify-center bg-lp-surface text-lp-text2 font-light hover:bg-lp-bg transition-colors"
                                 title="Edit Manual"
                               >
                                 <FaEdit className="text-xs" />
@@ -1025,14 +1025,14 @@ const AbsensiDosen = () => {
                   setShowManualModal(false)
                   setSelectedStudent(null)
                 }}
-                className="flex-1 bg-lp-surface text-lp-text2 py-3 rounded-lg font-medium hover:bg-lp-bg transition-colors"
+                className="flex-1 bg-lp-surface text-lp-text2 py-3 rounded-xl font-medium hover:bg-lp-bg transition-colors"
               >
                 Batal
               </button>
               <button
                 onClick={() => handleStatusUpdate(selectedStudent.id, manualStatus)}
                 disabled={updateStatusMutation.isPending}
-                className="flex-1 bg-lp-text text-white py-3 rounded-lg font-medium hover:bg-lp-atext transition-colors flex items-center justify-center gap-2"
+                className="flex-1 bg-lp-text text-white py-3 rounded-xl font-medium hover:bg-lp-atext transition-colors flex items-center justify-center gap-2"
               >
                 {updateStatusMutation.isPending ? (
                   <>

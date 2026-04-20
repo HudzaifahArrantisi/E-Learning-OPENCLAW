@@ -171,7 +171,7 @@ const PenilaianDosen = () => {
                   <div className="w-6 h-6 bg-gray-200 rounded"></div>
                 </div>
                 <div>
-                  <div className="h-8 w-64 bg-lp-bg rounded-lg animate-pulse mb-2"></div>
+                  <div className="h-8 w-64 bg-lp-bg rounded-xl animate-pulse mb-2"></div>
                   <div className="h-4 w-48 bg-gray-200 rounded animate-pulse"></div>
                 </div>
               </div>
@@ -374,7 +374,7 @@ const PenilaianDosen = () => {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setShowStats(!showStats)}
-                  className="px-4 py-2 text-sm bg-lp-surface text-lp-text2 rounded-lg hover:bg-lp-bg transition-colors"
+                  className="px-4 py-2 text-sm bg-lp-surface text-lp-text2 rounded-xl hover:bg-lp-bg transition-colors"
                 >
                   {showStats ? 'Sembunyikan Stats' : 'Tampilkan Stats'}
                 </button>
@@ -406,7 +406,7 @@ const PenilaianDosen = () => {
                       <tr key={index} className="hover:bg-lp-bg/50 transition-colors group">
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
-                            <div className="p-2 bg-lp-bg rounded-lg">
+                            <div className="p-2 bg-lp-bg rounded-xl">
                               <FiUser className="text-lp-text2" />
                             </div>
                             <div>
@@ -434,7 +434,7 @@ const PenilaianDosen = () => {
                               href={resolveBackendAssetUrl(submission.file_url)}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-2 px-4 py-2 bg-lp-bg text-lp-text2 rounded-lg font-medium hover:shadow-sm border border-lp-border transition-all duration-300 hover:-translate-y-0.5 border border-lp-border"
+                              className="inline-flex items-center gap-2 px-4 py-2 bg-lp-bg text-lp-text2 rounded-xl font-medium hover:border border-lp-border shadow-[0_8px_30px_rgba(0,0,0,0.04)] transition-all duration-300 hover:-translate-y-0.5 border border-lp-border"
                             >
                               <FiDownload />
                               Download
@@ -483,7 +483,7 @@ const PenilaianDosen = () => {
                             <button
                               onClick={() => handleGrade(submission.id)}
                               disabled={grading[submission.id]}
-                              className={`px-4 py-2 rounded-lg font-medium transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2 ${
+                              className={`px-4 py-2 rounded-xl font-medium transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2 ${
                                 grading[submission.id]
                                   ? 'bg-lp-bg text-lp-text2'
                                   : 'bg-lp-text text-white border-none hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border'
@@ -504,7 +504,7 @@ const PenilaianDosen = () => {
                             {submission.answer_text && (
                               <button
                                 onClick={() => showAnswer(submission.answer_text)}
-                                className="px-4 py-2 bg-lp-bg text-lp-text2 rounded-lg font-medium hover:shadow-sm border border-lp-border transition-all duration-300 hover:-translate-y-0.5 border border-lp-border flex items-center gap-2"
+                                className="px-4 py-2 bg-lp-bg text-lp-text2 rounded-xl font-medium hover:border border-lp-border shadow-[0_8px_30px_rgba(0,0,0,0.04)] transition-all duration-300 hover:-translate-y-0.5 border border-lp-border flex items-center gap-2"
                               >
                                 <FiEye />
                                 Jawaban
@@ -557,10 +557,10 @@ const PenilaianDosen = () => {
                   <strong>Tips:</strong> Klik pada kolom nilai untuk mengedit, lalu tekan Simpan untuk menyimpan perubahan.
                 </div>
                 <div className="flex items-center gap-3">
-                  <button className="px-4 py-2 text-sm bg-lp-surface border border-lp-border text-lp-text2 rounded-lg hover:bg-lp-bg transition-colors">
+                  <button className="px-4 py-2 text-sm bg-lp-surface border border-lp-border text-lp-text2 rounded-xl hover:bg-lp-bg transition-colors">
                     Export Excel
                   </button>
-                  <button className="px-4 py-2 text-sm bg-lp-text text-white border-none rounded-lg hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border transition-all duration-300">
+                  <button className="px-4 py-2 text-sm bg-lp-text text-white border-none rounded-xl hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border transition-all duration-300">
                     Print Laporan
                   </button>
                 </div>
@@ -574,7 +574,7 @@ const PenilaianDosen = () => {
               <div className="bg-lp-surface rounded-2xl p-8 w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col shadow-2xl animate-slideUp">
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-lp-bg rounded-lg">
+                    <div className="p-2 bg-lp-bg rounded-xl">
                       <FiEye className="text-xl text-lp-text2" />
                     </div>
                     <div>
@@ -584,7 +584,7 @@ const PenilaianDosen = () => {
                   </div>
                   <button
                     onClick={() => setShowAnswerModal(false)}
-                    className="p-2 hover:bg-lp-surface rounded-xl transition-colors"
+                    className="p-2 hover:bg-white rounded-xl transition-colors"
                   >
                     <FiX className="text-2xl text-lp-text3 hover:text-lp-text2 font-light" />
                   </button>
