@@ -45,6 +45,12 @@ const DetailPertemuanMateri = () => {
     'IR001': 'INCIDENT RESPONSE'
   }
 
+  // Frontend blocker for invalid course IDs
+  if (!matkulData[courseId]) {
+    window.location.href = '/not-found';
+    return null;
+  }
+
   if (loading) {
     return (
       <div className="flex h-screen bg-lp-bg">

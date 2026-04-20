@@ -134,6 +134,12 @@ const PenilaianDosen = () => {
     'IR001': 'Incident Response'
   }
 
+  // Frontend blocker for invalid course IDs
+  if (!matkulData[courseId]) {
+    window.location.href = '/not-found';
+    return null;
+  }
+
   const filteredSubmissions = submissions.filter(submission =>
     searchTerm === '' ||
     submission.student_name.toLowerCase().includes(searchTerm.toLowerCase()) ||

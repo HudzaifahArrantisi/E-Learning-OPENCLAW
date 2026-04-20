@@ -29,6 +29,17 @@ api.interceptors.response.use(
       localStorage.removeItem('user')
       window.location.href = '/'
     }
+    // Tangkap error 500, 404, 403 (Forbidden/Invalid URL), 400, atau Network Error (0 / undefined)
+    const status = error.response ? error.response.status : 0;
+    const isErrorRedirectable = status === 500 || status === 404 || status === 403 || status === 400 || status === 0;
+
+    // Jangan redirect jika error 400 dari login (agar pesan error username/password salah bisa muncul)
+    if (isErrorRedirectable && (!isLoginEndpoint || status !== 400)) {
+      if (!window.location.pathname.includes('/not-found')) {
+        window.location.href = '/not-found';
+      }
+    }
+
     return Promise.reject(error)
   }
 )

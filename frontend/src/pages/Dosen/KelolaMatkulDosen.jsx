@@ -171,6 +171,12 @@ const KelolaMatkulDosen = () => {
     'IR001': 'Incident Response'
   }
 
+  // Frontend blocker for invalid course IDs
+  if (!matkulData[courseId]) {
+    window.location.href = '/not-found';
+    return null;
+  }
+
   if (loading) {
     return (
       <div className="flex min-h-screen bg-lp-bg">

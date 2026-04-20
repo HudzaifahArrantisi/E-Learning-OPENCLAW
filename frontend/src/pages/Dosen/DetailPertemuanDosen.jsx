@@ -75,6 +75,12 @@ const DetailPertemuanDosen = () => {
     'IR001': 'Incident Response'
   }
 
+  // Frontend blocker for invalid course IDs
+  if (!matkulData[courseId]) {
+    window.location.href = '/not-found';
+    return null;
+  }
+
   const formatFileSize = (bytes) => {
     if (bytes < 1024) return bytes + ' bytes'
     else if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'

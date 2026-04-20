@@ -19,9 +19,9 @@ const NotFound = () => {
       {/* Brand top-left */}
       <Link to="/" className="fixed top-6 left-6 text-[11.5px] font-semibold tracking-[0.08em] text-lp-text3 z-10">STUDENT HUB</Link>
 
-      {/* Giant 404 */}
-      <div className="relative z-10 font-sans text-[clamp(7rem,20vw,14rem)] font-semibold leading-[0.9] tracking-[-0.035em] text-lp-text mb-7 select-none">
-        4<span className="text-lp-text/30">0</span>4
+      {/* Giant Error Text */}
+      <div className="relative z-10 font-sans text-[clamp(5rem,15vw,10rem)] font-bold leading-[0.9] tracking-[-0.035em] text-lp-text mb-7 select-none">
+        ERR<span className="text-lp-text/30">OR</span>
       </div>
 
       {/* Terminal */}
@@ -30,26 +30,26 @@ const NotFound = () => {
           <span className="w-2.5 h-2.5 rounded-full bg-[#FF5F57]" />
           <span className="w-2.5 h-2.5 rounded-full bg-[#FEBC2E]" />
           <span className="w-2.5 h-2.5 rounded-full bg-[#28C840]" />
-          <span className="font-mono text-[10px] text-lp-text3 ml-2 tracking-wide">~ / openclaw / router</span>
+          <span className="font-mono text-[10px] text-lp-text3 ml-2 tracking-wide">~ / openclaw / system</span>
         </div>
         <div className="p-5 font-mono text-[12px] font-light leading-loose">
           <span className="block">
             <span className="text-lp-text3">$ </span>
-            <span className="text-lp-atext">openclaw resolve --path "{location?.pathname || '/??'}"</span>
+            <span className="text-lp-atext">openclaw connect --target "{location?.pathname || '/??'}"</span>
           </span>
           <span className="block h-1.5" />
           <span className="block">
             <span className="text-lp-red">✗ </span>
-            <span className="text-lp-text2">Route not registered in manifest</span>
+            <span className="text-lp-text2">Connection or Routing Failed</span>
           </span>
           <span className="block">
             <span className="text-lp-red">✗ </span>
-            <span className="text-lp-text2">HTTP 404 · Page does not exist</span>
+            <span className="text-lp-text2">HTTP 404/500/Network Error</span>
           </span>
           <span className="block h-1.5" />
           <span className="block">
             <span className="text-lp-green">↗ </span>
-            <span className="text-lp-text2">Suggested: navigate to /</span>
+            <span className="text-lp-text2">Suggested: check connection or go to /</span>
           </span>
           <span className="block">
             <span className="text-lp-text3">$ </span>
@@ -60,7 +60,7 @@ const NotFound = () => {
 
       {/* Human-readable message */}
       <p className="relative z-10 font-sans text-[clamp(1.1rem,2.5vw,1.45rem)] text-lp-text max-w-[380px] mx-auto mb-3 leading-relaxed">
-        Halaman yang kamu cari <em className="italic text-lp-text/40">tidak tersedia.</em>
+        Halaman atau Layanannya <em className="italic text-lp-text/40">sedang bermasalah.</em>
       </p>
       <p className="relative z-10 text-[13px] font-mono text-lp-text3 tracking-[0.04em] mb-10">
         Periksa kembali alamat URL atau kembali ke halaman utama.
