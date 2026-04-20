@@ -27,16 +27,26 @@ func main() {
 	godotenv.Load()
 
 	// Initialize database
+	log.Println("Initializing database...")
 	config.InitDB()
+	
+	if config.DB == nil {
+		log.Fatal("FATAL: Database connection is nil after initialization")
+	} else {
+		log.Println("Database connected successfully ✅")
+	}
 
 	r := gin.Default()
 	r.SetTrustedProxies(nil)
+
+	// Recover from any panics and log them
+	r.Use(gin.Recovery())
 
 	// ============================================================
 	// 🔒 SECURITY MIDDLEWARES
 	// ============================================================
 
-	// CORS Configuration
+	// CORS Configuration — MUST BE AT THE TOP
 	r.Use(cors.New(cors.Config{
 		AllowOrigins: []string{
 			"https://e-learning-openclaw.vercel.app",
@@ -49,11 +59,6 @@ func main() {
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
 	}))
-
-	// Handle OPTIONS fallback explicitly at the root level just in case proxy strips it
-	r.OPTIONS("/*path", func(c *gin.Context) {
-		c.Status(204)
-	})
 
 	r.Use(middlewares.SecurityHeaders())
 	r.Use(middlewares.RateLimitMiddleware(200, 1*time.Minute)) // Global: 200 req/min per IP
