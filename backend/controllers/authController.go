@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"database/sql"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -143,6 +144,7 @@ func Login(c *gin.Context) {
 			})
 			return
 		}
+		fmt.Println("Login DB Error:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
 			"message": "Database error",

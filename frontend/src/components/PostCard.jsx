@@ -30,8 +30,12 @@ const CommentItem = memo(({ comment, getRelativeTime }) => {
         to={`/profile/${comment.user_role || 'mahasiswa'}/${cleanUsername(comment.author_username || comment.author_name)}`}
         className="flex-shrink-0"
       >
-        <div className="w-8 h-8 bg-lp-surface border border-lp-border rounded-full flex items-center justify-center text-lp-text2 text-xs font-bold shrink-0">
-          {comment.author_name?.[0]?.toUpperCase() || '?'}
+        <div className="w-8 h-8 bg-lp-surface border border-lp-border rounded-full flex items-center justify-center text-lp-text2 text-xs font-bold shrink-0 overflow-hidden">
+          {comment.author_avatar ? (
+            <img src={resolveBackendAssetUrl(comment.author_avatar)} alt={comment.author_name} className="w-full h-full object-cover" />
+          ) : (
+            comment.author_name?.[0]?.toUpperCase() || '?'
+          )}
         </div>
       </Link>
       <div className="flex-1 min-w-0 pt-1">
@@ -515,8 +519,12 @@ const PostCard = memo(({ post, getRelativeTime }) => {
                               to={`/profile/${comment.user_role || 'mahasiswa'}/${cleanUsername(comment.author_username || comment.author_name)}`}
                               className="flex-shrink-0"
                             >
-                              <div className="w-8 h-8 bg-lp-surface border border-lp-border rounded-full flex items-center justify-center text-lp-text2 text-xs font-bold shrink-0">
-                                {comment.author_name?.[0]?.toUpperCase() || '?'}
+                              <div className="w-8 h-8 bg-lp-surface border border-lp-border rounded-full flex items-center justify-center text-lp-text2 text-xs font-bold shrink-0 overflow-hidden">
+                                {comment.author_avatar ? (
+                                  <img src={resolveBackendAssetUrl(comment.author_avatar)} alt={comment.author_name} className="w-full h-full object-cover" />
+                                ) : (
+                                  comment.author_name?.[0]?.toUpperCase() || '?'
+                                )}
                               </div>
                             </Link>
                             <div className="flex-1 min-w-0 pt-1">

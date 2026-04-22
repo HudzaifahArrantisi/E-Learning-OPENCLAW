@@ -332,8 +332,8 @@ const DashboardLayout = ({
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div>
-                            <h3 className="text-[15px] font-semibold text-lp-text tracking-tight">{task.title}</h3>
-                            <p className="text-[13px] text-lp-text2 font-light mt-1">{task.course_name} • Pertemuan {task.pertemuan}</p>
+                            <h3 className="text-[20px] font-bold text-lp-text tracking-tight">{task.title}</h3>
+                            <p className="text-[14px] text-lp-text2 font-bold mt-1">{task.course_name} • Pertemuan {task.pertemuan}</p>
                           </div>
                           <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
                             {task.is_overdue ? (

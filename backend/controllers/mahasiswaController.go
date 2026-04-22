@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"nf-student-hub-backend/config"
@@ -13,6 +14,22 @@ import (
 
 	"github.com/gin-gonic/gin"
 )
+
+func normalizeHariIndonesia(hari string) (string, bool) {
+	normalized := strings.ToLower(strings.TrimSpace(hari))
+	dayMap := map[string]string{
+		"senin":  "Senin",
+		"selasa": "Selasa",
+		"rabu":   "Rabu",
+		"kamis":  "Kamis",
+		"jumat":  "Jumat",
+		"sabtu":  "Sabtu",
+		"minggu": "Minggu",
+	}
+
+	value, ok := dayMap[normalized]
+	return value, ok
+}
 
 // GetMahasiswaProfile - Get mahasiswa profile
 func GetMahasiswaProfile(c *gin.Context) {
@@ -182,18 +199,14 @@ func GetMahasiswaCoursesByDay(c *gin.Context) {
 		return
 	}
 
-	hari := c.Param("hari")
-	if hari == "" {
+	hariParam := c.Param("hari")
+	if strings.TrimSpace(hariParam) == "" {
 		utils.ValidationError(c, "Hari is required")
 		return
 	}
 
-	// Validasi hari
-	validDays := map[string]bool{
-		"Senin": true, "Selasa": true, "Rabu": true,
-		"Kamis": true, "Jumat": true, "Sabtu": true, "Minggu": true,
-	}
-	if !validDays[hari] {
+	hari, ok := normalizeHariIndonesia(hariParam)
+	if !ok {
 		utils.ValidationError(c, "Hari tidak valid. Gunakan: Senin, Selasa, Rabu, Kamis, Jumat, Sabtu, Minggu")
 		return
 	}
@@ -207,6 +220,7 @@ func GetMahasiswaCoursesByDay(c *gin.Context) {
 	}
 
 	// Query mata kuliah berdasarkan hari
+	mahasiswaIDStr := strconv.Itoa(mahasiswaID)
 	query := `
 		SELECT DISTINCT
 			mk.kode, 
@@ -224,19 +238,19 @@ func GetMahasiswaCoursesByDay(c *gin.Context) {
 		JOIN mahasiswa_mata_kuliah mmk ON mk.kode = mmk.mata_kuliah_kode
 		JOIN mahasiswa_mata_kuliah mmk2 ON mk.kode = mmk2.mata_kuliah_kode
 		LEFT JOIN (
-			SELECT DISTINCT a.student_id, asess.course_id, a.status, a.created_at
+			SELECT DISTINCT a.student_id::text as student_id, asess.course_id, a.status, a.created_at
 			FROM attendance a
-			JOIN attendance_sessions asess ON a.session_id = asess.id
+			JOIN attendance_sessions asess ON a.session_id::text = asess.id::text
 			WHERE (a.created_at)::date = CURRENT_DATE
-		) a ON mk.kode = a.course_id AND mmk.mahasiswa_id = a.student_id
-		WHERE mmk.mahasiswa_id = $1 
-			AND mk.hari = $2 
+		) a ON mk.kode = a.course_id AND mmk.mahasiswa_id::text = a.student_id
+		WHERE mmk.mahasiswa_id::text = $1::text
+			AND TRIM(LOWER(mk.hari::text)) = TRIM(LOWER($2::text))
 			AND mk.deleted_at IS NULL
 		GROUP BY mk.kode, mk.nama, d.name, mk.sks, mk.hari, mk.jam_mulai, mk.jam_selesai, a.status, a.created_at
 		ORDER BY mk.jam_mulai
 	`
 
-	rows, err := config.DB.Query(query, mahasiswaID, hari)
+	rows, err := config.DB.Query(query, mahasiswaIDStr, hari)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to fetch courses by day: "+err.Error())
 		return
@@ -247,10 +261,10 @@ func GetMahasiswaCoursesByDay(c *gin.Context) {
 	var totalMahasiswa int
 
 	for rows.Next() {
-		var kode, nama, dosen, jamMulai, jamSelesai, statusAbsen, waktuAbsen string
+		var kode, nama, dosen, courseHari, jamMulai, jamSelesai, statusAbsen, waktuAbsen string
 		var sks, totalMhs int
 
-		err := rows.Scan(&kode, &nama, &dosen, &sks, &hari, &jamMulai, &jamSelesai,
+		err := rows.Scan(&kode, &nama, &dosen, &sks, &courseHari, &jamMulai, &jamSelesai,
 			&statusAbsen, &waktuAbsen, &totalMhs)
 		if err != nil {
 			continue
@@ -275,7 +289,7 @@ func GetMahasiswaCoursesByDay(c *gin.Context) {
 			"nama":            nama,
 			"dosen":           dosen,
 			"sks":             sks,
-			"hari":            hari,
+			"hari":            courseHari,
 			"jam_mulai":       jamMulai,
 			"jam_selesai":     jamSelesai,
 			"status_absen":    statusAbsen,
@@ -436,6 +450,7 @@ func GetMahasiswaJadwalHariIni(c *gin.Context) {
 	}
 
 	// Query jadwal hari ini - DIPERBAIKI dengan DISTINCT untuk menghindari duplikasi
+	mahasiswaIDStr := strconv.Itoa(mahasiswaID)
 	query := `
 		SELECT DISTINCT
 			mk.kode, 
@@ -453,22 +468,22 @@ func GetMahasiswaJadwalHariIni(c *gin.Context) {
 		JOIN dosen d ON mk.dosen_id = d.id
 		JOIN mahasiswa_mata_kuliah mmk ON mk.kode = mmk.mata_kuliah_kode
 		LEFT JOIN (
-			SELECT DISTINCT a.student_id, asess.course_id, a.status, a.created_at, a.pertemuan_ke
+			SELECT DISTINCT a.student_id::text as student_id, asess.course_id, a.status, a.created_at, a.pertemuan_ke
 			FROM attendance a
-			JOIN attendance_sessions asess ON a.session_id = asess.id
-			WHERE (a.created_at)::date = CURRENT_DATE AND a.student_id = $1
-		) a ON mk.kode = a.course_id AND mmk.mahasiswa_id = a.student_id
+			JOIN attendance_sessions asess ON a.session_id::text = asess.id::text
+			WHERE (a.created_at)::date = CURRENT_DATE AND a.student_id::text = $1::text
+		) a ON mk.kode = a.course_id AND mmk.mahasiswa_id::text = a.student_id
 		LEFT JOIN attendance_sessions asess ON mk.kode = asess.course_id 
 			AND asess.status = 'active' 
 			AND asess.expires_at > NOW()
 			AND (asess.created_at)::date = CURRENT_DATE
-		WHERE mmk.mahasiswa_id = $2 
-			AND mk.hari = $3 
+		WHERE mmk.mahasiswa_id::text = $2::text
+			AND TRIM(LOWER(mk.hari::text)) = TRIM(LOWER($3::text))
 			AND mk.deleted_at IS NULL
 		ORDER BY mk.jam_mulai
 	`
 
-	rows, err := config.DB.Query(query, mahasiswaID, mahasiswaID, hariIni)
+	rows, err := config.DB.Query(query, mahasiswaIDStr, mahasiswaIDStr, hariIni)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to fetch today's schedule: "+err.Error())
 		return
@@ -665,14 +680,14 @@ func ScanAttendance(c *gin.Context) {
 	err = config.DB.QueryRow(`
 		SELECT EXISTS(
 			SELECT 1 FROM attendance a
-			JOIN attendance_sessions asess ON a.session_id = asess.id
+			JOIN attendance_sessions asess ON a.session_id::text = asess.id::text
 			WHERE a.student_id = $1 
 				AND asess.course_id = $2 
 				AND asess.pertemuan_ke = $3
 				AND (a.created_at)::date = CURRENT_DATE
 		), COALESCE(a.status, '')
 		FROM attendance a
-		JOIN attendance_sessions asess ON a.session_id = asess.id
+		JOIN attendance_sessions asess ON a.session_id::text = asess.id::text
 		WHERE a.student_id = $4 
 			AND asess.course_id = $5 
 			AND asess.pertemuan_ke = $6
@@ -777,7 +792,7 @@ func GetAttendanceHistoryByCourse(c *gin.Context) {
 			asess.session_code,
 			(a.created_at)::date as tanggal_raw
 		FROM attendance a
-		JOIN attendance_sessions asess ON a.session_id = asess.id
+		JOIN attendance_sessions asess ON a.session_id::text = asess.id::text
 		JOIN mata_kuliah mk ON asess.course_id = mk.kode
 		JOIN dosen d ON mk.dosen_id = d.id
 		WHERE a.student_id = $1 
@@ -828,7 +843,7 @@ func GetAttendanceHistoryByCourse(c *gin.Context) {
 			SUM(CASE WHEN a.status = 'sakit' THEN 1 ELSE 0 END) as sakit,
 			SUM(CASE WHEN a.status = 'alpa' THEN 1 ELSE 0 END) as alpa
 		FROM attendance a
-		JOIN attendance_sessions asess ON a.session_id = asess.id
+		JOIN attendance_sessions asess ON a.session_id::text = asess.id::text
 		WHERE a.student_id = $1 AND asess.course_id = $2
 	`, mahasiswaID, courseID).Scan(&totalSessions, &hadirCount, &izinCount, &sakitCount, &alpaCount)
 
@@ -911,7 +926,7 @@ func GetAttendanceHistory(c *gin.Context) {
 			mk.jam_mulai,
 			mk.jam_selesai
 		FROM attendance a
-		JOIN attendance_sessions asess ON a.session_id = asess.id
+		JOIN attendance_sessions asess ON a.session_id::text = asess.id::text
 		JOIN mata_kuliah mk ON asess.course_id = mk.kode
 		JOIN dosen d ON mk.dosen_id = d.id
 		WHERE a.student_id = $1
@@ -1194,7 +1209,7 @@ func GetAttendanceByCoursePertemuan(c *gin.Context) {
 			COALESCE(TO_CHAR(a.created_at, 'HH24:MI'), '') as my_time
 		FROM attendance_sessions asess
 		JOIN mata_kuliah mk ON mk.kode = asess.course_id
-		LEFT JOIN attendance a ON a.session_id = asess.id AND a.student_id = $1
+		LEFT JOIN attendance a ON a.session_id::text = asess.id::text AND a.student_id = $1
 		WHERE asess.course_id = $2
 	`
 

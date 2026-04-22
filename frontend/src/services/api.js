@@ -4,7 +4,7 @@ import { getBackendBaseUrl, getBackendWebSocketBaseUrl } from '../utils/backendU
 
 const api = axios.create({
   baseURL: getBackendBaseUrl(),
-  timeout: 10000,
+  timeout: 30000,
 })
 
 // ===================== INTERCEPTORS =====================
@@ -35,9 +35,10 @@ api.interceptors.response.use(
 
     // Jangan redirect jika error berasal dari endpoint 'stats' atau 'profile' (biarkan komponen menangani loading/error state sendiri)
     const isStatsOrProfile = error.config && error.config.url && (error.config.url.includes('stats') || error.config.url.includes('profile'));
+    const skipErrorRedirect = Boolean(error.config?.skipErrorRedirect);
 
     // Jangan redirect jika error 400 dari login (agar pesan error username/password salah bisa muncul)
-    if (isErrorRedirectable && (!isLoginEndpoint || status !== 400) && !isStatsOrProfile) {
+    if (isErrorRedirectable && (!isLoginEndpoint || status !== 400) && !isStatsOrProfile && !skipErrorRedirect) {
       if (!window.location.pathname.includes('/not-found')) {
         window.location.href = '/not-found';
       }
@@ -328,26 +329,26 @@ api.getMahasiswaTugasByCourse = (courseId) =>
   api.get(`/api/mahasiswa/tugas/course/${courseId}`)
 
 // === Absensi Mahasiswa ===
-api.getTodaySchedule = () => api.get('/api/mahasiswa/jadwal/hari-ini')
+api.getTodaySchedule = () => api.get('/api/mahasiswa/jadwal/hari-ini', { skipErrorRedirect: true })
 
 api.scanAttendance = (data) =>
-  api.post('/api/mahasiswa/absensi/scan', data)
+  api.post('/api/mahasiswa/absensi/scan', data, { skipErrorRedirect: true })
 
 api.getAttendanceSummary = () =>
   api.get('/api/mahasiswa/absensi/summary')
 
 api.getAttendanceHistory = (filters = {}) => {
   const params = new URLSearchParams(filters).toString()
-  return api.get(`/api/mahasiswa/absensi/riwayat${params ? '?' + params : ''}`)
+  return api.get(`/api/mahasiswa/absensi/riwayat${params ? '?' + params : ''}`, { skipErrorRedirect: true })
 }
 
 // API BARU UNTUK FILTER HARI
 api.getMahasiswaCoursesByDay = (hari) => 
-  api.get(`/api/mahasiswa/courses/day/${hari}`)
+  api.get(`/api/mahasiswa/courses/day/${hari}`, { skipErrorRedirect: true })
 
 // API untuk riwayat absensi per mata kuliah
 api.getAttendanceByCourse = (courseId) =>
-  api.get(`/api/mahasiswa/absensi/course/${courseId}`)
+  api.get(`/api/mahasiswa/absensi/course/${courseId}`, { skipErrorRedirect: true })
 
 // API untuk semua pertemuan attendance
 api.getAllPertemuanAttendance = () =>

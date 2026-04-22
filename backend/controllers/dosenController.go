@@ -253,7 +253,7 @@ func GetAttendanceSessionDetail(c *gin.Context) {
 
 	// Verify dosen owns this session
 	var dosenID int
-	err = config.DB.QueryRow("SELECT dosen_id FROM attendance_sessions WHERE id = $1", id).Scan(&dosenID)
+	err = config.DB.QueryRow("SELECT dosein_id  FROM attendance_sessions WHERE id = $1", id).Scan(&dosenID)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusNotFound, "Sesi tidak ditemukan")
 		return

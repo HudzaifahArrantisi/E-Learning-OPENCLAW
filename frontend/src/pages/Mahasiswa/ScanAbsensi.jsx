@@ -1,5 +1,5 @@
 // Removed duplicate/simple component block. Only the full-featured component remains below.
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useRef } from 'react'
 import { useMutation, useQuery } from "@tanstack/react-query";
 import api from '../../services/api'
 import Navbar from '../../components/Navbar'
@@ -25,8 +25,12 @@ import {
   FaEye,
   FaPlayCircle
 } from 'react-icons/fa'
-import { QRCodeSVG } from 'qrcode.react'
 import QrScanner from 'qr-scanner';
+
+const getCurrentIndonesianDay = () => {
+  const dayMap = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu']
+  return dayMap[new Date().getDay()]
+}
 
 const ScanAbsensi = () => {
   const { user } = useAuth()
@@ -37,39 +41,47 @@ const ScanAbsensi = () => {
   const [scanResult, setScanResult] = useState(null)
   const [showHistoryModal, setShowHistoryModal] = useState(false)
   const [showActionsModal, setShowActionsModal] = useState(false)
-  const [selectedDay, setSelectedDay] = useState('')
+  const [selectedDay, setSelectedDay] = useState(getCurrentIndonesianDay())
   const [qrScanner, setQrScanner] = useState(null)
   const videoRef = useRef(null)
+  const isProcessingScanRef = useRef(false)
   const [isScanning, setIsScanning] = useState(false)
 
   // Hari-hari untuk filter
   const days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu']
 
-  // Get hari ini untuk default filter
-  useEffect(() => {
-    const today = new Date().getDay()
-    const dayMap = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu']
-    setSelectedDay(dayMap[today])
-  }, [])
-
   // Query untuk jadwal berdasarkan hari
   const { data: coursesByDay, isLoading: loadingCoursesByDay, refetch: refetchCoursesByDay } = useQuery({
     queryKey: ['coursesByDay', selectedDay],
     queryFn: () => {
-      if (!selectedDay) {
-        // Default: hari ini
-        return api.getTodaySchedule().then(res => {
-          console.log('Schedule data:', res.data)
-          return res.data.data
-        })
-      } else {
-        return api.getMahasiswaCoursesByDay(selectedDay).then(res => {
-          console.log('Courses by day:', res.data)
-          return res.data.data
-        })
+      const day = selectedDay?.trim()
+      if (!day) {
+        return Promise.resolve({ hari: '', courses: [], total_courses: 0 })
       }
+
+      return api.getMahasiswaCoursesByDay(day).then(res => {
+        console.log('Courses by day:', res.data)
+        const data = res.data.data || {}
+        if (!Array.isArray(data.courses) && Array.isArray(data.jadwal)) {
+          return {
+            ...data,
+            courses: data.jadwal
+          }
+        }
+        return {
+          ...data,
+          courses: Array.isArray(data.courses) ? data.courses : []
+        }
+      }).catch(error => {
+        console.error('Failed fetching courses by day:', error)
+        return {
+          hari: day,
+          courses: [],
+          total_courses: 0
+        }
+        })
     },
-    enabled: true,
+    enabled: !!selectedDay,
     refetchInterval: 30000, // Refresh setiap 30 detik
   })
 
@@ -194,39 +206,104 @@ const ScanAbsensi = () => {
 
   const handleScanResult = (result) => {
     console.log('QR Scan result:', result)
-    
-    // Parse QR data (format: token|course_id|pertemuan|timestamp)
-    const qrData = result.data.split('|')
-    if (qrData.length < 2) {
+
+    if (isProcessingScanRef.current || scanAttendanceMutation.isPending) {
+      return
+    }
+
+    const rawData = typeof result?.data === 'string' ? result.data.trim() : ''
+    if (!rawData) {
       alert('QR Code tidak valid')
       return
     }
-    
-    const sessionToken = qrData[0]
-    
-    // Validasi: Pastikan mata kuliah sesuai
-    if (selectedCourse && qrData[1] !== selectedCourse.kode) {
-      alert('QR Code tidak sesuai dengan mata kuliah yang dipilih')
+
+    let sessionToken = rawData
+    let qrCourseId = ''
+
+    // Format JSON: {"session_token":"...","course_id":"..."}
+    try {
+      const parsed = JSON.parse(rawData)
+      if (parsed?.session_token) {
+        sessionToken = String(parsed.session_token)
+        qrCourseId = parsed.course_id ? String(parsed.course_id) : ''
+      }
+    } catch {
+      // Format lama: token|course_id|...
+      const parts = rawData.split('|')
+      if (parts.length >= 1 && parts[0]) {
+        sessionToken = parts[0].trim()
+      }
+      if (parts.length >= 2 && parts[1]) {
+        qrCourseId = parts[1].trim()
+      }
+    }
+
+    if (!sessionToken) {
+      alert('QR Code tidak valid')
       return
     }
-    
+
+    const availableCourses = coursesByDay?.courses || []
+    let resolvedCourseId = selectedCourse?.kode || ''
+
+    if (qrCourseId) {
+      if (resolvedCourseId && resolvedCourseId !== qrCourseId) {
+        alert('QR Code tidak sesuai dengan mata kuliah yang dipilih')
+        return
+      }
+
+      if (!resolvedCourseId) {
+        const matchedCourse = availableCourses.find((course) => course.kode === qrCourseId)
+        if (matchedCourse) {
+          setSelectedCourse(matchedCourse)
+          resolvedCourseId = matchedCourse.kode
+        } else {
+          resolvedCourseId = qrCourseId
+        }
+      }
+    }
+
+    if (!resolvedCourseId) {
+      alert('Pilih mata kuliah terlebih dahulu sebelum scan')
+      return
+    }
+
+    isProcessingScanRef.current = true
     scanAttendanceMutation.mutate({ 
       session_token: sessionToken,
-      course_id: selectedCourse.kode 
+      course_id: resolvedCourseId 
+    }, {
+      onSettled: () => {
+        isProcessingScanRef.current = false
+      }
     })
   }
 
   const handleManualToken = (token) => {
-    if (!token.trim() || !selectedCourse) {
-      alert('Masukkan token QR Code dan pilih mata kuliah')
+    if (!selectedCourse) {
+      alert('Pilih mata kuliah terlebih dahulu')
       return
     }
-    
+
+    const normalizedToken = token?.trim()
+    if (!normalizedToken) {
+      alert('Masukkan token QR Code')
+      return
+    }
+
+    if (isProcessingScanRef.current || scanAttendanceMutation.isPending) {
+      return
+    }
+
+    isProcessingScanRef.current = true
     scanAttendanceMutation.mutate({ 
-      session_token: token,
+      session_token: normalizedToken,
       course_id: selectedCourse.kode 
+    }, {
+      onSettled: () => {
+        isProcessingScanRef.current = false
+      }
     })
-    stopScanning()
   }
 
   // Render status badge

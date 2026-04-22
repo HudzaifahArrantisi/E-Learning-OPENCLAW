@@ -15,13 +15,9 @@ const NotFound = () => {
 
       {/* Scan line */}
       <div className="absolute left-0 right-0 h-[120px] animate-scanAnim bg-[linear-gradient(180deg,transparent,rgba(75,115,255,0.03)_50%,transparent)] pointer-events-none" />
-
-      {/* Brand top-left */}
-      <Link to="/" className="fixed top-6 left-6 text-[11.5px] font-semibold tracking-[0.08em] text-lp-text3 z-10">STUDENT HUB</Link>
-
       {/* Giant Error Text */}
       <div className="relative z-10 font-sans text-[clamp(5rem,15vw,10rem)] font-bold leading-[0.9] tracking-[-0.035em] text-lp-text mb-7 select-none">
-        ERR<span className="text-lp-text/30">OR</span>
+        4<span className="text-lp-text/30">0</span>4
       </div>
 
       {/* Terminal */}
@@ -60,20 +56,13 @@ const NotFound = () => {
 
       {/* Human-readable message */}  
       <p className="relative z-10 font-sans text-[clamp(1.1rem,2.5vw,1.45rem)] text-lp-text max-w-[380px] mx-auto mb-3 leading-relaxed">
-        Halaman atau Layanannya <em className="italic text-lp-text/40">sedang bermasalah.</em>
+        Halaman Tidak Ditemukan
       </p>
-      <p className="relative z-10 text-[13px] font-mono text-lp-text3 tracking-[0.04em] mb-10">
-        Periksa kembali alamat   URL atau kembali ke halaman utama.
-      </p>
-
       {/* Actions */}
       <div className="relative z-10 flex items-center gap-4 flex-wrap justify-center">
         <Link to="/" className="inline-flex items-center gap-2 bg-lp-text text-white font-sans text-[13px] font-semibold py-3 px-6 rounded-full transition-all hover:bg-lp-atext hover:-translate-y-px">
           ← Ke Beranda
         </Link>
-        <button onClick={() => navigate(-1)} className="inline-flex items-center gap-2 text-lp-text2 border border-lp-border font-sans text-[13px] py-3 px-5 rounded-full transition-all hover:text-lp-text hover:border-lp-borderA">
-          Kembali
-        </button>
       </div>
 
       {/* Bottom brand */}

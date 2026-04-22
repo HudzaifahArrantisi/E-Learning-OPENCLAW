@@ -2,6 +2,7 @@
 package controllers
 
 import (
+	"database/sql"
 	"net/http"
 	"strings"
 	"time"
@@ -108,7 +109,8 @@ func getPostComments(postID int) ([]map[string]interface{}, error) {
             c.created_at, 
             c.parent_id,
             c.author_name,
-            c.user_role
+            c.user_role,
+            c.user_id
         FROM comments c
         WHERE c.post_id = $1 AND c.deleted_at IS NULL
         ORDER BY 
@@ -131,20 +133,34 @@ func getPostComments(postID int) ([]map[string]interface{}, error) {
 		var content, authorName, userRole string
 		var parentID *int
 		var createdAt time.Time
+		var userID int
 
-		err = rows.Scan(&id, &content, &createdAt, &parentID, &authorName, &userRole)
+		err = rows.Scan(&id, &content, &createdAt, &parentID, &authorName, &userRole, &userID)
 		if err != nil {
 			return nil, err
 		}
 
+		var authorAvatar sql.NullString
+		switch userRole {
+		case "mahasiswa":
+			_ = config.DB.QueryRow("SELECT photo FROM mahasiswa WHERE user_id = $1", userID).Scan(&authorAvatar)
+		case "admin":
+			_ = config.DB.QueryRow("SELECT profile_picture FROM admin WHERE user_id = $1", userID).Scan(&authorAvatar)
+		case "ukm":
+			_ = config.DB.QueryRow("SELECT profile_picture FROM ukm WHERE user_id = $1", userID).Scan(&authorAvatar)
+		case "ormawa":
+			_ = config.DB.QueryRow("SELECT profile_picture FROM ormawa WHERE user_id = $1", userID).Scan(&authorAvatar)
+		}
+
 		comment := map[string]interface{}{
-			"id":          id,
-			"content":     content,
-			"author_name": authorName,
-			"user_role":   userRole,
-			"created_at":  createdAt,
-			"parent_id":   parentID,
-			"replies":     []map[string]interface{}{},
+			"id":            id,
+			"content":       content,
+			"author_name":   authorName,
+			"user_role":     userRole,
+			"author_avatar": authorAvatar.String,
+			"created_at":    createdAt,
+			"parent_id":     parentID,
+			"replies":       []map[string]interface{}{},
 		}
 
 		allComments[id] = comment
@@ -402,21 +418,22 @@ func CommentPost(c *gin.Context) {
 
 	// Ambil data user untuk komentar
 	var userName, userRole string
+	var authorAvatar sql.NullString
 	
 	// Coba ambil dari tabel spesifik berdasarkan role
 	role, exists := c.Get("role")
 	if exists {
 		switch role {
 		case "mahasiswa":
-			config.DB.QueryRow("SELECT name FROM mahasiswa WHERE user_id = $1", userID).Scan(&userName)
+			config.DB.QueryRow("SELECT name, photo FROM mahasiswa WHERE user_id = $1", userID).Scan(&userName, &authorAvatar)
 		case "dosen":
 			config.DB.QueryRow("SELECT name FROM dosen WHERE user_id = $1", userID).Scan(&userName)
 		case "admin":
-			config.DB.QueryRow("SELECT name FROM admin WHERE user_id = $1", userID).Scan(&userName)
+			config.DB.QueryRow("SELECT name, profile_picture FROM admin WHERE user_id = $1", userID).Scan(&userName, &authorAvatar)
 		case "ukm":
-			config.DB.QueryRow("SELECT name FROM ukm WHERE user_id = $1", userID).Scan(&userName)
+			config.DB.QueryRow("SELECT name, profile_picture FROM ukm WHERE user_id = $1", userID).Scan(&userName, &authorAvatar)
 		case "ormawa":
-			config.DB.QueryRow("SELECT name FROM ormawa WHERE user_id = $1", userID).Scan(&userName)
+			config.DB.QueryRow("SELECT name, profile_picture FROM ormawa WHERE user_id = $1", userID).Scan(&userName, &authorAvatar)
 		case "orangtua":
 			config.DB.QueryRow("SELECT name FROM ortu WHERE user_id = $1", userID).Scan(&userName)
 		}
@@ -465,13 +482,14 @@ func CommentPost(c *gin.Context) {
 	}
 
 	utils.SuccessResponse(c, gin.H{
-		"id":          commentID,
-		"post_id":     postID,
-		"content":     input.Content,
-		"author_name": userName,
-		"user_role":   userRole,
-		"parent_id":   input.ParentID,
-		"created_at":  time.Now(),
+		"id":            commentID,
+		"post_id":       postID,
+		"content":       input.Content,
+		"author_name":   userName,
+		"user_role":     userRole,
+		"author_avatar": authorAvatar.String,
+		"parent_id":     input.ParentID,
+		"created_at":    time.Now(),
 	}, "Komentar berhasil ditambahkan!")
 }
 

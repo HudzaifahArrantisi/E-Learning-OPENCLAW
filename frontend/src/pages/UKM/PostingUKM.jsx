@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { Link } from 'react-router-dom'
 import api from '../../services/api'
 import Navbar from '../../components/Navbar'
 import Sidebar from '../../components/Sidebar'
 import useAuth from '../../hooks/useAuth'
-import { FiX, FiUpload, FiCheckCircle, FiAlertCircle, FiChevronRight, FiArrowLeft, FiActivity } from 'react-icons/fi'
+import { FiX, FiUpload, FiCheckCircle, FiAlertCircle, FiChevronRight, FiArrowLeft, FiActivity, FiImage, FiFileText, FiType } from 'react-icons/fi'
 import { motion, AnimatePresence } from 'framer-motion'
 
 const PostingUKM = () => {
@@ -19,6 +20,7 @@ const PostingUKM = () => {
   const [uploadProgress, setUploadProgress] = useState(0)
   const [isUploading, setIsUploading] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
+  const [dragActive, setDragActive] = useState(false)
   const abortControllerRef = useRef(null)
 
   const mutation = useMutation({
@@ -93,6 +95,29 @@ const PostingUKM = () => {
 
   const handleFileChange = (e) => {
     const selectedFiles = Array.from(e.target.files)
+    processFiles(selectedFiles)
+  }
+
+  const handleDrag = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true)
+    } else if (e.type === "dragleave") {
+      setDragActive(false)
+    }
+  }
+
+  const handleDrop = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setDragActive(false)
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      processFiles(Array.from(e.dataTransfer.files))
+    }
+  }
+
+  const processFiles = (selectedFiles) => {
     if (files.length + selectedFiles.length > 10) {
       setShowError('Maksimal 10 gambar yang dapat diupload')
       setTimeout(() => setShowError(''), 4000)
@@ -131,11 +156,13 @@ const PostingUKM = () => {
   }, [previews])
 
   return (
-    <div className="flex min-h-screen bg-lp-bg relative overflow-hidden">
-       {/* Background Decorative Layer */}
-       <div className="fixed inset-0 pointer-events-none z-0">
-        <div className="absolute top-[-5%] left-[-5%] w-[50%] h-[50%] bg-purple-500/5 blur-[120px] rounded-full" />
-        <div className="absolute bottom-[-5%] right-[-5%] w-[40%] h-[40%] bg-lp-accent/5 blur-[100px] rounded-full" />
+    <div className="flex min-h-screen bg-[#050505] text-white relative overflow-hidden font-sans">
+      {/* Dynamic Background */}
+      <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-purple-600/10 blur-[120px] rounded-full animate-pulse" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[30%] h-[30%] bg-lp-accent/10 blur-[100px] rounded-full animate-pulse capitalize" style={{animationDelay: '2s'}} />
+        <div className="absolute top-[20%] right-[-5%] w-[20%] h-[20%] bg-blue-500/5 blur-[80px] rounded-full" />
+        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay"></div>
       </div>
 
       <Sidebar role="ukm" />
@@ -143,166 +170,258 @@ const PostingUKM = () => {
       <div className="flex-1 flex flex-col relative z-10 transition-all duration-300 min-w-0">
         <Navbar user={user} />
         
-        <main className="flex-1 overflow-y-auto p-6 md:p-10 lg:p-14">
-          <div className="max-w-4xl mx-auto">
+        <main className="flex-1 overflow-y-auto p-6 md:p-12 lg:p-20 scrollbar-hide">
+          <div className="max-w-5xl mx-auto">
             
-            {/* Header Section */}
+            {/* Minimalist Header */}
             <motion.div 
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
               className="mb-16"
             >
               <Link 
                 to="/ukm/dashboard"
-                className="inline-flex items-center gap-2 text-[11px] font-mono font-bold tracking-[0.2em] text-lp-text3 hover:text-lp-text transition-colors uppercase mb-8"
+                className="group inline-flex items-center gap-3 text-[11px] font-mono font-bold tracking-[0.3em] text-white/40 hover:text-white transition-all uppercase mb-10"
               >
-                <FiArrowLeft /> Return to Workspace
+                <div className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center group-hover:border-white/30 group-hover:bg-white/5 transition-all">
+                  <FiArrowLeft className="group-hover:-translate-x-0.5 transition-transform" />
+                </div>
+                <span>Workspace</span>
               </Link>
               
-              <h1 className="text-4xl md:text-5xl font-light text-lp-text tracking-tight mb-4 italic">
-                Publishing Tool
-              </h1>
-              <p className="text-lp-text2 font-light text-lg max-w-2xl leading-relaxed">
-                Bagikan narasi, visual, dan perkembangan terbaru organisasi Anda kepada seluruh komunitas kampus.
-              </p>
+              <div className="space-y-4">
+                <div className="flex items-center gap-4">
+                  <div className="h-[1px] w-12 bg-lp-accent"></div>
+                  <span className="text-[10px] font-mono tracking-[0.4em] text-lp-accent uppercase font-bold">New Publication</span>
+                </div>
+                <h1 className="text-5xl md:text-7xl font-light tracking-tight italic bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-white/40">
+                  Compose.
+                </h1>
+                <p className="text-white/40 font-light text-xl max-w-xl leading-relaxed">
+                  Craft your narrative and synchronize it with the campus network.
+                </p>
+              </div>
             </motion.div>
 
-            {/* Content Portal */}
+            {/* Main Interface */}
             <AnimatePresence mode="wait">
               {isUploading || showSuccess ? (
                 <motion.div 
                   key="uploading-state"
-                  initial={{ opacity: 0, scale: 0.98 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="bg-white border border-lp-border rounded-[3rem] p-10 md:p-16 shadow-[0_64px_128px_rgba(0,0,0,0.06)] relative overflow-hidden"
+                  initial={{ opacity: 0, scale: 0.95, filter: 'blur(10px)' }}
+                  animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
+                  className="relative group"
                 >
-                  <div className="flex items-center justify-between mb-10">
-                    <div className="flex items-center gap-4">
-                      <div className="w-14 h-14 rounded-2xl bg-lp-surface border border-lp-border flex items-center justify-center font-bold text-xl shadow-sm">
-                        {user?.name?.charAt(0) || 'U'}
+                  <div className="absolute inset-0 bg-gradient-to-br from-lp-accent/10 to-purple-600/10 rounded-[3rem] blur-2xl -z-10 opacity-50 group-hover:opacity-100 transition-opacity duration-1000"></div>
+                  <div className="bg-white/[0.03] backdrop-blur-3xl border border-white/10 rounded-[3rem] p-10 md:p-20 shadow-[0_64px_128px_rgba(0,0,0,0.4)] relative overflow-hidden">
+                    
+                    <div className="flex items-center justify-between mb-16">
+                      <div className="flex items-center gap-6">
+                        <div className="relative">
+                          <div className="absolute inset-0 bg-lp-accent/20 blur-lg rounded-2xl animate-pulse"></div>
+                          <div className="w-16 h-16 rounded-2xl bg-white/[0.05] border border-white/10 flex items-center justify-center font-bold text-2xl relative z-10">
+                            {user?.name?.charAt(0) || 'U'}
+                          </div>
+                        </div>
+                        <div>
+                          <p className="font-bold text-white text-lg tracking-tight">{user?.name || 'Organization'}</p>
+                          <p className="text-[10px] text-white/30 font-mono tracking-[0.3em] uppercase">Sync Status: {showSuccess ? 'Completed' : 'Transmitting'}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-bold text-lp-text text-[15px] tracking-tight">{user?.name || 'Organization'}</p>
-                        <p className="text-[11px] text-lp-text3 font-mono tracking-widest uppercase">TRANSMISSION CHANNEL · ACTIVE</p>
-                      </div>
+                      {!showSuccess && isUploading && (
+                        <button onClick={handleCancel} className="px-6 py-2 rounded-full border border-red-500/30 text-[10px] font-mono font-bold tracking-widest uppercase text-red-500 hover:bg-red-500/10 transition-all">
+                          Abort
+                        </button>
+                      )}
                     </div>
-                    {!showSuccess && isUploading && uploadProgress < 100 && (
-                      <button onClick={handleCancel} className="text-[10px] font-mono font-bold tracking-widest uppercase text-red-500 hover:text-red-700">
-                        CANCEL SYNC
-                      </button>
+
+                    <div className="space-y-8 mb-16">
+                      <h3 className="text-3xl font-light italic leading-tight">{title}</h3>
+                      <div className="h-[1px] w-full bg-gradient-to-r from-white/10 to-transparent"></div>
+                      <p className="text-lg text-white/50 font-light leading-relaxed line-clamp-3 italic">"{content}"</p>
+                    </div>
+
+                    {previews.length > 0 && (
+                      <div className="relative rounded-[2.5rem] overflow-hidden bg-black/40 border border-white/5 aspect-[21/9] shadow-2xl mb-16 group/img">
+                        <img 
+                          src={previews[0]} 
+                          alt="uploading preview" 
+                          className={`w-full h-full object-cover transition-all duration-1000 ease-out select-none ${
+                            uploadProgress < 100 ? 'blur-xl scale-110 opacity-50' : 'blur-0 scale-100 opacity-100'
+                          }`} 
+                        />
+                        
+                        <AnimatePresence>
+                           {uploadProgress < 100 && (
+                             <motion.div 
+                               initial={{ opacity: 0 }}
+                               animate={{ opacity: 1 }}
+                               className="absolute inset-0 bg-gradient-to-b from-blue-500/20 to-blue-500/5 flex flex-col items-center justify-center backdrop-blur-md rounded-[2.5rem]"
+                             >
+                               <div className="flex flex-col items-center gap-6">
+                                  <div className="w-20 h-20 relative flex items-center justify-center">
+                                    <svg className="w-full h-full transform -rotate-90">
+                                      <circle cx="40" cy="40" r="36" stroke="rgba(59,130,246,0.1)" strokeWidth="2" fill="transparent" />
+                                      <motion.circle 
+                                        cx="40" 
+                                        cy="40" 
+                                        r="36" 
+                                        stroke="#3b82f6" 
+                                        strokeWidth="2.5" 
+                                        fill="transparent" 
+                                        strokeDasharray={2 * Math.PI * 36} 
+                                        initial={{ strokeDashoffset: 2 * Math.PI * 36 }}
+                                        animate={{ strokeDashoffset: (1 - uploadProgress / 100) * 2 * Math.PI * 36 }}
+                                        transition={{ duration: 0.3, ease: "linear" }}
+                                        strokeLinecap="round" 
+                                      />
+                                    </svg>
+                                    <span className="absolute text-sm font-bold text-white">{uploadProgress}%</span>
+                                  </div>
+                                  <div className="text-center space-y-1">
+                                    <p className="text-xs font-semibold text-white">Mengunggah</p>
+                                    <p className="text-[10px] text-blue-200">Tunggu...</p>
+                                  </div>
+                               </div>
+                             </motion.div>
+                           )}
+                        </AnimatePresence>
+
+                        {isProcessing && !showSuccess && (
+                          <motion.div 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            className="absolute inset-0 bg-gradient-to-b from-purple-500/20 to-purple-500/5 flex flex-col items-center justify-center backdrop-blur-md rounded-[2.5rem]"
+                          >
+                            <div className="flex flex-col items-center gap-6">
+                              <motion.div 
+                                animate={{ rotate: 360 }}
+                                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                                className="w-10 h-10 border-2 border-purple-200 border-t-purple-500 rounded-full"
+                              />
+                              <div className="text-center space-y-1">
+                                <p className="text-xs font-semibold text-white">Memproses</p>
+                                <p className="text-[10px] text-purple-200">Verifikasi...</p>
+                              </div>
+                            </div>
+                          </motion.div>
+                        )}
+
+                        {showSuccess && (
+                          <motion.div 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            className="absolute inset-0 bg-gradient-to-b from-emerald-500/20 to-emerald-500/5 flex items-center justify-center backdrop-blur-md rounded-[2.5rem]"
+                          >
+                             <motion.div 
+                               initial={{ scale: 0, rotate: -180 }} 
+                               animate={{ scale: 1, rotate: 0 }} 
+                               transition={{ type: "spring", stiffness: 200, damping: 20 }}
+                               className="flex flex-col items-center gap-3"
+                             >
+                               <div className="w-16 h-16 bg-emerald-500/20 rounded-full flex items-center justify-center">
+                                 <FiCheckCircle className="text-3xl text-emerald-400" />
+                               </div>
+                               <div className="text-center space-y-1">
+                                 <p className="text-xs font-semibold text-white">Tersimpan</p>
+                                 <p className="text-[10px] text-emerald-200">File OK</p>
+                               </div>
+                             </motion.div>
+                          </motion.div>
+                        )}
+                      </div>
                     )}
-                  </div>
 
-                  <div className="mb-10">
-                    <h3 className="text-2xl font-normal text-lp-text mb-4 tracking-tight italic">{title}</h3>
-                    <p className="text-[15px] text-lp-text2 leading-relaxed font-light whitespace-pre-wrap">{content}</p>
-                  </div>
-
-                  {previews.length > 0 && (
-                    <div className="relative rounded-[2.5rem] overflow-hidden bg-lp-surface border border-lp-border aspect-video shadow-inner mb-12">
-                      <img 
-                        src={previews[0]} 
-                        alt="uploading preview" 
-                        className={`w-full h-full object-cover transition-all duration-1000 ease-out ${
-                          uploadProgress < 100 ? 'blur-2xl scale-110 sepia-[0.3]' : 'blur-0 scale-100'
-                        }`} 
-                      />
-                      
-                      {uploadProgress < 100 && (
-                        <div className="absolute inset-0 bg-lp-bg/30 flex flex-col items-center justify-center backdrop-blur-md">
-                           <div className="w-20 h-20 relative flex items-center justify-center">
-                              <svg className="w-full h-full transform -rotate-90">
-                                <circle cx="40" cy="40" r="36" stroke="rgba(0,0,0,0.05)" strokeWidth="5" fill="transparent" />
-                                <circle 
-                                  cx="40" 
-                                  cy="40" 
-                                  r="36" 
-                                  stroke="black" 
-                                  strokeWidth="5" 
-                                  fill="transparent" 
-                                  strokeDasharray={2 * Math.PI * 36} 
-                                  strokeDashoffset={(1 - uploadProgress / 100) * 2 * Math.PI * 36} 
-                                  className="transition-all duration-300" 
-                                  strokeLinecap="round" 
-                                />
-                              </svg>
-                              <span className="absolute text-[12px] font-mono font-bold">{uploadProgress}%</span>
+                    <div className="flex flex-col items-center gap-6 pt-10 border-t border-white/5">
+                       {showSuccess ? (
+                         <div className="text-center space-y-2">
+                           <div className="flex items-center justify-center gap-2 text-emerald-400">
+                             <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                             <span className="text-xs font-semibold">Posting Berhasil Dibuat</span>
+                             <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
                            </div>
-                           <p className="text-[10px] font-mono tracking-[0.4em] font-bold uppercase mt-6 text-lp-text">Uploading Assets</p>
-                        </div>
-                      )}
-
-                      {isProcessing && !showSuccess && (
-                        <div className="absolute inset-0 bg-lp-bg/80 flex flex-col items-center justify-center backdrop-blur-xl">
-                          <div className="w-6 h-6 border-2 border-lp-text border-t-transparent rounded-full animate-spin mb-4"></div>
-                          <p className="text-[10px] font-mono tracking-[0.4em] font-bold uppercase text-lp-text">Analyzing Content</p>
-                        </div>
-                      )}
-
-                      {showSuccess && (
-                        <div className="absolute inset-0 bg-emerald-500/10 flex items-center justify-center backdrop-blur-sm">
-                           <motion.div 
-                             initial={{ scale: 0.5, opacity: 0 }} 
-                             animate={{ scale: 1, opacity: 1 }} 
-                             className="w-16 h-16 bg-lp-text text-white rounded-full flex items-center justify-center shadow-2xl"
-                           >
-                             <FiCheckCircle className="text-2xl" />
-                           </motion.div>
-                        </div>
-                      )}
+                           <p className="text-[10px] text-white/50">Mengalihkan halaman...</p>
+                         </div>
+                       ) : (
+                         <div className="flex items-center gap-3">
+                           <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse"></div>
+                           <span className="text-[10px] font-semibold uppercase text-white/40">Koneksi Server: OK</span>
+                         </div>
+                       )}
                     </div>
-                  )}
-
-                  <div className="pt-10 border-t border-lp-border flex flex-col items-center gap-4">
-                     {showSuccess ? (
-                       <span className="text-[11px] font-mono font-bold tracking-[0.5em] uppercase text-lp-text">STORY ARCHIVED</span>
-                     ) : (
-                       <div className="flex items-center gap-3">
-                         <div className="w-1.5 h-1.5 rounded-full bg-lp-text animate-ping"></div>
-                         <span className="text-[10px] font-mono font-bold tracking-[0.5em] uppercase text-lp-text3">UPLINK STABLE</span>
-                       </div>
-                     )}
                   </div>
                 </motion.div>
               ) : (
                 <motion.div 
                   key="form-state"
-                  initial={{ opacity: 0, y: 30 }}
+                  initial={{ opacity: 0, y: 40 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="bg-white border border-lp-border rounded-[3.5rem] p-10 md:p-14 shadow-[0_32px_64px_rgba(0,0,0,0.03)]"
+                  className="relative"
                 >
-                  <form onSubmit={handleSubmit} className="space-y-12">
-                    <div className="space-y-10">
-                      <div className="group">
-                        <label className="block text-[11px] font-mono font-bold tracking-[0.2em] uppercase text-lp-text3 mb-4">Narrative Headline *</label>
-                        <input
-                          type="text"
-                          value={title}
-                          onChange={(e) => setTitle(e.target.value)}
-                          placeholder="Judul berita yang memukau..."
-                          className="w-full bg-lp-surface border border-lp-border rounded-2xl p-6 text-lp-text text-[17px] font-light italic tracking-tight focus:outline-none focus:ring-4 focus:ring-lp-accent/5 focus:border-lp-text transition-all duration-700"
-                          required
-                        />
-                      </div>
+                  <form onSubmit={handleSubmit} className="space-y-20">
+                    
+                    {/* Form Section: Narrative */}
+                    <div className="space-y-12">
+                      <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-12 items-start">
+                        <div className="sticky top-0">
+                          <div className="flex items-center gap-3 mb-4">
+                             <FiType className="text-lp-accent" />
+                             <label className="text-[11px] font-mono font-bold tracking-[0.3em] uppercase text-white/40">Narrative Details</label>
+                          </div>
+                          <h2 className="text-2xl font-light italic text-white/70">Headline & Story.</h2>
+                          <p className="text-sm text-white/20 mt-4 leading-relaxed font-light">Set the tone of your publication with a compelling headline and detailed narrative.</p>
+                        </div>
+                        
+                        <div className="space-y-8">
+                          <div className="group relative">
+                            <input
+                              type="text"
+                              value={title}
+                              onChange={(e) => setTitle(e.target.value)}
+                              placeholder="Title of your publication..."
+                              className="w-full bg-white/[0.02] border-b border-white/10 p-4 text-white text-2xl font-light italic tracking-tight focus:outline-none focus:border-lp-accent transition-all duration-500 placeholder:text-white/10"
+                              required
+                            />
+                            <div className="absolute bottom-0 left-0 h-[1px] bg-lp-accent w-0 group-focus-within:w-full transition-all duration-700"></div>
+                          </div>
 
-                      <div className="group">
-                        <label className="block text-[11px] font-mono font-bold tracking-[0.2em] uppercase text-lp-text3 mb-4">The Story *</label>
-                        <textarea
-                          value={content}
-                          onChange={(e) => setContent(e.target.value)}
-                          rows={8}
-                          placeholder="Ceritakan detail kegiatan atau informasi krusial organisasi Anda..."
-                          className="w-full bg-lp-surface border border-lp-border rounded-3xl p-8 text-lp-text text-[17px] font-light leading-relaxed focus:outline-none focus:ring-4 focus:ring-lp-accent/5 focus:border-lp-text transition-all duration-700 resize-none"
-                          required
-                        />
+                          <div className="group relative">
+                            <textarea
+                              value={content}
+                              onChange={(e) => setContent(e.target.value)}
+                              rows={6}
+                              placeholder="Describe your narrative here..."
+                              className="w-full bg-white/[0.02] border-b border-white/10 p-4 text-white text-lg font-light leading-relaxed focus:outline-none focus:border-lp-accent transition-all duration-500 resize-none placeholder:text-white/10 scrollbar-hide"
+                              required
+                            />
+                            <div className="absolute bottom-0 left-0 h-[1px] bg-lp-accent w-0 group-focus-within:w-full transition-all duration-700"></div>
+                          </div>
+                        </div>
                       </div>
+                    </div>
 
-                      {/* Premium Upload Zone */}
-                      <div>
-                        <label className="block text-[11px] font-mono font-bold tracking-[0.2em] uppercase text-lp-text3 mb-6 text-center">Visual Media Integration <span className="font-sans lowercase opacity-50 font-normal italic ml-1">(Max 10)</span></label>
-                        <div className="relative group">
-                          <div className="absolute inset-0 bg-lp-text/5 blur-3xl rounded-[3rem] opacity-0 group-hover:opacity-100 transition-opacity duration-1000 -z-10"></div>
-                          <div className="relative border-2 border-dashed border-lp-border bg-lp-surface/50 backdrop-blur-md rounded-[3rem] p-20 hover:border-lp-text transition-all duration-700 flex flex-col items-center cursor-pointer overflow-hidden group">
+                    {/* Form Section: Visuals */}
+                    <div className="space-y-12">
+                      <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-12 items-start">
+                        <div>
+                          <div className="flex items-center gap-3 mb-4">
+                             <FiImage className="text-lp-accent" />
+                             <label className="text-[11px] font-mono font-bold tracking-[0.3em] uppercase text-white/40">Visual Assets</label>
+                          </div>
+                          <h2 className="text-2xl font-light italic text-white/70">Media Integration.</h2>
+                          <p className="text-sm text-white/20 mt-4 leading-relaxed font-light">Attach up to 10 high-resolution visual modules to support your story.</p>
+                        </div>
+
+                        <div className="space-y-10">
+                          <div 
+                            onDragEnter={handleDrag}
+                            onDragLeave={handleDrag}
+                            onDragOver={handleDrag}
+                            onDrop={handleDrop}
+                            className={`relative group h-[300px] rounded-[2.5rem] border-2 border-dashed transition-all duration-700 flex flex-col items-center justify-center overflow-hidden cursor-pointer ${
+                              dragActive ? 'border-lp-accent bg-lp-accent/5' : 'border-white/10 bg-white/[0.02] hover:border-white/20 hover:bg-white/[0.03]'
+                            }`}
+                          >
                             <input
                               type="file"
                               accept="image/*"
@@ -311,83 +430,94 @@ const PostingUKM = () => {
                               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                               id="file-upload"
                             />
-                            <div className="w-16 h-16 bg-white border border-lp-border rounded-2xl flex items-center justify-center mb-6 shadow-sm transition-transform duration-700 group-hover:scale-110 group-hover:-rotate-3 text-lp-text3">
-                              <FiUpload className="text-2xl" />
-                            </div>
-                            <p className="text-[18px] font-normal text-lp-text mb-1 tracking-tight">Drop visual assets or <em className="italic underline">browse</em>.</p>
-                            <p className="text-[11px] text-lp-text3 font-medium tracking-[0.3em] uppercase mt-3 opacity-60">High Resolution Assets Only</p>
-                          </div>
-                        </div>
-
-                        {/* Preview Management */}
-                        <AnimatePresence>
-                          {previews.length > 0 && (
+                            
                             <motion.div 
-                              initial={{ opacity: 0, y: 20 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              exit={{ opacity: 0 }}
-                              className="mt-12 pt-12 border-t border-lp-border"
+                              animate={dragActive ? { scale: 1.2, rotate: 10 } : { scale: 1, rotate: 0 }}
+                              className="w-20 h-20 bg-white/[0.05] border border-white/10 rounded-3xl flex items-center justify-center mb-8 shadow-2xl relative"
                             >
-                              <div className="flex items-center justify-between mb-8">
-                                 <div className="flex items-center gap-3">
-                                   <div className="w-2 h-2 rounded-full bg-lp-green animate-pulse"></div>
-                                   <span className="text-[11px] font-mono font-bold tracking-[0.2em] uppercase text-lp-text">{files.length} Modules Ready for Sink</span>
-                                 </div>
-                                 <button 
-                                   type="button" 
-                                   onClick={() => { setFiles([]); setPreviews([]); }}
-                                   className="text-[10px] font-mono font-bold tracking-[0.2em] text-red-500 uppercase hover:text-red-700 flex items-center gap-2 transition-colors"
-                                 >
-                                   <FiX className="text-sm" /> Purge Queue
-                                 </button>
-                              </div>
-                              <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
-                                {previews.map((preview, index) => (
-                                  <motion.div 
-                                    layout
-                                    initial={{ opacity: 0, scale: 0.8 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    className="relative group aspect-square rounded-2xl overflow-hidden border border-lp-border bg-lp-surface shadow-sm"
-                                    key={preview}
-                                  >
-                                    <img src={preview} alt="Asset" className="w-full h-full object-cover grayscale-[0.2] group-hover:grayscale-0 transition-all duration-700 group-hover:scale-115" />
-                                    <div className="absolute inset-0 bg-lp-text/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
-                                      <button type="button" onClick={() => removeFile(index)} className="w-10 h-10 bg-white/20 hover:bg-lp-text text-white rounded-full flex items-center justify-center backdrop-blur-md transition-all">
-                                        <FiX className="text-lg" />
-                                      </button>
-                                    </div>
-                                  </motion.div>
-                                ))}
-                              </div>
+                               <div className="absolute inset-0 bg-white/10 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                               <FiUpload className="text-2xl text-white relative z-10" />
                             </motion.div>
-                          )}
-                        </AnimatePresence>
+                            
+                            <p className="text-xl font-light text-white/60 mb-2">Drop assets or <span className="text-white italic underline underline-offset-4 decoration-lp-accent/50 cursor-pointer">browse</span>.</p>
+                            <p className="text-[10px] text-white/20 font-mono tracking-[0.4em] uppercase">High Resolution Only</p>
+                          </div>
+
+                          {/* Refined Grid Preview */}
+                          <AnimatePresence>
+                            {previews.length > 0 && (
+                              <motion.div 
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                className="space-y-8"
+                              >
+                                <div className="flex items-center justify-between">
+                                   <div className="flex items-center gap-3">
+                                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_10px_#10b981]"></div>
+                                      <span className="text-[10px] font-mono font-bold tracking-[0.3em] uppercase text-white/40">{files.length} Assets Staged</span>
+                                   </div>
+                                   <button 
+                                     type="button" 
+                                     onClick={() => { setFiles([]); setPreviews([]); }}
+                                     className="text-[10px] font-mono font-bold tracking-[0.3em] text-red-500/60 hover:text-red-500 transition-colors uppercase flex items-center gap-2"
+                                   >
+                                     <FiX /> Clear Data
+                                   </button>
+                                </div>
+                                <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
+                                  {previews.map((preview, index) => (
+                                    <motion.div 
+                                      layout
+                                      initial={{ opacity: 0, scale: 0.8 }}
+                                      animate={{ opacity: 1, scale: 1 }}
+                                      exit={{ opacity: 0, scale: 0.8 }}
+                                      className="relative group aspect-square rounded-3xl overflow-hidden border border-white/10 bg-black shadow-xl"
+                                      key={preview}
+                                    >
+                                      <img src={preview} alt="Asset" className="w-full h-full object-cover transition-all duration-1000 group-hover:scale-110 group-hover:rotate-1" />
+                                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-all duration-500 flex items-center justify-center backdrop-blur-[2px]">
+                                        <button type="button" onClick={() => removeFile(index)} className="w-10 h-10 bg-white text-black rounded-full flex items-center justify-center shadow-2xl hover:scale-110 transition-transform">
+                                          <FiX className="text-xl" />
+                                        </button>
+                                      </div>
+                                    </motion.div>
+                                  ))}
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
                       </div>
                     </div>
 
-                    {/* Footer Actions */}
-                    <div className="flex flex-col sm:flex-row justify-between items-center gap-6 pt-12 border-t border-lp-border">
-                      <button
-                        type="button"
-                        onClick={() => window.history.back()}
-                        className="w-full sm:w-auto px-12 py-5 border border-lp-border text-lp-text2 rounded-full text-[13px] font-bold tracking-[0.2em] uppercase hover:bg-lp-surface transition-all duration-500"
-                      >
-                        Previous View
-                      </button>
-                      <button
-                        type="submit"
-                        disabled={mutation.isPending}
-                        className="w-full sm:w-auto bg-lp-text text-lp-bg px-12 py-5 rounded-full text-[13px] font-bold tracking-[0.3em] uppercase hover:bg-lp-atext hover:-translate-y-1 disabled:opacity-40 transition-all duration-500 flex items-center justify-center gap-4 shadow-[0_12px_24px_rgba(0,0,0,0.1)] group"
-                      >
-                        {mutation.isPending ? (
-                          <div className="w-5 h-5 border-2 border-lp-bg/30 border-t-lp-bg rounded-full animate-spin"></div>
-                        ) : (
-                          <>
-                            <span>Publish Story</span>
-                            <FiChevronRight className="group-hover:translate-x-1 transition-transform" />
-                          </>
-                        )}
-                      </button>
+                    {/* Bottom Actions */}
+                    <div className="flex flex-col sm:flex-row justify-between items-center gap-10 pt-20">
+                      <div className="flex items-center gap-4 text-white/20">
+                        <FiFileText className="text-xl" />
+                        <p className="text-[10px] font-mono tracking-[0.2em] uppercase font-bold">Review all data before sync</p>
+                      </div>
+                      
+                      <div className="flex items-center gap-6 w-full sm:w-auto">
+                        <button
+                          type="button"
+                          onClick={() => window.history.back()}
+                          className="flex-1 sm:flex-none px-10 py-5 text-[11px] font-mono font-bold tracking-[0.3em] uppercase text-white/40 hover:text-white transition-all border border-white/5 rounded-full hover:bg-white/5"
+                        >
+                          Discard
+                        </button>
+                        <button
+                          type="submit"
+                          disabled={mutation.isPending}
+                          className="flex-1 sm:flex-none relative group overflow-hidden bg-white text-black px-12 py-5 rounded-full text-[11px] font-bold tracking-[0.4em] uppercase disabled:opacity-50 transition-all duration-500 shadow-[0_20px_40px_rgba(255,255,255,0.1)]"
+                        >
+                          <div className="absolute inset-0 bg-lp-accent w-0 group-hover:w-full transition-all duration-700 ease-in-out -z-0"></div>
+                          <span className="relative z-10 flex items-center justify-center gap-4 group-hover:text-white transition-colors duration-500">
+                             {mutation.isPending ? 'Syncing...' : 'Publish Story'}
+                             {!mutation.isPending && <FiChevronRight className="group-hover:translate-x-1 transition-transform" />}
+                          </span>
+                        </button>
+                      </div>
                     </div>
                   </form>
                 </motion.div>
@@ -401,22 +531,22 @@ const PostingUKM = () => {
       <AnimatePresence>
         {showError && (
           <motion.div 
-            initial={{ opacity: 0, y: 50, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[100] w-full max-w-sm px-6"
+            initial={{ opacity: 0, y: 50, scale: 0.9, filter: 'blur(10px)' }}
+            animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
+            exit={{ opacity: 0, scale: 0.9, filter: 'blur(10px)' }}
+            className="fixed bottom-12 left-1/2 -translate-x-1/2 z-[100] w-[90%] max-w-md"
           >
-             <div className="bg-lp-bg border border-lp-border rounded-[2.5rem] p-6 shadow-[0_48px_96px_rgba(0,0,0,0.15)] flex items-start gap-5 ring-1 ring-lp-borderA">
-                <div className="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center shrink-0 border border-red-100 shadow-sm">
-                  <FiAlertCircle className="text-red-500 text-xl" />
+             <div className="bg-white/[0.05] backdrop-blur-2xl border border-red-500/30 rounded-[2rem] p-6 shadow-[0_32px_64px_rgba(0,0,0,0.5)] flex items-start gap-6">
+                <div className="w-12 h-12 rounded-2xl bg-red-500/10 flex items-center justify-center shrink-0 border border-red-500/20 shadow-inner">
+                  <FiAlertCircle className="text-red-500 text-2xl" />
                 </div>
                 <div className="flex-1">
-                   <h5 className="text-[12px] font-bold text-lp-text uppercase tracking-widest mb-1 flex items-center gap-2 italic">
-                     <FiActivity className="text-lp-text3" /> Sync Interrupted
+                   <h5 className="text-[10px] font-mono font-bold text-red-500 uppercase tracking-widest mb-2 flex items-center gap-2">
+                     <FiActivity className="animate-pulse" /> Transmission Error
                    </h5>
-                   <p className="text-[14px] text-lp-text2 font-light leading-relaxed">{showError}</p>
+                   <p className="text-sm text-white/70 font-light leading-relaxed">{showError}</p>
                 </div>
-                <button onClick={() => setShowError('')} className="text-lp-text3 hover:text-lp-text transition-colors">
+                <button onClick={() => setShowError('')} className="text-white/20 hover:text-white transition-colors">
                   <FiX />
                 </button>
              </div>
