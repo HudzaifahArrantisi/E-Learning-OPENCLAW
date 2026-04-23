@@ -11,6 +11,7 @@ export default function LandingPage() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [showTutorial, setShowTutorial] = useState(false)
+  const [showMaintenance, setShowMaintenance] = useState(true)
   const [activeRoleGuide, setActiveRoleGuide] = useState(0)
 
   useEffect(() => {
@@ -608,71 +609,42 @@ export default function LandingPage() {
       </footer>
       <LoginModal isOpen={isLoginModalOpen} onClose={() => setIsLoginModalOpen(false)} />
 
-      {/* TUTORIAL MODAL */}
+      {/* TUTORIAL MODAL - Simplified & Smaller */}
       {showTutorial && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-lp-surface/60 backdrop-blur-md animate-fadeIn">
-          <div className="bg-white border border-lp-border rounded-[24px] sm:rounded-[32px] max-w-[520px] w-full max-h-[95vh] overflow-y-auto overflow-x-hidden shadow-[0_32px_80px_rgba(0,0,0,0.12)] relative transform transition-all animate-slideUp scrollbar-hide">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-lp-surface/60 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white border border-lp-border rounded-[24px] max-w-[400px] w-full shadow-[0_24px_60px_rgba(0,0,0,0.1)] relative transform transition-all animate-slideUp">
             
-            {/* Top Decorative Header */}
-            <div className="h-20 sm:h-28 bg-lp-accentS relative w-full overflow-hidden flex items-center justify-center shrink-0">
-              <div className="absolute inset-0 bg-gradient-to-br from-lp-accent/20 to-lp-surface/40 z-0"></div>
-              <div className="absolute inset-0 opacity-[0.05] z-0" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, black 1px, transparent 0)', backgroundSize: '16px 16px' }}></div>
-              <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-white/40 rounded-full blur-2xl"></div>
-              <div className="absolute -top-10 -right-10 w-32 h-32 bg-lp-accent/30 rounded-full blur-2xl"></div>
-              
-              <div className="relative z-10 w-12 h-12 sm:w-14 sm:h-14 bg-white/80 backdrop-blur-sm border border-white rounded-[16px] sm:rounded-[20px] flex items-center justify-center text-2xl sm:text-3xl shadow-xl mt-2 sm:mt-4">
-                🚀
-              </div>
-            </div>
-
-            {/* Close Button */}
+            {/* Simple Close Button */}
             <button 
               onClick={closeTutorial}
-              className="absolute top-3 right-3 sm:top-4 sm:right-4 bg-black/5 hover:bg-black/10 text-lp-text2 transition-all p-1.5 sm:p-2 rounded-full z-20 backdrop-blur-md"
+              className="absolute top-4 right-4 text-lp-text3 hover:text-lp-text transition-all p-1"
             >
-              <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
             
-            <div className="p-5 sm:p-8 pt-5 sm:pt-6">
-              <div className="text-center mb-6 sm:mb-8">
-                <h3 className="text-[20px] sm:text-[24px] font-bold text-lp-text mb-2 sm:mb-3 tracking-tight leading-tight">Mulai Petualangan<br className="hidden sm:block"/> Akademik Anda</h3>
-                <p className="text-[12.5px] sm:text-[13.5px] text-lp-text2 leading-relaxed font-light px-2 sm:px-4">
-                  Ikuti dua langkah mudah di bawah ini untuk mengakses dashboard e-learning Anda.
+            <div className="p-6 sm:p-8">
+              <div className="mb-6">
+                <div className="w-10 h-10 bg-lp-accent/10 rounded-xl flex items-center justify-center text-xl mb-4">🚀</div>
+                <h3 className="text-[18px] font-bold text-lp-text mb-2 tracking-tight">Panduan Cepat</h3>
+                <p className="text-[12.5px] text-lp-text2 font-light leading-relaxed">
+                  Gunakan akun berikut untuk mengakses dashboard mahasiswa:
                 </p>
               </div>
               
-              <div className="space-y-3 sm:space-y-4 mb-6 sm:mb-8 relative">
-                {/* Connecting Line (Only visible on sm+ screens) */}
-                <div className="absolute left-[35px] sm:left-[39px] top-10 bottom-10 w-px bg-gradient-to-b from-lp-accent/50 via-lp-border to-transparent hidden sm:block"></div>
-
-                {/* Step 1 */}
-                <div className="relative bg-lp-bg hover:bg-lp-surface transition-colors border border-lp-border rounded-[16px] sm:rounded-[20px] p-4 sm:p-5 flex gap-3 sm:gap-4 items-start group">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-[14px] sm:rounded-2xl bg-lp-accent/10 text-lp-accent flex items-center justify-center text-[16px] sm:text-[18px] shrink-0 border border-lp-accent/20 shadow-inner group-hover:scale-105 transition-transform relative z-10 bg-white">
-                    <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
-                    </svg>
+              <div className="space-y-4 mb-7">
+                <div className="p-4 bg-lp-bg border border-lp-border rounded-xl">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-lp-accent" />
+                    <span className="text-[11px] font-bold text-lp-text uppercase tracking-wider">Login Mahasiswa</span>
                   </div>
-                  <div className="pt-0.5 sm:pt-1">
-                    <h4 className="text-[13.5px] sm:text-[14.5px] font-bold text-lp-text mb-1 sm:mb-1.5 tracking-tight">Login Mahasiswa</h4>
-                    <p className="text-[12px] sm:text-[13px] text-lp-text2 leading-relaxed font-light">
-                      Klik <strong>Masuk</strong> di menu atas. Gunakan email <code className="bg-lp-accent/10 text-lp-accent px-1.5 py-0.5 rounded-md font-mono text-[10px] sm:text-[11px] font-semibold border border-lp-accent/20 break-all inline-block mt-0.5">nim@nurulfikri.ac.id</code> dan sandi <code className="bg-black/5 px-1.5 py-0.5 rounded-md font-mono text-[10px] sm:text-[11px] font-semibold border border-black/10 inline-block mt-0.5">password</code>.
+                  <div className="space-y-1.5">
+                    <p className="text-[12px] text-lp-text2 font-light">
+                      Email: <code className="bg-lp-accent/5 text-lp-accent px-1 rounded font-mono">nim@nurulfikri.ac.id</code>
                     </p>
-                  </div>
-                </div>
-                
-                {/* Step 2 */}
-                <div className="relative bg-lp-bg hover:bg-lp-surface transition-colors border border-lp-border rounded-[16px] sm:rounded-[20px] p-4 sm:p-5 flex gap-3 sm:gap-4 items-start group">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-[14px] sm:rounded-2xl bg-lp-tg/10 text-lp-tg flex items-center justify-center text-[16px] sm:text-[18px] shrink-0 border border-lp-tg/20 shadow-inner group-hover:scale-105 transition-transform relative z-10 bg-white">
-                    <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                    </svg>
-                  </div>
-                  <div className="pt-0.5 sm:pt-1">
-                    <h4 className="text-[13.5px] sm:text-[14.5px] font-bold text-lp-text mb-1 sm:mb-1.5 tracking-tight">Eksplorasi Dashboard</h4>
-                    <p className="text-[12px] sm:text-[13px] text-lp-text2 leading-relaxed font-light">
-                      Akses feed dari organisasi mahasiswa, kumpulkan tugas, absen mandiri, dan pantau tagihan kampus.
+                    <p className="text-[12px] text-lp-text2 font-light">
+                      Sandi: <code className="bg-black/5 px-1 rounded font-mono">password</code>
                     </p>
                   </div>
                 </div>
@@ -680,13 +652,43 @@ export default function LandingPage() {
               
               <button 
                 onClick={closeTutorial}
-                className="w-full bg-lp-text text-lp-bg text-[13px] sm:text-[14px] font-bold py-3.5 sm:py-4 rounded-[14px] sm:rounded-[16px] hover:bg-lp-atext hover:-translate-y-1 transition-all duration-300 shadow-[0_8px_20px_rgba(0,0,0,0.1)] hover:shadow-[0_12px_24px_rgba(0,0,0,0.15)] flex items-center justify-center gap-2 group"
+                className="w-full bg-lp-text text-lp-bg text-[13px] font-bold py-3 rounded-xl hover:bg-lp-atext transition-all flex items-center justify-center gap-2"
               >
                 Mengerti
-                <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
                 </svg>
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* MAINTENANCE NOTIFICATION */}
+      {showMaintenance && (
+        <div className="fixed top-28 left-1/2 -translate-x-1/2 z-[100] w-[calc(100%-32px)] sm:w-[500px] animate-fadeIn">
+          <div className="bg-white/90 backdrop-blur-2xl border border-lp-border/50 rounded-2xl p-4 shadow-[0_30px_60px_rgba(0,0,0,0.12)] relative overflow-hidden">
+            {/* Decorative accent */}
+            <div className="absolute top-0 left-0 w-full h-1 bg-lp-accent" />
+            
+            <button 
+              onClick={() => setShowMaintenance(false)}
+              className="absolute top-2 right-2 text-lp-text3 hover:text-lp-text transition-colors p-1"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 rounded-full bg-lp-accent/10 flex items-center justify-center shrink-0 text-xl">
+                ⚠️
+              </div>
+              <div className="pr-6">
+                <h4 className="text-[13px] font-bold text-lp-text tracking-tight">Sistem dalam Pemeliharaan Koneksi oleh admin (candalena)</h4>
+                <p className="text-[12px] text-lp-text2 font-light leading-relaxed mt-0.5">
+                  Koneksi Server nya lagi Shutdown dulu yaa karna limit free plan nya wkkwkwk
+                </p>
+              </div>
             </div>
           </div>
         </div>
