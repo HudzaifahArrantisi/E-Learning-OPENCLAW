@@ -27,6 +27,70 @@ const roles = [
   { idx: '05', name: 'UKM / Ormawa',desc: 'Campus organization tools and event publishing.',               access: ['Post Kegiatan', 'Feed Filter', 'Kolaborasi'] },
 ]
 
+const roleGuides = [
+  {
+    id: 'mahasiswa',
+    title: 'Panduan Mahasiswa',
+    icon: '🎓',
+    color: 'from-blue-500 to-indigo-600',
+    steps: [
+      { num: '01', title: 'Login & Hubungkan Akun', desc: 'Klik tombol Masuk. Gunakan email nim@nurulfikri.ac.id dengan kata sandi bawaan. Hubungkan akun Telegram Anda untuk notifikasi kelas otomatis.' },
+      { num: '02', title: 'Eksplorasi Feed Kampus', desc: 'Di dashboard utama, pantau informasi dari kampus, BEM, atau UKM. Anda dapat memfilter feed khusus dari organisasi tertentu.' },
+      { num: '03', title: 'Akses Materi & Kelas', desc: 'Pilih menu E-Learning untuk melihat materi kuliah minggu ini, cek modul, serta melakukan absen menggunakan QR code secara mandiri.' },
+      { num: '04', title: 'Kumpulkan Tugas', desc: 'Upload file tugas Anda dalam batas waktu (deadline) yang telah ditentukan. Anda akan mendapat pengingat 24 jam sebelumnya via Telegram.' },
+      { num: '05', title: 'Pantau Akademik', desc: 'Cek nilai UTS, UAS, total absensi semester, serta status pembayaran UKT langsung dari portal mahasiswa Anda.' }
+    ]
+  },
+  {
+    id: 'orangtua',
+    title: 'Panduan Orang Tua',
+    icon: '👨‍👩‍👧',
+    color: 'from-amber-500 to-orange-600',
+    steps: [
+      { num: '01', title: 'Akses Portal Orang Tua', desc: 'Login menggunakan nomor induk mahasiswa anak Anda dan password khusus orang tua yang diberikan oleh kampus.' },
+      { num: '02', title: 'Pantau Nilai Akademik', desc: 'Lihat ringkasan nilai ujian, Indeks Prestasi (IP) semester terakhir, dan perkembangan akademik anak secara transparan.' },
+      { num: '03', title: 'Monitoring Absensi', desc: 'Ketahui rekapitulasi kehadiran anak di perkuliahan, termasuk jika ada teguran atau surat peringatan absensi.' },
+      { num: '04', title: 'Status Keuangan', desc: 'Periksa status tagihan, riwayat pembayaran SPP/UKT, dan jadwal pembayaran agar anak dapat mengikuti ujian dengan lancar.' }
+    ]
+  },
+  {
+    id: 'dosen',
+    title: 'Panduan Dosen',
+    icon: '👨‍🏫',
+    color: 'from-emerald-500 to-teal-600',
+    steps: [
+      { num: '01', title: 'Masuk Portal Pengajar', desc: 'Gunakan NIDN/email dosen dan password untuk mengakses panel pengajaran yang terhubung dengan jadwal kampus.' },
+      { num: '02', title: 'Kelola Kelas & Absen', desc: 'Tampilkan QR Code di layar kelas. Mahasiswa men-scan, dan sistem OpenClaw langsung mencatat absensi di dashboard Anda.' },
+      { num: '03', title: 'Upload Materi & Tugas', desc: 'Unggah file PDF, presentasi, atau berikan penugasan beserta tenggat waktu. Mahasiswa akan langsung ternotifikasi.' },
+      { num: '04', title: 'Penilaian Mandiri', desc: 'Beri nilai untuk tugas, kuis, UTS, maupun UAS. Nilai akan otomatis dikalkulasikan ke IPK akhir mahasiswa.' }
+    ]
+  },
+  {
+    id: 'ormawa',
+    title: 'Panduan UKM / Ormawa',
+    icon: '🎭',
+    color: 'from-purple-500 to-fuchsia-600',
+    steps: [
+      { num: '01', title: 'Kelola Akun Organisasi', desc: 'Akses dashboard UKM/Ormawa Anda. Edit profil organisasi untuk mengenalkan kegiatan ke seluruh kampus.' },
+      { num: '02', title: 'Buat Postingan Acara', desc: 'Buat post dengan gambar carousel ala Instagram. Tambahkan deskripsi, poster kegiatan, atau informasi pendaftaran.' },
+      { num: '03', title: 'Tunggu Validasi Admin', desc: 'Setiap kegiatan yang di-posting akan melewati pengecekan oleh Admin Kemahasiswaan. Statusnya bisa dipantau.' },
+      { num: '04', title: 'Terbit ke Seluruh Mahasiswa', desc: 'Setelah disetujui, post akan tampil di dashboard semua mahasiswa STT-NF, meningkatkan visibilitas event Anda.' }
+    ]
+  },
+  {
+    id: 'admin',
+    title: 'Panduan Admin BAK',
+    icon: '🛡️',
+    color: 'from-slate-600 to-gray-800',
+    steps: [
+      { num: '01', title: 'Akses Penuh Sistem', desc: 'Login sebagai SuperAdmin. Anda memiliki kendali penuh atas pengguna, struktur kurikulum, dan kalender akademik.' },
+      { num: '02', title: 'Manajemen Pengguna', desc: 'Tambahkan, nonaktifkan, atau atur ulang password untuk akun Mahasiswa, Dosen, Orang Tua, maupun UKM.' },
+      { num: '03', title: 'Approval Postingan', desc: 'Tinjau setiap pengajuan pos dari UKM/Ormawa. Setujui agar tampil di feed utama atau tolak jika tidak relevan.' },
+      { num: '04', title: 'Manajemen Kurikulum', desc: 'Update data SKS, mata kuliah, dan plotting jadwal perkuliahan ke sistem agar OpenClaw bisa menjalankan otomasi.' }
+    ]
+  }
+]
+
 const semesters = [
   { n: 'SEM 01', credits: 21, courses: 8 },
   { n: 'SEM 02', credits: 21, courses: 8 },
@@ -339,6 +403,7 @@ export {
   EVENT_LABELS,
   dashboardStories,
   dashboardFeed,
+  roleGuides,
   getEventsForDate,
   fmtDate
 }

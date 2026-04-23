@@ -29,6 +29,9 @@ Secara pengalaman pengguna (*User Experience*), STUDENT HUB mengadopsi pola inte
 > **One platform. One ecosystem. One academic experience.**
 
 ### 🔄 Pembaruan Terbaru
+- Penambahan **Popup Tutorial Interaktif** khusus mahasiswa baru pada Landing Page (hanya muncul pada kunjungan pertama).
+- Pembaruan UI Landing Page dengan section **Panduan Role (Role Guides)** interaktif yang terstruktur (Mahasiswa, Dosen, Orang Tua, Ormawa, Admin).
+- Optimalisasi **Akses Jaringan Lokal (LAN)**: Backend telah dikonfigurasi menggunakan `AllowOriginFunc` untuk mengizinkan akses sistem penuh melalui jaringan Wi-Fi lokal dari perangkat mobile tanpa kendala CORS (403 Forbidden).
 - Modul **Chatbot** telah dihapus dari frontend dan backend.
 - Seluruh endpoint dan fungsi **API health check** yang terkait chatbot/OpenClaw telah dihapus karena tidak digunakan.
 

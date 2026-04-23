@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import {
   featureCards, howItWorks, benefits, roles, semesters, visiData, platformFeatures,
   stats, footerLinks, programs, institutions, academicCalendar, calendarMonths,
-  EVENT_COLORS, EVENT_LABELS, getEventsForDate, fmtDate, dashboardFeed
+  EVENT_COLORS, EVENT_LABELS, getEventsForDate, fmtDate, dashboardFeed, roleGuides
 } from '../data/landingData'
 import LoginModal from '../components/LoginModal'
 
@@ -11,6 +11,7 @@ export default function LandingPage() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [showTutorial, setShowTutorial] = useState(false)
+  const [activeRoleGuide, setActiveRoleGuide] = useState(0)
 
   useEffect(() => {
     const tutorialSeen = sessionStorage.getItem('tutorialSeen')
@@ -176,12 +177,94 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* 03 - TERMINAL */}
+      {/* 03 - PANDUAN AKSES (ROLE GUIDES) */}
+      <hr className="border-0 border-t border-lp-border" />
+      <section id="panduan" className="py-24 bg-lp-surface/30">
+        <div className="max-w-[1120px] mx-auto px-7">
+          <div className={`${rvBase} flex items-center gap-4 text-[10.5px] font-medium tracking-[0.16em] uppercase text-lp-text3 mb-10 after:content-[''] after:flex-1 after:h-px after:bg-lp-border`}>
+            <span className="font-mono">03</span> Role Guides
+          </div>
+          <div className={`${rvBase} ${rvDelays[1]} text-center mb-14`}>
+            <h2 className="font-sans text-[clamp(2.5rem,5vw,4rem)] leading-[1.06] tracking-tight text-lp-text max-w-[700px] mx-auto">Satu Platform untuk<br /><em className="italic text-lp-text/40">Semua Kebutuhan.</em></h2>
+            <p className="text-[14px] font-light text-lp-text2 max-w-[400px] mx-auto mt-6">
+              Pilih peran Anda untuk melihat bagaimana Student Hub mempermudah kehidupan akademik Anda sehari-hari.
+            </p>
+          </div>
+          
+          <div className={`${rvBase} ${rvDelays[2]} grid grid-cols-1 lg:grid-cols-[1fr_2fr] gap-8 lg:gap-16`}>
+            {/* Role Selector */}
+            <div className="flex flex-col gap-3">
+              {roleGuides.map((role, idx) => (
+                <button
+                  key={role.id}
+                  onClick={() => setActiveRoleGuide(idx)}
+                  className={`flex items-center gap-4 p-4 rounded-2xl transition-all duration-300 text-left border ${
+                    activeRoleGuide === idx 
+                      ? 'bg-white border-lp-borderA shadow-[0_8px_30px_rgba(0,0,0,0.06)] scale-[1.02]' 
+                      : 'bg-lp-surface border-lp-border hover:bg-white/60 hover:border-lp-borderA/50'
+                  }`}
+                >
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl shrink-0 bg-gradient-to-br ${role.color} text-white shadow-inner`}>
+                    {role.icon}
+                  </div>
+                  <div>
+                    <h3 className={`text-[15px] font-bold tracking-tight mb-1 ${activeRoleGuide === idx ? 'text-lp-text' : 'text-lp-text2'}`}>
+                      {role.title}
+                    </h3>
+                    <p className="text-[11.5px] text-lp-text3 font-light leading-relaxed line-clamp-1">
+                      Lihat panduan lengkap {role.id}
+                    </p>
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            {/* Role Content */}
+            <div className="bg-white border border-lp-border rounded-[24px] p-6 sm:p-10 shadow-[0_20px_60px_rgba(0,0,0,0.04)] relative overflow-hidden">
+              {/* Decorative Blur */}
+              <div className={`absolute -top-20 -right-20 w-64 h-64 rounded-full blur-[80px] opacity-10 bg-gradient-to-br ${roleGuides[activeRoleGuide].color} pointer-events-none transition-colors duration-700`}></div>
+              
+              <div className="flex items-center gap-4 mb-8 relative z-10">
+                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-3xl shrink-0 bg-gradient-to-br ${roleGuides[activeRoleGuide].color} text-white shadow-lg`}>
+                  {roleGuides[activeRoleGuide].icon}
+                </div>
+                <div>
+                  <h3 className="text-[22px] font-bold text-lp-text tracking-tight leading-tight">
+                    {roleGuides[activeRoleGuide].title}
+                  </h3>
+                  <p className="text-[13px] text-lp-text2 font-light mt-1">Langkah-langkah penggunaan sistem</p>
+                </div>
+              </div>
+
+              <div className="space-y-6 relative z-10">
+                <div className="absolute left-[27px] top-4 bottom-4 w-[2px] bg-lp-surface hidden sm:block"></div>
+                {roleGuides[activeRoleGuide].steps.map((step, idx) => (
+                  <div key={idx} className="flex gap-4 sm:gap-6 relative group">
+                    <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-full bg-lp-surface border-2 border-white shadow-sm flex items-center justify-center text-[12px] sm:text-[14px] font-mono font-bold text-lp-text2 shrink-0 group-hover:bg-lp-text group-hover:text-white transition-colors relative z-10">
+                      {step.num}
+                    </div>
+                    <div className="pt-0.5 sm:pt-2 pb-2">
+                      <h4 className="text-[15px] font-bold text-lp-text mb-1.5 tracking-tight group-hover:text-lp-accent transition-colors">
+                        {step.title}
+                      </h4>
+                      <p className="text-[13.5px] text-lp-text2 leading-relaxed font-light">
+                        {step.desc}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 04 - TERMINAL */}
       <hr className="border-0 border-t border-lp-border" />
       <section id="platform" className="py-24">
         <div className="max-w-[1120px] mx-auto px-7">
           <div className={`${rvBase} flex items-center gap-4 text-[10.5px] font-medium tracking-[0.16em] uppercase text-lp-text3 mb-10 after:content-[''] after:flex-1 after:h-px after:bg-lp-border`}>
-            <span className="font-mono">03</span> Automation Engine
+            <span className="font-mono">04</span> Automation Engine
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-[5fr_7fr] gap-12 lg:gap-24 items-center">
             <div className={`${rvBase} ${rvDelays[1]}`}>
@@ -217,12 +300,12 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* 04 - TELEGRAM PREVIEW */}
+      {/* 05 - TELEGRAM PREVIEW */}
       <hr className="border-0 border-t border-lp-border" />
       <section className="py-24">
         <div className="max-w-[1120px] mx-auto px-7">
           <div className={`${rvBase} flex items-center gap-4 text-[10.5px] font-medium tracking-[0.16em] uppercase text-lp-text3 mb-10 after:content-[''] after:flex-1 after:h-px after:bg-lp-border`}>
-            <span className="font-mono">04</span> Telegram Integration
+            <span className="font-mono">05</span> Telegram Integration
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-[7fr_5fr] gap-12 lg:gap-24 items-center">
             <div className={`${rvBase} ${rvDelays[1]} order-2 lg:order-1`}>
@@ -268,12 +351,12 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* 05 - BENEFITS */}
+      {/* 06 - BENEFITS */}
       <hr className="border-0 border-t border-lp-border" />
       <section className="py-24">
         <div className="max-w-[1120px] mx-auto px-7">
           <div className={`${rvBase} flex items-center gap-4 text-[10.5px] font-medium tracking-[0.16em] uppercase text-lp-text3 mb-10 after:content-[''] after:flex-1 after:h-px after:bg-lp-border`}>
-            <span className="font-mono">05</span> Why Students Love It
+            <span className="font-mono">06</span> Why Students Love It
           </div>
           <div className={`${rvBase} ${rvDelays[1]} text-center mb-14`}>
             <h2 className="font-sans text-[clamp(2.8rem,5.5vw,4.5rem)] leading-[1.06] tracking-tight text-lp-text max-w-[600px] mx-auto">Your unfair<br /><em className="italic text-lp-text/40">academic advantage.</em></h2>
@@ -291,12 +374,12 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* 06 - KURIKULUM */}
+      {/* 07 - KURIKULUM */}
       <hr className="border-0 border-t border-lp-border" />
       <section id="kurikulum" className="py-24">
         <div className="max-w-[1120px] mx-auto px-7">
           <div className={`${rvBase} flex items-center gap-4 text-[10.5px] font-medium tracking-[0.16em] uppercase text-lp-text3 mb-10 after:content-[''] after:flex-1 after:h-px after:bg-lp-border`}>
-            <span className="font-mono">06</span> Kurikulum
+            <span className="font-mono">07</span> Kurikulum
           </div>
           <div className={`${rvBase} ${rvDelays[1]} mb-10`}>
             <h2 className="font-sans text-[clamp(2.8rem,5.5vw,4.5rem)] leading-[1.06] tracking-tight text-lp-text mb-6">Program Studi</h2>
@@ -326,12 +409,12 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* 07 - VISI & MISI */}
+      {/* 08 - VISI & MISI */}
       <hr className="border-0 border-t border-lp-border" />
       <section id="visi-misi" className="py-24 bg-lp-surface/50">
         <div className="max-w-[1120px] mx-auto px-7">
           <div className={`${rvBase} flex items-center gap-4 text-[10.5px] font-medium tracking-[0.16em] uppercase text-lp-text3 mb-10 after:content-[''] after:flex-1 after:h-px after:bg-lp-border`}>
-            <span className="font-mono">07</span> Visi & Misi
+            <span className="font-mono">08</span> Visi & Misi
           </div>
           <div className={`${rvBase} ${rvDelays[1]} mb-14 text-center`}>
             <h2 className="font-sans text-[clamp(2.5rem,5vw,4rem)] leading-[1.06] tracking-tight text-lp-text mb-6">{inst.fullName}</h2>
@@ -371,12 +454,12 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* 08 - KALENDER */}
+      {/* 09 - KALENDER */}
       <hr className="border-0 border-t border-lp-border" />
       <section id="kalender" className="py-24">
         <div className="max-w-[1120px] mx-auto px-7">
           <div className={`${rvBase} flex items-center gap-4 text-[10.5px] font-medium tracking-[0.16em] uppercase text-lp-text3 mb-10 after:content-[''] after:flex-1 after:h-px after:bg-lp-border`}>
-            <span className="font-mono">08</span> Kalender Akademik
+            <span className="font-mono">09</span> Kalender Akademik
           </div>
           <div className={`${rvBase} ${rvDelays[1]} mb-10`}>
              <h2 className="font-sans text-[clamp(2.8rem,5.5vw,4.5rem)] leading-[1.06] tracking-tight text-lp-text">Jadwal<br /><em className="italic text-lp-text/40">Kegiatan.</em></h2>
@@ -428,12 +511,12 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* 09 - PLATFORM FEATURES */}
+      {/* 10 - PLATFORM FEATURES */}
       <hr className="border-0 border-t border-lp-border" />
       <section className="py-24">
         <div className="max-w-[1120px] mx-auto px-7">
           <div className={`${rvBase} flex items-center gap-4 text-[10.5px] font-medium tracking-[0.16em] uppercase text-lp-text3 mb-10 after:content-[''] after:flex-1 after:h-px after:bg-lp-border`}>
-            <span className="font-mono">09</span> Platform Features
+            <span className="font-mono">10</span> Platform Features
           </div>
           <div className={`${rvBase} ${rvDelays[1]}`}>
             <h2 className="font-sans text-[clamp(2.8rem,5.5vw,4.5rem)] leading-[1.06] tracking-tight text-lp-text max-w-[480px]">Everything your campus needs.<br /><em className="italic text-lp-text/40">Nothing it doesn't.</em></h2>
