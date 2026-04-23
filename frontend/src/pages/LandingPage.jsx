@@ -686,7 +686,7 @@ export default function LandingPage() {
               <div className="pr-6">
                 <h4 className="text-[13px] font-bold text-lp-text tracking-tight">Sistem dalam Pemeliharaan Koneksi oleh admin (candalena)</h4>
                 <p className="text-[12px] text-lp-text2 font-light leading-relaxed mt-0.5">
-                  Koneksi Server nya lagi Shutdown dulu yaa karna limit free plan nya wkkwkwk
+                  Koneksi Server nya lagi Shutdown dulu yaa ampe 1 Mei, karna limit free plan nya wkkwkwk
                 </p>
               </div>
             </div>
