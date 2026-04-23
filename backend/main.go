@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"log"
 	"os"
 	"strings"
@@ -142,7 +143,14 @@ func startOpenClaw(r *gin.Engine) {
 		return
 	}
 
-	db := openclawConfig.InitDB(cfg.DBDSN)
+	// IMPORTANT: Reuse the main database connection pool instead of creating a new one.
+	// This prevents connection explosion on Supabase's 15-connection limit.
+	var db *sql.DB
+	if config.DB != nil {
+		db = openclawConfig.InitDBFromExisting(config.DB)
+	} else {
+		db = openclawConfig.InitDB(cfg.DBDSN)
+	}
 	sender := telegram.NewSender(cfg.TelegramBotToken, cfg.TelegramChannelID)
 	log.Printf("[OpenClaw] Telegram channel: %s", cfg.TelegramChannelID)
 

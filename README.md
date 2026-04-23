@@ -87,7 +87,9 @@ Pusat API dan Database harus dikonfigurasi pada folder `backend`. Buatlah file `
 
 ```env
 # Koneksi Database PostgreSQL (Bisa lokal atau Supabase)
-DB_DSN=postgresql://postgres:password_anda@db.xxxxxxxx.supabase.co:5432/postgres
+# PENTING: Untuk deployment serverless (Leapcell/Vercel), gunakan Transaction Pooler (port 6543)
+# JANGAN gunakan Session Pooler (port 5432) — akan menyebabkan error EMAXCONNSESSION
+DB_DSN=postgresql://postgres.[PROJECT_REF]:[PASSWORD]@aws-0-[REGION].pooler.supabase.com:6543/postgres
 
 # Security
 JWT_SECRET=isi_dengan_bebas_rahasia_panjang
