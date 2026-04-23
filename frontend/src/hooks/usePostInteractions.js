@@ -130,9 +130,9 @@ export const usePostInteractions = () => {
   })
 
   return {
-    likePost: (postId) => likeMutation.mutate(postId),
-    addComment: (postId, content, parentId = null) => commentMutation.mutate({ postId, content, parentId }),
-    savePost: (postId) => saveMutation.mutate(postId),
+    likePost: (postId) => likeMutation.mutateAsync(postId),
+    addComment: (postId, content, parentId = null) => commentMutation.mutateAsync({ postId, content, parentId }),
+    savePost: (postId) => saveMutation.mutateAsync(postId),
     isLiking: likeMutation.isPending,
     isCommenting: commentMutation.isPending,
     isSaving: saveMutation.isPending

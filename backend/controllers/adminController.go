@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"strings"
 
@@ -132,36 +131,37 @@ func CreateAdminPost(c *gin.Context) {
 		return
 	}
 
-	// Upload media ke database (BYTEA) — BUKAN filesystem
-	var mediaURL string
-	if _, err := c.FormFile("media"); err == nil {
-		uid, _ := userID.(int)
-		_, fileURL, uploadErr := UploadFileToDB(c, "media", uid, "admin", "post", nil, nil)
-		if uploadErr != nil {
-			utils.ErrorResponse(c, http.StatusBadRequest, uploadErr.Error())
-			return
-		}
-		mediaURL = fileURL
-		log.Printf("[Admin Post] Media uploaded to DB: %s", fileURL)
-	}
-
+	// Insert post dulu (tanpa media_url)
 	query := `
 		INSERT INTO posts (user_id, role, title, content, media_url, author_name, author_username, likes_count, comments_count, created_at)
-		VALUES ($1, 'admin', $2, $3, $4, $5, $6, 0, 0, NOW())
+		VALUES ($1, 'admin', $2, $3, '', $4, $5, 0, 0, NOW())
 		RETURNING id
 	`
 	var postID int64
-	err = config.DB.QueryRow(query, userID, title, content, mediaURL, authorName, authorUsername).Scan(&postID)
+	err = config.DB.QueryRow(query, userID, title, content, authorName, authorUsername).Scan(&postID)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, "Gagal simpan ke database: "+err.Error())
 		return
+	}
+
+	// Upload multiple media (carousel) dan insert ke post_media
+	uid, _ := userID.(int)
+	firstMediaURL, uploadErr := uploadMultipleMedia(c, int(postID), uid, "admin")
+	if uploadErr != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, uploadErr.Error())
+		return
+	}
+
+	// Update posts.media_url dengan URL media pertama (backward compat)
+	if firstMediaURL != "" {
+		config.DB.Exec("UPDATE posts SET media_url = $1 WHERE id = $2", firstMediaURL, postID)
 	}
 
 	utils.SuccessResponse(c, gin.H{
 		"id":              postID,
 		"title":           title,
 		"content":         content,
-		"media_url":       mediaURL,
+		"media_url":       firstMediaURL,
 		"author_name":     authorName,
 		"author_username": authorUsername,
 		"role":            "admin",

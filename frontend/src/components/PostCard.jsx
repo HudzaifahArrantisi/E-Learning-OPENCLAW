@@ -2,9 +2,10 @@
 import React, { useState, memo, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { usePostInteractions } from '../hooks/usePostInteractions'
+import api from '../services/api'
 import { 
   FaHeart, FaRegHeart, FaComment, FaPaperPlane, 
-  FaBookmark, FaRegBookmark, FaEllipsisH, FaSmile, 
+  FaBookmark, FaRegBookmark, FaEllipsisH, FaSmile, FaFileAlt,
   FaTimes, FaChevronLeft, FaChevronRight 
 } from 'react-icons/fa'
 import { FiSend } from 'react-icons/fi'
@@ -111,6 +112,7 @@ const PostCard = memo(({ post, getRelativeTime }) => {
   const [showNavigation, setShowNavigation] = useState(false)
   const [animateLike, setAnimateLike] = useState(false)
   const [imageLoaded, setImageLoaded] = useState(false)
+  const [commentsLoading, setCommentsLoading] = useState(false)
   
   const commentInputRef = useRef(null)
 
@@ -122,14 +124,82 @@ const PostCard = memo(({ post, getRelativeTime }) => {
     setLocalComments(Array.isArray(post?.comments) ? post.comments : [])
   }, [post])
 
+  useEffect(() => {
+    let cancelled = false
+
+    const fetchLatestComments = async () => {
+      if (!showComments) return
+
+      setCommentsLoading(true)
+      try {
+        const response = await api.get(`/api/feed/${post.id}`, { skipErrorRedirect: true })
+        if (cancelled) return
+
+        const comments = Array.isArray(response?.data?.data?.comments)
+          ? response.data.data.comments
+          : []
+        setLocalComments(comments)
+      } catch (error) {
+        if (cancelled) return
+      } finally {
+        if (!cancelled) setCommentsLoading(false)
+      }
+    }
+
+    fetchLatestComments()
+    return () => {
+      cancelled = true
+    }
+  }, [showComments, post.id])
+
   const username = cleanUsername(post.author_username || post.author_name?.toLowerCase().replace(/\s+/g, '_'))
 
-  // Handle multiple media
-  const mediaUrls = Array.isArray(post.media_url) ? post.media_url : 
-                   post.media_url ? [post.media_url] : []
+  // Handle multiple media — read from new post.media array, fallback to legacy post.media_url
+  const mediaItems = (() => {
+    // New API format: post.media is an array of {id, media_type, media_url, sort_order}
+    if (Array.isArray(post.media) && post.media.length > 0) {
+      return post.media.map(m => ({
+        url: m.media_url,
+        type: m.media_type || 'image',
+      }))
+    }
+    // Legacy fallback: post.media_url is a string
+    if (post.media_url) {
+      return [{ url: post.media_url, type: 'image' }]
+    }
+    return []
+  })()
   
-  const hasMultipleMedia = mediaUrls.length > 1
-  const hasMedia = mediaUrls.length > 0
+  const hasMultipleMedia = mediaItems.length > 1
+  const hasMedia = mediaItems.length > 0
+
+  // Touch swipe support
+  const touchStartX = useRef(null)
+  const touchEndX = useRef(null)
+  const carouselRef = useRef(null)
+
+  const handleTouchStart = (e) => {
+    touchStartX.current = e.touches[0].clientX
+  }
+
+  const handleTouchMove = (e) => {
+    touchEndX.current = e.touches[0].clientX
+  }
+
+  const handleTouchEnd = () => {
+    if (touchStartX.current === null || touchEndX.current === null) return
+    const diff = touchStartX.current - touchEndX.current
+    const threshold = 50
+    if (diff > threshold) {
+      // Swiped left → next slide
+      setCurrentSlide((prev) => Math.min(prev + 1, mediaItems.length - 1))
+    } else if (diff < -threshold) {
+      // Swiped right → prev slide
+      setCurrentSlide((prev) => Math.max(prev - 1, 0))
+    }
+    touchStartX.current = null
+    touchEndX.current = null
+  }
 
   const handleLike = async () => {
     if (isLiking) return
@@ -189,11 +259,11 @@ const PostCard = memo(({ post, getRelativeTime }) => {
   }
 
   const nextSlide = () => {
-    setCurrentSlide((prev) => (prev + 1) % mediaUrls.length)
+    setCurrentSlide((prev) => Math.min(prev + 1, mediaItems.length - 1))
   }
 
   const prevSlide = () => {
-    setCurrentSlide((prev) => (prev - 1 + mediaUrls.length) % mediaUrls.length)
+    setCurrentSlide((prev) => Math.max(prev - 1, 0))
   }
 
   // Check if mobile
@@ -233,8 +303,12 @@ const PostCard = memo(({ post, getRelativeTime }) => {
           to={`/profile/${post.role}/${username}`}
           className="flex items-center gap-3 hover:opacity-90 transition-opacity"
         >
-          <div className="w-8 h-8 bg-lp-accentS border border-lp-borderA rounded-full flex items-center justify-center text-lp-atext text-[11px] font-bold">
-            {username?.[0]?.toUpperCase() || '?'}
+          <div className="w-8 h-8 bg-lp-accentS border border-lp-borderA rounded-full flex items-center justify-center text-lp-atext text-[11px] font-bold overflow-hidden shrink-0">
+            {post.author_avatar ? (
+              <img src={resolveBackendAssetUrl(post.author_avatar)} alt={username} className="w-full h-full object-cover" />
+            ) : (
+              username?.[0]?.toUpperCase() || '?'
+            )}
           </div>
           <div>
             <div className="font-semibold text-lp-text text-[13px] hover:underline tracking-tight">{username}</div>
@@ -250,59 +324,85 @@ const PostCard = memo(({ post, getRelativeTime }) => {
       {/* Image Carousel */}
       {hasMedia && (
         <div 
-          className="w-full relative bg-lp-surface"
+          className="w-full relative bg-lp-surface select-none"
           onMouseEnter={() => setShowNavigation(true)}
           onMouseLeave={() => setShowNavigation(false)}
+          ref={carouselRef}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
         >
-          <div className={`relative flex items-center justify-center overflow-hidden ${!imageLoaded ? 'animate-pulse bg-lp-surface' : ''}`}
+          <div className={`relative overflow-hidden ${!imageLoaded ? 'animate-pulse bg-lp-surface' : ''}`}
             style={{ minHeight: '200px', maxHeight: '600px' }}
           >
             {animateLike && <HeartAnimation />}
             
-            <div className="w-full h-full flex items-center justify-center">
-              <img
-                src={resolveBackendAssetUrl(mediaUrls[currentSlide])}
-                alt={`Post content ${currentSlide + 1}`}
-                className="w-full h-auto object-contain"
-                onError={handleImageError}
-                onLoad={() => setImageLoaded(true)}
-                loading="lazy"
-                style={{ display: 'block', maxHeight: '600px' }}
-              />
+            {/* Carousel track */}
+            <div 
+              className="flex transition-transform duration-300 ease-out"
+              style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+            >
+              {mediaItems.map((media, index) => (
+                <div 
+                  key={index}
+                  className="w-full flex-shrink-0 flex items-center justify-center"
+                  style={{ minHeight: '200px', maxHeight: '600px' }}
+                >
+                  <img
+                    src={resolveBackendAssetUrl(media.url)}
+                    alt={`Post content ${index + 1}`}
+                    className="w-full h-auto object-contain"
+                    onError={handleImageError}
+                    onLoad={() => index === currentSlide && setImageLoaded(true)}
+                    loading={index <= 1 ? 'eager' : 'lazy'}
+                    style={{ display: 'block', maxHeight: '600px' }}
+                    draggable={false}
+                  />
+                </div>
+              ))}
             </div>
             
             {hasMultipleMedia && (
               <>
-                <button
-                  onClick={prevSlide}
-                  className={`absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 backdrop-blur-sm text-lp-text p-2 rounded-full hover:bg-white transition-all z-20 shadow-sm ${
-                    isMobile || showNavigation ? 'opacity-100' : 'opacity-0'
-                  }`}
-                >
-                  <FaChevronLeft className="text-xs" />
-                </button>
-                <button
-                  onClick={nextSlide}
-                  className={`absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 backdrop-blur-sm text-lp-text p-2 rounded-full hover:bg-white transition-all z-20 shadow-sm ${
-                    isMobile || showNavigation ? 'opacity-100' : 'opacity-0'
-                  }`}
-                >
-                  <FaChevronRight className="text-xs" />
-                </button>
+                {currentSlide > 0 && (
+                  <button
+                    onClick={prevSlide}
+                    className={`absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 backdrop-blur-sm text-lp-text p-2 rounded-full hover:bg-white transition-all z-20 shadow-sm ${
+                      isMobile || showNavigation ? 'opacity-100' : 'opacity-0'
+                    }`}
+                  >
+                    <FaChevronLeft className="text-xs" />
+                  </button>
+                )}
+                {currentSlide < mediaItems.length - 1 && (
+                  <button
+                    onClick={nextSlide}
+                    className={`absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 backdrop-blur-sm text-lp-text p-2 rounded-full hover:bg-white transition-all z-20 shadow-sm ${
+                      isMobile || showNavigation ? 'opacity-100' : 'opacity-0'
+                    }`}
+                  >
+                    <FaChevronRight className="text-xs" />
+                  </button>
+                )}
+
+                {/* Slide counter badge */}
+                <div className="absolute top-3 right-3 bg-black/60 text-white text-[11px] font-semibold px-2.5 py-1 rounded-full z-20 backdrop-blur-sm">
+                  {currentSlide + 1}/{mediaItems.length}
+                </div>
               </>
             )}
           </div>
 
           {hasMultipleMedia && (
             <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-20">
-              {mediaUrls.map((_, index) => (
+              {mediaItems.map((_, index) => (
                 <button
                   key={index}
                   onClick={() => setCurrentSlide(index)}
-                  className={`w-1.5 h-1.5 rounded-full transition-all ${
+                  className={`rounded-full transition-all duration-200 ${
                     index === currentSlide 
-                      ? 'bg-lp-accent scale-125' 
-                      : 'bg-lp-text3/40 hover:bg-lp-text3/60'
+                      ? 'bg-lp-accent w-2 h-2 scale-110' 
+                      : 'bg-white/60 w-1.5 h-1.5 hover:bg-white/80'
                   }`}
                 />
               ))}
@@ -411,12 +511,12 @@ const PostCard = memo(({ post, getRelativeTime }) => {
                   {hasMedia ? (
                     <>
                       <div className="w-full h-full md:w-auto md:h-auto flex items-center justify-center bg-lp-surface">
-                        <img
-                          src={resolveBackendAssetUrl(mediaUrls[currentSlide])}
-                          alt={`Post content ${currentSlide + 1}`}
-                          className="w-full h-full md:w-auto md:h-auto md:max-w-[calc(95vw-350px)] lg:max-w-[calc(95vw-400px)] md:max-h-[90vh] md:min-h-[400px] object-contain block"
-                          onError={handleImageError}
-                        />
+                          <img
+                            src={resolveBackendAssetUrl(mediaItems[currentSlide]?.url)}
+                            alt={`Post content ${currentSlide + 1}`}
+                            className="w-full h-full md:w-auto md:h-auto md:max-w-[calc(95vw-350px)] lg:max-w-[calc(95vw-400px)] md:max-h-[90vh] md:min-h-[400px] object-contain block"
+                            onError={handleImageError}
+                          />
                       </div>
                       
                       {hasMultipleMedia && (
@@ -428,7 +528,7 @@ const PostCard = memo(({ post, getRelativeTime }) => {
                             <FaChevronRight className="text-sm" />
                           </button>
                           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5">
-                            {mediaUrls.map((_, index) => (
+                            {mediaItems.map((_, index) => (
                               <button key={index} onClick={() => setCurrentSlide(index)} className={`w-1.5 h-1.5 rounded-full transition-all ${index === currentSlide ? 'bg-white scale-125' : 'bg-white/50'}`} />
                             ))}
                           </div>
@@ -467,8 +567,12 @@ const PostCard = memo(({ post, getRelativeTime }) => {
                   {/* Header Post */}
                   <div className="flex items-center justify-between p-3 sm:p-4 border-b border-lp-border bg-white flex-shrink-0">
                     <Link to={`/profile/${post.role}/${username}`} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-                      <div className="w-8 h-8 bg-lp-accentS border border-lp-borderA rounded-full flex items-center justify-center text-lp-atext text-xs font-bold shrink-0">
-                        {username?.[0]?.toUpperCase() || '?'}
+                      <div className="w-8 h-8 bg-lp-accentS border border-lp-borderA rounded-full flex items-center justify-center text-lp-atext text-xs font-bold shrink-0 overflow-hidden">
+                        {post.author_avatar ? (
+                          <img src={resolveBackendAssetUrl(post.author_avatar)} alt={username} className="w-full h-full object-cover" />
+                        ) : (
+                          username?.[0]?.toUpperCase() || '?'
+                        )}
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="font-semibold text-lp-text text-[14px] tracking-tight">{username}</span>
@@ -488,8 +592,12 @@ const PostCard = memo(({ post, getRelativeTime }) => {
                           to={`/profile/${post.role}/${username}`}
                           className="flex-shrink-0 mt-0.5"
                         >
-                          <div className="w-9 h-9 bg-lp-bg rounded-full flex items-center justify-center text-lp-text border-2 border-white shadow-sm text-sm font-bold shrink-0">
-                            {username?.[0]?.toUpperCase() || '?'}
+                          <div className="w-9 h-9 bg-lp-bg rounded-full flex items-center justify-center text-lp-text border-2 border-white shadow-sm text-sm font-bold shrink-0 overflow-hidden">
+                            {post.author_avatar ? (
+                              <img src={resolveBackendAssetUrl(post.author_avatar)} alt={username} className="w-full h-full object-cover" />
+                            ) : (
+                              username?.[0]?.toUpperCase() || '?'
+                            )}
                           </div>
                         </Link>
                         <div className="flex-1 min-w-0">
@@ -512,7 +620,11 @@ const PostCard = memo(({ post, getRelativeTime }) => {
                     )}
 
                     <div className="px-4 pb-4 space-y-4 pt-2">
-                      {localComments.length > 0 ? (
+                      {commentsLoading ? (
+                        <div className="text-center py-8">
+                          <p className="font-medium text-lp-text text-[14px]">Memuat komentar...</p>
+                        </div>
+                      ) : localComments.length > 0 ? (
                         localComments.map((comment) => (
                           <div key={comment.id} className="flex items-start space-x-3 group">
                             <Link 

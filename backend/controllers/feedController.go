@@ -3,6 +3,8 @@ package controllers
 
 import (
 	"database/sql"
+	"fmt"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -27,13 +29,126 @@ func cleanUsername(username string) string {
 	return cleaned
 }
 
+// getPostMediaItems fetches carousel media items for a batch of post IDs
+func getPostMediaItems(postIDs []int) map[int][]map[string]interface{} {
+	result := make(map[int][]map[string]interface{})
+	if len(postIDs) == 0 {
+		return result
+	}
+
+	// Build placeholder list: $1,$2,$3...
+	placeholders := make([]string, len(postIDs))
+	args := make([]interface{}, len(postIDs))
+	for i, id := range postIDs {
+		placeholders[i] = fmt.Sprintf("$%d", i+1)
+		args[i] = id
+	}
+
+	query := fmt.Sprintf(`
+		SELECT id, post_id, media_type, media_url, sort_order
+		FROM post_media
+		WHERE post_id IN (%s) AND deleted_at IS NULL
+		ORDER BY post_id, sort_order ASC
+	`, strings.Join(placeholders, ","))
+
+	rows, err := config.DB.Query(query, args...)
+	if err != nil {
+		log.Printf("[Feed] Error fetching post_media: %v", err)
+		return result
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var id, postID, sortOrder int
+		var mediaType, mediaURL string
+		err := rows.Scan(&id, &postID, &mediaType, &mediaURL, &sortOrder)
+		if err != nil {
+			continue
+		}
+		result[postID] = append(result[postID], map[string]interface{}{
+			"id":         id,
+			"media_type": mediaType,
+			"media_url":  mediaURL,
+			"sort_order": sortOrder,
+		})
+	}
+
+	return result
+}
+
+// insertPostMedia inserts a single media item into post_media table
+func insertPostMedia(postID int, uploadID int64, mediaType string, mediaURL string, sortOrder int) error {
+	_, err := config.DB.Exec(`
+		INSERT INTO post_media (post_id, upload_id, media_type, media_url, sort_order, created_at)
+		VALUES ($1, $2, $3, $4, $5, NOW())
+	`, postID, uploadID, mediaType, mediaURL, sortOrder)
+	return err
+}
+
+// uploadMultipleMedia uploads multiple files from multipart form and inserts into post_media
+// Returns the first media URL (for backward compat with posts.media_url)
+func uploadMultipleMedia(c *gin.Context, postID int, userID int, role string) (string, error) {
+	form, err := c.MultipartForm()
+	if err != nil {
+		return "", nil // No multipart form = no media, that's OK
+	}
+
+	files := form.File["media"]
+	if len(files) == 0 {
+		return "", nil
+	}
+
+	if len(files) > 10 {
+		return "", fmt.Errorf("maksimal 10 file per postingan")
+	}
+
+	var firstMediaURL string
+
+	// Iterate through "media" files using form file headers
+	for i, fh := range files {
+		file, err := fh.Open()
+		if err != nil {
+			log.Printf("[Carousel] Skip file %d: %v", i, err)
+			continue
+		}
+
+		fileBytes, err := readFileBytes(file)
+		file.Close()
+		if err != nil {
+			log.Printf("[Carousel] Skip file %d read error: %v", i, err)
+			continue
+		}
+
+		uploadID, fileURL, err := uploadBytesToDB(fh, fileBytes, userID, role, "post")
+		if err != nil {
+			log.Printf("[Carousel] Skip file %d upload error: %v", i, err)
+			continue
+		}
+
+		// Insert into post_media
+		insertErr := insertPostMedia(postID, uploadID, "image", fileURL, i)
+		if insertErr != nil {
+			log.Printf("[Carousel] Error inserting post_media: %v", insertErr)
+			continue
+		}
+
+		if i == 0 {
+			firstMediaURL = fileURL
+		}
+
+		log.Printf("[Carousel] ✅ File %d/%d uploaded: %s", i+1, len(files), fileURL)
+	}
+
+	return firstMediaURL, nil
+}
+
 func GetFeed(c *gin.Context) {
 	userID, _ := c.Get("user_id")
 
 	query := `
         SELECT 
             p.id, p.title, p.content, p.media_url, p.created_at,
-            p.author_username, 
+            p.author_name, 
             COALESCE(NULLIF(p.author_username, ''), 
                 LOWER(REPLACE(REPLACE(REPLACE(p.author_username, ' ', '_'), 'Ormawa_', ''), 'UKM_', ''))
             ) as author_username,
@@ -41,7 +156,14 @@ func GetFeed(c *gin.Context) {
             COALESCE(p.likes_count, 0) AS likes_count,
             COALESCE(p.comments_count, 0) AS comments_count,
             EXISTS(SELECT 1 FROM likes l WHERE l.post_id = p.id AND l.user_id = $1 AND l.deleted_at IS NULL) as user_has_liked,
-            EXISTS(SELECT 1 FROM saved_posts sp WHERE sp.post_id = p.id AND sp.user_id = $2 AND sp.deleted_at IS NULL) as user_has_saved
+            EXISTS(SELECT 1 FROM saved_posts sp WHERE sp.post_id = p.id AND sp.user_id = $2 AND sp.deleted_at IS NULL) as user_has_saved,
+            CASE p.role
+                WHEN 'admin' THEN (SELECT profile_picture FROM admin WHERE user_id = p.user_id)
+                WHEN 'ukm' THEN (SELECT profile_picture FROM ukm WHERE user_id = p.user_id)
+                WHEN 'ormawa' THEN (SELECT profile_picture FROM ormawa WHERE user_id = p.user_id)
+                WHEN 'mahasiswa' THEN (SELECT photo FROM mahasiswa WHERE user_id = p.user_id)
+                ELSE NULL
+            END as author_avatar
         FROM posts p
         WHERE p.role IN ('admin', 'ukm', 'ormawa', 'dosen', 'mahasiswa', 'orangtua') AND p.deleted_at IS NULL
         ORDER BY p.created_at DESC
@@ -56,14 +178,16 @@ func GetFeed(c *gin.Context) {
 	defer rows.Close()
 
 	var posts []map[string]interface{}
+	var postIDs []int
 	for rows.Next() {
 		var id int
 		var title, content, mediaURL, authorName, authorUsername, role string
 		var createdAt time.Time
 		var likesCount, commentsCount int
 		var userHasLiked, userHasSaved bool
+		var authorAvatar sql.NullString
 
-		err = rows.Scan(&id, &title, &content, &mediaURL, &createdAt, &authorName, &authorUsername, &role, &likesCount, &commentsCount, &userHasLiked, &userHasSaved)
+		err = rows.Scan(&id, &title, &content, &mediaURL, &createdAt, &authorName, &authorUsername, &role, &likesCount, &commentsCount, &userHasLiked, &userHasSaved, &authorAvatar)
 		if err != nil {
 			utils.ErrorResponse(c, http.StatusInternalServerError, "Error scan post: "+err.Error())
 			return
@@ -83,6 +207,7 @@ func GetFeed(c *gin.Context) {
 			"created_at":       createdAt,
 			"author_name":      authorName,
 			"author_username":  authorUsername,
+			"author_avatar":    authorAvatar.String,
 			"role":             role,
 			"likes_count":      likesCount,
 			"comments_count":   commentsCount,
@@ -90,6 +215,26 @@ func GetFeed(c *gin.Context) {
 			"user_has_saved":   userHasSaved,
 			"comments":         comments,
 		})
+		postIDs = append(postIDs, id)
+	}
+
+	// Batch-fetch carousel media for all posts
+	mediaMap := getPostMediaItems(postIDs)
+	for _, post := range posts {
+		pid := post["id"].(int)
+		if mediaItems, ok := mediaMap[pid]; ok && len(mediaItems) > 0 {
+			post["media"] = mediaItems
+		} else if post["media_url"] != "" {
+			// Fallback: wrap legacy single media_url as array
+			post["media"] = []map[string]interface{}{{
+				"id":         0,
+				"media_type": "image",
+				"media_url":  post["media_url"],
+				"sort_order": 0,
+			}}
+		} else {
+			post["media"] = []map[string]interface{}{}
+		}
 	}
 
 	if len(posts) == 0 {
@@ -508,7 +653,14 @@ func GetPost(c *gin.Context) {
             COALESCE(p.likes_count, 0) AS likes_count,
             COALESCE(p.comments_count, 0) AS comments_count,
             EXISTS(SELECT 1 FROM likes l WHERE l.post_id = p.id AND l.user_id = $1 AND l.deleted_at IS NULL) as user_has_liked,
-            EXISTS(SELECT 1 FROM saved_posts sp WHERE sp.post_id = p.id AND sp.user_id = $2 AND sp.deleted_at IS NULL) as user_has_saved
+            EXISTS(SELECT 1 FROM saved_posts sp WHERE sp.post_id = p.id AND sp.user_id = $2 AND sp.deleted_at IS NULL) as user_has_saved,
+            CASE p.role
+                WHEN 'admin' THEN (SELECT profile_picture FROM admin WHERE user_id = p.user_id)
+                WHEN 'ukm' THEN (SELECT profile_picture FROM ukm WHERE user_id = p.user_id)
+                WHEN 'ormawa' THEN (SELECT profile_picture FROM ormawa WHERE user_id = p.user_id)
+                WHEN 'mahasiswa' THEN (SELECT photo FROM mahasiswa WHERE user_id = p.user_id)
+                ELSE NULL
+            END as author_avatar
         FROM posts p
         WHERE p.id = $3 AND p.deleted_at IS NULL
     `
@@ -521,6 +673,7 @@ func GetPost(c *gin.Context) {
         CreatedAt       time.Time `json:"created_at"`
         AuthorName      string    `json:"author_name"`
         AuthorUsername  string    `json:"author_username"`
+        AuthorAvatar    string    `json:"author_avatar"`
         Role            string    `json:"role"`
         LikesCount      int       `json:"likes_count"`
         CommentsCount   int       `json:"comments_count"`
@@ -528,6 +681,8 @@ func GetPost(c *gin.Context) {
         UserHasSaved    bool      `json:"user_has_saved"`
         Comments        []map[string]interface{} `json:"comments"`
     }
+
+    var authorAvatar sql.NullString
 
     err := config.DB.QueryRow(query, userID, userID, postID).Scan(
         &post.ID,
@@ -542,7 +697,12 @@ func GetPost(c *gin.Context) {
         &post.CommentsCount,
         &post.UserHasLiked,
         &post.UserHasSaved,
+        &authorAvatar,
     )
+
+    if err == nil {
+        post.AuthorAvatar = authorAvatar.String
+    }
 
     if err != nil {
         utils.ErrorResponse(c, http.StatusNotFound, "Post tidak ditemukan")

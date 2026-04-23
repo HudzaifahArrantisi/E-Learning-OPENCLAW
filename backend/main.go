@@ -48,10 +48,12 @@ func main() {
 
 	// CORS Configuration — MUST BE AT THE TOP
 	r.Use(cors.New(cors.Config{
-		AllowOrigins: []string{
-			"https://e-learning-openclaw.vercel.app",
-			"http://localhost:5173",
-			"http://localhost:3000",
+		AllowOriginFunc: func(origin string) bool {
+			return strings.HasPrefix(origin, "http://localhost") ||
+				strings.HasPrefix(origin, "https://e-learning-openclaw.vercel.app") ||
+				strings.HasPrefix(origin, "http://192.168.") ||
+				strings.HasPrefix(origin, "http://10.") ||
+				strings.HasPrefix(origin, "http://172.")
 		},
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Length", "Content-Type", "Authorization", "Accept", "X-Requested-With", "X-Internal-Key"},

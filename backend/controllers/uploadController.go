@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"mime/multipart"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -764,6 +765,110 @@ func UploadFileToDB(c *gin.Context, formFieldName string, uploaderID int, upload
 
 	log.Printf("[Upload] ✅ Saved: id=%d, type=%s, role=%s, %dKB→%dKB",
 		uploadIDResult, uploadType, uploaderRole, originalSize/1024, compressedSize/1024)
+
+	return uploadIDResult, fileURL, nil
+}
+
+// ============================================================
+// readFileBytes reads all bytes from a multipart.File
+// Used by carousel multi-upload in feedController
+// ============================================================
+func readFileBytes(file io.Reader) ([]byte, error) {
+	return io.ReadAll(file)
+}
+
+// ============================================================
+// uploadBytesToDB uploads raw file bytes directly to the uploads table
+// Used by carousel multi-upload (avoids needing gin context per file)
+// ============================================================
+func uploadBytesToDB(fh *multipart.FileHeader, fileBytes []byte, uploaderID int, uploaderRole string, uploadType string) (int64, string, error) {
+	// Detect MIME type
+	detectedMime := http.DetectContentType(fileBytes)
+
+	// Validate MIME
+	allowed, ok := allowedMimeTypes[uploadType]
+	if !ok {
+		return 0, "", fmt.Errorf("tipe upload tidak dikenali")
+	}
+	mimeValid := false
+	for _, m := range allowed {
+		if strings.HasPrefix(detectedMime, m) || detectedMime == m {
+			mimeValid = true
+			break
+		}
+	}
+	if !mimeValid {
+		declaredMime := fh.Header.Get("Content-Type")
+		for _, m := range allowed {
+			if declaredMime == m {
+				mimeValid = true
+				detectedMime = declaredMime
+				break
+			}
+		}
+	}
+	if !mimeValid {
+		return 0, "", fmt.Errorf("tipe file '%s' tidak diizinkan", detectedMime)
+	}
+
+	// Checksum
+	hash := sha256.Sum256(fileBytes)
+	checksum := hex.EncodeToString(hash[:])
+
+	// Extension
+	ext := strings.ToLower(filepath.Ext(filepath.Base(fh.Filename)))
+	if ext == "" {
+		ext = ".bin"
+	}
+
+	// Optimize file via Python
+	compressedBytes := fileBytes
+	originalSize := int64(len(fileBytes))
+	compressedSize := originalSize
+	compressionRatio := float32(0)
+
+	optimizedBytes, optimizedMime, optimizedExt, optimized, optimizeErr := utils.OptimizeFileWithPython(fileBytes, detectedMime, ext, 1200, 75)
+	if optimizeErr != nil {
+		log.Printf("[Upload] Python optimizer skipped (%s): %v", fh.Filename, optimizeErr)
+	} else if optimized {
+		compressedBytes = optimizedBytes
+		compressedSize = int64(len(optimizedBytes))
+		compressionRatio = float32(100.0 - (float64(compressedSize) / float64(originalSize) * 100.0))
+		detectedMime = optimizedMime
+		ext = optimizedExt
+	}
+
+	// Insert ke database
+	var uploadIDResult int64
+	err := config.DB.QueryRow(`
+		INSERT INTO uploads (
+			uploader_id, uploader_role, type, variant,
+			original_filename, mime_type, file_extension,
+			original_size, compressed_size, compression_ratio,
+			file_data, related_id, related_table,
+			visibility, status, checksum_hash, created_at, updated_at
+		) VALUES (
+			$1, $2, $3, 'original',
+			$4, $5, $6,
+			$7, $8, $9,
+			$10, NULL, NULL,
+			'public', 'ready', $11, NOW(), NOW()
+		)
+		RETURNING id
+	`, uploaderID, uploaderRole, uploadType,
+		filepath.Base(fh.Filename), detectedMime, ext,
+		originalSize, compressedSize, compressionRatio,
+		compressedBytes, checksum,
+	).Scan(&uploadIDResult)
+
+	if err != nil {
+		return 0, "", fmt.Errorf("gagal menyimpan file ke database: %v", err)
+	}
+
+	fileURL := fmt.Sprintf("/api/files/%d", uploadIDResult)
+
+	log.Printf("[Upload] ✅ Carousel file saved: id=%d, %dKB→%dKB",
+		uploadIDResult, originalSize/1024, compressedSize/1024)
 
 	return uploadIDResult, fileURL, nil
 }

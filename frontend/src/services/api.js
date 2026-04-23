@@ -29,20 +29,6 @@ api.interceptors.response.use(
       localStorage.removeItem('user')
       window.location.href = '/'
     }
-    // Tangkap error 500, 404, 403 (Forbidden/Invalid URL), 400, atau Network Error (0 / undefined)
-    const status = error.response ? error.response.status : 0;
-    const isErrorRedirectable = status === 500 || status === 404 || status === 403 || status === 400 || status === 0;
-
-    // Jangan redirect jika error berasal dari endpoint 'stats' atau 'profile' (biarkan komponen menangani loading/error state sendiri)
-    const isStatsOrProfile = error.config && error.config.url && (error.config.url.includes('stats') || error.config.url.includes('profile'));
-    const skipErrorRedirect = Boolean(error.config?.skipErrorRedirect);
-
-    // Jangan redirect jika error 400 dari login (agar pesan error username/password salah bisa muncul)
-    if (isErrorRedirectable && (!isLoginEndpoint || status !== 400) && !isStatsOrProfile && !skipErrorRedirect) {
-      if (!window.location.pathname.includes('/not-found')) {
-        window.location.href = '/not-found';
-      }
-    }
 
     return Promise.reject(error)
   }
@@ -259,6 +245,11 @@ api.webSocket = webSocketService
 // ==============================================================
 // ==================== ADMIN ROUTES ============================
 // ==============================================================
+
+api.updateMyProfile = (formData) =>
+  api.put('/api/profile/me', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  })
 
 api.getAdminProfile = () => api.get('/api/admin/profile')
 api.getUKTMahasiswa = () => api.get('/api/admin/ukt/mahasiswa')

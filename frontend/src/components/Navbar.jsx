@@ -2,9 +2,12 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { FaBars } from 'react-icons/fa';
 import useAuth from '../hooks/useAuth';
+import useProfile from '../hooks/useProfile';
+import { getProfilePhotoUrl } from '../utils/profileUtils';
 
 const Navbar = ({ onMenuToggle, onToggleSidebar }) => {
   const { user: authUser } = useAuth();
+  const { data: profile } = useProfile();
 
   const handleMenuToggle = () => {
     const toggleHandler = onMenuToggle || onToggleSidebar;
@@ -16,6 +19,18 @@ const Navbar = ({ onMenuToggle, onToggleSidebar }) => {
 
     window.dispatchEvent(new CustomEvent('nf-sidebar-toggle'));
   };
+
+  const displayName = profile?.name || authUser?.name || 'User';
+  const roleName = authUser?.role || profile?.role || '';
+  const photo = profile?.profile_picture || profile?.photo || authUser?.profile_picture || authUser?.photo;
+  const roleProfilePath = {
+    mahasiswa: '/mahasiswa/profile',
+    dosen: '/dosen',
+    admin: '/admin/akun',
+    ukm: '/ukm/akun',
+    ormawa: '/ormawa/akun',
+    orangtua: '/ortu',
+  }[roleName?.toLowerCase()] || '/';
 
   return (
     <div className="bg-white/80 backdrop-blur-2xl border-b border-lp-border px-5 py-3.5 sticky top-0 z-40 w-full">
@@ -34,14 +49,27 @@ const Navbar = ({ onMenuToggle, onToggleSidebar }) => {
 
           {/* User */}
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-lp-accentS border border-lp-borderA 
+            <Link to={roleProfilePath} className="w-9 h-9 bg-lp-accentS border border-lp-borderA 
               rounded-xl flex items-center justify-center 
-              text-lp-atext font-bold text-xs">
-              {authUser?.name?.[0]?.toUpperCase() || 'U'}
-            </div>
-            <div className="hidden sm:block">
-              <p className="text-[13px] font-semibold text-lp-text tracking-tight">{authUser?.name || 'User'}</p>
-              <p className="text-[10px] text-lp-text3 capitalize font-mono tracking-wider">{authUser?.role}</p>
+              text-lp-atext font-bold text-xs overflow-hidden">
+              {photo ? (
+                <img 
+                  src={getProfilePhotoUrl(photo)} 
+                  alt="Profile" 
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                    e.target.nextSibling.style.display = 'flex';
+                  }}
+                />
+              ) : null}
+              <div className={`w-full h-full flex items-center justify-center ${photo ? 'hidden' : 'flex'}`}>
+                {displayName?.[0]?.toUpperCase() || 'U'}
+              </div>
+            </Link>
+            <div className="flex flex-col">
+              <Link to={roleProfilePath} className="text-[13px] font-semibold text-lp-text tracking-tight hover:underline max-w-[120px] sm:max-w-xs truncate">{displayName}</Link>
+              <p className="text-[10px] text-lp-text3 capitalize font-mono tracking-wider">{roleName}</p>
             </div>
           </div>
         </div>

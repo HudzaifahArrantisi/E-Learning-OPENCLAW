@@ -154,6 +154,85 @@ func GetMyProfile(c *gin.Context) {
     }
 }
 
+func UpdateMyProfile(c *gin.Context) {
+    userID, exists := c.Get("user_id")
+    if !exists {
+        utils.ErrorResponse(c, http.StatusUnauthorized, "Unauthorized")
+        return
+    }
+
+    role, exists := c.Get("role")
+    if !exists {
+        utils.ErrorResponse(c, http.StatusBadRequest, "Role tidak valid")
+        return
+    }
+
+    table := ""
+    switch role {
+    case "admin":
+        table = "admin"
+    case "ukm":
+        table = "ukm"
+    case "ormawa":
+        table = "ormawa"
+    default:
+        utils.ErrorResponse(c, http.StatusBadRequest, "Role tidak valid atau tidak memiliki akses update profile")
+        return
+    }
+
+    name := c.PostForm("name")
+    username := c.PostForm("username")
+    bio := c.PostForm("bio")
+    website := c.PostForm("website")
+    phone := c.PostForm("phone")
+
+    // Retrieve existing to keep profile picture if not updated
+    var existing struct {
+        ProfilePicture sql.NullString
+    }
+    existingErr := config.DB.QueryRow("SELECT profile_picture FROM "+table+" WHERE user_id = $1", userID).Scan(&existing.ProfilePicture)
+    profilePicture := ""
+    if existingErr == nil {
+        profilePicture = existing.ProfilePicture.String
+    }
+
+    if _, _, formErr := c.Request.FormFile("profile_picture"); formErr == nil {
+        // We pass 0 for uid if not needed, but wait! UploadFileToDB takes (c, formField, userID, role, folderName, oldFileUrl, fallbackUrl)
+        var uid int
+        uidF, _ := userID.(float64)
+        uid = int(uidF)
+        
+        // Coba upload ke DB (BYTEA)
+        _, fileURL, uploadErr := UploadFileToDB(c, "profile_picture", uid, role.(string), "profile", nil, nil)
+        if uploadErr != nil {
+            utils.ErrorResponse(c, http.StatusBadRequest, uploadErr.Error())
+            return
+        }
+        profilePicture = fileURL
+    }
+
+    // Upsert or update
+    _, err := config.DB.Exec(`
+        UPDATE `+table+`
+        SET name = $1, username = $2, bio = $3, website = $4, phone = $5, profile_picture = $6, updated_at = NOW()
+        WHERE user_id = $7 AND deleted_at IS NULL
+    `, name, username, bio, website, phone, profilePicture, userID)
+
+    if err != nil {
+        utils.ErrorResponse(c, http.StatusInternalServerError, "Gagal mengupdate profile: "+err.Error())
+        return
+    }
+
+    utils.SuccessResponse(c, gin.H{
+        "name": name,
+        "username": username,
+        "bio": bio,
+        "website": website,
+        "phone": phone,
+        "profile_picture": profilePicture,
+    }, "Profile berhasil diupdate")
+}
+
 func GetPublicProfile(c *gin.Context) {
     role := c.Param("role")
     username := c.Param("username")
@@ -300,6 +379,7 @@ func GetUserPosts(c *gin.Context) {
     defer rows.Close()
 
     var posts []map[string]interface{}
+    var postIDs []int
     for rows.Next() {
         var id int
         var title, content, mediaURL, authorName, authorUsername, role string
@@ -328,6 +408,25 @@ func GetUserPosts(c *gin.Context) {
             "comments_count":   commentsCount,
             "created_at":       createdAt,
         })
+        postIDs = append(postIDs, id)
+    }
+
+    // Batch-fetch carousel media for all posts
+    mediaMap := getPostMediaItems(postIDs)
+    for _, post := range posts {
+        pid := post["id"].(int)
+        if mediaItems, ok := mediaMap[pid]; ok && len(mediaItems) > 0 {
+            post["media"] = mediaItems
+        } else if post["media_url"] != "" {
+            post["media"] = []map[string]interface{}{{
+                "id":         0,
+                "media_type": "image",
+                "media_url":  post["media_url"],
+                "sort_order": 0,
+            }}
+        } else {
+            post["media"] = []map[string]interface{}{}
+        }
     }
 
     if len(posts) == 0 {
@@ -337,3 +436,71 @@ func GetUserPosts(c *gin.Context) {
 
     utils.SuccessResponse(c, posts, "Postingan user berhasil diambil")
 }
+
+// GetRecommendedAccounts fetches UKM and Ormawa profiles for the sidebar
+func GetRecommendedAccounts(c *gin.Context) {
+	// Ambil rekomendasi ormawa
+	ormawaQuery := `
+		SELECT id, name, username, profile_picture
+		FROM ormawa
+		WHERE deleted_at IS NULL
+		ORDER BY created_at DESC
+		LIMIT 6
+	`
+	ormawaRows, err := config.DB.Query(ormawaQuery)
+	var ormawaList []map[string]interface{}
+	if err == nil {
+		defer ormawaRows.Close()
+		for ormawaRows.Next() {
+			var id int
+			var name, username string
+			var profilePicture sql.NullString
+			if err := ormawaRows.Scan(&id, &name, &username, &profilePicture); err == nil {
+				ormawaList = append(ormawaList, map[string]interface{}{
+					"id":              id,
+					"name":            name,
+					"username":        username,
+					"type":            "ormawa",
+					"profile_picture": profilePicture.String,
+				})
+			}
+		}
+	} else {
+	    log.Printf("Error fetching recommended ormawa: %v", err)
+	}
+
+	// Ambil rekomendasi ukm
+	ukmQuery := `
+		SELECT id, name, username, profile_picture
+		FROM ukm
+		WHERE deleted_at IS NULL
+		ORDER BY created_at DESC
+		LIMIT 6
+	`
+	ukmRows, err := config.DB.Query(ukmQuery)
+	var ukmList []map[string]interface{}
+	if err == nil {
+		defer ukmRows.Close()
+		for ukmRows.Next() {
+			var id int
+			var name, username string
+			var profilePicture sql.NullString
+			if err := ukmRows.Scan(&id, &name, &username, &profilePicture); err == nil {
+				ukmList = append(ukmList, map[string]interface{}{
+					"id":              id,
+					"name":            name,
+					"username":        username,
+					"type":            "ukm",
+					"profile_picture": profilePicture.String,
+				})
+			}
+		}
+	} else {
+	    log.Printf("Error fetching recommended ukm: %v", err)
+	}
+
+	utils.SuccessResponse(c, gin.H{
+		"ormawa": ormawaList,
+		"ukm":    ukmList,
+	}, "Rekomendasi akun berhasil diambil")
+}

@@ -33,6 +33,7 @@ go.mod.bak
 
 # Test files
 backend/test_payload.json
+backend/database/migrations
 
 #sql
 openclaw_manual.sql

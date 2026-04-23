@@ -2,6 +2,7 @@
 // Centralized Auth Context — verifies token ONCE, shared across all components.
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
 import api from '../services/api'
+import queryClient from '../lib/queryClient'
 
 const AuthContext = createContext(null)
 
@@ -86,9 +87,15 @@ export function AuthProvider({ children }) {
   }
 
   const logout = useCallback(() => {
+    // 1. Clear localStorage auth data
     localStorage.removeItem('token')
     localStorage.removeItem('role')
+    // 2. Remove Authorization header
     delete api.defaults.headers.common['Authorization']
+    // 3. Clear ALL React Query cache — prevents stale profile/feed data
+    //    from previous user session leaking into new login
+    queryClient.clear()
+    // 4. Reset local state
     setUser(null)
     setError(null)
     hasVerified.current = false // Allow re-verify on next login

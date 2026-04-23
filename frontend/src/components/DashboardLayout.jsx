@@ -1,5 +1,5 @@
 // src/components/DashboardLayout.jsx
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useQuery } from "@tanstack/react-query"
 import { useNavigate, Link } from 'react-router-dom'
 import api from '../services/api'
@@ -8,7 +8,7 @@ import useAuth from '../hooks/useAuth'
 import PostCard from './PostCard'
 import { 
   FaBars, FaSignOutAlt, FaClock, FaPaperclip,
-  FaChevronDown, FaChevronUp, FaUsers
+  FaChevronRight, FaUsers, FaTimes
 } from 'react-icons/fa'
 import { MdOutlineSchool } from 'react-icons/md'
 import { BsPeopleFill } from 'react-icons/bs'
@@ -77,6 +77,15 @@ const DashboardLayout = ({
   const [showAccountsDropdown, setShowAccountsDropdown] = useState(false)
   const [activeAccountTab, setActiveAccountTab] = useState('ormawa')
 
+  useEffect(() => {
+    if (!showAccountsDropdown) return
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = previousOverflow
+    }
+  }, [showAccountsDropdown])
+
   // Fetch profile data
   const { data: profile, isLoading: profileLoading } = useQuery({
     queryKey: [`${role}-profile`],
@@ -139,31 +148,24 @@ const DashboardLayout = ({
 
   const isLoading = profileLoading || postsLoading
 
+  const { data: recommendations } = useQuery({
+    queryKey: ['public-recommendations'],
+    queryFn: () => api.get('/api/public/recommendations').then(res => res.data?.data || { ormawa: [], ukm: [] }),
+    staleTime: 5 * 60 * 1000,
+    enabled: !isLoading,
+  })
+
   if (isLoading) {
     return <Loading />
   }
 
-  const organizations = [
-    { id: 1, name: 'SENADA', type: 'ormawa', email: 'senada@nurulfikri.ac.id', username: 'senada' },
-    { id: 2, name: 'BEM NF', type: 'ormawa', email: 'bem@nurulfikri.ac.id', username: 'bem' },
-    { id: 3, name: 'DPM', type: 'ormawa', email: 'dpm@nurulfikri.ac.id', username: 'dpm' },
-    { id: 4, name: 'HIMA TI', type: 'ormawa', email: 'hima_ti@nurulfikri.ac.id', username: 'hima_ti' },
-    { id: 5, name: 'HIMA SI', type: 'ormawa', email: 'hima_si@nurulfikri.ac.id', username: 'hima_si' },
-    { id: 6, name: 'HIMA BD', type: 'ormawa', email: 'hima_bd@nurulfikri.ac.id', username: 'hima_bd' },
-  ]
-
-  const suggestedUKM = [
-    { id: 1, name: 'NFSCC', type: 'ukm', email: 'nfscc@nurulfikri.ac.id', username: 'nfscc' },
-    { id: 2, name: 'GDGOC', type: 'ukm', email: 'gdgoc@nurulfikri.ac.id', username: 'gdgoc' },
-    { id: 3, name: 'HALMAHERA', type: 'ukm', email: 'halmahera@nurulfikri.ac.id', username: 'halmahera' },
-    { id: 4, name: 'BIZZCLUB', type: 'ukm', email: 'bizzclub@nurulfikri.ac.id', username: 'bizzclub' },
-    { id: 5, name: 'MUDENG', type: 'ukm', email: 'mudeng@nurulfikri.ac.id', username: 'mudeng' },
-    { id: 6, name: 'FORUM PEREMPUAN', type: 'ukm', email: 'forum_perempuan@nurulfikri.ac.id', username: 'forum_perempuan' },
-  ]
+  const organizations = recommendations?.ormawa || []
+  const suggestedUKM = recommendations?.ukm || []
 
   const profileUsername = cleanUsername(profile?.username || user?.username || user?.name || 'user')
   const profileName = profile?.name || user?.name || 'User'
   const profileEmail = profile?.email || user?.email || ''
+  const profilePhoto = profile?.profile_picture || profile?.photo || user?.profile_picture || user?.photo || ''
 
   return (
     <div className="bg-lp-bg text-lp-text font-sans font-light min-h-screen relative z-0">
@@ -208,14 +210,40 @@ const DashboardLayout = ({
                 </Link>
               </div>
 
-              {/* Right Side: Mobile Logout Button */}
-              <button 
-                onClick={handleLogout}
-                className="lg:hidden p-2 text-lp-red/80 hover:text-white hover:bg-lp-red rounded-lg transition-colors"
-                title="Keluar"
-              >
-                <FaSignOutAlt className="text-sm" />
-              </button>
+              {/* Right Side: Profile Info & Mobile Logout */}
+              <div className="flex items-center gap-3 lg:hidden">
+                <Link to={`/${role}/profile`} className="flex items-center gap-2">
+                  <div className="flex flex-col items-end">
+                    <span className="text-[12px] font-semibold text-lp-text leading-tight max-w-[100px] truncate">{profileName}</span>
+                    <span className="text-[10px] text-lp-text3 font-mono hidden sm:block">@{profileUsername}</span>
+                  </div>
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-xs overflow-hidden border border-lp-border flex-shrink-0">
+                    {profilePhoto ? (
+                      <img 
+                        src={getProfilePhotoUrl(profilePhoto)} 
+                        alt="Profile" 
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          e.target.nextSibling.style.display = 'flex';
+                        }}
+                      />
+                    ) : null}
+                    <div 
+                      className={`w-full h-full bg-lp-accentS flex items-center justify-center text-lp-atext font-bold ${profilePhoto ? 'hidden' : 'flex'}`}
+                    >
+                      {getInitials(profileName)}
+                    </div>
+                  </div>
+                </Link>
+                <button 
+                  onClick={() => setShowLogoutConfirm(true)}
+                  className="p-1.5 text-lp-red/80 hover:text-white hover:bg-lp-red rounded-lg transition-colors border border-transparent hover:border-lp-red/20"
+                  title="Keluar"
+                >
+                  <FaSignOutAlt className="text-[14px]" />
+                </button>
+              </div>
             </div>
 
             {/* Role Filter Tabs */}
@@ -241,7 +269,7 @@ const DashboardLayout = ({
             {/* Mobile Accounts Dropdown Toggle */}
             <div className="lg:hidden border-t border-lp-border">
               <button
-                onClick={() => setShowAccountsDropdown(!showAccountsDropdown)}
+                onClick={() => setShowAccountsDropdown(true)}
                 className="w-full flex items-center justify-between px-4 py-1.5 hover:bg-lp-surface/50 transition-colors"
               >
                 <div className="flex items-center gap-2.5">
@@ -253,58 +281,102 @@ const DashboardLayout = ({
                     <div className="text-[10px] text-lp-text3 font-light">Temukan ormawa & UKM</div>
                   </div>
                 </div>
-                {showAccountsDropdown ? (
-                  <FaChevronUp className="text-lp-text3 text-xs" />
-                ) : (
-                  <FaChevronDown className="text-lp-text3 text-xs" />
-                )}
+                <FaChevronRight className="text-lp-text3 text-xs" />
               </button>
+            </div>
+          </div>
 
-              {/* Mobile Accounts Dropdown Content */}
-              {showAccountsDropdown && (
-                <div className="bg-white border-t border-lp-border animate-slideUp">
-                  {/* Account Type Tabs */}
-                  <div className="flex border-b border-lp-border">
+          {/* Mobile Recommendations Side Panel */}
+          <div
+            className={`lg:hidden fixed inset-0 z-40 transition-opacity duration-300 ${
+              showAccountsDropdown ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+            }`}
+          >
+            <button
+              type="button"
+              aria-label="Tutup rekomendasi akun"
+              onClick={() => setShowAccountsDropdown(false)}
+              className="absolute inset-0 bg-black/35 backdrop-blur-[2px]"
+            />
+
+            <div
+              className={`absolute inset-y-0 right-0 w-[88%] max-w-sm bg-white border-l border-lp-border shadow-[0_20px_60px_rgba(0,0,0,0.2)] transform transition-transform duration-300 ease-out ${
+                showAccountsDropdown ? 'translate-x-0' : 'translate-x-full'
+              }`}
+            >
+              <div className="h-full flex flex-col">
+                <div className="px-4 py-4 border-b border-lp-border bg-white/95 backdrop-blur">
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <h3 className="text-[14px] font-semibold text-lp-text">Rekomendasi Akun</h3>
+                      <p className="text-[11px] text-lp-text3">Temukan ormawa & UKM</p>
+                    </div>
+                    <button
+                      onClick={() => setShowAccountsDropdown(false)}
+                      className="p-2 text-lp-text3 hover:text-lp-text hover:bg-lp-surface rounded-xl transition-colors"
+                    >
+                      <FaTimes className="text-sm" />
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 bg-lp-surface p-1 rounded-xl">
                     <button
                       onClick={() => setActiveAccountTab('ormawa')}
-                      className={`flex-1 py-3 text-[12px] font-medium flex items-center justify-center gap-1.5 transition-colors ${activeAccountTab === 'ormawa' ? 'text-lp-atext border-b-2 border-lp-accent' : 'text-lp-text3'}`}
+                      className={`py-2 text-[12px] font-semibold flex items-center justify-center gap-1.5 rounded-lg transition-all ${
+                        activeAccountTab === 'ormawa'
+                          ? 'bg-white text-lp-atext shadow-sm'
+                          : 'text-lp-text3 hover:text-lp-text'
+                      }`}
                     >
-                      <MdOutlineSchool />
-                      <span>Organisasi</span>
+                      <MdOutlineSchool className="text-sm" />
+                      <span>Ormawa</span>
                     </button>
                     <button
                       onClick={() => setActiveAccountTab('ukm')}
-                      className={`flex-1 py-3 text-[12px] font-medium flex items-center justify-center gap-1.5 transition-colors ${activeAccountTab === 'ukm' ? 'text-lp-atext border-b-2 border-lp-accent' : 'text-lp-text3'}`}
+                      className={`py-2 text-[12px] font-semibold flex items-center justify-center gap-1.5 rounded-lg transition-all ${
+                        activeAccountTab === 'ukm'
+                          ? 'bg-white text-lp-atext shadow-sm'
+                          : 'text-lp-text3 hover:text-lp-text'
+                      }`}
                     >
-                      <BsPeopleFill />
+                      <BsPeopleFill className="text-sm" />
                       <span>UKM</span>
                     </button>
                   </div>
-
-                  {/* Accounts List */}
-                  <div className="max-h-[300px] overflow-y-auto p-3 space-y-1">
-                    {(activeAccountTab === 'ormawa' ? organizations : suggestedUKM).map((org) => (
-                      <Link
-                        key={org.id}
-                        to={`/profile/${org.type}/${cleanUsername(org.username || org.name)}`}
-                        className="flex items-center gap-3 p-3 rounded-xl hover:bg-lp-surface transition-all"
-                        onClick={() => setShowAccountsDropdown(false)}
-                      >
-                        <div className="w-10 h-10 bg-lp-accentS border border-lp-borderA rounded-xl flex items-center justify-center text-lp-atext font-bold text-sm">
-                          {org.name?.[0]?.toUpperCase() || 'O'}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="font-semibold text-lp-text text-[13px] truncate">{org.name}</div>
-                          <div className="text-lp-text3 text-[11px] font-light">{activeAccountTab === 'ormawa' ? 'Organisasi Mahasiswa' : 'Unit Kegiatan Mahasiswa'}</div>
-                        </div>
-                        <span className="text-[11px] font-semibold text-lp-accent bg-lp-accentS px-3 py-1 rounded-full transition-all hover:-translate-y-px">
-                          Detail
-                        </span>
-                      </Link>
-                    ))}
-                  </div>
                 </div>
-              )}
+
+                <div className="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar">
+                  {(activeAccountTab === 'ormawa' ? organizations : suggestedUKM).slice(0, 8).map((account) => (
+                    <Link
+                      key={account.id}
+                      to={`/profile/${account.type}/${cleanUsername(account.username || account.name)}`}
+                      onClick={() => setShowAccountsDropdown(false)}
+                      className="flex items-center gap-3 p-3 rounded-xl border border-transparent hover:bg-lp-surface hover:border-lp-border transition-all duration-200"
+                    >
+                      <div className={`w-10 h-10 rounded-xl border flex items-center justify-center font-bold text-sm overflow-hidden shrink-0 ${
+                        activeAccountTab === 'ormawa'
+                          ? 'bg-lp-accentS border-lp-borderA text-lp-atext'
+                          : 'bg-lp-green/10 border-lp-green/20 text-lp-green'
+                      }`}>
+                        {account.profile_picture ? (
+                          <img src={resolveBackendAssetUrl(account.profile_picture)} alt={account.name} className="w-full h-full object-cover" />
+                        ) : (
+                          account.name?.[0]?.toUpperCase() || (activeAccountTab === 'ormawa' ? 'O' : 'U')
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold text-lp-text text-[13px] truncate">{account.name}</div>
+                        <div className="text-lp-text3 text-[11px] font-light">
+                          {activeAccountTab === 'ormawa' ? 'Organisasi Mahasiswa' : 'Unit Kegiatan Mahasiswa'}
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-semibold text-lp-text bg-white border border-lp-border px-2.5 py-1 rounded-full">
+                        Detail
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
 
@@ -429,9 +501,9 @@ const DashboardLayout = ({
                 to={`/mahasiswa/profile`}
                 className="w-14 h-14 rounded-2xl flex items-center justify-center text-white font-bold text-base hover:scale-105 transition-transform overflow-hidden border border-lp-border"
               >
-                {profile?.photo ? (
+                {profilePhoto ? (
                   <img 
-                    src={getProfilePhotoUrl(profile.photo)} 
+                    src={getProfilePhotoUrl(profilePhoto)} 
                     alt="Profile" 
                     className="w-full h-full object-cover"
                     onError={(e) => {
@@ -441,7 +513,7 @@ const DashboardLayout = ({
                   />
                 ) : null}
                 <div 
-                  className={`w-full h-full bg-lp-accentS rounded-2xl flex items-center justify-center text-lp-atext font-bold ${profile?.photo ? 'hidden' : 'flex'}`}
+                  className={`w-full h-full bg-lp-accentS rounded-2xl flex items-center justify-center text-lp-atext font-bold ${profilePhoto ? 'hidden' : 'flex'}`}
                 >
                   {getInitials(profileName)}
                 </div>
@@ -481,8 +553,12 @@ const DashboardLayout = ({
                     to={`/profile/${org.type}/${cleanUsername(org.username || org.name)}`}
                     className="flex items-center gap-3 flex-1 min-w-0"
                   >
-                    <div className="w-9 h-9 bg-lp-accentS border border-lp-borderA rounded-xl flex items-center justify-center text-lp-atext font-bold text-xs">
-                      {org.name?.[0]?.toUpperCase() || 'O'}
+                    <div className="w-9 h-9 bg-lp-accentS border border-lp-borderA rounded-xl flex items-center justify-center text-lp-atext font-bold text-xs overflow-hidden shrink-0">
+                      {org.profile_picture ? (
+                        <img src={resolveBackendAssetUrl(org.profile_picture)} alt={org.name} className="w-full h-full object-cover" />
+                      ) : (
+                        org.name?.[0]?.toUpperCase() || 'O'
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="font-semibold text-lp-text text-[12px] truncate tracking-tight">{org.name}</div>
@@ -514,8 +590,12 @@ const DashboardLayout = ({
                     to={`/profile/${ukm.type}/${cleanUsername(ukm.username || ukm.name)}`}
                     className="flex items-center gap-3 flex-1 min-w-0"
                   >
-                    <div className="w-9 h-9 bg-lp-green/10 border border-lp-green/20 rounded-xl flex items-center justify-center text-lp-green font-bold text-xs">
-                      {ukm.name?.[0]?.toUpperCase() || 'U'}
+                    <div className="w-9 h-9 bg-lp-green/10 border border-lp-green/20 rounded-xl flex items-center justify-center text-lp-green font-bold text-xs overflow-hidden shrink-0">
+                      {ukm.profile_picture ? (
+                        <img src={resolveBackendAssetUrl(ukm.profile_picture)} alt={ukm.name} className="w-full h-full object-cover" />
+                      ) : (
+                        ukm.name?.[0]?.toUpperCase() || 'U'
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="font-semibold text-lp-text text-[12px] truncate tracking-tight">{ukm.name}</div>

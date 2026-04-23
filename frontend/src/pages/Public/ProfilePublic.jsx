@@ -19,7 +19,10 @@ import {
   FaSmile,
   FaEllipsisH,
   FaImage,
-  FaFileAlt
+  FaFileAlt,
+  FaBars,
+  FaChevronLeft,
+  FaChevronRight
 } from 'react-icons/fa'
 
 const ProfilePublic = () => {
@@ -97,13 +100,24 @@ const ProfilePublic = () => {
     fetchPosts()
   }, [profile, role, username])
 
-  // Helper untuk memproses media_url agar konsisten dengan PostCard.jsx
-  const getMediaUrls = (mediaUrl) => {
+  // Helper untuk memproses media — support new post.media array + legacy media_url
+  const getMediaUrls = (mediaUrlOrPost) => {
+    // If a post object with .media array is passed
+    if (mediaUrlOrPost && typeof mediaUrlOrPost === 'object' && !Array.isArray(mediaUrlOrPost)) {
+      if (Array.isArray(mediaUrlOrPost.media) && mediaUrlOrPost.media.length > 0) {
+        return mediaUrlOrPost.media.map(m => m.media_url)
+      }
+      // Fallback to .media_url
+      const url = mediaUrlOrPost.media_url
+      if (!url) return []
+      return [url]
+    }
+
+    // Legacy: mediaUrl string or array
+    const mediaUrl = mediaUrlOrPost
     if (!mediaUrl) return []
-    // Jika sudah berupa array (misal sudah di-parse oleh axios)
     if (Array.isArray(mediaUrl)) return mediaUrl
     
-    // Jika berupa string, coba cek apakah JSON array
     if (typeof mediaUrl === 'string') {
       const trimmed = mediaUrl.trim()
       if (trimmed.startsWith('[') || trimmed.startsWith('{')) {
@@ -329,6 +343,8 @@ const ProfilePublic = () => {
   const isImagePost = (post) => {
     if (!post) return false
     if (post.media_type === 'image') return true
+    // Check new carousel media array
+    if (Array.isArray(post.media) && post.media.length > 0) return true
     
     const urls = getMediaUrls(post.media_url)
     return urls.length > 0
@@ -341,10 +357,23 @@ const ProfilePublic = () => {
     return text.substring(0, maxLength) + '...'
   }
 
+  const getFeedPath = () => {
+    if (!user?.role) return '/'
+    const roleHome = {
+      admin: '/admin',
+      dosen: '/dosen',
+      mahasiswa: '/mahasiswa',
+      orangtua: '/ortu',
+      ukm: '/ukm',
+      ormawa: '/ormawa',
+    }
+    return roleHome[user.role] || '/'
+  }
+
   if (isLoading) {
     return (
       <div className="flex min-h-screen bg-lp-bg font-sans font-light">
-        <Sidebar role={user ? user.role : 'mahasiswa'} />
+        {user && <Sidebar role={user.role} />}
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center"><div className="w-10 h-10 border-2 border-lp-border border-t-lp-accent rounded-full animate-spin mx-auto mb-3" /><p className="text-lp-text2 text-sm font-light">Memuat profil...</p></div>
         </div>
@@ -355,17 +384,17 @@ const ProfilePublic = () => {
   if (error || !profile) {
     return (
       <div className="flex min-h-screen bg-lp-bg font-sans font-light">
-        <Sidebar role={user ? user.role : 'mahasiswa'} />
+        {user && <Sidebar role={user.role} />}
         <div className="flex-1 max-w-2xl mx-auto p-8">
           <div className="bg-lp-surface border border-lp-border rounded-2xl p-12 text-center shadow-[0_8px_30px_rgba(0,0,0,0.04)]">
             <div className="w-16 h-16 mx-auto mb-5 bg-lp-red/8 rounded-2xl flex items-center justify-center"><span className="text-3xl">❌</span></div>
             <h1 className="text-2xl font-semibold text-lp-text tracking-tight mb-3">Profile Tidak Ditemukan</h1>
             <p className="text-[13px] text-lp-text2 font-light mb-4">{error ? error.message : 'Pastikan username dan role benar'}</p>
             <button 
-              onClick={() => navigate(-1)} 
+              onClick={() => navigate(getFeedPath())} 
               className="mt-4 bg-lp-text text-white px-6 py-3 rounded-full text-[13px] font-semibold hover:bg-lp-atext hover:-translate-y-px transition-all"
             >
-              Kembali
+              Kembali ke Feed
             </button>
           </div>
         </div>
@@ -375,12 +404,55 @@ const ProfilePublic = () => {
 
   return (
     <div className="flex min-h-screen bg-[#fafafa] font-sans">
-      <Sidebar role={user ? user.role : 'mahasiswa'} />
+      {user && <Sidebar role={user.role} />}
       
       {/* Main Content - Diperbaiki untuk responsif */}
       <div className="flex-1 w-full relative">
-                {/* Header Profil Premium */}
+        {/* Mobile Navbar - Hanya muncul di mobile (lg:hidden) */}
+        <div className="lg:hidden sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-lp-border px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            {user && (
+              <button 
+                onClick={() => window.dispatchEvent(new CustomEvent('nf-sidebar-toggle'))}
+                className="p-2 hover:bg-lp-surface rounded-xl transition-all text-lp-text2"
+                aria-label="Menu"
+              >
+                <FaBars className="text-lg" />
+              </button>
+            )}
+            
+            <Link to="/" className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-lp-accentS border border-lp-borderA flex items-center justify-center">
+                <svg className="w-3.5 h-3.5 stroke-lp-accent fill-none stroke-2 [stroke-linecap:round]" viewBox="0 0 24 24">
+                  <path d="M22 10v6M2 10l10-5 10 5-10 5-10-5z" />
+                  <path d="M6 12v5c3.33 1.67 8.67 1.67 12 0v-5" />
+                </svg>
+              </div>
+              <span className="text-[11px] font-bold text-lp-text tracking-wider">HUB</span>
+            </Link>
+          </div>
+
+          {user && (
+            <Link to={`/${user.role}`} className="w-8 h-8 rounded-full bg-lp-surface border border-lp-border flex items-center justify-center overflow-hidden">
+               {user.profile_picture ? (
+                 <img src={resolveBackendAssetUrl(user.profile_picture)} alt="Me" className="w-full h-full object-cover" />
+               ) : (
+                 <span className="text-[10px] font-bold text-lp-text3">{user.name?.[0]?.toUpperCase()}</span>
+               )}
+            </Link>
+          )}
+        </div>
+
+        {/* Header Profil Premium */}
         <header className="bg-white border-b border-lp-border relative overflow-hidden">
+          <button
+            onClick={() => navigate(getFeedPath())}
+            className="absolute top-3 left-3 sm:top-4 sm:left-6 z-30 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/90 backdrop-blur border border-lp-border text-[11px] font-semibold text-lp-text2 hover:text-lp-text hover:bg-white transition-all"
+          >
+            <FaChevronLeft className="text-[9px]" />
+            Kembali ke Feed
+          </button>
+
           {/* Enhanced Banner */}
           <div className="h-32 sm:h-48 lg:h-64 bg-lp-accentS relative w-full overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-lp-accent/20 to-lp-surface/40 z-0"></div>
@@ -430,10 +502,21 @@ const ProfilePublic = () => {
                     <span className="px-3 py-1 bg-lp-accent/10 text-lp-accent text-[10px] font-bold tracking-wider uppercase rounded-lg border border-lp-accent/20">
                       {getRoleDisplay(role)}
                     </span>
-                    {user?.id === profile.user_id && (
-                      <button className="px-4 py-1.5 bg-lp-surface border border-lp-border rounded-lg text-[12px] font-semibold text-lp-text hover:bg-white transition-all">
-                        Edit Profil
-                      </button>
+                    {user && Number(user.id) === Number(profile.user_id) && (
+                      <>
+                        <Link 
+                          to={`/${role}/setting-profile`}
+                          className="px-4 py-1.5 bg-lp-surface border border-lp-border rounded-lg text-[12px] font-semibold text-lp-text hover:bg-white transition-all"
+                        >
+                          Edit Profil
+                        </Link>
+                        <Link
+                          to={`/${role}/posting`}
+                          className="px-4 py-1.5 bg-lp-text text-white rounded-lg text-[12px] font-semibold hover:bg-lp-atext transition-all"
+                        >
+                          Buat Postingan
+                        </Link>
+                      </>
                     )}
                   </div>
                 </div>
@@ -541,7 +624,8 @@ const ProfilePublic = () => {
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-1 sm:gap-2 md:gap-3">
               {filteredPosts.map((post) => {
-                const imageUrl = post.media_url ? getImageUrl(post.media_url) : null
+                const urls = getMediaUrls(post)
+                const imageUrl = urls.length > 0 ? resolveBackendAssetUrl(urls[0]) : null
                 const isImage = isImagePost(post)
 
                 return (
@@ -573,7 +657,7 @@ const ProfilePublic = () => {
                             </span>
                           </div>
                         </div>
-                        {getMediaUrls(post.media_url).length > 1 && (
+                        {urls.length > 1 && (
                           <div className="absolute top-2 right-2 bg-white/20 backdrop-blur-md rounded-lg p-1.5 z-10 shadow-sm border border-white/30">
                             <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9l-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -635,27 +719,71 @@ const ProfilePublic = () => {
             <div className={`w-full md:w-auto bg-black flex items-center justify-center flex-shrink-0 h-[50vh] md:h-full relative overflow-hidden`}>
               {isImagePost(selectedPost) ? (
                 <div className="w-full h-full relative group">
-                  {/* Media Content */}
-                  <div className="w-full h-full flex items-center justify-center">
+                  {/* Media Content — Carousel */}
+                  <div className="w-full h-full flex items-center justify-center overflow-hidden">
                     {(() => {
-                      const urls = getMediaUrls(selectedPost.media_url)
-                      // Sederhananya kita tampilkan yang pertama, tapi bisa dikembangkan ke carousel
+                      const urls = getMediaUrls(selectedPost)
                       return (
-                        <img
-                          src={resolveBackendAssetUrl(urls[0])}
-                          alt={`Post by ${selectedPost.author_name}`}
-                          className="max-w-full max-h-full md:max-w-[calc(90vw-400px)] md:max-h-[90vh] object-contain block shadow-2xl"
-                        />
+                        <div 
+                          className="flex transition-transform duration-300 ease-out w-full h-full"
+                          style={{ transform: `translateX(-${(selectedPost._modalSlide || 0) * 100}%)` }}
+                        >
+                          {urls.map((url, idx) => (
+                            <div key={idx} className="w-full h-full flex-shrink-0 flex items-center justify-center">
+                              <img
+                                src={resolveBackendAssetUrl(url)}
+                                alt={`Post by ${selectedPost.author_name} — slide ${idx + 1}`}
+                                className="max-w-full max-h-full md:max-w-[calc(90vw-400px)] md:max-h-[90vh] object-contain block shadow-2xl"
+                                loading={idx <= 1 ? 'eager' : 'lazy'}
+                              />
+                            </div>
+                          ))}
+                        </div>
                       )
                     })()}
                   </div>
                   
-                  {/* Media count indicator if multiple */}
-                  {getMediaUrls(selectedPost.media_url).length > 1 && (
-                    <div className="absolute top-4 right-4 bg-black/50 backdrop-blur-md px-3 py-1 rounded-full text-white text-[11px] font-bold">
-                      1 / {getMediaUrls(selectedPost.media_url).length}
-                    </div>
-                  )}
+                  {/* Navigation arrows for modal carousel */}
+                  {(() => {
+                    const urls = getMediaUrls(selectedPost)
+                    const slide = selectedPost._modalSlide || 0
+                    if (urls.length <= 1) return null
+                    return (
+                      <>
+                        {slide > 0 && (
+                          <button 
+                            onClick={() => setSelectedPost({...selectedPost, _modalSlide: slide - 1})}
+                            className="absolute left-3 top-1/2 -translate-y-1/2 bg-white/80 backdrop-blur-sm text-black p-2 rounded-full hover:bg-white transition-all z-20 shadow-sm"
+                          >
+                            <FaChevronLeft className="text-xs" />
+                          </button>
+                        )}
+                        {slide < urls.length - 1 && (
+                          <button 
+                            onClick={() => setSelectedPost({...selectedPost, _modalSlide: slide + 1})}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 bg-white/80 backdrop-blur-sm text-black p-2 rounded-full hover:bg-white transition-all z-20 shadow-sm"
+                          >
+                            <FaChevronRight className="text-xs" />
+                          </button>
+                        )}
+                        <div className="absolute top-4 right-4 bg-black/50 backdrop-blur-md px-3 py-1 rounded-full text-white text-[11px] font-bold">
+                          {slide + 1} / {urls.length}
+                        </div>
+                        {/* Dots */}
+                        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-20">
+                          {urls.map((_, idx) => (
+                            <button 
+                              key={idx}
+                              onClick={() => setSelectedPost({...selectedPost, _modalSlide: idx})}
+                              className={`rounded-full transition-all duration-200 ${
+                                idx === slide ? 'bg-white w-2 h-2' : 'bg-white/50 w-1.5 h-1.5'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                      </>
+                    )
+                  })()}
                 </div>
               ) : (
                 <div className="w-full h-full md:w-[450px] lg:w-[550px] flex flex-col items-center justify-center p-8 sm:p-14 bg-white">
@@ -693,11 +821,25 @@ const ProfilePublic = () => {
                 <div className="flex items-center space-x-3">
                   <Link 
                     to={`/profile/${selectedPost.role}/${cleanUsername(selectedPost.author_username || selectedPost.author_name)}`}
-                    className="w-10 h-10 rounded-full p-[1.5px] bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-600"
+                    className="w-10 h-10 rounded-full p-[1.5px] bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-600 shrink-0"
                   >
                     <div className="w-full h-full rounded-full bg-white p-[1.5px]">
                       <div className="w-full h-full rounded-full bg-lp-surface flex items-center justify-center text-lp-text font-bold text-sm overflow-hidden">
-                        {selectedPost.author_name?.[0]?.toUpperCase() || 'U'}
+                        {selectedPost.author_avatar ? (
+                          <img 
+                            src={getImageUrl(selectedPost.author_avatar)} 
+                            alt={selectedPost.author_name} 
+                            className="w-full h-full object-cover"
+                            onError={handleProfileImageError}
+                          />
+                        ) : (
+                          <span className="flex items-center justify-center w-full h-full">
+                            {selectedPost.author_name?.[0]?.toUpperCase() || 'U'}
+                          </span>
+                        )}
+                        <span style={{display: 'none'}} className="flex items-center justify-center w-full h-full bg-lp-surface text-lp-text">
+                          {selectedPost.author_name?.[0]?.toUpperCase() || 'U'}
+                        </span>
                       </div>
                     </div>
                   </Link>
@@ -729,8 +871,22 @@ const ProfilePublic = () => {
                       to={`/profile/${selectedPost.role}/${cleanUsername(selectedPost.author_username || selectedPost.author_name)}`}
                       className="flex-shrink-0"
                     >
-                      <div className="w-8 h-8 bg-lp-bg rounded-full flex items-center justify-center text-lp-text border border-lp-border text-xs font-bold shrink-0">
-                        {selectedPost.author_name?.[0]?.toUpperCase() || 'U'}
+                      <div className="w-8 h-8 bg-lp-bg rounded-full flex items-center justify-center text-lp-text border border-lp-border text-xs font-bold shrink-0 overflow-hidden">
+                        {selectedPost.author_avatar ? (
+                          <img 
+                            src={getImageUrl(selectedPost.author_avatar)} 
+                            alt={selectedPost.author_name} 
+                            className="w-full h-full object-cover"
+                            onError={handleProfileImageError}
+                          />
+                        ) : (
+                          <span className="flex items-center justify-center w-full h-full">
+                            {selectedPost.author_name?.[0]?.toUpperCase() || 'U'}
+                          </span>
+                        )}
+                        <span style={{display: 'none'}} className="flex items-center justify-center w-full h-full bg-lp-bg text-lp-text">
+                          {selectedPost.author_name?.[0]?.toUpperCase() || 'U'}
+                        </span>
                       </div>
                     </Link>
                     <div className="flex-1 min-w-0 pt-1">
@@ -761,8 +917,22 @@ const ProfilePublic = () => {
                           to={`/profile/${comment.user_role || 'mahasiswa'}/${cleanUsername(comment.author_username || comment.author_name)}`}
                           className="flex-shrink-0"
                         >
-                          <div className="w-8 h-8 bg-lp-surface border border-lp-border rounded-full flex items-center justify-center text-lp-text2 text-xs font-bold shrink-0">
-                            {comment.author_name?.[0]?.toUpperCase() || 'U'}
+                          <div className="w-8 h-8 bg-lp-surface border border-lp-border rounded-full flex items-center justify-center text-lp-text2 text-xs font-bold shrink-0 overflow-hidden">
+                            {comment.author_avatar ? (
+                              <img 
+                                src={getImageUrl(comment.author_avatar)} 
+                                alt={comment.author_name} 
+                                className="w-full h-full object-cover"
+                                onError={handleProfileImageError}
+                              />
+                            ) : (
+                              <span className="flex items-center justify-center w-full h-full">
+                                {comment.author_name?.[0]?.toUpperCase() || 'U'}
+                              </span>
+                            )}
+                            <span style={{display: 'none'}} className="flex items-center justify-center w-full h-full bg-lp-surface text-lp-text2">
+                              {comment.author_name?.[0]?.toUpperCase() || 'U'}
+                            </span>
                           </div>
                         </Link>
                         <div className="flex-1 min-w-0 pt-1">

@@ -1,7 +1,7 @@
 package controllers
 
 import (
-	"log"
+	"database/sql"
 	"net/http"
 	"strings"
 
@@ -41,37 +41,38 @@ func CreateUKMPost(c *gin.Context) {
 		return
 	}
 
-	// Upload media ke database (BYTEA) — BUKAN filesystem
-	var mediaURL string
-	if _, err := c.FormFile("media"); err == nil {
-		uid, _ := userID.(int)
-		_, fileURL, uploadErr := UploadFileToDB(c, "media", uid, "ukm", "post", nil, nil)
-		if uploadErr != nil {
-			utils.ErrorResponse(c, http.StatusBadRequest, uploadErr.Error())
-			return
-		}
-		mediaURL = fileURL
-		log.Printf("[UKM Post] Media uploaded to DB: %s", fileURL)
-	}
-
+	// Insert post dulu (tanpa media_url)
 	query := `
 		INSERT INTO posts 
 		(user_id, role, title, content, media_url, author_name, author_username, likes_count, comments_count, created_at)
-		VALUES ($1, 'ukm', $2, $3, $4, $5, $6, 0, 0, NOW())
+		VALUES ($1, 'ukm', $2, $3, '', $4, $5, 0, 0, NOW())
 		RETURNING id
 	`
 	var postID int64
-	err = config.DB.QueryRow(query, userID, title, content, mediaURL, authorName, authorUsername).Scan(&postID)
+	err = config.DB.QueryRow(query, userID, title, content, authorName, authorUsername).Scan(&postID)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, "Gagal simpan ke database: "+err.Error())
 		return
+	}
+
+	// Upload multiple media (carousel) dan insert ke post_media
+	uid, _ := userID.(int)
+	firstMediaURL, uploadErr := uploadMultipleMedia(c, int(postID), uid, "ukm")
+	if uploadErr != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, uploadErr.Error())
+		return
+	}
+
+	// Update posts.media_url dengan URL media pertama (backward compat)
+	if firstMediaURL != "" {
+		config.DB.Exec("UPDATE posts SET media_url = $1 WHERE id = $2", firstMediaURL, postID)
 	}
 
 	utils.SuccessResponse(c, gin.H{
 		"id":              postID,
 		"title":           title,
 		"content":         content,
-		"media_url":       mediaURL,
+		"media_url":       firstMediaURL,
 		"author_name":     authorName,
 		"author_username": authorUsername,
 	}, "Postingan UKM berhasil dibuat!")
@@ -127,30 +128,105 @@ func GetUKMProfile(c *gin.Context) {
 		return
 	}
 
-	var ukm struct {
-		ID       int    `json:"id"`
-		Name     string `json:"name"`
-		Username string `json:"username"`
-		Bio      string `json:"bio"`
-		Email    string `json:"email"`
-		Avatar   string `json:"avatar"`
+	var role string
+	if err := config.DB.QueryRow("SELECT role FROM users WHERE id = $1", userID).Scan(&role); err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Gagal membaca role user")
+		return
 	}
-
-	err := config.DB.QueryRow(`
-		SELECT COALESCE(u_profile.id, 0), COALESCE(u_profile.name, 'UKM'), 
-		       COALESCE(u_profile.username, ''), COALESCE(u_profile.bio, ''), 
-		       u.email, COALESCE(u_profile.avatar, '')
-		FROM users u
-		LEFT JOIN ukm u_profile ON u.id = u_profile.user_id
-		WHERE u.id = $1
-	`, userID).Scan(&ukm.ID, &ukm.Name, &ukm.Username, &ukm.Bio, &ukm.Email, &ukm.Avatar)
-
-	if err != nil {
-		utils.ErrorResponse(c, http.StatusNotFound, "User not found")
+	if role != "ukm" {
+		utils.ErrorResponse(c, http.StatusForbidden, "Endpoint ini hanya untuk role ukm")
 		return
 	}
 
-	utils.SuccessResponse(c, ukm, "UKM profile retrieved")
+	var ukm struct {
+		ID             int            `json:"id"`
+		UserID         int            `json:"user_id"`
+		Name           string         `json:"name"`
+		Username       sql.NullString `json:"username"`
+		Bio            sql.NullString `json:"bio"`
+		Website        sql.NullString `json:"website"`
+		Phone          sql.NullString `json:"phone"`
+		ProfilePicture sql.NullString `json:"profile_picture"`
+		FollowersCount sql.NullInt64  `json:"followers_count"`
+		FollowingCount sql.NullInt64  `json:"following_count"`
+		Email          string         `json:"email"`
+	}
+
+	err := config.DB.QueryRow(`
+		SELECT uk.id, uk.user_id, uk.name, uk.username, uk.bio, uk.website, uk.phone,
+		       uk.profile_picture, uk.followers_count, uk.following_count, u.email
+		FROM ukm uk
+		JOIN users u ON u.id = uk.user_id
+		WHERE uk.user_id = $1 AND uk.deleted_at IS NULL
+		LIMIT 1
+	`, userID).Scan(
+		&ukm.ID,
+		&ukm.UserID,
+		&ukm.Name,
+		&ukm.Username,
+		&ukm.Bio,
+		&ukm.Website,
+		&ukm.Phone,
+		&ukm.ProfilePicture,
+		&ukm.FollowersCount,
+		&ukm.FollowingCount,
+		&ukm.Email,
+	)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			var email string
+			var fallbackName sql.NullString
+			userErr := config.DB.QueryRow(`
+				SELECT email, NULLIF(TRIM(SPLIT_PART(email, '@', 1)), '')
+				FROM users
+				WHERE id = $1
+			`, userID).Scan(&email, &fallbackName)
+			if userErr != nil {
+				utils.ErrorResponse(c, http.StatusNotFound, "Data ukm tidak ditemukan di tabel ukm")
+				return
+			}
+
+			name := "UKM"
+			if fallbackName.Valid && fallbackName.String != "" {
+				name = "UKM " + fallbackName.String
+			}
+			username := strings.ToLower(strings.ReplaceAll(strings.TrimSpace(name), " ", "_"))
+
+			utils.SuccessResponse(c, gin.H{
+				"id":              0,
+				"user_id":         userID,
+				"name":            name,
+				"username":        username,
+				"bio":             "",
+				"website":         "",
+				"phone":           "",
+				"profile_picture": "",
+				"followers_count": 0,
+				"following_count": 0,
+				"email":           email,
+				"role":            "ukm",
+			}, "UKM profile retrieved")
+			return
+		}
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Gagal mengambil profile ukm: "+err.Error())
+		return
+	}
+
+	utils.SuccessResponse(c, gin.H{
+		"id":              ukm.ID,
+		"user_id":         ukm.UserID,
+		"name":            ukm.Name,
+		"username":        ukm.Username.String,
+		"bio":             ukm.Bio.String,
+		"website":         ukm.Website.String,
+		"phone":           ukm.Phone.String,
+		"profile_picture": ukm.ProfilePicture.String,
+		"followers_count": ukm.FollowersCount.Int64,
+		"following_count": ukm.FollowingCount.Int64,
+		"email":           ukm.Email,
+		"role":            "ukm",
+	}, "UKM profile retrieved")
 }
 
 func GetUKMStats(c *gin.Context) {
@@ -164,7 +240,7 @@ func GetUKMStats(c *gin.Context) {
 
 	// Get stats
 	config.DB.QueryRow("SELECT COUNT(*) FROM posts WHERE user_id = $1", userID).Scan(&postsCount)
-	
+
 	// Default values for now, can be expanded if tables exist
 	followersCount = 0
 	membersCount = 0

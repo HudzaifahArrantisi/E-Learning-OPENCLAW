@@ -20,6 +20,8 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB) {
 	// Public routes (with login rate limiter)
 	r.POST("/api/auth/login", middlewares.LoginRateLimiter(), controllers.Login)
 	r.POST("/api/auth/register", middlewares.LoginRateLimiter(), controllers.Register)
+	r.GET("/api/profile/public/:role/:username", controllers.GetPublicProfile)
+	r.GET("/api/profile/public/:role/:username/posts", controllers.GetUserPosts)
 
 	// Webhook Pakasir.com (tanpa auth)
 	r.POST("/api/webhook/pakasir", controllers.PakasirWebhook)
@@ -36,8 +38,7 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB) {
 	// === AUTH & PROFILE ===
 	api.GET("/auth/verify", controllers.Verify)
 	api.GET("/profile/me", controllers.GetMyProfile)
-	api.GET("/profile/public/:role/:username", controllers.GetPublicProfile)
-	api.GET("/profile/public/:role/:username/posts", controllers.GetUserPosts)
+	api.PUT("/profile/me", controllers.UpdateMyProfile)
 
 	// === UKT ROUTES (Shared for mahasiswa & orangtua) ===
 	ukt := api.Group("/ukt")
@@ -97,6 +98,7 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB) {
 	api.POST("/post/:id/save", controllers.SavePost)
 
 	// === ROLE-SPECIFIC ROUTES ===
+	api.GET("/public/recommendations", controllers.GetRecommendedAccounts)
 	// UKM
 	ukm := api.Group("/ukm")
 	{
