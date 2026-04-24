@@ -626,7 +626,6 @@ export default function LandingPage() {
             
             <div className="p-6 sm:p-8">
               <div className="mb-6">
-                <div className="w-10 h-10 bg-lp-accent/10 rounded-xl flex items-center justify-center text-xl mb-4">🚀</div>
                 <h3 className="text-[18px] font-bold text-lp-text mb-2 tracking-tight">Panduan Cepat</h3>
                 <p className="text-[12.5px] text-lp-text2 font-light leading-relaxed">
                   Gunakan akun berikut untuk mengakses dashboard mahasiswa:
