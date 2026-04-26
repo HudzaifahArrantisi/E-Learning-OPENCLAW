@@ -1,6 +1,8 @@
 # ============================================================
-# docker-compose.dev.yml — LOCAL Kali Linux Testing
-# Uses localhost for all URLs
+# docker-compose.dev.yml — Local Development (Backend Only)
+#
+# For testing on your local machine / Kali Linux VM
+# Frontend runs separately via: npm run dev (on Windows)
 #
 # USAGE:
 #   docker compose -f docker-compose.dev.yml up --build
@@ -17,36 +19,16 @@ services:
     env_file:
       - ./backend/.env
     volumes:
-      - backend_uploads:/app/uploads
+      - ./backend/uploads:/app/uploads
     restart: unless-stopped
     networks:
       - app_network
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 15s
-
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-      args:
-        # Local testing: point to localhost backend
-        VITE_API_URL: http://localhost:8080
-        VITE_API_BASE_URL: http://localhost:8080
-    container_name: openclaw_frontend
-    ports:
-      - "3000:80"
-    depends_on:
-      - backend
-    restart: unless-stopped
-    networks:
-      - app_network
-
-volumes:
-  backend_uploads:
 
 networks:
   app_network:

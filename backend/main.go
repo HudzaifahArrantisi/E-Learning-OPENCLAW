@@ -44,17 +44,52 @@ func main() {
 	r.Use(gin.Recovery())
 
 	// ============================================================
+	// 🩺 HEALTH CHECK — Used by Docker healthcheck & monitoring
+	// ============================================================
+	r.GET("/health", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"status":  "ok",
+			"service": "E-Learning-OPENCLAW Backend",
+		})
+	})
+
+	// ============================================================
 	// 🔒 SECURITY MIDDLEWARES
 	// ============================================================
 
 	// CORS Configuration — MUST BE AT THE TOP
+	// Reads extra allowed origins from ALLOWED_ORIGINS env var (comma-separated)
+	allowedOriginsEnv := os.Getenv("ALLOWED_ORIGINS")
+	var extraOrigins []string
+	if allowedOriginsEnv != "" {
+		for _, o := range strings.Split(allowedOriginsEnv, ",") {
+			extraOrigins = append(extraOrigins, strings.TrimSpace(o))
+		}
+	}
+
 	r.Use(cors.New(cors.Config{
 		AllowOriginFunc: func(origin string) bool {
-			return strings.HasPrefix(origin, "http://localhost") ||
-				strings.HasPrefix(origin, "https://e-learning-openclaw.vercel.app") ||
-				strings.HasPrefix(origin, "http://192.168.") ||
+			// Always allow localhost for development
+			if strings.HasPrefix(origin, "http://localhost") {
+				return true
+			}
+			// Always allow Vercel production frontend
+			if strings.HasPrefix(origin, "https://e-learning-openclaw.vercel.app") {
+				return true
+			}
+			// Allow local network IPs (for Kali Linux VM testing)
+			if strings.HasPrefix(origin, "http://192.168.") ||
 				strings.HasPrefix(origin, "http://10.") ||
-				strings.HasPrefix(origin, "http://172.")
+				strings.HasPrefix(origin, "http://172.") {
+				return true
+			}
+			// Allow extra origins from ALLOWED_ORIGINS env var
+			for _, allowed := range extraOrigins {
+				if origin == allowed {
+					return true
+				}
+			}
+			return false
 		},
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Length", "Content-Type", "Authorization", "Accept", "X-Requested-With", "X-Internal-Key"},

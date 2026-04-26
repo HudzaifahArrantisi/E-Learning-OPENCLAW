@@ -1,6 +1,9 @@
 # ============================================================
-# docker-compose.yml — VPS Production Deployment
-# Replace YOUR_VPS_IP with your actual VPS public IP or domain
+# docker-compose.yml — VPS Production (Backend Only)
+#
+# Frontend is deployed on Vercel (e-learning-openclaw.vercel.app)
+# Database is on Supabase (external cloud)
+# This file only runs the Go backend in Docker
 #
 # USAGE:
 #   docker compose up --build -d
@@ -19,39 +22,16 @@ services:
     environment:
       - GIN_MODE=release
     volumes:
-      - backend_uploads:/app/uploads
+      - ./backend/uploads:/app/uploads
     restart: always
     networks:
       - app_network
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 15s
-
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-      args:
-        # ⚠️ CHANGE THIS to your VPS public IP or domain name!
-        # Examples:
-        #   http://123.456.789.10:8080
-        #   https://api.yourdomain.com
-        VITE_API_URL: http://YOUR_VPS_IP:8080
-        VITE_API_BASE_URL: http://YOUR_VPS_IP:8080
-    container_name: openclaw_frontend
-    ports:
-      - "3000:80"
-    depends_on:
-      - backend
-    restart: always
-    networks:
-      - app_network
-
-volumes:
-  backend_uploads:
 
 networks:
   app_network:
