@@ -127,7 +127,7 @@ const KelolaMatkulDosen = () => {
       }
       fetchPertemuanList()
     } catch (error) {
-      console.error('Error deleting materi:', error)
+      console.error('Error Delete Materi:', error)
       alert('Gagal menghapus materi: ' + (error.response?.data?.message || error.message))
     }
   }
@@ -294,7 +294,11 @@ const KelolaMatkulDosen = () => {
                <motion.button
                  initial={{ opacity: 0, x: 20 }}
                  animate={{ opacity: 1, x: 0 }}
-                 onClick={() => setShowUploadMateri(true)}
+                 onClick={() => {
+                   setSelectedPertemuan(null);
+                   setFormData(prev => ({ ...prev, pertemuan: '' }));
+                   setShowUploadMateri(true);
+                 }}
                  className="flex-1 group relative overflow-hidden bg-white border border-lp-border rounded-[2rem] p-6 flex items-center justify-between hover:border-lp-text transition-all duration-500"
                >
                  <div className="flex items-center gap-4">
@@ -312,7 +316,11 @@ const KelolaMatkulDosen = () => {
                  initial={{ opacity: 0, x: 20 }}
                  animate={{ opacity: 1, x: 0 }}
                  transition={{ delay: 0.1 }}
-                 onClick={() => setShowCreateTugas(true)}
+                 onClick={() => {
+                   setSelectedPertemuan(null);
+                   setFormData(prev => ({ ...prev, pertemuan: '' }));
+                   setShowCreateTugas(true);
+                 }}
                  className="flex-1 group relative overflow-hidden bg-white border border-lp-border rounded-[2rem] p-6 flex items-center justify-between hover:border-lp-text transition-all duration-500"
                >
                  <div className="flex items-center gap-4">
@@ -368,37 +376,59 @@ const KelolaMatkulDosen = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
-                className="group relative bg-white border border-lp-border rounded-[2.5rem] p-8 hover:shadow-[0_32px_64px_rgba(0,0,0,0.06)] transition-all duration-700 hover:-translate-y-2 cursor-pointer overflow-hidden"
+                className={`group relative bg-white border ${pertemuan.has_materi && pertemuan.has_tugas ? 'border-lp-text shadow-[0_12px_32px_rgba(0,0,0,0.04)]' : 'border-lp-border'} rounded-[2.5rem] p-8 hover:shadow-[0_32px_64px_rgba(0,0,0,0.08)] transition-all duration-700 hover:-translate-y-2 cursor-pointer overflow-hidden`}
                 onClick={() => fetchPertemuanDetail(pertemuan.pertemuan)}
               >
                 {/* Visual Accent */}
-                <div className={`absolute top-0 right-0 w-32 h-32 blur-[40px] opacity-10 transition-opacity duration-700 group-hover:opacity-30 ${pertemuan.has_materi && pertemuan.has_tugas ? 'bg-lp-text' : 'bg-lp-text'}`} />
+                <div className={`absolute top-0 right-0 w-32 h-32 blur-[40px] opacity-10 transition-opacity duration-700 group-hover:opacity-30 ${pertemuan.has_materi && pertemuan.has_tugas ? 'bg-lp-text' : pertemuan.has_materi || pertemuan.has_tugas ? 'bg-lp-text2' : 'bg-transparent'}`} />
                 
                 <div className="relative z-10">
-                  <div className="flex items-center justify-between mb-8">
+                  <div className="flex items-start justify-between mb-8">
                     <div>
-                      <span className="text-[11px] font-mono font-bold tracking-[0.2em] text-lp-text3 uppercase mb-1 block">LECTURE {pertemuan.pertemuan}</span>
-                      <h3 className="text-[22px] font-normal text-lp-text tracking-tight italic">Pertemuan {pertemuan.pertemuan}</h3>
+                      <span className={`text-[10px] font-mono font-bold tracking-[0.2em] uppercase mb-1 block ${pertemuan.has_materi && pertemuan.has_tugas ? 'text-lp-text' : 'text-lp-text3'}`}>
+                        Sesi {pertemuan.pertemuan}
+                      </span>
+                      <h3 className="text-[24px] font-normal text-lp-text tracking-tight">
+                        Pertemuan {pertemuan.pertemuan}
+                      </h3>
                     </div>
-                    <div className={`w-3 h-3 rounded-full ${pertemuan.has_materi && pertemuan.has_tugas ? 'bg-lp-text ring-4 ring-lp-surface' : pertemuan.has_materi || pertemuan.has_tugas ? 'bg-lp-text2 ring-4 ring-lp-surface' : 'bg-lp-border'}`}></div>
+                    {pertemuan.has_materi && pertemuan.has_tugas ? (
+                      <div className="bg-lp-text text-white text-[9px] font-mono font-bold tracking-widest px-3 py-1.5 rounded-full uppercase flex items-center gap-1">
+                        <FiCheckCircle /> Lengkap
+                      </div>
+                    ) : (
+                      <div className={`w-3 h-3 rounded-full mt-2 ${pertemuan.has_materi || pertemuan.has_tugas ? 'bg-lp-text2 ring-4 ring-lp-surface' : 'bg-lp-border'}`}></div>
+                    )}
                   </div>
                   
-                  <div className="space-y-4 mb-8">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[13px] text-lp-text2 font-light flex items-center gap-2">
-                        <FiFileText className="text-lp-text3" /> Module
+                  <div className="space-y-3 mb-8">
+                    <div className="flex items-center justify-between p-3 rounded-2xl bg-lp-surface/50 border border-lp-border/50">
+                      <span className="text-[13px] text-lp-text font-light flex items-center gap-2">
+                        <FiFileText className={pertemuan.has_materi ? "text-lp-text" : "text-lp-text3"} /> Modul
                       </span>
-                      <span className={`text-[11px] font-bold tracking-widest uppercase px-3 py-1.5 rounded-full ${pertemuan.has_materi ? "text-lp-text2 bg-lp-surface" : "text-lp-text3 bg-lp-surface"}`}>
-                        {pertemuan.has_materi ? "Ready" : "Empty"}
-                      </span>
+                      {pertemuan.has_materi ? (
+                        <span className="text-[10px] font-bold tracking-widest uppercase px-3 py-1 text-lp-text bg-white border border-lp-border rounded-full shadow-sm">
+                          Tersedia
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-bold tracking-widest uppercase px-3 py-1 text-lp-text3">
+                          Kosong
+                        </span>
+                      )}
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-[13px] text-lp-text2 font-light flex items-center gap-2">
-                        <FiCalendar className="text-lp-text3" /> Task
+                    <div className="flex items-center justify-between p-3 rounded-2xl bg-lp-surface/50 border border-lp-border/50">
+                      <span className="text-[13px] text-lp-text font-light flex items-center gap-2">
+                        <FiCalendar className={pertemuan.has_tugas ? "text-lp-text" : "text-lp-text3"} /> Tugas
                       </span>
-                      <span className={`text-[11px] font-bold tracking-widest uppercase px-3 py-1.5 rounded-full ${pertemuan.has_tugas ? "text-lp-text2 bg-lp-surface" : "text-lp-text3 bg-lp-surface"}`}>
-                        {pertemuan.has_tugas ? "Active" : "Empty"}
-                      </span>
+                      {pertemuan.has_tugas ? (
+                        <span className="text-[10px] font-bold tracking-widest uppercase px-3 py-1 text-lp-text bg-white border border-lp-border rounded-full shadow-sm">
+                          Aktif
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-bold tracking-widest uppercase px-3 py-1 text-lp-text3">
+                          Kosong
+                        </span>
+                      )}
                     </div>
                   </div>
                   
@@ -407,9 +437,13 @@ const KelolaMatkulDosen = () => {
                       e.stopPropagation();
                       fetchPertemuanDetail(pertemuan.pertemuan);
                     }}
-                    className="w-full py-4 bg-lp-surface text-lp-text rounded-2xl text-[13px] font-bold tracking-[0.1em] uppercase hover:bg-lp-text hover:text-white transition-all duration-500 flex items-center justify-center gap-2"
+                    className={`w-full py-4 rounded-2xl text-[12px] font-bold tracking-[0.1em] uppercase transition-all duration-500 flex items-center justify-center gap-2 ${!(pertemuan.has_materi || pertemuan.has_tugas) ? 'bg-white border border-lp-border text-lp-text hover:border-lp-text hover:bg-lp-surface' : 'bg-lp-text text-white hover:bg-lp-atext shadow-md hover:shadow-xl hover:-translate-y-0.5'}`}
                   >
-                    Manage Session <FiChevronRight />
+                    {!(pertemuan.has_materi || pertemuan.has_tugas) ? (
+                      <>Atur Sesi <FiPlus /></>
+                    ) : (
+                      <>Kelola Sesi <FiChevronRight /></>
+                    )}
                   </button>
                 </div>
               </motion.div>
@@ -445,10 +479,11 @@ const KelolaMatkulDosen = () => {
                         <select
                           value={formData.pertemuan}
                           onChange={(e) => setFormData(prev => ({ ...prev, pertemuan: e.target.value }))}
-                          className="w-full bg-lp-surface font-light text-[15px] border border-lp-border rounded-2xl px-5 py-4 focus:outline-none focus:ring-2 focus:ring-lp-accent/5 focus:border-lp-text transition-all duration-500 appearance-none"
+                          className={`w-full font-light text-[15px] border border-lp-border rounded-2xl px-5 py-4 focus:outline-none focus:ring-2 focus:ring-lp-accent/5 focus:border-lp-text transition-all duration-500 appearance-none ${selectedPertemuan ? 'bg-lp-surface/50 text-lp-text2 cursor-not-allowed' : 'bg-lp-surface text-lp-text'}`}
                           required
+                          disabled={!!selectedPertemuan}
                         >
-                          <option value="">Select Session</option>
+                          <option value="">Pilih Pertemuan</option>
                           {Array.from({ length: 16 }, (_, i) => i + 1).map(pertemuan => (
                             <option key={pertemuan} value={pertemuan}>Pertemuan {pertemuan}</option>
                           ))}
@@ -511,12 +546,12 @@ const KelolaMatkulDosen = () => {
                               </div>
                               {formData.file ? (
                                 <>
-                                  <p className="text-[16px] font-normal text-lp-text mb-1 tracking-tight italic">Resource Locked & Loaded</p>
+                                  <p className="text-[16px] font-normal text-lp-text mb-1 tracking-tight italic">File Siap Diunggah</p>
                                   <p className="text-[12px] text-lp-text3 font-mono uppercase">{formData.file.name}</p>
                                 </>
                               ) : (
                                 <>
-                                  <p className="text-[16px] font-normal text-lp-text mb-1 tracking-tight">Drop module here or <em className="italic underline">browse</em>.</p>
+                                  <p className="text-[16px] font-normal text-lp-text mb-1 tracking-tight">Tarik file ke sini atau <em className="italic underline">telusuri</em>.</p>
                                   <p className="text-[10px] text-lp-text3 font-mono font-medium tracking-widest mt-2 uppercase">PDF · PPT · DOC · ZIP</p>
                                 </>
                               )}
@@ -539,7 +574,7 @@ const KelolaMatkulDosen = () => {
                         className="bg-lp-text text-lp-bg px-8 py-4 rounded-full text-[13px] font-bold hover:bg-lp-atext hover:-translate-y-1 disabled:opacity-40 transition-all duration-500 uppercase tracking-widest flex items-center justify-center gap-3 shadow-[0_12px_24px_rgba(0,0,0,0.1)]"
                       >
                         {submitting && <div className="w-4 h-4 border-2 border-lp-bg/30 border-t-lp-bg rounded-full animate-spin"></div>}
-                        <span>{submitting ? 'RELEASING' : 'RELEASE MODULE'}</span>
+                        <span>{submitting ? 'MEMPUBLIKASIKAN' : 'PUBLIKASI MATERI'}</span>
                       </button>
                     </div>
                   </form>
@@ -561,7 +596,7 @@ const KelolaMatkulDosen = () => {
                   </div>
 
                   <div className="mb-10">
-                    <span className="text-[11px] font-mono font-medium tracking-[0.2em] uppercase text-lp-text3 mb-3 block">ASSESSMENT TASK</span>
+                    <span className="text-[11px] font-mono font-medium tracking-[0.2em] uppercase text-lp-text3 mb-3 block">TUGAS PENILAIAN</span>
                     <h3 className="text-3xl md:text-4xl font-normal text-lp-text tracking-tight leading-none italic">
                       Buat Tugas Baru
                     </h3>
@@ -574,10 +609,11 @@ const KelolaMatkulDosen = () => {
                         <select
                           value={formData.pertemuan}
                           onChange={(e) => setFormData(prev => ({ ...prev, pertemuan: e.target.value }))}
-                          className="w-full bg-lp-surface font-light text-[15px] border border-lp-border rounded-2xl px-5 py-4 focus:outline-none focus:ring-2 focus:ring-lp-accent/5 focus:border-lp-text transition-all duration-500 appearance-none"
+                          className={`w-full font-light text-[15px] border border-lp-border rounded-2xl px-5 py-4 focus:outline-none focus:ring-2 focus:ring-lp-accent/5 focus:border-lp-text transition-all duration-500 appearance-none ${selectedPertemuan ? 'bg-lp-surface/50 text-lp-text2 cursor-not-allowed' : 'bg-lp-surface text-lp-text'}`}
                           required
+                          disabled={!!selectedPertemuan}
                         >
-                          <option value="">Select Session</option>
+                          <option value="">Pilih Pertemuan</option>
                           {Array.from({ length: 16 }, (_, i) => i + 1).map(pertemuan => (
                             <option key={pertemuan} value={pertemuan}>Pertemuan {pertemuan}</option>
                           ))}
@@ -611,7 +647,7 @@ const KelolaMatkulDosen = () => {
                     
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                       <div>
-                        <label className="block text-[11px] font-mono font-semibold text-lp-text3 mb-3 tracking-widest uppercase">Submission Deadline</label>
+                        <label className="block text-[11px] font-mono font-semibold text-lp-text3 mb-3 tracking-widest uppercase">Tenggat Waktu Pengumpulan</label>
                         <input
                           type="datetime-local"
                           value={formData.due_date}
@@ -621,7 +657,7 @@ const KelolaMatkulDosen = () => {
                       </div>
                       
                       <div>
-                        <label className="block text-[11px] font-mono font-semibold text-lp-text3 mb-3 tracking-widest uppercase">Reference File <span className="font-sans lowercase opacity-50 font-normal ml-1">(Optional)</span></label>
+                        <label className="block text-[11px] font-mono font-semibold text-lp-text3 mb-3 tracking-widest uppercase">File Referensi <span className="font-sans lowercase opacity-50 font-normal ml-1">(Opsional)</span></label>
                         <div className="relative group">
                           <input
                             type="file"
@@ -652,7 +688,7 @@ const KelolaMatkulDosen = () => {
                                 {formData.file_tugas ? (
                                   <p className="text-[12px] text-lp-text font-mono uppercase truncate max-w-[160px]">{formData.file_tugas.name}</p>
                                 ) : (
-                                  <p className="text-[12px] text-lp-text3 font-medium uppercase tracking-[0.1em]">Upload Guide</p>
+                                  <p className="text-[12px] text-lp-text3 font-medium uppercase tracking-[0.1em]">Upload Panduan</p>
                                 )}
                              </div>
                           </label>
@@ -666,7 +702,7 @@ const KelolaMatkulDosen = () => {
                         onClick={() => setShowCreateTugas(false)}
                         className="px-8 py-4 border border-lp-border text-lp-text2 rounded-full text-[13px] font-bold hover:bg-lp-surface transition-all duration-300 uppercase tracking-widest"
                       >
-                        Cancel
+                        Batal
                       </button>
                       <button
                         type="submit"
@@ -674,7 +710,7 @@ const KelolaMatkulDosen = () => {
                         className="bg-lp-text text-lp-bg px-8 py-4 rounded-full text-[13px] font-bold hover:bg-lp-atext hover:-translate-y-1 disabled:opacity-40 transition-all duration-500 uppercase tracking-widest flex items-center justify-center gap-3 shadow-[0_12px_24px_rgba(0,0,0,0.1)]"
                       >
                         {submitting && <div className="w-4 h-4 border-2 border-lp-bg/30 border-t-lp-bg rounded-full animate-spin"></div>}
-                        <span>{submitting ? 'ACTIVATING' : 'ACTIVATE TASK'}</span>
+                        <span>{submitting ? 'MENGAKTIFKAN' : 'AKTIFKAN TUGAS'}</span>
                       </button>
                     </div>
                   </form>
@@ -695,7 +731,7 @@ const KelolaMatkulDosen = () => {
                   
                   <div className="flex items-start justify-between mb-12 relative z-10">
                     <div>
-                      <span className="text-[11px] font-mono font-bold tracking-[0.2em] text-lp-text3 uppercase mb-4 block">SESSION DETAILS</span>
+                      <span className="text-[11px] font-mono font-bold tracking-[0.2em] text-lp-text3 uppercase mb-4 block">DETAIL SESI</span>
                       <h3 className="text-4xl md:text-5xl font-light text-lp-text tracking-tight mb-3">
                         Pertemuan {selectedPertemuan}
                       </h3>
@@ -715,7 +751,7 @@ const KelolaMatkulDosen = () => {
                   {detailLoading ? (
                     <div className="flex flex-col items-center justify-center py-20 relative z-10">
                       <div className="w-12 h-12 border-2 border-lp-text/10 border-t-lp-text rounded-full animate-spin mb-6"></div>
-                      <p className="text-[11px] font-mono font-bold tracking-widest text-lp-text3 uppercase">Synchronizing Modules...</p>
+                      <p className="text-[11px] font-mono font-bold tracking-widest text-lp-text3 uppercase">Sinkronisasi Modul...</p>
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 relative z-10">
@@ -724,14 +760,18 @@ const KelolaMatkulDosen = () => {
                       <div className="space-y-8">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
-                            <h4 className="text-[11px] font-mono font-bold tracking-[0.2em] uppercase text-lp-text3">Modules</h4>
+                            <h4 className="text-[11px] font-mono font-bold tracking-[0.2em] uppercase text-lp-text3">Modul</h4>
                             <div className="h-px w-12 bg-lp-border" />
                           </div>
                           <button
-                            onClick={() => setShowUploadMateri(true)}
+                            onClick={() => {
+                              setFormData(prev => ({ ...prev, pertemuan: selectedPertemuan }));
+                              setShowUploadMateri(true);
+                              setShowDetailPertemuan(false);
+                            }}
                             className="text-[10px] font-mono font-bold tracking-widest uppercase text-lp-text2 hover:text-lp-accent flex items-center gap-1.5"
                           >
-                            <FiPlus /> New Asset
+                            <FiPlus /> Upload Materi
                           </button>
                         </div>
                         
@@ -743,7 +783,7 @@ const KelolaMatkulDosen = () => {
                                   <div className="flex-1 min-w-0">
                                     <p className="text-[10px] font-mono font-bold text-lp-text3 tracking-widest uppercase mb-2">MOD-{materi.id}</p>
                                     <h5 className="text-[18px] font-normal text-lp-text tracking-tight mb-2 truncate italic">{materi.title}</h5>
-                                    <p className="text-[13px] text-lp-text2 font-light line-clamp-2">{materi.desc || "No description."}</p>
+                                    <p className="text-[13px] text-lp-text2 font-light line-clamp-2">{materi.desc || "Tidak ada deskripsi."}</p>
                                   </div>
                                   <div className="flex flex-col gap-2">
                                     {materi.file_path && (
@@ -769,7 +809,7 @@ const KelolaMatkulDosen = () => {
                           ) : (
                             <div className="py-16 text-center border-2 border-dashed border-lp-border rounded-[2rem]">
                               <FiFileText className="text-4xl text-lp-text/10 mx-auto mb-4" />
-                              <p className="text-[11px] font-mono font-bold text-lp-text3 uppercase">No modules</p>
+                              <p className="text-[11px] font-mono font-bold text-lp-text3 uppercase">Belum ada materi</p>
                             </div>
                           )}
                         </div>
@@ -779,14 +819,18 @@ const KelolaMatkulDosen = () => {
                       <div className="space-y-8">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
-                            <h4 className="text-[11px] font-mono font-bold tracking-[0.2em] uppercase text-lp-text3">Evaluations</h4>
+                            <h4 className="text-[11px] font-mono font-bold tracking-[0.2em] uppercase text-lp-text3">Evaluasi</h4>
                             <div className="h-px w-12 bg-lp-border" />
                           </div>
                           <button
-                            onClick={() => setShowCreateTugas(true)}
+                            onClick={() => {
+                              setFormData(prev => ({ ...prev, pertemuan: selectedPertemuan }));
+                              setShowCreateTugas(true);
+                              setShowDetailPertemuan(false);
+                            }}
                             className="text-[10px] font-mono font-bold tracking-widest uppercase text-lp-text2 hover:text-lp-accent flex items-center gap-1.5"
                           >
-                            <FiPlus /> New Assessment
+                            <FiPlus /> Upload Tugas
                           </button>
                         </div>
                         
@@ -796,7 +840,7 @@ const KelolaMatkulDosen = () => {
                               <div key={index} className="group bg-white border border-lp-border rounded-[2rem] p-6 hover:shadow-xl hover:-translate-y-1 transition-all duration-500">
                                 <div className="flex justify-between items-start gap-4 mb-4">
                                   <div className="flex-1 min-w-0">
-                                    <p className="text-[10px] font-mono font-bold text-lp-text3 tracking-widest uppercase mb-2">TASK-{tugas.id}</p>
+                                    <p className="text-[10px] font-mono font-bold text-lp-text3 tracking-widest uppercase mb-2">TUGAS-{tugas.id}</p>
                                     <h5 className="text-[18px] font-normal text-lp-text tracking-tight italic">{tugas.title}</h5>
                                   </div>
                                   <div className="flex flex-col gap-2">
@@ -817,12 +861,12 @@ const KelolaMatkulDosen = () => {
                                 <div className="space-y-2">
                                   <div className="flex items-center gap-2 text-[12px] text-lp-text2 font-light">
                                     <FiClock className="opacity-60" />
-                                    <span>Deadline: {tugas.due_date ? new Date(tugas.due_date).toLocaleString('id-ID') : 'Flexible'}</span>
+                                    <span>Deadline: {tugas.due_date ? new Date(tugas.due_date).toLocaleString('id-ID') : 'Fleksibel'}</span>
                                   </div>
                                   {tugas.file_path && (
                                     <div className="flex items-center gap-2 text-[12px] text-lp-text2 font-light">
                                       <FiFile className="opacity-60" />
-                                      <a href={resolveBackendAssetUrl(tugas.file_path)} className="underline hover:text-lp-text2">Reference Asset</a>
+                                      <a href={resolveBackendAssetUrl(tugas.file_path)} className="underline hover:text-lp-text2">File Referensi</a>
                                     </div>
                                   )}
                                 </div>
@@ -831,7 +875,7 @@ const KelolaMatkulDosen = () => {
                           ) : (
                             <div className="py-16 text-center border-2 border-dashed border-lp-border rounded-[2rem]">
                               <FiCalendar className="text-4xl text-lp-text/10 mx-auto mb-4" />
-                              <p className="text-[11px] font-mono font-bold text-lp-text3 uppercase">No tasks</p>
+                              <p className="text-[11px] font-mono font-bold text-lp-text3 uppercase">Belum ada tugas</p>
                             </div>
                           )}
                         </div>

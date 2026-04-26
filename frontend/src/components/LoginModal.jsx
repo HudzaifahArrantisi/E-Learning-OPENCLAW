@@ -115,7 +115,7 @@ export default function LoginModal({ isOpen, onClose }) {
           {/* Password */}
           <div className="flex flex-col gap-2">
             <label className="text-[11px] font-bold text-lp-text2 tracking-[0.08em] uppercase font-mono" htmlFor="modal-password">
-            password = password
+            password
             </label>
             <div className="relative flex items-center group">
               <input

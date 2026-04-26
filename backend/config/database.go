@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -39,11 +40,18 @@ func InitDB() {
 			log.Fatal("DB_DSN environment variable is required for PostgreSQL connection")
 		}
 
+		// Disable pgx prepared statement cache to fix Supabase transaction pooling (42P05 error)
+		if !strings.Contains(dsn, "default_query_exec_mode") {
+			if strings.Contains(dsn, "?") {
+				dsn += "&default_query_exec_mode=exec&statement_cache_capacity=0"
+			} else {
+				dsn += "?default_query_exec_mode=exec&statement_cache_capacity=0"
+			}
+		}
+
 		// Initialize GORM with PostgreSQL driver
 		gdb, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
 			Logger: logger.Default.LogMode(logger.Silent),
-			// Disable prepared statements — required for Supabase transaction pooling (PgBouncer).
-			// PgBouncer in transaction mode cannot track prepared statements across connections.
 			PrepareStmt: false,
 		})
 		if err != nil {
@@ -58,12 +66,8 @@ func InitDB() {
 			log.Fatalf("FATAL: %v", initErr)
 		}
 
-		// ─── Connection Pool Configuration (Supabase Free Tier) ───
-		// Supabase transaction pooler allows ~15 concurrent connections.
-		// We keep our pool small to avoid exhausting the limit,
-		// especially when multiple serverless instances run in parallel.
-		sqlDB.SetMaxOpenConns(5)               // Max 5 active connections per instance
-		sqlDB.SetMaxIdleConns(2)               // Keep 2 idle connections warm
+		sqlDB.SetMaxOpenConns(5)                // Max 5 active connections per instance
+		sqlDB.SetMaxIdleConns(2)                // Keep 2 idle connections warm
 		sqlDB.SetConnMaxLifetime(5 * time.Minute) // Recycle connections every 5 min
 		sqlDB.SetConnMaxIdleTime(1 * time.Minute) // Close idle connections after 1 min
 		// ──────────────────────────────────────────────────────────

@@ -306,7 +306,7 @@ const DetailPertemuanDosen = () => {
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="p-2 bg-lp-bg text-lp-text2 rounded-xl hover:bg-lp-surface transition-colors"
-                                title="Download"
+                                title="Unduh"
                               >
                                 <FiDownload />
                               </a>

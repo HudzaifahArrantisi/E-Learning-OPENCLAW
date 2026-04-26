@@ -1,33 +1,55 @@
-# Tahap 1: Build Image
+# ============================================================
+# Backend Dockerfile — Go (Gin) Multi-stage Build
+# Stage 1: Compile Go binary
+# Stage 2: Minimal Alpine runtime
+# ============================================================
+
+# --- Stage 1: Build ---
 FROM golang:1.24-alpine AS builder
 
-# Set direktori kerja
+# Install git and ca-certificates (needed for HTTPS calls to Supabase)
+RUN apk add --no-cache git ca-certificates tzdata
+
 WORKDIR /app
 
-# Install dependensi
+# Download dependencies first (better Docker cache)
 COPY go.mod go.sum ./
 RUN go mod download
 
-# Copy source code backend
+# Copy all source code
 COPY . .
 
-# Build aplikasi Go
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o server main.go
+# Build static binary (no CGO = smaller, fully static)
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+    go build -a -installsuffix cgo \
+    -ldflags="-s -w" \
+    -o server main.go
 
-# Tahap 2: Runtime Image (Kecil)
-FROM alpine:latest
+# --- Stage 2: Runtime ---
+FROM alpine:3.20
+
+# Install ca-certificates (for HTTPS to Supabase) and wget (for healthcheck)
+RUN apk add --no-cache ca-certificates tzdata wget
 
 WORKDIR /app
 
-# Copy binary dari builder
+# Copy binary from builder
 COPY --from=builder /app/server .
-# Copy konfigurasi email/aset (jika ada template html) dan environment example
-COPY --from=builder /app/.env.example .
 
-# Siapkan direktori upload minimal
-RUN mkdir -p uploads/posts uploads/materi uploads/tugas uploads/tugasdosen uploads/profile
+# Create upload directories (even though we use DB BYTEA, some legacy paths may exist)
+RUN mkdir -p uploads/posts uploads/materi uploads/tugas uploads/tugasdosen uploads/profile logs
 
-# Eksekusi port
+# Non-root user for security
+RUN addgroup -g 1001 -S appuser && \
+    adduser -u 1001 -S appuser -G appuser && \
+    chown -R appuser:appuser /app
+
+USER appuser
+
 EXPOSE 8080
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 --start-period=15s \
+    CMD wget --spider -q http://localhost:8080/ || exit 1
 
 CMD ["./server"]

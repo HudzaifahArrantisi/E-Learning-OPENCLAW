@@ -1592,7 +1592,7 @@ func GetMahasiswaTugasList(c *gin.Context) {
 			COALESCE(t.description, '') AS description,
 			COALESCE(t.file_tugas, '') AS file_tugas,
 			t.due_date,
-			t.type,
+			COALESCE(t.type, 'tugas') AS type,
 			t.created_at,
 			s.id AS submission_id,
 			s.grade
@@ -1618,11 +1618,12 @@ func GetMahasiswaTugasList(c *gin.Context) {
 		var courseID, courseName, title, description, fileTugas, typeTugas string
 		var dueDate, createdAt sql.NullTime
 		var submissionID sql.NullInt64
-		var grade sql.NullInt64
+		var grade sql.NullFloat64
 
 		err := rows.Scan(&id, &courseID, &courseName, &pertemuan, &title, &description,
 			&fileTugas, &dueDate, &typeTugas, &createdAt, &submissionID, &grade)
 		if err != nil {
+			log.Printf("Scan error in GetMahasiswaTugasList: %v", err)
 			continue
 		}
 
@@ -1650,7 +1651,7 @@ func GetMahasiswaTugasList(c *gin.Context) {
 		}
 
 		if grade.Valid {
-			taskData["grade"] = grade.Int64
+			taskData["grade"] = grade.Float64
 		} else if submissionID.Valid {
 			taskData["grade"] = nil
 		}
@@ -1703,7 +1704,7 @@ func GetMahasiswaTugasByCourse(c *gin.Context) {
 			COALESCE(t.description, '') AS description,
 			COALESCE(t.file_tugas, '') AS file_tugas,
 			t.due_date,
-			t.type,
+			COALESCE(t.type, 'tugas') AS type,
 			t.created_at,
 			s.id AS submission_id,
 			s.grade
@@ -1727,11 +1728,12 @@ func GetMahasiswaTugasByCourse(c *gin.Context) {
 		var courseIDRes, title, description, fileTugas, typeTugas string
 		var dueDate, createdAt sql.NullTime
 		var submissionID sql.NullInt64
-		var grade sql.NullInt64
+		var grade sql.NullFloat64
 
 		err := rows.Scan(&id, &courseIDRes, &pertemuan, &title, &description,
 			&fileTugas, &dueDate, &typeTugas, &createdAt, &submissionID, &grade)
 		if err != nil {
+			log.Printf("Scan error in GetMahasiswaTugasByCourse: %v", err)
 			continue
 		}
 
@@ -1758,7 +1760,7 @@ func GetMahasiswaTugasByCourse(c *gin.Context) {
 		}
 
 		if grade.Valid {
-			taskData["grade"] = grade.Int64
+			taskData["grade"] = grade.Float64
 		} else if submissionID.Valid {
 			taskData["grade"] = nil
 		}

@@ -1,9 +1,9 @@
 # ============================================================
-# docker-compose.yml — VPS Production Deployment
-# Replace YOUR_VPS_IP with your actual VPS public IP or domain
+# docker-compose.dev.yml — LOCAL Kali Linux Testing
+# Uses localhost for all URLs
 #
 # USAGE:
-#   docker compose up --build -d
+#   docker compose -f docker-compose.dev.yml up --build
 # ============================================================
 
 services:
@@ -16,11 +16,9 @@ services:
       - "8080:8080"
     env_file:
       - ./backend/.env
-    environment:
-      - GIN_MODE=release
     volumes:
       - backend_uploads:/app/uploads
-    restart: always
+    restart: unless-stopped
     networks:
       - app_network
     healthcheck:
@@ -35,18 +33,15 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        # ⚠️ CHANGE THIS to your VPS public IP or domain name!
-        # Examples:
-        #   http://123.456.789.10:8080
-        #   https://api.yourdomain.com
-        VITE_API_URL: http://YOUR_VPS_IP:8080
-        VITE_API_BASE_URL: http://YOUR_VPS_IP:8080
+        # Local testing: point to localhost backend
+        VITE_API_URL: http://localhost:8080
+        VITE_API_BASE_URL: http://localhost:8080
     container_name: openclaw_frontend
     ports:
       - "3000:80"
     depends_on:
       - backend
-    restart: always
+    restart: unless-stopped
     networks:
       - app_network
 
