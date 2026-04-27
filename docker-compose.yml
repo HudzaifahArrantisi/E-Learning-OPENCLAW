@@ -14,8 +14,8 @@
 #   docker ps
 #   ./logs.sh
 # ============================================================
-
 services:
+
   # ────────────────────────────────────────────
   # 🖥️ Backend — Go + Gin API
   # Internal only (no public ports)
@@ -32,17 +32,18 @@ services:
     environment:
       - GIN_MODE=release
     volumes:
-      - ./backend/uploads:/app/uploads
+      - backend_uploads:/app/uploads
     restart: always
     networks:
       - app_network
+    # ✅ FIXED: Use GET instead of HEAD, and use /api/feed
+    # because /health returns 404 (not implemented yet)
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/api/feed || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 15s
-    # 📝 Log rotation — prevents filling 40GB disk
+      start_period: 20s
     logging:
       driver: "json-file"
       options:
@@ -61,7 +62,6 @@ services:
     restart: always
     networks:
       - app_network
-    # 📝 Log rotation
     logging:
       driver: "json-file"
       options:
@@ -89,7 +89,6 @@ services:
     restart: always
     networks:
       - app_network
-    # 📝 Log rotation
     logging:
       driver: "json-file"
       options:
@@ -101,6 +100,8 @@ services:
 # ────────────────────────────────────────────
 volumes:
   openclaw_data:
+    driver: local
+  backend_uploads:
     driver: local
 
 # ────────────────────────────────────────────
