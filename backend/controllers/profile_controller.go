@@ -503,4 +503,4 @@ func GetRecommendedAccounts(c *gin.Context) {
 		"ormawa": ormawaList,
 		"ukm":    ukmList,
 	}, "Rekomendasi akun berhasil diambil")
-}
+}
