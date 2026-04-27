@@ -11,7 +11,6 @@ export default function LandingPage() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [showTutorial, setShowTutorial] = useState(false)
-  const [showMaintenance, setShowMaintenance] = useState(true)
   const [activeRoleGuide, setActiveRoleGuide] = useState(0)
 
   useEffect(() => {
@@ -662,36 +661,7 @@ export default function LandingPage() {
           </div>
         </div>
       )}
-      {/* MAINTENANCE NOTIFICATION */}
-      {showMaintenance && (
-        <div className="fixed top-28 left-1/2 -translate-x-1/2 z-[100] w-[calc(100%-32px)] sm:w-[500px] animate-fadeIn">
-          <div className="bg-white/90 backdrop-blur-2xl border border-lp-border/50 rounded-2xl p-4 shadow-[0_30px_60px_rgba(0,0,0,0.12)] relative overflow-hidden">
-            {/* Decorative accent */}
-            <div className="absolute top-0 left-0 w-full h-1 bg-lp-accent" />
-            
-            <button 
-              onClick={() => setShowMaintenance(false)}
-              className="absolute top-2 right-2 text-lp-text3 hover:text-lp-text transition-colors p-1"
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
 
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-full bg-lp-accent/10 flex items-center justify-center shrink-0 text-xl">
-                ⚠️
-              </div>
-              <div className="pr-6">
-                <h4 className="text-[13px] font-bold text-lp-text tracking-tight">Sistem dalam Pemeliharaan Koneksi oleh admin (candalena)</h4>
-                <p className="text-[12px] text-lp-text2 font-light leading-relaxed mt-0.5">
-                  Koneksi Server nya lagi Shutdown dulu yaa ampe 1 Mei, karna limit free plan nya wkkwkwk
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
