@@ -37,11 +37,56 @@ func main() {
 		log.Println("Database connected successfully ✅")
 	}
 
-	r := gin.Default()
+	r := gin.New()
 	r.SetTrustedProxies(nil)
 
 	// Recover from any panics and log them
 	r.Use(gin.Recovery())
+
+	// ============================================================
+	// 📝 STRUCTURED REQUEST LOGGING
+	// Logs every request to stdout — Docker captures automatically
+	// Format: timestamp | METHOD /path | status | duration | IP
+	// ============================================================
+	r.Use(func(c *gin.Context) {
+		start := time.Now()
+		path := c.Request.URL.Path
+		raw := c.Request.URL.RawQuery
+		if raw != "" {
+			path = path + "?" + raw
+		}
+
+		// Process request
+		c.Next()
+
+		// Calculate latency
+		latency := time.Since(start)
+		status := c.Writer.Status()
+		clientIP := c.ClientIP()
+		method := c.Request.Method
+		size := c.Writer.Size()
+
+		// Color status code for readability
+		var level string
+		switch {
+		case status >= 500:
+			level = "ERROR"
+		case status >= 400:
+			level = "WARN"
+		default:
+			level = "INFO"
+		}
+
+		log.Printf("[%s] %s %s | status=%d | time=%v | ip=%s | size=%d",
+			level, method, path, status, latency, clientIP, size)
+
+		// Log errors in detail
+		if len(c.Errors) > 0 {
+			for _, e := range c.Errors {
+				log.Printf("[ERROR] %s", e.Error())
+			}
+		}
+	})
 
 	// ============================================================
 	// 🩺 HEALTH CHECK — Used by Docker healthcheck & monitoring
@@ -75,6 +120,11 @@ func main() {
 			}
 			// Always allow Vercel production frontend
 			if strings.HasPrefix(origin, "https://e-learning-openclaw.vercel.app") {
+				return true
+			}
+			// Allow andromedahub.my.id (custom domain)
+			if origin == "https://andromedahub.my.id" ||
+				origin == "https://www.andromedahub.my.id" {
 				return true
 			}
 			// Allow local network IPs (for Kali Linux VM testing)
@@ -150,6 +200,7 @@ func main() {
 	log.Println("🖼️ Image Compression: Auto JPEG 75% on upload")
 	log.Println("📡 File Serving: /api/files/:id (streaming from DB)")
 	log.Println("🦀 OpenClaw Reminder: Embedded & Running")
+	log.Println("📝 Structured Logging: Active (stdout → Docker)")
 
 	log.Printf("Selamat datang! Ini nama '%s' dalam bentuk besar.", nama)
 

@@ -1,22 +1,32 @@
 # ============================================================
-# docker-compose.yml — VPS Production (Backend Only)
+# docker-compose.yml — VPS Production
 #
-# Frontend is deployed on Vercel (e-learning-openclaw.vercel.app)
-# Database is on Supabase (external cloud)
-# This file only runs the Go backend in Docker
+# Services:
+#   1. openclaw_backend  — Go API (internal, port 8080)
+#   2. openclaw_gateway  — OpenClaw CLI gateway (24/7)
+#   3. nginx             — Reverse proxy (public, 80/443)
+#
+# Frontend: Vercel (https://www.andromedahub.my.id)
+# Database: Supabase (external cloud)
 #
 # USAGE:
 #   docker compose up --build -d
+#   docker ps
+#   ./logs.sh
 # ============================================================
 
 services:
+  # ────────────────────────────────────────────
+  # 🖥️ Backend — Go + Gin API
+  # Internal only (no public ports)
+  # Nginx proxies /api/*, /health, /uploads/*
+  # ────────────────────────────────────────────
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
     container_name: openclaw_backend
-    ports:
-      - "8080:8080"
+    # ⚠️ No "ports:" — internal only, accessed via nginx
     env_file:
       - ./backend/.env
     environment:
@@ -32,7 +42,70 @@ services:
       timeout: 10s
       retries: 3
       start_period: 15s
+    # 📝 Log rotation — prevents filling 40GB disk
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
 
+  # ────────────────────────────────────────────
+  # 🦀 OpenClaw Gateway — Runs 24/7
+  # Persistent state in Docker volume
+  # ────────────────────────────────────────────
+  openclaw_gateway:
+    build: ./openclaw
+    container_name: openclaw_gateway
+    volumes:
+      - openclaw_data:/root/.openclaw
+    restart: always
+    networks:
+      - app_network
+    # 📝 Log rotation
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  # ────────────────────────────────────────────
+  # 🌐 Nginx — Reverse Proxy (public-facing)
+  # SSL via Let's Encrypt
+  # Routes: /api/*, /health, /uploads/* → backend
+  # ────────────────────────────────────────────
+  nginx:
+    image: nginx:alpine
+    container_name: nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      - /var/www/certbot:/var/www/certbot:ro
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: always
+    networks:
+      - app_network
+    # 📝 Log rotation
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+# ────────────────────────────────────────────
+# 📦 Volumes
+# ────────────────────────────────────────────
+volumes:
+  openclaw_data:
+    driver: local
+
+# ────────────────────────────────────────────
+# 🌐 Networks
+# ────────────────────────────────────────────
 networks:
   app_network:
     driver: bridge
