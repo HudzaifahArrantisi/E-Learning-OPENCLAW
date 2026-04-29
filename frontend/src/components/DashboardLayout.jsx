@@ -63,7 +63,7 @@ const getFileUrl = (filePath) => {
 
 const DashboardLayout = ({ 
   role, 
-  profileEndpoint = '/api/mahasiswa/profile',
+  profileEndpoint,
   statsEndpoint, 
   quickActions = [],
   statsComponent,

@@ -1172,6 +1172,7 @@ func getStatusLabel(status string) string {
 // EXISTING DOSEN FUNCTIONS (DIPERTAHANKAN - tidak diubah)
 // =============================================
 
+/*
 // GetDosenProfile - Get profile dosen
 func GetDosenProfile(c *gin.Context) {
 	userID, exists := c.Get("user_id")
@@ -1230,6 +1231,7 @@ func GetDosenProfile(c *gin.Context) {
 		},
 	}, "Profile retrieved successfully")
 }
+*/
 
 // GetDosenStats - Get statistics for dosen dashboard
 func GetDosenStats(c *gin.Context) {
@@ -1432,6 +1434,7 @@ func GetDosenCourses(c *gin.Context) {
 	utils.SuccessResponse(c, courses, "Courses retrieved successfully")
 }
 
+/*
 // UpdateDosenProfile - Update profile dosen
 func UpdateDosenProfile(c *gin.Context) {
 	userID, exists := c.Get("user_id")
@@ -1470,6 +1473,7 @@ func UpdateDosenProfile(c *gin.Context) {
 
 	utils.SuccessResponse(c, nil, "Profile updated successfully")
 }
+*/
 
 // UploadMateri - Upload materi pembelajaran
 func UploadMateri(c *gin.Context) {

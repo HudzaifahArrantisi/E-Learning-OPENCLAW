@@ -59,7 +59,6 @@ const DashboardDosen = () => {
   return (
     <DashboardLayout
       role="dosen"
-      profileEndpoint="/api/dosen/profile"
       statsEndpoint="/api/dosen/stats"
       quickActions={quickActions}
       statsComponent={statsComponent}

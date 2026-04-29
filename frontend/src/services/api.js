@@ -357,9 +357,9 @@ api.getTranskripNilai = () =>
 // ==============================================================
 
 api.getDosenCourses = () => api.get('/api/dosen/courses')
-api.getDosenProfile = () => api.get('/api/dosen/profile')
+// api.getDosenProfile = () => api.get('/api/dosen/profile')
 api.getDosenStats = () => api.get('/api/dosen/stats')
-api.updateDosenProfile = (data) => api.put('/api/dosen/profile', data)
+// api.updateDosenProfile = (data) => api.put('/api/dosen/profile', data)
 
 // === Materi & Tugas ===
 api.uploadMateri = (data) =>

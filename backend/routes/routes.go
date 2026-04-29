@@ -197,9 +197,9 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB) {
 		dosen.GET("/matkul/:course_id/pertemuan", controllers.GetPertemuanByMatkul)
 		dosen.GET("/matkul/:course_id/pertemuan/:pertemuan", controllers.GetPertemuanDetail)
 
-		// Profile
-		dosen.GET("/profile", controllers.GetDosenProfile)
-		dosen.PUT("/profile", controllers.UpdateDosenProfile)
+		// Profile (Removed as requested to avoid errors)
+		// dosen.GET("/profile", controllers.GetDosenProfile)
+		// dosen.PUT("/profile", controllers.UpdateDosenProfile)
 		dosen.GET("/stats", controllers.GetDosenStats)
 	}
 
