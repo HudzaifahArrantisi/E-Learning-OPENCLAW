@@ -16,7 +16,11 @@
 
 ### 2. Dashboard Mahasiswa
 *Pengalaman feed layaknya media sosial (For You, Like, Komentar, Update Organisasi) yang digabungkan dengan fungsi inti akademik (Tugas, Materi, Absensi, Nilai, UKT).*
-![Dashboard Mahasiswa](frontend/src/assets/image1.png)
+![Dashboard Mahasiswa](frontend/src/assets/image.png)
+
+### 3. Notifikasi Telegram
+*Notifikasi Real Time Tugas Mahasiswa.*
+![Notifikasi Telegram](frontend/src/assets/image2.png)
 
 ---
 

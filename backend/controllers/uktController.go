@@ -504,7 +504,7 @@ func CancelPayment(c *gin.Context) {
 	var status string
 	var totalDibayar float64
 	var pakasirOrderID string
-	var amount int64
+	var amount float64
 	var err error
 
 	// Cari data pembayaran berdasarkan role
