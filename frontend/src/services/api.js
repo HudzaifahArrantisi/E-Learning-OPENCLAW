@@ -348,6 +348,10 @@ api.getAllPertemuanAttendance = () =>
 api.getAttendanceByCoursePertemuan = (courseId) =>
   api.get(`/api/mahasiswa/absensi/pertemuan?course_id=${courseId}`)
 
+// Transkrip Nilai Mahasiswa
+api.getTranskripNilai = () =>
+  api.get('/api/mahasiswa/transkrip-nilai')
+
 // ==============================================================
 // ======================= DOSEN ROUTES =========================
 // ==============================================================

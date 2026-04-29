@@ -1777,3 +1777,216 @@ func GetMahasiswaTugasByCourse(c *gin.Context) {
 		"total": len(tasks),
 	}, "Tasks retrieved successfully")
 }
+
+// GetMahasiswaTranskripNilai - Get transkrip nilai mahasiswa dari submissions
+func GetMahasiswaTranskripNilai(c *gin.Context) {
+	userID, exists := c.Get("user_id")
+	if !exists {
+		utils.ErrorResponse(c, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	// Get mahasiswa ID
+	var mahasiswaID int
+	var mahasiswaName, mahasiswaNIM string
+	err := config.DB.QueryRow("SELECT id, name, nim FROM mahasiswa WHERE user_id = $1", userID).Scan(&mahasiswaID, &mahasiswaName, &mahasiswaNIM)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusNotFound, "Mahasiswa not found")
+		return
+	}
+
+	// Query: Get all graded submissions grouped by course and pertemuan
+	query := `
+		SELECT 
+			mk.kode AS course_id,
+			mk.nama AS course_name,
+			mk.sks,
+			d.name AS dosen_name,
+			t.pertemuan,
+			t.title AS task_title,
+			t.type AS task_type,
+			s.id AS submission_id,
+			COALESCE(s.grade, 0) AS grade,
+			s.created_at AS submitted_at,
+			s.updated_at AS graded_at
+		FROM submissions s
+		JOIN tugas t ON s.task_id = t.id
+		JOIN mata_kuliah mk ON t.course_id = mk.kode
+		JOIN dosen d ON mk.dosen_id = d.id
+		WHERE s.student_id = $1 AND t.deleted_at IS NULL
+		ORDER BY mk.nama, t.pertemuan, t.title
+	`
+
+	rows, err := config.DB.Query(query, mahasiswaID)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to fetch transkrip: "+err.Error())
+		return
+	}
+	defer rows.Close()
+
+	// Build course map
+	type GradeItem struct {
+		SubmissionID int       `json:"submission_id"`
+		Pertemuan    int       `json:"pertemuan"`
+		TaskTitle    string    `json:"task_title"`
+		TaskType     string    `json:"task_type"`
+		Grade        float64   `json:"grade"`
+		SubmittedAt  time.Time `json:"submitted_at"`
+		GradedAt     time.Time `json:"graded_at"`
+	}
+
+	type CourseGrade struct {
+		CourseID   string      `json:"course_id"`
+		CourseName string      `json:"course_name"`
+		SKS        int         `json:"sks"`
+		DosenName  string      `json:"dosen_name"`
+		Grades     []GradeItem `json:"grades"`
+		Average    float64     `json:"average"`
+		TotalGraded int       `json:"total_graded"`
+		LetterGrade string    `json:"letter_grade"`
+	}
+
+	courseMap := make(map[string]*CourseGrade)
+	var courseOrder []string
+
+	for rows.Next() {
+		var courseID, courseName, dosenName, taskTitle, taskType string
+		var sks, pertemuan, submissionID int
+		var grade float64
+		var submittedAt, gradedAt time.Time
+
+		err := rows.Scan(&courseID, &courseName, &sks, &dosenName, &pertemuan,
+			&taskTitle, &taskType, &submissionID, &grade, &submittedAt, &gradedAt)
+		if err != nil {
+			log.Printf("Scan error in GetMahasiswaTranskripNilai: %v", err)
+			continue
+		}
+
+		if _, exists := courseMap[courseID]; !exists {
+			courseMap[courseID] = &CourseGrade{
+				CourseID:   courseID,
+				CourseName: courseName,
+				SKS:        sks,
+				DosenName:  dosenName,
+				Grades:     []GradeItem{},
+			}
+			courseOrder = append(courseOrder, courseID)
+		}
+
+		courseMap[courseID].Grades = append(courseMap[courseID].Grades, GradeItem{
+			SubmissionID: submissionID,
+			Pertemuan:    pertemuan,
+			TaskTitle:    taskTitle,
+			TaskType:     taskType,
+			Grade:        grade,
+			SubmittedAt:  submittedAt,
+			GradedAt:     gradedAt,
+		})
+	}
+
+	// Calculate averages and letter grades
+	var courses []gin.H
+	var totalWeightedGrade float64
+	var totalSKS int
+
+	for _, courseID := range courseOrder {
+		cg := courseMap[courseID]
+		var totalGrade float64
+		var gradedCount int
+
+		for _, g := range cg.Grades {
+			if g.Grade > 0 {
+				totalGrade += g.Grade
+				gradedCount++
+			}
+		}
+
+		var avg float64
+		if gradedCount > 0 {
+			avg = totalGrade / float64(gradedCount)
+		}
+
+		letterGrade := convertToLetterGrade(avg)
+		gradePoint := convertToGradePoint(letterGrade)
+
+		totalWeightedGrade += gradePoint * float64(cg.SKS)
+		totalSKS += cg.SKS
+
+		// Build grades as gin.H array
+		var gradesArray []gin.H
+		for _, g := range cg.Grades {
+			gradesArray = append(gradesArray, gin.H{
+				"submission_id": g.SubmissionID,
+				"pertemuan":     g.Pertemuan,
+				"task_title":    g.TaskTitle,
+				"task_type":     g.TaskType,
+				"grade":         g.Grade,
+				"submitted_at":  g.SubmittedAt.Format("2006-01-02 15:04:05"),
+				"graded_at":     g.GradedAt.Format("2006-01-02 15:04:05"),
+			})
+		}
+
+		courses = append(courses, gin.H{
+			"course_id":    cg.CourseID,
+			"course_name":  cg.CourseName,
+			"sks":          cg.SKS,
+			"dosen_name":   cg.DosenName,
+			"grades":       gradesArray,
+			"average":      fmt.Sprintf("%.1f", avg),
+			"total_graded": gradedCount,
+			"letter_grade": letterGrade,
+			"grade_point":  gradePoint,
+		})
+	}
+
+	var ipk float64
+	if totalSKS > 0 {
+		ipk = totalWeightedGrade / float64(totalSKS)
+	}
+
+	if courses == nil {
+		courses = []gin.H{}
+	}
+
+	utils.SuccessResponse(c, gin.H{
+		"student_name": mahasiswaName,
+		"student_nim":  mahasiswaNIM,
+		"courses":      courses,
+		"total_sks":    totalSKS,
+		"ipk":          fmt.Sprintf("%.2f", ipk),
+	}, "Transkrip nilai retrieved successfully")
+}
+
+func convertToLetterGrade(avg float64) string {
+	if avg >= 85 {
+		return "A"
+	} else if avg >= 80 {
+		return "A-"
+	} else if avg >= 75 {
+		return "B+"
+	} else if avg >= 70 {
+		return "B"
+	} else if avg >= 65 {
+		return "B-"
+	} else if avg >= 60 {
+		return "C+"
+	} else if avg >= 55 {
+		return "C"
+	} else if avg >= 50 {
+		return "C-"
+	} else if avg >= 40 {
+		return "D"
+	}
+	return "E"
+}
+
+func convertToGradePoint(letter string) float64 {
+	gradePoints := map[string]float64{
+		"A": 4.0, "A-": 3.7, "B+": 3.3, "B": 3.0, "B-": 2.7,
+		"C+": 2.3, "C": 2.0, "C-": 1.7, "D": 1.0, "E": 0.0,
+	}
+	if gp, ok := gradePoints[letter]; ok {
+		return gp
+	}
+	return 0.0
+}

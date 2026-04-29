@@ -154,6 +154,9 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB) {
 
 		// ROUTE UNTUK ABSENSI PER COURSE DENGAN PERTEMUAN
 		mahasiswa.GET("/absensi/pertemuan", controllers.GetAttendanceByCoursePertemuan)
+
+		// ROUTE UNTUK TRANSKRIP NILAI MAHASISWA
+		mahasiswa.GET("/transkrip-nilai", controllers.GetMahasiswaTranskripNilai)
 	}
 
 	// === DOSEN ROUTES ===
