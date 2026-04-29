@@ -1,17 +1,20 @@
 #!/bin/bash
 # ============================================================
-# deploy.sh — Deploy backend on VPS (or redeploy after updates)
+# deploy.sh — Deploy E-Learning-OPENCLAW on VPS
 #
 # Run after git clone (first time) or git pull (updates):
 #   chmod +x deploy.sh
 #   ./deploy.sh
 #
 # What it does:
-#   1. Checks if backend/.env exists
-#   2. Stops old containers
-#   3. Builds and starts new containers
-#   4. Shows container status
-#   5. Prints backend URL
+#   1. Checks Docker is running
+#   2. Checks backend/.env exists
+#   3. Fixes line endings
+#   4. Pulls latest changes from git
+#   5. Builds frontend (React/Vite)
+#   6. Stops old containers & rebuilds backend
+#   7. Reloads nginx
+#   8. Shows status
 # ============================================================
 
 set -e
@@ -33,7 +36,7 @@ echo ""
 # ──────────────────────────────────────────
 # Step 1: Check if Docker is running
 # ──────────────────────────────────────────
-echo -e "${YELLOW}[1/5] Checking Docker...${NC}"
+echo -e "${YELLOW}[1/7] Checking Docker...${NC}"
 
 if ! command -v docker &> /dev/null; then
     echo -e "${RED}   ❌ Docker not installed! Run vps-setup.sh first.${NC}"
@@ -50,7 +53,7 @@ echo -e "${GREEN}   ✅ Docker is running${NC}"
 # ──────────────────────────────────────────
 # Step 2: Check backend/.env
 # ──────────────────────────────────────────
-echo -e "${YELLOW}[2/5] Checking backend/.env...${NC}"
+echo -e "${YELLOW}[2/7] Checking backend/.env...${NC}"
 
 if [ ! -f "backend/.env" ]; then
     if [ -f "backend/.env.example" ]; then
@@ -91,9 +94,9 @@ fi
 echo -e "${GREEN}   ✅ backend/.env exists${NC}"
 
 # ──────────────────────────────────────────
-# Step 3: Fix line endings (in case of CRLF from Windows)
+# Step 3: Fix line endings
 # ──────────────────────────────────────────
-echo -e "${YELLOW}[3/5] Fixing line endings...${NC}"
+echo -e "${YELLOW}[3/7] Fixing line endings...${NC}"
 find . -name "*.sh" -type f -exec sed -i 's/\r$//' {} + 2>/dev/null || true
 find . -name "Dockerfile" -type f -exec sed -i 's/\r$//' {} + 2>/dev/null || true
 find . -name "*.yml" -type f -exec sed -i 's/\r$//' {} + 2>/dev/null || true
@@ -102,18 +105,58 @@ find . -name ".env*" -type f -exec sed -i 's/\r$//' {} + 2>/dev/null || true
 echo -e "${GREEN}   ✅ Line endings fixed${NC}"
 
 # ──────────────────────────────────────────
-# Step 4: Stop old containers & rebuild
+# Step 4: Pull latest changes from git
 # ──────────────────────────────────────────
-echo -e "${YELLOW}[4/5] Stopping old containers and rebuilding...${NC}"
+echo -e "${YELLOW}[4/7] Pulling latest changes from git...${NC}"
+git pull origin main
+echo -e "${GREEN}   ✅ Git pull selesai${NC}"
+
+# ──────────────────────────────────────────
+# Step 5: Build frontend
+# ──────────────────────────────────────────
+echo -e "${YELLOW}[5/7] Building frontend...${NC}"
+
+if [ ! -d "frontend" ]; then
+    echo -e "${RED}   ❌ Folder frontend tidak ditemukan!${NC}"
+    exit 1
+fi
+
+cd frontend
+
+# Install dependencies jika node_modules belum ada
+if [ ! -d "node_modules" ]; then
+    echo -e "${YELLOW}   📦 Installing npm dependencies...${NC}"
+    npm install
+fi
+
+npm run build
+cd ..
+
+echo -e "${GREEN}   ✅ Frontend berhasil di-build${NC}"
+
+# ──────────────────────────────────────────
+# Step 6: Stop old containers & rebuild backend
+# ──────────────────────────────────────────
+echo -e "${YELLOW}[6/7] Stopping old containers and rebuilding...${NC}"
 docker compose down --remove-orphans 2>/dev/null || true
 docker compose up --build -d
 echo -e "${GREEN}   ✅ Backend container started${NC}"
 
 # ──────────────────────────────────────────
-# Step 5: Wait and show status
+# Step 7: Reload nginx & show status
 # ──────────────────────────────────────────
-echo -e "${YELLOW}[5/5] Waiting for backend to start...${NC}"
-sleep 5
+echo -e "${YELLOW}[7/7] Reloading nginx...${NC}"
+sleep 3
+
+if docker ps --format '{{.Names}}' | grep -q "^nginx$"; then
+    docker exec nginx nginx -t && docker exec nginx nginx -s reload
+    echo -e "${GREEN}   ✅ Nginx reloaded${NC}"
+else
+    echo -e "${YELLOW}   ⚠️  Container nginx tidak ditemukan, skip reload${NC}"
+fi
+
+# Wait for backend to start
+sleep 3
 
 echo ""
 echo -e "${BOLD}Container status:${NC}"
@@ -124,26 +167,25 @@ VPS_IP=$(hostname -I | awk '{print $1}')
 
 echo ""
 echo -e "${CYAN}${BOLD}============================================${NC}"
-echo -e "${CYAN}${BOLD}  ✅ Backend deployed successfully!${NC}"
+echo -e "${CYAN}${BOLD}  ✅ Deploy selesai!${NC}"
 echo -e "${CYAN}${BOLD}============================================${NC}"
 echo ""
-echo -e "${BOLD}Your backend is running at:${NC}"
-echo -e "  ${GREEN}http://${VPS_IP}:8080${NC}"
+echo -e "${BOLD}Frontend:${NC}"
+echo -e "  ${GREEN}https://andromedahub.my.id${NC}"
 echo ""
-echo -e "${BOLD}Test commands:${NC}"
-echo "  curl http://${VPS_IP}:8080/health"
-echo "  curl http://localhost:8080/health"
+echo -e "${BOLD}Backend API:${NC}"
+echo -e "  ${GREEN}https://api.andromedahub.my.id${NC}"
+echo ""
+echo -e "${BOLD}OpenClaw Control:${NC}"
+echo -e "  ${GREEN}https://claw.andromedahub.my.id${NC}"
+echo ""
+echo -e "${BOLD}Test backend:${NC}"
+echo "  curl https://andromedahub.my.id/health"
 echo ""
 echo -e "${BOLD}View logs:${NC}"
 echo "  docker compose logs -f"
+echo "  docker logs nginx --tail 20"
 echo ""
-echo -e "${BOLD}Stop backend:${NC}"
+echo -e "${BOLD}Stop semua:${NC}"
 echo "  docker compose down"
-echo ""
-echo -e "${BOLD}Vercel frontend:${NC}"
-echo "  https://e-learning-openclaw.vercel.app"
-echo ""
-echo -e "${YELLOW}Don't forget to set on Vercel dashboard:${NC}"
-echo "  VITE_API_URL = http://${VPS_IP}:8080"
-echo "  VITE_API_BASE_URL = http://${VPS_IP}:8080"
 echo ""
