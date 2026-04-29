@@ -67,6 +67,8 @@ services:
   nginx:
     image: nginx:alpine
     container_name: nginx
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     # ✅ FIX: Remove default.conf that overrides our config
     command: >
       sh -c "rm -f /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"
