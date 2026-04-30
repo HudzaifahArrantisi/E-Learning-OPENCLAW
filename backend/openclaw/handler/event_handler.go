@@ -117,8 +117,8 @@ func (h *EventHandler) sendInstantNotification(event TugasCreatedEvent) {
 		return
 	}
 
-	// Get course name from DB
-	courseName := h.getCourseName(event.CourseID)
+	// Get course info from DB
+	courseName, category := h.getCourseInfo(event.CourseID)
 
 	// Format due date for display
 	dueDateDisplay := event.DueDate
@@ -132,11 +132,11 @@ func (h *EventHandler) sendInstantNotification(event TugasCreatedEvent) {
 	var message string
 	if event.Type == "materi-uploaded" {
 		message = telegram.FormatMateriNotification(
-			event.Title, courseName, event.Description, event.Pertemuan,
+			event.Title, courseName, event.Description, category, event.Pertemuan,
 		)
 	} else {
 		message = telegram.FormatInstantNotification(
-			event.Title, courseName, event.Description, dueDateDisplay, event.Pertemuan,
+			event.Title, courseName, event.Description, dueDateDisplay, category, event.Pertemuan,
 		)
 	}
 
@@ -153,14 +153,14 @@ func (h *EventHandler) sendInstantNotification(event TugasCreatedEvent) {
 	log.Printf("[EventHandler] Instant notification sent for tugas_id=%d", event.TugasID)
 }
 
-// getCourseName fetches the course name from the database
-func (h *EventHandler) getCourseName(courseID string) string {
-	var courseName string
-	err := h.DB.QueryRow("SELECT nama FROM mata_kuliah WHERE kode = $1", courseID).Scan(&courseName)
+// getCourseInfo fetches the course name and category from the database
+func (h *EventHandler) getCourseInfo(courseID string) (string, string) {
+	var courseName, category string
+	err := h.DB.QueryRow("SELECT nama, COALESCE(kategori, 'wajib') FROM mata_kuliah WHERE kode = $1", courseID).Scan(&courseName, &category)
 	if err != nil {
-		return courseID // Fallback to course ID if not found
+		return courseID, "wajib" // Fallback to course ID if not found
 	}
-	return courseName
+	return courseName, category
 }
 
 func writeJSON(w http.ResponseWriter, status int, data interface{}) {

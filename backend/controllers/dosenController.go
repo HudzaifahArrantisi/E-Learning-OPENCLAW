@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"nf-student-hub-backend/config"
@@ -1168,6 +1169,25 @@ func getStatusLabel(status string) string {
 	}
 }
 
+// isSuperDosen - Check apakah user adalah super dosen (akses semua matkul)
+func isSuperDosen(userID interface{}) bool {
+	var email string
+	err := config.DB.QueryRow("SELECT email FROM users WHERE id = $1", userID).Scan(&email)
+	if err != nil {
+		log.Printf("[DEBUG] isSuperDosen failed for userID %v: %v", userID, err)
+		return false
+	}
+	
+	email = strings.ToLower(strings.TrimSpace(email))
+	isSuper := email == "superdosen@nurulfikri.ac.id" || email == "suerdosen@nurlfikri.ac.id"
+	
+	if isSuper {
+		log.Printf("[DEBUG] SuperDosen access granted for email: %s", email)
+	}
+	
+	return isSuper
+}
+
 // =============================================
 // EXISTING DOSEN FUNCTIONS (DIPERTAHANKAN - tidak diubah)
 // =============================================
@@ -1250,59 +1270,102 @@ func GetDosenStats(c *gin.Context) {
 
 	// Initialize variables
 	var stats = gin.H{}
+	superDosen := isSuperDosen(userID)
 
 	// 1. Total courses taught
 	var courseCount int
-	config.DB.QueryRow(`SELECT COUNT(*) FROM mata_kuliah WHERE dosen_id = $1`, dosenID).Scan(&courseCount)
+	if superDosen {
+		config.DB.QueryRow(`SELECT COUNT(*) FROM mata_kuliah WHERE semester = 4`).Scan(&courseCount)
+	} else {
+		config.DB.QueryRow(`SELECT COUNT(*) FROM mata_kuliah WHERE dosen_id = $1`, dosenID).Scan(&courseCount)
+	}
 	stats["total_courses"] = courseCount
 
 	// 2. Total students
 	var studentCount int
-	config.DB.QueryRow(`
-		SELECT COUNT(DISTINCT mmk.mahasiswa_id) 
-		FROM mata_kuliah mk
-		JOIN mahasiswa_mata_kuliah mmk ON mk.kode = mmk.mata_kuliah_kode
-		WHERE mk.dosen_id = $1
-	`, dosenID).Scan(&studentCount)
+	if superDosen {
+		config.DB.QueryRow(`
+			SELECT COUNT(DISTINCT mmk.mahasiswa_id) 
+			FROM mata_kuliah mk
+			JOIN mahasiswa_mata_kuliah mmk ON mk.kode = mmk.mata_kuliah_kode
+			WHERE mk.semester = 4
+		`).Scan(&studentCount)
+	} else {
+		config.DB.QueryRow(`
+			SELECT COUNT(DISTINCT mmk.mahasiswa_id) 
+			FROM mata_kuliah mk
+			JOIN mahasiswa_mata_kuliah mmk ON mk.kode = mmk.mata_kuliah_kode
+			WHERE mk.dosen_id = $1
+		`, dosenID).Scan(&studentCount)
+	}
 	stats["total_students"] = studentCount
 
 	// 3. Today's sessions
 	var todaySessions int
-	config.DB.QueryRow(`
-		SELECT COUNT(*) 
-		FROM attendance_sessions 
-		WHERE dosen_id = $1 AND (created_at)::date = CURRENT_DATE
-	`, dosenID).Scan(&todaySessions)
+	if superDosen {
+		config.DB.QueryRow(`
+			SELECT COUNT(asess.id) 
+			FROM attendance_sessions asess
+			JOIN mata_kuliah mk ON asess.course_id = mk.kode
+			WHERE mk.semester = 4 AND (asess.created_at)::date = CURRENT_DATE
+		`).Scan(&todaySessions)
+	} else {
+		config.DB.QueryRow(`
+			SELECT COUNT(*) 
+			FROM attendance_sessions 
+			WHERE dosen_id = $1 AND (created_at)::date = CURRENT_DATE
+		`, dosenID).Scan(&todaySessions)
+	}
 	stats["today_sessions"] = todaySessions
 
 	// 4. Active sessions
 	var activeSessions int
-	config.DB.QueryRow(`
-		SELECT COUNT(*) 
-		FROM attendance_sessions 
-		WHERE dosen_id = $1 AND status = 'active' AND expires_at > NOW()
-	`, dosenID).Scan(&activeSessions)
+	if superDosen {
+		config.DB.QueryRow(`
+			SELECT COUNT(asess.id) 
+			FROM attendance_sessions asess
+			JOIN mata_kuliah mk ON asess.course_id = mk.kode
+			WHERE mk.semester = 4 AND asess.status = 'active' AND asess.expires_at > NOW()
+		`).Scan(&activeSessions)
+	} else {
+		config.DB.QueryRow(`
+			SELECT COUNT(*) 
+			FROM attendance_sessions 
+			WHERE dosen_id = $1 AND status = 'active' AND expires_at > NOW()
+		`, dosenID).Scan(&activeSessions)
+	}
 	stats["active_sessions"] = activeSessions
 
 	// 5. Today's attendance
 	var todayAttendance int
-	config.DB.QueryRow(`
-		SELECT COUNT(DISTINCT a.id)
-		FROM attendance a
-		JOIN attendance_sessions asess ON a.session_id = asess.id
-		WHERE asess.dosen_id = $1 AND (a.created_at)::date = CURRENT_DATE
-	`, dosenID).Scan(&todayAttendance)
+	if !superDosen {
+		config.DB.QueryRow(`
+			SELECT COUNT(DISTINCT a.id)
+			FROM attendance a
+			JOIN attendance_sessions asess ON a.session_id = asess.id
+			WHERE asess.dosen_id = $1 AND (a.created_at)::date = CURRENT_DATE
+		`, dosenID).Scan(&todayAttendance)
+	}
 	stats["today_attendance"] = todayAttendance
 
 	// 6. Tasks to grade
 	var tasksToGrade int
-	config.DB.QueryRow(`
-		SELECT COUNT(*) 
-		FROM submissions s
-		JOIN tugas t ON s.task_id = t.id
-		JOIN mata_kuliah mk ON t.course_id = mk.kode
-		WHERE mk.dosen_id = $1 AND (s.grade IS NULL OR s.grade = 0)
-	`, dosenID).Scan(&tasksToGrade)
+	if superDosen {
+		config.DB.QueryRow(`
+			SELECT COUNT(*) 
+			FROM submissions s
+			JOIN tugas t ON s.task_id = t.id
+			WHERE s.grade IS NULL OR s.grade = 0
+		`).Scan(&tasksToGrade)
+	} else {
+		config.DB.QueryRow(`
+			SELECT COUNT(*) 
+			FROM submissions s
+			JOIN tugas t ON s.task_id = t.id
+			JOIN mata_kuliah mk ON t.course_id = mk.kode
+			WHERE mk.dosen_id = $1 AND (s.grade IS NULL OR s.grade = 0)
+		`, dosenID).Scan(&tasksToGrade)
+	}
 	stats["tasks_to_grade"] = tasksToGrade
 
 	// 7. Weekly attendance trend
@@ -1360,33 +1423,53 @@ func GetDosenCourses(c *gin.Context) {
 		return
 	}
 
-	// Query courses with schedule and student count
-	query := `
-		SELECT 
-			mk.kode, 
-			mk.nama, 
-			mk.sks,
-			mk.hari,
-			mk.jam_mulai,
-			mk.jam_selesai,
-			(SELECT COUNT(DISTINCT mmk.mahasiswa_id) FROM mahasiswa_mata_kuliah mmk WHERE mmk.mata_kuliah_kode = mk.kode) as student_count,
-			(SELECT COUNT(*) FROM attendance_sessions WHERE course_id = mk.kode AND (created_at)::date = CURRENT_DATE) as today_sessions
-		FROM mata_kuliah mk
-		WHERE mk.dosen_id = $1 AND mk.semester = 3
-		ORDER BY 
-			CASE mk.hari
-				WHEN 'Senin' THEN 1
-				WHEN 'Selasa' THEN 2
-				WHEN 'Rabu' THEN 3
-				WHEN 'Kamis' THEN 4
-				WHEN 'Jumat' THEN 5
-				WHEN 'Sabtu' THEN 6
-				WHEN 'Minggu' THEN 7
-			END,
-			mk.jam_mulai
-	`
+	// Check if superdosen (akses semua matkul)
+	superDosen := isSuperDosen(userID)
 
-	rows, err := config.DB.Query(query, dosenID)
+	// Query courses with schedule and student count
+	var query string
+	var rows *sql.Rows
+
+	if superDosen {
+		// Super dosen: ambil SEMUA matkul semester 4
+		query = `
+			SELECT 
+				mk.kode, mk.nama, mk.sks, mk.hari, mk.jam_mulai, mk.jam_selesai,
+				(SELECT COUNT(DISTINCT mmk.mahasiswa_id) FROM mahasiswa_mata_kuliah mmk WHERE mmk.mata_kuliah_kode = mk.kode) as student_count,
+				(SELECT COUNT(*) FROM attendance_sessions WHERE course_id = mk.kode AND (created_at)::date = CURRENT_DATE) as today_sessions
+			FROM mata_kuliah mk
+			WHERE mk.semester = 4
+			ORDER BY 
+				CASE COALESCE(mk.kategori, 'wajib')
+					WHEN 'wajib' THEN 1
+					WHEN 'peminatan_cs' THEN 2
+					WHEN 'peminatan_ai' THEN 3
+				END,
+				CASE mk.hari
+					WHEN 'Senin' THEN 1 WHEN 'Selasa' THEN 2 WHEN 'Rabu' THEN 3
+					WHEN 'Kamis' THEN 4 WHEN 'Jumat' THEN 5 WHEN 'Sabtu' THEN 6
+					WHEN 'Minggu' THEN 7
+				END, mk.jam_mulai
+		`
+		rows, err = config.DB.Query(query)
+	} else {
+		// Dosen biasa: hanya matkul yang diampu
+		query = `
+			SELECT 
+				mk.kode, mk.nama, mk.sks, mk.hari, mk.jam_mulai, mk.jam_selesai,
+				(SELECT COUNT(DISTINCT mmk.mahasiswa_id) FROM mahasiswa_mata_kuliah mmk WHERE mmk.mata_kuliah_kode = mk.kode) as student_count,
+				(SELECT COUNT(*) FROM attendance_sessions WHERE course_id = mk.kode AND (created_at)::date = CURRENT_DATE) as today_sessions
+			FROM mata_kuliah mk
+			WHERE mk.dosen_id = $1 AND mk.semester = 4
+			ORDER BY 
+				CASE mk.hari
+					WHEN 'Senin' THEN 1 WHEN 'Selasa' THEN 2 WHEN 'Rabu' THEN 3
+					WHEN 'Kamis' THEN 4 WHEN 'Jumat' THEN 5 WHEN 'Sabtu' THEN 6
+					WHEN 'Minggu' THEN 7
+				END, mk.jam_mulai
+		`
+		rows, err = config.DB.Query(query, dosenID)
+	}
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to fetch courses")
 		return
@@ -1396,10 +1479,12 @@ func GetDosenCourses(c *gin.Context) {
 	var courses []gin.H
 	for rows.Next() {
 		var kode, nama, hari, jamMulai, jamSelesai string
-		var sks, studentCount, todaySessions int
+		var sks int
+		var studentCount, todaySessions int64
 
 		err := rows.Scan(&kode, &nama, &sks, &hari, &jamMulai, &jamSelesai, &studentCount, &todaySessions)
 		if err != nil {
+			log.Printf("Scan error in GetDosenCourses: %v", err)
 			continue
 		}
 
@@ -1500,10 +1585,13 @@ func UploadMateri(c *gin.Context) {
 		return
 	}
 
-	var exists bool
-	if err := config.DB.QueryRow("SELECT EXISTS(SELECT 1 FROM mata_kuliah WHERE kode = $1 AND dosen_id = $2)", courseID, dosenID).Scan(&exists); err != nil || !exists {
-		utils.ErrorResponse(c, http.StatusForbidden, "Anda tidak mengampu mata kuliah ini")
-		return
+	// SuperDosen bypass: akses semua matkul
+	if !isSuperDosen(userID) {
+		var exists bool
+		if err := config.DB.QueryRow("SELECT EXISTS(SELECT 1 FROM mata_kuliah WHERE kode = $1 AND dosen_id = $2)", courseID, dosenID).Scan(&exists); err != nil || !exists {
+			utils.ErrorResponse(c, http.StatusForbidden, "Anda tidak mengampu mata kuliah ini")
+			return
+		}
 	}
 
 	pertemuan, _ := strconv.Atoi(pertemuanStr)
@@ -1585,10 +1673,13 @@ func CreateTugas(c *gin.Context) {
 		return
 	}
 
-	var exists bool
-	if err := config.DB.QueryRow("SELECT EXISTS(SELECT 1 FROM mata_kuliah WHERE kode = $1 AND dosen_id = $2)", courseID, dosenID).Scan(&exists); err != nil || !exists {
-		utils.ErrorResponse(c, http.StatusForbidden, "Anda tidak mengampu mata kuliah ini")
-		return
+	// SuperDosen bypass: akses semua matkul
+	if !isSuperDosen(userID) {
+		var exists bool
+		if err := config.DB.QueryRow("SELECT EXISTS(SELECT 1 FROM mata_kuliah WHERE kode = $1 AND dosen_id = $2)", courseID, dosenID).Scan(&exists); err != nil || !exists {
+			utils.ErrorResponse(c, http.StatusForbidden, "Anda tidak mengampu mata kuliah ini")
+			return
+		}
 	}
 
 	pertemuan, _ := strconv.Atoi(pertemuanStr)
@@ -1690,18 +1781,20 @@ func GetTugasSubmissions(c *gin.Context) {
 		return
 	}
 
-	// Check if dosen teaches this course
-	var courseExists bool
-	err = config.DB.QueryRow(`
-		SELECT EXISTS(
-			SELECT 1 FROM mata_kuliah 
-			WHERE kode = $1 AND dosen_id = $2
-		)
-	`, courseID, dosenID).Scan(&courseExists)
+	// Check if dosen teaches this course (superdosen bypass)
+	if !isSuperDosen(userID) {
+		var courseExists bool
+		err = config.DB.QueryRow(`
+			SELECT EXISTS(
+				SELECT 1 FROM mata_kuliah 
+				WHERE kode = $1 AND dosen_id = $2
+			)
+		`, courseID, dosenID).Scan(&courseExists)
 
-	if err != nil || !courseExists {
-		utils.ErrorResponse(c, http.StatusForbidden, "Anda tidak mengampu mata kuliah ini")
-		return
+		if err != nil || !courseExists {
+			utils.ErrorResponse(c, http.StatusForbidden, "Anda tidak mengampu mata kuliah ini")
+			return
+		}
 	}
 
 	var query string
@@ -1859,15 +1952,21 @@ func GradeSubmission(c *gin.Context) {
 		return
 	}
 
-	// Check if submission belongs to dosen's course
+	// Check if submission belongs to dosen's course (superdosen bypass)
 	var courseID string
-	err = config.DB.QueryRow(`
-		SELECT t.course_id 
-		FROM submissions s
-		JOIN tugas t ON s.task_id = t.id
-		JOIN mata_kuliah mk ON t.course_id = mk.kode
-		WHERE s.id = $1 AND mk.dosen_id = $2
-	`, submissionID, dosenID).Scan(&courseID)
+	if isSuperDosen(userID) {
+		err = config.DB.QueryRow(`
+			SELECT t.course_id FROM submissions s JOIN tugas t ON s.task_id = t.id WHERE s.id = $1
+		`, submissionID).Scan(&courseID)
+	} else {
+		err = config.DB.QueryRow(`
+			SELECT t.course_id 
+			FROM submissions s
+			JOIN tugas t ON s.task_id = t.id
+			JOIN mata_kuliah mk ON t.course_id = mk.kode
+			WHERE s.id = $1 AND mk.dosen_id = $2
+		`, submissionID, dosenID).Scan(&courseID)
+	}
 
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusForbidden, "Anda tidak memiliki akses ke pengumpulan ini")
@@ -1928,15 +2027,21 @@ func DeleteMateri(c *gin.Context) {
 		return
 	}
 
-	// Cek kepemilikan materi
+	// Cek kepemilikan materi (superdosen bypass)
 	var courseID string
 	var filePath sql.NullString
-	err = config.DB.QueryRow(`
-		SELECT t.course_id, t.file_tugas 
-		FROM tugas t
-		JOIN mata_kuliah mk ON t.course_id = mk.kode
-		WHERE t.id = $1 AND t.type = 'materi' AND mk.dosen_id = $2
-	`, materiID, dosenID).Scan(&courseID, &filePath)
+	if isSuperDosen(userID) {
+		err = config.DB.QueryRow(`
+			SELECT t.course_id, t.file_tugas FROM tugas t WHERE t.id = $1 AND t.type = 'materi'
+		`, materiID).Scan(&courseID, &filePath)
+	} else {
+		err = config.DB.QueryRow(`
+			SELECT t.course_id, t.file_tugas 
+			FROM tugas t
+			JOIN mata_kuliah mk ON t.course_id = mk.kode
+			WHERE t.id = $1 AND t.type = 'materi' AND mk.dosen_id = $2
+		`, materiID, dosenID).Scan(&courseID, &filePath)
+	}
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusNotFound, "Materi tidak ditemukan atau Anda tidak memiliki akses")
 		return
@@ -1983,15 +2088,21 @@ func DeleteTugas(c *gin.Context) {
 		return
 	}
 
-	// Cek kepemilikan tugas
+	// Cek kepemilikan tugas (superdosen bypass)
 	var courseID string
 	var filePath sql.NullString
-	err = config.DB.QueryRow(`
-		SELECT t.course_id, t.file_tugas 
-		FROM tugas t
-		JOIN mata_kuliah mk ON t.course_id = mk.kode
-		WHERE t.id = $1 AND t.type = 'tugas' AND mk.dosen_id = $2
-	`, tugasID, dosenID).Scan(&courseID, &filePath)
+	if isSuperDosen(userID) {
+		err = config.DB.QueryRow(`
+			SELECT t.course_id, t.file_tugas FROM tugas t WHERE t.id = $1 AND t.type = 'tugas'
+		`, tugasID).Scan(&courseID, &filePath)
+	} else {
+		err = config.DB.QueryRow(`
+			SELECT t.course_id, t.file_tugas 
+			FROM tugas t
+			JOIN mata_kuliah mk ON t.course_id = mk.kode
+			WHERE t.id = $1 AND t.type = 'tugas' AND mk.dosen_id = $2
+		`, tugasID, dosenID).Scan(&courseID, &filePath)
+	}
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusNotFound, "Tugas tidak ditemukan atau Anda tidak memiliki akses")
 		return
@@ -2062,17 +2173,19 @@ func DeleteSubmission(c *gin.Context) {
 		return
 	}
 
-	// Cek apakah dosen mengampu mata kuliah ini
-	var courseExists bool
-	err = config.DB.QueryRow(`
-		SELECT EXISTS(
-			SELECT 1 FROM mata_kuliah 
-			WHERE kode = $1 AND dosen_id = $2
-		)
-	`, courseID, dosenID).Scan(&courseExists)
-	if err != nil || !courseExists {
-		utils.ErrorResponse(c, http.StatusForbidden, "Anda tidak mengampu mata kuliah ini")
-		return
+	// Cek apakah dosen mengampu mata kuliah ini (superdosen bypass)
+	if !isSuperDosen(userID) {
+		var courseExists bool
+		err = config.DB.QueryRow(`
+			SELECT EXISTS(
+				SELECT 1 FROM mata_kuliah 
+				WHERE kode = $1 AND dosen_id = $2
+			)
+		`, courseID, dosenID).Scan(&courseExists)
+		if err != nil || !courseExists {
+			utils.ErrorResponse(c, http.StatusForbidden, "Anda tidak mengampu mata kuliah ini")
+			return
+		}
 	}
 
 	// Hapus file submission jika ada
@@ -2116,10 +2229,13 @@ func GetPertemuanByMatkul(c *gin.Context) {
 			return
 		}
 
-		var exists bool
-		if err := config.DB.QueryRow("SELECT EXISTS(SELECT 1 FROM mata_kuliah WHERE kode = $1 AND dosen_id = $2)", courseID, dosenID).Scan(&exists); err != nil || !exists {
-			utils.ErrorResponse(c, http.StatusForbidden, "Anda tidak mengampu mata kuliah ini")
-			return
+		// SuperDosen bypass: akses semua matkul
+		if !isSuperDosen(userID) {
+			var exists bool
+			if err := config.DB.QueryRow("SELECT EXISTS(SELECT 1 FROM mata_kuliah WHERE kode = $1 AND dosen_id = $2)", courseID, dosenID).Scan(&exists); err != nil || !exists {
+				utils.ErrorResponse(c, http.StatusForbidden, "Anda tidak mengampu mata kuliah ini")
+				return
+			}
 		}
 	} else if userRole == "mahasiswa" {
 		var mahasiswaID int
@@ -2187,18 +2303,20 @@ func GetPertemuanDetail(c *gin.Context) {
 			return
 		}
 
-		// Check if dosen teaches this course
-		var courseExists bool
-		err = config.DB.QueryRow(`
-			SELECT EXISTS(
-				SELECT 1 FROM mata_kuliah 
-				WHERE kode = $1 AND dosen_id = $2
-			)
-		`, courseID, dosenID).Scan(&courseExists)
+		// Check if dosen teaches this course (superdosen bypass)
+		if !isSuperDosen(userID) {
+			var courseExists bool
+			err = config.DB.QueryRow(`
+				SELECT EXISTS(
+					SELECT 1 FROM mata_kuliah 
+					WHERE kode = $1 AND dosen_id = $2
+				)
+			`, courseID, dosenID).Scan(&courseExists)
 
-		if err != nil || !courseExists {
-			utils.ErrorResponse(c, http.StatusForbidden, "Anda tidak mengampu mata kuliah ini")
-			return
+			if err != nil || !courseExists {
+				utils.ErrorResponse(c, http.StatusForbidden, "Anda tidak mengampu mata kuliah ini")
+				return
+			}
 		}
 	} else if userRole == "mahasiswa" {
 		var mahasiswaID int
@@ -2323,4 +2441,25 @@ func GetPertemuanDetail(c *gin.Context) {
 		"role":        userRole,
 		"fetched_at":  time.Now().Format("2006-01-02 15:04:05"),
 	}, "Pertemuan detail retrieved successfully")
+}
+
+// GetCourseInfo - Get basic course info for any role
+func GetCourseInfo(c *gin.Context) {
+	courseID := c.Param("course_id")
+	if courseID == "" {
+		utils.ValidationError(c, "course_id diperlukan")
+		return
+	}
+
+	var nama string
+	err := config.DB.QueryRow("SELECT nama FROM mata_kuliah WHERE kode = $1", courseID).Scan(&nama)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusNotFound, "Mata kuliah tidak ditemukan")
+		return
+	}
+
+	utils.SuccessResponse(c, gin.H{
+		"kode": courseID,
+		"nama": nama,
+	}, "Course info retrieved")
 }

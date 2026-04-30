@@ -24,6 +24,7 @@ const DetailPertemuanTugas = () => {
     file: null
   })
   const [loading, setLoading] = useState(true)
+  const [courseName, setCourseName] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [submissionStatus, setSubmissionStatus] = useState({})
 
@@ -34,6 +35,13 @@ const DetailPertemuanTugas = () => {
   const fetchTugasDetail = async () => {
     try {
       setLoading(true)
+
+      // Fetch course info
+      const courseRes = await api.getCourseInfo(courseId)
+      if (courseRes.data && courseRes.data.data) {
+        setCourseName(courseRes.data.data.nama)
+      }
+
       const response = await api.getPertemuanDetail(courseId, pertemuan)
       const tugas = response.data.data.tugas || []
       setTugasList(tugas)
@@ -53,6 +61,9 @@ const DetailPertemuanTugas = () => {
       }
     } catch (error) {
       console.error('Error fetching tugas detail:', error)
+      if (error.response?.status === 404) {
+        window.location.href = '/not-found';
+      }
     } finally {
       setLoading(false)
     }
@@ -107,22 +118,7 @@ const DetailPertemuanTugas = () => {
     setShowSubmitModal(true)
   }
 
-  const matkulData = {
-    'KP001': 'Komputasi Paralel & Terdistribusi',
-    'KW002': 'Keamanan Web',
-    'PBO001': 'Pemrograman Berorientasi Objek',
-    'DEV001': 'DevOpsSec',
-    'RPL001': 'Rekayasa Perangkat Lunak',
-    'KWU001': 'Kewirausahaan',
-    'BI002': 'Bahasa Inggris 2',
-    'IR001': 'Incident Response'
-  }
 
-  // Frontend blocker for invalid course IDs
-  if (!matkulData[courseId]) {
-    window.location.href = '/not-found';
-    return null;
-  }
 
   if (loading) {
     return (
@@ -172,7 +168,7 @@ const DetailPertemuanTugas = () => {
                 </Link>
                 
                 <h1 className="text-4xl md:text-5xl font-light text-lp-text tracking-tight mb-3">
-                  {matkulData[courseId] || courseId}
+                  {courseName || courseId}
                   <span className="text-lp-text3 block text-lg font-normal mt-2">Meeting {pertemuan} Assessment Suite</span>
                 </h1>
                 <p className="text-lp-text2 font-light max-w-xl leading-relaxed">

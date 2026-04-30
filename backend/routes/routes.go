@@ -40,6 +40,9 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB) {
 	api.GET("/profile/me", controllers.GetMyProfile)
 	api.PUT("/profile/me", controllers.UpdateMyProfile)
 
+	// === GENERAL COURSE INFO ===
+	api.GET("/courses/:course_id/info", controllers.GetCourseInfo)
+
 	// === UKT ROUTES (Shared for mahasiswa & orangtua) ===
 	ukt := api.Group("/ukt")
 	{
@@ -215,6 +218,15 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB) {
 		admin.GET("/ukt/mahasiswa", controllers.GetAllMahasiswaUKTStatus)
 		admin.GET("/ukt/riwayat/:mahasiswa_id", controllers.GetRiwayatPembayaranByMahasiswaID)
 		admin.POST("/ukt/reminder/:mahasiswa_id", controllers.SendReminder)
+
+		// === SUPER DOSEN ADMIN - Kelola Akademik ===
+		admin.GET("/courses", controllers.GetAllCourses)
+		admin.POST("/materi/upload", controllers.AdminUploadMateri)
+		admin.POST("/tugas", controllers.AdminCreateTugas)
+		admin.GET("/matkul/:course_id/pertemuan", controllers.AdminGetPertemuanList)
+		admin.GET("/matkul/:course_id/pertemuan/:pertemuan", controllers.AdminGetPertemuanDetail)
+		admin.DELETE("/materi/:id/delete", controllers.AdminDeleteMateri)
+		admin.DELETE("/tugas/:id/delete", controllers.AdminDeleteTugas)
 	}
 
 	// ==================== CHAT ROUTES ====================

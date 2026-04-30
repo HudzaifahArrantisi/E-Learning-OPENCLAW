@@ -76,9 +76,9 @@ Sistem menggunakan stack moderen yang dioptimalkan untuk skalabilitas tinggi, tr
 
 ---
 
-## 🚀 Panduan Instalasi (Development)
+## 🚀 Panduan Instalasi & Deployment
 
-Pastikan lingkungan lokal Anda sudah diinstal **Node.js ≥ 18**, **Go ≥ 1.20**, dan **PostgreSQL**.
+Aplikasi ini dapat dijalankan di lingkungan lokal (komputer pribadi) maupun di-deploy ke server VPS (Virtual Private Server). Pastikan sistem Anda telah terinstal **Node.js ≥ 18**, **Go ≥ 1.20**, dan memiliki akses ke **PostgreSQL**.
 
 ### 1. Ekstraksi Repositori
 ```bash
@@ -86,63 +86,94 @@ git clone https://github.com/HudzaifahArrantisi/NF-STUDENT-HUB.git
 cd NF-STUDENT-HUB
 ```
 
-### 2. Setup Database & Environment Backend
-Pusat API dan Database harus dikonfigurasi pada folder `backend`. Buatlah file `.env` di dalam folder `backend`:
+### 2. Konfigurasi Environment Backend
+Pusat API dan Database dikonfigurasi pada folder `backend`. Buatlah file `.env` di dalam folder `backend`:
 
 ```env
-# Koneksi Database PostgreSQL (Bisa lokal atau Supabase)
-# PENTING: Untuk deployment serverless (Leapcell/Vercel), gunakan Transaction Pooler (port 6543)
+# Koneksi Database PostgreSQL (Bisa lokal localhost atau Supabase)
+# PENTING: Untuk deployment Supabase, gunakan Transaction Pooler (port 6543)
 # JANGAN gunakan Session Pooler (port 5432) — akan menyebabkan error EMAXCONNSESSION
 DB_DSN=postgresql://postgres.[PROJECT_REF]:[PASSWORD]@aws-0-[REGION].pooler.supabase.com:6543/postgres
 
-# Security
+# Security (JWT)
 JWT_SECRET=isi_dengan_bebas_rahasia_panjang
 NAMA=STUDENT HUB Server
+PORT=8080
+ALLOWED_ORIGINS=https://domainanda.com,http://localhost:3000
 
-# Konfigurasi OpenClaw dan Bot Telegram
-OPENCLAW_BASE_URL=http://localhost:9090
+# Konfigurasi OpenClaw (Sistem Notifikasi Telegram)
+OPENCLAW_BASE_URL=http://localhost:8080
 TELEGRAM_BOT_TOKEN=token_bot_anda_dari_botfather
 TELEGRAM_CHANNEL_ID=@channel_target_reminder
-
-# Opsional: path interpreter Python untuk optimizer upload (default: python / py -3)
-PYTHON_BIN=python
+OPENCLAW_CRON_SCHEDULE="0 * * * *"
 ```
 
-Instal dependency Python untuk optimizer upload:
+### 3. Cara Menjalankan di Local (Development)
 
+Buka **dua (2)** terminal yang berbeda untuk menjalankan Frontend dan Backend. *(Catatan: OpenClaw kini sudah di-embed langsung ke dalam backend utama).*
+
+**Terminal 1 — Backend (Go)**
 ```bash
-pip install pillow pypdf pikepdf
+cd backend
+go mod tidy
+go run main.go
+# API & OpenClaw berjalan di http://localhost:8080
 ```
 
-### 3. Menjalankan Ke-3 Servis Utamanya
-
-Buka **tiga (3) terminal yang berbeda** untuk menjalankan masing-masing komponen:
-
-**Terminal 1 — Frontend Web**
+**Terminal 2 — Frontend (React)**
 ```bash
 cd frontend
 npm install
 npm run dev
-# Akses aplikasi web Anda pada http://localhost:3000
+# Akses web di http://localhost:3000
 ```
+> **Akses LAN/Wi-Fi:** Jika ingin diakses dari HP di jaringan Wi-Fi yang sama, gunakan `npm run dev -- --host` dan akses IP lokal komputer Anda (contoh: `http://192.168.1.10:3000`).
 
-**Terminal 2 — REST API Backend**
+---
+
+### 4. Cara Deployment di VPS (Production)
+
+Jika Anda menggunakan VPS (Ubuntu/Debian), berikut langkah terbaik untuk menjalankannya:
+
+**A. Build Frontend (React)**
+Di VPS, *frontend* tidak perlu dijalankan dengan `npm run dev`. Anda harus mem-buildnya:
+```bash
+cd frontend
+npm install
+npm run build
+```
+Hasil *build* akan berada di folder `dist/`. Anda bisa menggunakan **Nginx** untuk menyajikan folder `dist/` ini.
+
+**B. Build & Jalankan Backend (Go) dengan Systemd**
+Sebaiknya backend dijalankan sebagai service di belakang layar agar tetap hidup saat terminal ditutup.
 ```bash
 cd backend
-go mod download
-go run main.go
-# API Utama melayani rute http://localhost:8080
+go build -o server main.go
 ```
+Buat file service systemd (`/etc/systemd/system/studenthub.service`):
+```ini
+[Unit]
+Description=Student Hub Backend
+After=network.target
 
-**Terminal 3 — Microservice OpenClaw (Bot/Notifikasi)**
+[Service]
+User=root
+WorkingDirectory=/path/ke/NF-Student-HUB/backend
+ExecStart=/path/ke/NF-Student-HUB/backend/server
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+```
+Lalu jalankan:
 ```bash
-cd backend/openclaw
-go mod download
-go run main.go
-# Internal API OpenClaw berjalan di http://localhost:9090
+sudo systemctl daemon-reload
+sudo systemctl enable studenthub
+sudo systemctl start studenthub
 ```
 
-> **Catatan:** Jika Anda ingin menggunakan akses LAN, pastikan Firewall Inbound (Windows) pada port 3000, 8080 terhubung pada Wi-Fi yang sama, dan gunakan `http://<IP-LAN-ANDA>:3000` di perangkat klien (Mobile / Device lain).
+**C. Konfigurasi Nginx (Reverse Proxy)**
+Arahkan domain Anda ke Nginx, lalu buat Nginx mem-*proxy* port `8080` (Backend) dan menyajikan folder `dist` (Frontend). Jangan lupa set *SSL/HTTPS* menggunakan Certbot.
 
 ---
 

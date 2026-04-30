@@ -20,6 +20,7 @@ const PenilaianDosen = () => {
   const [filterPertemuan, setFilterPertemuan] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
   const [loading, setLoading] = useState(true)
+  const [courseName, setCourseName] = useState('')
   const [grading, setGrading] = useState({})
   const [gradeInputs, setGradeInputs] = useState({})
   const [showAnswerModal, setShowAnswerModal] = useState(false)
@@ -38,6 +39,13 @@ const PenilaianDosen = () => {
   const fetchSubmissions = async () => {
     try {
       setLoading(true)
+
+      // Fetch course info
+      const courseRes = await api.getCourseInfo(courseId)
+      if (courseRes.data && courseRes.data.data) {
+        setCourseName(courseRes.data.data.nama)
+      }
+
       const response = await api.getTugasSubmissions(courseId, filterPertemuan)
       const submissionsArray = Array.isArray(response.data?.data?.submissions)
         ? response.data.data.submissions
@@ -123,22 +131,7 @@ const PenilaianDosen = () => {
     setSidebarOpen(!sidebarOpen)
   }
 
-  const matkulData = {
-    'KP001': 'Komputasi Paralel & Terdistribusi',
-    'KW002': 'Keamanan Web', 
-    'PBO001': 'Pemrograman Berorientasi Objek',
-    'DEV001': 'DevOpsSec',
-    'RPL001': 'Rekayasa Perangkat Lunak',
-    'KWU001': 'Kewirausahaan',
-    'BI002': 'Bahasa Inggris 2',
-    'IR001': 'Incident Response'
-  }
 
-  // Frontend blocker for invalid course IDs
-  if (!matkulData[courseId]) {
-    window.location.href = '/not-found';
-    return null;
-  }
 
   const filteredSubmissions = submissions.filter(submission =>
     searchTerm === '' ||
@@ -228,7 +221,7 @@ const PenilaianDosen = () => {
                       Penilaian Tugas
                     </h1>
                     <p className="text-lp-text2 font-light ml-16">
-                      {matkulData[courseId] || courseId} • {submissions.length} pengumpulan
+                      {courseName || courseId} • {submissions.length} pengumpulan
                     </p>
                   </div>
                 </div>

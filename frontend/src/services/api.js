@@ -262,6 +262,36 @@ api.createAdminPost = (formData) =>
     headers: { 'Content-Type': 'multipart/form-data' },
   })
 
+// === SUPER DOSEN ADMIN - Kelola Akademik ===
+api.getAdminCourses = (semester = 4, kategori = '') => {
+  const params = new URLSearchParams()
+  if (semester) params.append('semester', semester)
+  if (kategori) params.append('kategori', kategori)
+  return api.get(`/api/admin/courses${params.toString() ? '?' + params.toString() : ''}`)
+}
+
+api.adminUploadMateri = (data) =>
+  api.post('/api/admin/materi/upload', data, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  })
+
+api.adminCreateTugas = (data) =>
+  api.post('/api/admin/tugas', data, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  })
+
+api.adminGetPertemuanList = (courseId) =>
+  api.get(`/api/admin/matkul/${courseId}/pertemuan`)
+
+api.adminGetPertemuanDetail = (courseId, pertemuan) =>
+  api.get(`/api/admin/matkul/${courseId}/pertemuan/${pertemuan}`)
+
+api.adminDeleteMateri = (materiId) =>
+  api.delete(`/api/admin/materi/${materiId}/delete`)
+
+api.adminDeleteTugas = (tugasId) =>
+  api.delete(`/api/admin/tugas/${tugasId}/delete`)
+
 // ==============================================================
 // ==================== UKT ROUTES ==============================
 // ==============================================================
@@ -455,6 +485,12 @@ api.getPertemuanList = (courseId, role = 'dosen') => {
     return api.get(`/api/mahasiswa/matkul/${courseId}/pertemuan`)
   }
 }
+
+// ==============================================================
+// ================= GENERAL COURSE INFO ========================
+// ==============================================================
+
+api.getCourseInfo = (courseId) => api.get(`/api/courses/${courseId}/info`)
 
 // ==============================================================
 // ==================== STANDARD METHODS ========================

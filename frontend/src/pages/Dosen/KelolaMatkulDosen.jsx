@@ -28,6 +28,7 @@ const KelolaMatkulDosen = () => {
     file_tugas: null
   })
   const [loading, setLoading] = useState(true)
+  const [courseName, setCourseName] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [detailLoading, setDetailLoading] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -40,6 +41,13 @@ const KelolaMatkulDosen = () => {
   const fetchPertemuanList = async () => {
     try {
       setLoading(true)
+
+      // Fetch course info
+      const courseRes = await api.getCourseInfo(courseId)
+      if (courseRes.data && courseRes.data.data) {
+        setCourseName(courseRes.data.data.nama)
+      }
+
       const response = await api.getPertemuanList(courseId, 'dosen')
       setPertemuanList(response.data.data || [])
     } catch (error) {
@@ -161,22 +169,6 @@ const KelolaMatkulDosen = () => {
     setSidebarOpen(!sidebarOpen)
   }
 
-  const matkulData = {
-    'KP001': 'Komputasi Paralel & Terdistribusi',
-    'KW002': 'Keamanan Web',
-    'PBO001': 'Pemrograman Berorientasi Objek',
-    'DEV001': 'DevOpsSec',
-    'RPL001': 'Rekayasa Perangkat Lunak',
-    'KWU001': 'Kewirausahaan',
-    'BI002': 'Bahasa Inggris 2',
-    'IR001': 'Incident Response'
-  }
-
-  // Frontend blocker for invalid course IDs
-  if (!matkulData[courseId]) {
-    window.location.href = '/not-found';
-    return null;
-  }
 
   if (loading) {
     return (
@@ -243,7 +235,7 @@ const KelolaMatkulDosen = () => {
               </div>
               
               <h1 className="text-4xl md:text-5xl font-light text-lp-text tracking-tight mb-3">
-                {matkulData[courseId] || courseId}
+                {courseName || courseId}
                 <span className="text-lp-text3 block text-lg font-normal mt-2">Course Management Suite</span>
               </h1>
               <p className="text-lp-text2 font-light max-w-xl">
@@ -737,7 +729,7 @@ const KelolaMatkulDosen = () => {
                       </h3>
                       <div className="flex items-center gap-2 text-lp-text2 font-light">
                         <FiBookOpen className="text-lp-text3" />
-                        <span>{matkulData[courseId] || courseId}</span>
+                        <span>{courseName || courseId}</span>
                       </div>
                     </div>
                     <button

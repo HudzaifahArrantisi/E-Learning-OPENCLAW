@@ -23,13 +23,7 @@ const MatkulMahasiswa = () => {
     try {
       setLoading(true)
       setError(null)
-      console.log('🔄 Fetching mahasiswa courses...')
-      
       const response = await api.getMahasiswaCourses()
-      console.log('📦 API Response:', response)
-      console.log('📊 Response data:', response.data)
-      console.log('📊 Response nested data:', response.data?.data)
-      console.log('📊 Response nested inner data:', response.data?.data?.data)
 
       // Ensure we extract the courses array from various possible response shapes
       let coursesData = []
@@ -53,7 +47,7 @@ const MatkulMahasiswa = () => {
         coursesData = response.data.courses
       }
       
-      console.log(`✅ Found ${coursesData.length} courses`)
+
       setCourses(coursesData)
       
     } catch (error) {
@@ -61,7 +55,6 @@ const MatkulMahasiswa = () => {
       console.error('❌ Error details:', error.response?.data || error.message)
       
       // Fallback: Load dummy data for testing
-      console.log('🔄 Loading fallback data...')
       setCourses(getFallbackCourses())
       setError('⚠️ Gagal memuat data dari server. Menampilkan data contoh.')
       
@@ -130,7 +123,7 @@ const MatkulMahasiswa = () => {
   }
 
   const handleCardClick = (courseKode) => {
-    console.log(`📚 Navigating to course: ${courseKode}`)
+
     navigate(`/mahasiswa/matkul/${courseKode}`)
   }
 

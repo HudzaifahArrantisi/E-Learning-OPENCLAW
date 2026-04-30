@@ -12,6 +12,7 @@ const DetailPertemuanMateri = () => {
   const { courseId, pertemuan } = useParams()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [materiList, setMateriList] = useState([])
+  const [courseName, setCourseName] = useState('')
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -20,6 +21,13 @@ const DetailPertemuanMateri = () => {
 
   const fetchMateriDetail = async () => {
     try {
+      setLoading(true)
+      // Fetch course info
+      const courseRes = await api.getCourseInfo(courseId)
+      if (courseRes.data && courseRes.data.data) {
+        setCourseName(courseRes.data.data.nama)
+      }
+
       // ✅ PERBAIKAN: Gunakan endpoint mahasiswa, bukan dosen
       const response = await api.getPertemuanDetail(courseId, pertemuan)
       setMateriList(response.data.data.materi || [])
@@ -34,22 +42,7 @@ const DetailPertemuanMateri = () => {
     }
   }
 
-  const matkulData = {
-    'KP001': 'KOMPUTASI PARALEL & TERDISTRIBUSI',
-    'KW002': 'KEAMANAN WEB',
-    'PBO001': 'PEMROGRAMAN BERORIENTASI OBJEK',
-    'DEV001': 'DEVOPSSEC',
-    'RPL001': 'REKAYASA PERANGKAT LUNAK',
-    'KWU001': 'KEWIRAUSAHAAN',
-    'BI002': 'BAHASA INGGRIS 2',
-    'IR001': 'INCIDENT RESPONSE'
-  }
 
-  // Frontend blocker for invalid course IDs
-  if (!matkulData[courseId]) {
-    window.location.href = '/not-found';
-    return null;
-  }
 
   if (loading) {
     return (
@@ -91,7 +84,7 @@ const DetailPertemuanMateri = () => {
                   <span>Kembali ke Mata Kuliah</span>
                 </Link>
                 <h1 className="text-2xl md:text-3xl font-bold text-lp-text font-semibold tracking-tight">
-                  {matkulData[courseId] || courseId}
+                  {courseName || courseId}
                 </h1>
                 <p className="text-lp-text2 font-light mt-1">Pertemuan {pertemuan} - Materi Pembelajaran</p>
               </div>

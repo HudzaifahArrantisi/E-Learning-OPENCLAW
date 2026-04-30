@@ -189,7 +189,7 @@ const CourseDosen = () => {
                     <h1 className="text-3xl lg:text-4xl font-bold bg-lp-bg bg-clip-text text-transparent">
                       Mata Kuliah Yang Diampu
                     </h1>
-                    <p className="text-lp-text2 font-light ml-16">Semester 3 • Total {courses.length} mata kuliah</p>
+                    <p className="text-lp-text2 font-light ml-16">Semester 4 • Total {courses.length} mata kuliah</p>
                   </div>
                 </div>
               </div>
@@ -330,7 +330,7 @@ const CourseDosen = () => {
                           <h3 className="text-xl font-bold text-lp-text font-semibold tracking-tight mb-2 line-clamp-2">
                             {course.nama}
                           </h3>
-                          <p className="text-lp-text2 font-light text-sm">Semester 3</p>
+                          <p className="text-lp-text2 font-light text-sm">Semester 4</p>
                         </div>
                         <div className={`p-2 rounded-xl ${course.student_count > 0 ? 'bg-lp-bg text-lp-text2' : 'bg-lp-surface text-lp-text2 font-light'}`}>
                           <FiUsers />
@@ -396,7 +396,7 @@ const CourseDosen = () => {
                           <td className="px-6 py-4">
                             <div className="max-w-xs">
                               <div className="font-bold text-lp-text font-bold tracking-tight mb-1">{course.nama}</div>
-                              <div className="text-sm text-lp-text3 font-light">Semester 3</div>
+                              <div className="text-sm text-lp-text3 font-light">Semester 4</div>
                             </div>
                           </td>
                           <td className="px-6 py-4">
@@ -508,35 +508,7 @@ const CourseDosen = () => {
             </div>
           )}
 
-          {/* Custom CSS */}
-          <style jsx>{`
-            @keyframes fadeIn {
-              from { opacity: 0; }
-              to { opacity: 1; }
-            }
-            @keyframes slideUp {
-              from { 
-                opacity: 0;
-                transform: translateY(20px);
-              }
-              to { 
-                opacity: 1;
-                transform: translateY(0);
-              }
-            }
-            .animate-fadeIn {
-              animation: fadeIn 0.3s ease-out;
-            }
-            .animate-slideUp {
-              animation: slideUp 0.4s ease-out;
-            }
-            .line-clamp-2 {
-              display: -webkit-box;
-              -webkit-line-clamp: 2;
-              -webkit-box-orient: vertical;
-              overflow: hidden;
-            }
-          `}</style>
+          {/* Removed invalid style jsx */}
         </div>
       </div>
     </div>

@@ -2,7 +2,6 @@ package scheduler
 
 import (
 	"database/sql"
-	"fmt"
 	"log"
 	"time"
 
@@ -17,6 +16,7 @@ type ReminderTask struct {
 	ID          int
 	CourseID    string
 	CourseName  string
+	Category    string
 	Title       string
 	Description string
 	DueDate     time.Time
@@ -69,7 +69,6 @@ func (s *Scheduler) processReminders() {
 	now := time.Now()
 
 	// Query all active tugas that need reminders
-	// Filter: type='tugas', deleted_at IS NULL, due_date IS NOT NULL, due_date >= today
 	tasks, err := s.getActiveTasks()
 	if err != nil {
 		log.Printf("[Scheduler] Failed to fetch active tasks: %v", err)
@@ -78,8 +77,96 @@ func (s *Scheduler) processReminders() {
 
 	log.Printf("[Scheduler] Found %d active tasks to check", len(tasks))
 
+	var remindersToGroup []map[string]interface{}
+	var tasksToLog []struct {
+		task         ReminderTask
+		reminderType string
+		pendingCount int
+	}
+
+	recipientID := s.Sender.ChannelID
+
 	for _, task := range tasks {
-		s.processTaskReminders(task, now)
+		// Calculate days remaining until due date
+		dueDay := time.Date(task.DueDate.Year(), task.DueDate.Month(), task.DueDate.Day(), 0, 0, 0, 0, task.DueDate.Location())
+		today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+		daysRemaining := int(dueDay.Sub(today).Hours() / 24)
+
+		// Determine which reminder type to send
+		var reminderType string
+		switch daysRemaining {
+		case 3:
+			reminderType = "h3"
+		case 2:
+			reminderType = "h2"
+		case 1:
+			reminderType = "h1"
+		case 0:
+			reminderType = "h0"
+		default:
+			continue
+		}
+
+		// Check dedup
+		if notiflog.IsDuplicate(s.DB, task.ID, reminderType, recipientID, now) {
+			continue
+		}
+
+		// Check pending count
+		pendingCount, err := s.getPendingStudentCount(task.ID, task.CourseID)
+		if err != nil {
+			log.Printf("[Scheduler] Error checking pending students for task %d: %v", task.ID, err)
+			continue
+		}
+
+		if pendingCount == 0 {
+			notiflog.InsertLog(s.DB, task.ID, reminderType, "channel", recipientID,
+				"success", "Skipped: all students submitted", "")
+			continue
+		}
+
+		// Add to group
+		remindersToGroup = append(remindersToGroup, map[string]interface{}{
+			"title":        task.Title,
+			"courseName":   task.CourseName,
+			"dueDate":      task.DueDate.Format("02 Jan 2006 15:04"),
+			"reminderType": reminderType,
+			"daysLeft":     daysRemaining,
+			"pendingCount": pendingCount,
+		})
+
+		tasksToLog = append(tasksToLog, struct {
+			task         ReminderTask
+			reminderType string
+			pendingCount int
+		}{
+			task:         task,
+			reminderType: reminderType,
+			pendingCount: pendingCount,
+		})
+	}
+
+	// Send grouped message if any
+	if len(remindersToGroup) > 0 {
+		message := telegram.FormatGroupedReminderNotification(remindersToGroup)
+		err = s.Sender.SendMessage(message)
+
+		status := "success"
+		errMsg := ""
+		if err != nil {
+			status = "failed"
+			errMsg = err.Error()
+			log.Printf("[Scheduler] Failed to send grouped reminder: %v", err)
+		}
+
+		for _, item := range tasksToLog {
+			notiflog.InsertLog(s.DB, item.task.ID, item.reminderType, "channel", recipientID,
+				status, message, errMsg)
+		}
+		
+		if err == nil {
+			log.Printf("[Scheduler] Sent grouped reminder for %d tasks", len(remindersToGroup))
+		}
 	}
 
 	log.Println("[Scheduler] ========== Reminder check completed ==========")
@@ -89,7 +176,7 @@ func (s *Scheduler) processReminders() {
 func (s *Scheduler) getActiveTasks() ([]ReminderTask, error) {
 	query := `
 		SELECT 
-			t.id, t.course_id, mk.nama, t.title, 
+			t.id, t.course_id, mk.nama, COALESCE(mk.kategori, 'wajib') as kategori, t.title, 
 			COALESCE(t.description, '') as description,
 			t.due_date, t.pertemuan
 		FROM tugas t
@@ -110,7 +197,7 @@ func (s *Scheduler) getActiveTasks() ([]ReminderTask, error) {
 	var tasks []ReminderTask
 	for rows.Next() {
 		var task ReminderTask
-		err := rows.Scan(&task.ID, &task.CourseID, &task.CourseName, &task.Title,
+		err := rows.Scan(&task.ID, &task.CourseID, &task.CourseName, &task.Category, &task.Title,
 			&task.Description, &task.DueDate, &task.Pertemuan)
 		if err != nil {
 			log.Printf("[Scheduler] Error scanning task: %v", err)
@@ -122,75 +209,6 @@ func (s *Scheduler) getActiveTasks() ([]ReminderTask, error) {
 	return tasks, nil
 }
 
-// processTaskReminders determines and sends appropriate reminders for a single task
-func (s *Scheduler) processTaskReminders(task ReminderTask, now time.Time) {
-	// Calculate days remaining until due date (using date only, not time)
-	dueDay := time.Date(task.DueDate.Year(), task.DueDate.Month(), task.DueDate.Day(), 0, 0, 0, 0, task.DueDate.Location())
-	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
-	daysRemaining := int(dueDay.Sub(today).Hours() / 24)
-
-	// Determine which reminder type to send based on days remaining
-	var reminderType string
-	switch daysRemaining {
-	case 3:
-		reminderType = "h3"
-	case 2:
-		reminderType = "h2"
-	case 1:
-		reminderType = "h1"
-	case 0:
-		reminderType = "h0"
-	default:
-		// No reminder needed for this day
-		return
-	}
-
-	log.Printf("[Scheduler] Task %d (%s) — days_remaining=%d reminder_type=%s",
-		task.ID, task.Title, daysRemaining, reminderType)
-
-	recipientID := s.Sender.ChannelID
-
-	// Check dedup
-	if notiflog.IsDuplicate(s.DB, task.ID, reminderType, recipientID, now) {
-		log.Printf("[Scheduler] SKIP — already sent %s for tugas_id=%d today", reminderType, task.ID)
-		return
-	}
-
-	// Check if there are students who haven't submitted yet
-	pendingCount, err := s.getPendingStudentCount(task.ID, task.CourseID)
-	if err != nil {
-		log.Printf("[Scheduler] Error checking pending students: %v", err)
-		// Continue anyway — send to channel regardless
-	}
-
-	if pendingCount == 0 {
-		log.Printf("[Scheduler] SKIP — all students have submitted tugas_id=%d", task.ID)
-		notiflog.InsertLog(s.DB, task.ID, reminderType, "channel", recipientID,
-			"success", "Skipped: all students submitted", "")
-		return
-	}
-
-	// Format and send the reminder
-	dueDateDisplay := task.DueDate.Format("02 Jan 2006 15:04")
-	message := telegram.FormatReminderNotification(
-		task.Title, task.CourseName, dueDateDisplay, reminderType, daysRemaining,
-	)
-
-	// Append pending student count info
-	message += fmt.Sprintf("\n\n👥 %d mahasiswa belum mengumpulkan", pendingCount)
-
-	err = s.Sender.SendMessage(message)
-	if err != nil {
-		log.Printf("[Scheduler] Failed to send %s reminder for tugas_id=%d: %v", reminderType, task.ID, err)
-		notiflog.InsertLog(s.DB, task.ID, reminderType, "channel", recipientID,
-			"failed", message, err.Error())
-		return
-	}
-
-	notiflog.InsertLog(s.DB, task.ID, reminderType, "channel", recipientID,
-		"success", message, "")
-	log.Printf("[Scheduler] Sent %s reminder for tugas_id=%d (%s)", reminderType, task.ID, task.Title)
-}
 
 // getPendingStudentCount returns the number of students who haven't submitted a task
 func (s *Scheduler) getPendingStudentCount(tugasID int, courseID string) (int, error) {

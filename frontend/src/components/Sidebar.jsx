@@ -15,7 +15,7 @@ import { MdDashboard, MdClass, MdPayment } from 'react-icons/md'
 const Sidebar = ({ role, isOpen, onClose }) => {
   const location = useLocation()
   const navigate = useNavigate()
-  const { logout } = useAuth()
+  const { logout, user } = useAuth()
   const [internalOpen, setInternalOpen] = useState(false)
 
   const isControlled = useMemo(() => typeof isOpen === 'boolean', [isOpen])
@@ -70,9 +70,9 @@ const Sidebar = ({ role, isOpen, onClose }) => {
     ],
     dosen: [
       { path: '/dosen', label: 'Dashboard', icon: <MdDashboard className="text-lg" /> },
-      { path: '/dosen/course', label: 'Kelas Saya', icon: <FaBook className="text-lg" /> },
-      { path: '/dosen/absensi', label: 'Absensi', icon: <FaCalendar className="text-lg" /> },
-      { path: '/dosen/pesan', label: 'Pesan', icon: <FaComment className="text-lg" /> }
+      { path: '/dosen/course', label: user?.email === 'superdosen@nurulfikri.ac.id' ? 'Kelola Semua Matkul' : 'Kelas Saya', icon: <FaBook className="text-lg" /> },
+      { path: '/dosen/absensi', label: 'Absensi', icon: <FaCalendar className="text-lg" />, hidden: user?.email === 'superdosen@nurulfikri.ac.id' },
+      { path: '/dosen/pesan', label: 'Pesan', icon: <FaComment className="text-lg" />, hidden: user?.email === 'superdosen@nurulfikri.ac.id' }
     ],
     admin: [
       { path: '/admin', label: 'Dashboard', icon: <MdDashboard className="text-lg" /> },
@@ -100,7 +100,7 @@ const Sidebar = ({ role, isOpen, onClose }) => {
     ]
   }
 
-  const items = menuItems[role] || []
+  const items = (menuItems[role] || []).filter(item => !item.hidden)
 
   return (
     <>

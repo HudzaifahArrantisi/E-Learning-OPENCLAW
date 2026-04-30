@@ -62,8 +62,8 @@ export default function LandingPage() {
       {/* HEADER / NAV */}
       <div className="fixed top-5 left-0 right-0 z-50 flex justify-center px-4 sm:px-5 pointer-events-none">
         <div className={`pointer-events-auto transition-all duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)] relative ${isMobileMenuOpen ? 'w-full sm:w-max' : 'w-max max-w-full'}`}>
-          <nav className="flex items-center justify-between bg-lp-bg/50 backdrop-blur-x1 border border-lp-border/20 rounded-full py-1 px-1.5 pl-4 sm:pl-5 whitespace-nowrap gap-0.5 shadow-[0_12px_32px_rgba(0,0,0,0.08)]">
-            <span className="text-[11.5px] font-semibold text-lp-text tracking-[0.07em] mr-2.5 sm:mr-4">STUDENT-HUB</span>
+          <nav className="flex items-center justify-between bg-white/80 backdrop-blur-md border border-black/10 rounded-full py-1 px-1.5 pl-4 sm:pl-5 whitespace-nowrap gap-0.5 shadow-[0_8px_32px_rgba(0,0,0,0.06)]">
+            <span className="text-[11.5px] font-bold text-lp-text tracking-[0.07em] mr-2.5 sm:mr-4">STUDENT-HUB</span>
             
             <div className="hidden sm:flex items-center gap-0.5">
               <a href="#features" className="text-lp-text2 text-[12.5px] px-4 py-2 rounded-full transition-all hover:text-lp-text hover:bg-black/5">Features</a>
@@ -98,16 +98,13 @@ export default function LandingPage() {
           </div>
         </div>
       </div>
+
       <section className="relative min-h-screen flex items-end pb-24 overflow-hidden">
         <div className="absolute left-0 right-0 h-[160px] animate-scanAnim bg-[linear-gradient(180deg,transparent,rgba(75,115,255,0.03)_35%,rgba(75,115,255,0.06)_50%,rgba(75,115,255,0.03)_65%,transparent)] pointer-events-none" />
         <div className="relative z-10 w-full max-w-[1120px] mx-auto px-7">
-          <div className="inline-flex items-center gap-2 border border-black/10 rounded-full py-1.5 pl-2.5 pr-4 text-[11.5px] text-lp-text2 tracking-wide mb-10 animate-slideUp delay-100 fill-mode-both">
-            <span className="w-1.5 h-1.5 rounded-full bg-lp-accent animate-pulse" />
-            E-Learning Reminder Openclaw · By Andromeda 
-          </div>
           <h1 className="font-sans text-[clamp(3.8rem,7.4vw,6.6rem)] font-normal leading-[0.96] tracking-[-0.035em] text-lp-text mb-8 animate-slideUp delay-300 fill-mode-both">
-            Openclaw Reminder<br />
-            <em className="italic text-lp-text/40">Student Hub</em>
+            Student Hub<br />
+            <em className="italic text-lp-text/40">Openlcaw Reminder</em>
           </h1>
           <p className="text-[17px] font-light text-lp-text2 max-w-[560px] leading-relaxed mb-11 animate-slideUp delay-500 fill-mode-both">
             Student Hub automatically reminds you about classes, assignments, 
@@ -122,63 +119,8 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
-
-      {/* 01 - FEATURES */}
-      <hr className="border-0 border-t border-lp-border" />
-      <section id="features" className="py-24">
-        <div className="max-w-[1120px] mx-auto px-7">
-          <div className={`${rvBase} flex items-center gap-4 text-[10.5px] font-medium tracking-[0.16em] uppercase text-lp-text3 mb-10 after:content-[''] after:flex-1 after:h-px after:bg-lp-border`}>
-            <span className="font-mono">01</span> Core Features
-          </div>
-          <div className={`${rvBase} ${rvDelays[1]} flex flex-col md:flex-row md:justify-between md:items-end gap-6 mb-14`}>
-            <h2 className="font-sans text-[clamp(2.8rem,5.5vw,4.5rem)] leading-[1.06] tracking-tight text-lp-text">Everything you need<br /><em className="italic text-lp-text/40">to stay on track.</em></h2>
-            <p className="text-[14px] font-light text-lp-text2 max-w-[320px] pb-2">
-              Smart reminders, automated tracking, and seamless Telegram integration built for the modern student.
-            </p>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {featureCards.map((f, i) => (
-              <div key={f.title} className={`${rvBase} ${rvDelays[Math.min(i+1, 5)]} border border-lp-border rounded-2xl p-8 relative overflow-hidden transition-all duration-300 hover:border-lp-borderA hover:bg-lp-borderA/5 hover:-translate-y-0.5 group`}>
-                <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-lp-accent/30 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-                {f.icon === '⚡' && <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-5 text-xl bg-lp-accentS text-lp-atext">{f.icon}</div>}
-                {f.icon === '✈️' && <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-5 text-xl bg-lp-tg/10 text-lp-tg">{f.icon}</div>}
-                {f.icon === '📊' && <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-5 text-xl bg-lp-green/10 text-lp-green">{f.icon}</div>}
-                {f.icon === '📝' && <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-5 text-xl bg-lp-amber/10 text-lp-amber">{f.icon}</div>}
-                {f.icon === '📈' && <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-5 text-xl bg-purple-500/10 text-purple-400">{f.icon}</div>}
-                {f.icon === '🔄' && <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-5 text-xl bg-lp-red/10 text-lp-red">{f.icon}</div>}
-                <div className="text-[15px] font-semibold text-lp-text mb-2.5 tracking-tight leading-snug">{f.title}</div>
-                <div className="text-[13.5px] font-light text-lp-text2 leading-relaxed">{f.desc}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* 02 - HOW IT WORKS */}
-      <hr className="border-0 border-t border-lp-border" />
-      <section className="py-24">
-        <div className="max-w-[1120px] mx-auto px-7">
-          <div className={`${rvBase} flex items-center gap-4 text-[10.5px] font-medium tracking-[0.16em] uppercase text-lp-text3 mb-10 after:content-[''] after:flex-1 after:h-px after:bg-lp-border`}>
-            <span className="font-mono">02</span> How It Works
-          </div>
-          <div className={`${rvBase} ${rvDelays[1]} text-center mb-14`}>
-            <h2 className="font-sans text-[clamp(2.8rem,5.5vw,4.5rem)] leading-[1.06] tracking-tight text-lp-text max-w-[600px] mx-auto">Three steps to<br /><em className="italic text-lp-text/40">academic clarity.</em></h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-0 relative">
-            <div className="hidden md:block absolute top-11 left-[15%] right-[15%] h-px bg-gradient-to-r from-transparent via-lp-borderA to-transparent" />
-            {howItWorks.map((step, i) => (
-              <div key={step.num} className={`${rvBase} ${rvDelays[i+1]} text-center relative px-6`}>
-                <div className="w-14 h-14 rounded-full border border-lp-borderA bg-lp-surface flex items-center justify-center font-mono text-base text-lp-atext mx-auto mb-7 relative z-10">{step.num}</div>
-                <div className="text-base font-semibold text-lp-text mb-2.5 tracking-tight">{step.title}</div>
-                <div className="text-[13.5px] font-light text-lp-text2 leading-relaxed max-w-[260px] mx-auto">{step.desc}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* 03 - PANDUAN AKSES (ROLE GUIDES) */}
-      <hr className="border-0 border-t border-lp-border" />
+      
+            {/* 03 - PANDUAN AKSES (ROLE GUIDES) */}
       <section id="panduan" className="py-24 bg-lp-surface/30">
         <div className="max-w-[1120px] mx-auto px-7">
           <div className={`${rvBase} flex items-center gap-4 text-[10.5px] font-medium tracking-[0.16em] uppercase text-lp-text3 mb-10 after:content-[''] after:flex-1 after:h-px after:bg-lp-border`}>
@@ -258,9 +200,61 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+      {/* 01 - FEATURES */}
+      <section id="features" className="py-24">
+        <div className="max-w-[1120px] mx-auto px-7">
+          <div className={`${rvBase} flex items-center gap-4 text-[10.5px] font-medium tracking-[0.16em] uppercase text-lp-text3 mb-10 after:content-[''] after:flex-1 after:h-px after:bg-lp-border`}>
+            <span className="font-mono">01</span> Core Features
+          </div>
+          <div className={`${rvBase} ${rvDelays[1]} flex flex-col md:flex-row md:justify-between md:items-end gap-6 mb-14`}>
+            <h2 className="font-sans text-[clamp(2.8rem,5.5vw,4.5rem)] leading-[1.06] tracking-tight text-lp-text">Everything you need<br /><em className="italic text-lp-text/40">to stay on track.</em></h2>
+            <p className="text-[14px] font-light text-lp-text2 max-w-[320px] pb-2">
+              Smart reminders, automated tracking, and seamless Telegram integration built for the modern student.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {featureCards.map((f, i) => (
+              <div key={f.title} className={`${rvBase} ${rvDelays[Math.min(i+1, 5)]} border border-lp-border rounded-2xl p-8 relative overflow-hidden transition-all duration-300 hover:border-lp-borderA hover:bg-lp-borderA/5 hover:-translate-y-0.5 group`}>
+                <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-lp-accent/30 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                {f.icon === '⚡' && <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-5 text-xl bg-lp-accentS text-lp-atext">{f.icon}</div>}
+                {f.icon === '✈️' && <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-5 text-xl bg-lp-tg/10 text-lp-tg">{f.icon}</div>}
+                {f.icon === '📊' && <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-5 text-xl bg-lp-green/10 text-lp-green">{f.icon}</div>}
+                {f.icon === '📝' && <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-5 text-xl bg-lp-amber/10 text-lp-amber">{f.icon}</div>}
+                {f.icon === '📈' && <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-5 text-xl bg-purple-500/10 text-purple-400">{f.icon}</div>}
+                {f.icon === '🔄' && <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-5 text-xl bg-lp-red/10 text-lp-red">{f.icon}</div>}
+                <div className="text-[15px] font-semibold text-lp-text mb-2.5 tracking-tight leading-snug">{f.title}</div>
+                <div className="text-[13.5px] font-light text-lp-text2 leading-relaxed">{f.desc}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 02 - HOW IT WORKS */}
+      <section className="py-24">
+        <div className="max-w-[1120px] mx-auto px-7">
+          <div className={`${rvBase} flex items-center gap-4 text-[10.5px] font-medium tracking-[0.16em] uppercase text-lp-text3 mb-10 after:content-[''] after:flex-1 after:h-px after:bg-lp-border`}>
+            <span className="font-mono">02</span> How It Works
+          </div>
+          <div className={`${rvBase} ${rvDelays[1]} text-center mb-14`}>
+            <h2 className="font-sans text-[clamp(2.8rem,5.5vw,4.5rem)] leading-[1.06] tracking-tight text-lp-text max-w-[600px] mx-auto">Three steps to<br /><em className="italic text-lp-text/40">academic clarity.</em></h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-0 relative">
+            <div className="hidden md:block absolute top-11 left-[15%] right-[15%] h-px bg-gradient-to-r from-transparent via-lp-borderA to-transparent" />
+            {howItWorks.map((step, i) => (
+              <div key={step.num} className={`${rvBase} ${rvDelays[i+1]} text-center relative px-6`}>
+                <div className="w-14 h-14 rounded-full border border-lp-borderA bg-lp-surface flex items-center justify-center font-mono text-base text-lp-atext mx-auto mb-7 relative z-10">{step.num}</div>
+                <div className="text-base font-semibold text-lp-text mb-2.5 tracking-tight">{step.title}</div>
+                <div className="text-[13.5px] font-light text-lp-text2 leading-relaxed max-w-[260px] mx-auto">{step.desc}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+
 
       {/* 04 - TERMINAL */}
-      <hr className="border-0 border-t border-lp-border" />
       <section id="platform" className="py-24">
         <div className="max-w-[1120px] mx-auto px-7">
           <div className={`${rvBase} flex items-center gap-4 text-[10.5px] font-medium tracking-[0.16em] uppercase text-lp-text3 mb-10 after:content-[''] after:flex-1 after:h-px after:bg-lp-border`}>
@@ -301,7 +295,6 @@ export default function LandingPage() {
       </section>
 
       {/* 05 - TELEGRAM PREVIEW */}
-      <hr className="border-0 border-t border-lp-border" />
       <section className="py-24">
         <div className="max-w-[1120px] mx-auto px-7">
           <div className={`${rvBase} flex items-center gap-4 text-[10.5px] font-medium tracking-[0.16em] uppercase text-lp-text3 mb-10 after:content-[''] after:flex-1 after:h-px after:bg-lp-border`}>
@@ -352,7 +345,6 @@ export default function LandingPage() {
       </section>
 
       {/* 06 - BENEFITS */}
-      <hr className="border-0 border-t border-lp-border" />
       <section className="py-24">
         <div className="max-w-[1120px] mx-auto px-7">
           <div className={`${rvBase} flex items-center gap-4 text-[10.5px] font-medium tracking-[0.16em] uppercase text-lp-text3 mb-10 after:content-[''] after:flex-1 after:h-px after:bg-lp-border`}>
@@ -375,7 +367,6 @@ export default function LandingPage() {
       </section>
 
       {/* 07 - KURIKULUM */}
-      <hr className="border-0 border-t border-lp-border" />
       <section id="kurikulum" className="py-24">
         <div className="max-w-[1120px] mx-auto px-7">
           <div className={`${rvBase} flex items-center gap-4 text-[10.5px] font-medium tracking-[0.16em] uppercase text-lp-text3 mb-10 after:content-[''] after:flex-1 after:h-px after:bg-lp-border`}>
@@ -410,7 +401,6 @@ export default function LandingPage() {
       </section>
 
       {/* 08 - VISI & MISI */}
-      <hr className="border-0 border-t border-lp-border" />
       <section id="visi-misi" className="py-24 bg-lp-surface/50">
         <div className="max-w-[1120px] mx-auto px-7">
           <div className={`${rvBase} flex items-center gap-4 text-[10.5px] font-medium tracking-[0.16em] uppercase text-lp-text3 mb-10 after:content-[''] after:flex-1 after:h-px after:bg-lp-border`}>
@@ -455,7 +445,6 @@ export default function LandingPage() {
       </section>
 
       {/* 09 - KALENDER */}
-      <hr className="border-0 border-t border-lp-border" />
       <section id="kalender" className="py-24">
         <div className="max-w-[1120px] mx-auto px-7">
           <div className={`${rvBase} flex items-center gap-4 text-[10.5px] font-medium tracking-[0.16em] uppercase text-lp-text3 mb-10 after:content-[''] after:flex-1 after:h-px after:bg-lp-border`}>
@@ -512,7 +501,6 @@ export default function LandingPage() {
       </section>
 
       {/* 10 - PLATFORM FEATURES */}
-      <hr className="border-0 border-t border-lp-border" />
       <section className="py-24">
         <div className="max-w-[1120px] mx-auto px-7">
           <div className={`${rvBase} flex items-center gap-4 text-[10.5px] font-medium tracking-[0.16em] uppercase text-lp-text3 mb-10 after:content-[''] after:flex-1 after:h-px after:bg-lp-border`}>
@@ -533,7 +521,6 @@ export default function LandingPage() {
       </section>
 
       {/* 14 - STATS */}
-      <hr className="border-0 border-t border-lp-border" />
       <section className="py-24">
         <div className="max-w-[1120px] mx-auto px-7">
           <div className={`${rvBase} border border-lp-border rounded-[20px] overflow-hidden grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4`}>
@@ -548,7 +535,6 @@ export default function LandingPage() {
       </section>
 
       {/* CTA */}
-      <hr className="border-0 border-t border-lp-border" />
       <div className={`${rvBase} text-center pt-[118px] pb-[112px] px-6 relative overflow-hidden`}>
         <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[640px] h-[360px] bg-[radial-gradient(ellipse_at_50%_100%,rgba(75,115,255,0.06),transparent_72%)] pointer-events-none" />
         <span className="text-[10.5px] font-mono text-lp-text3 tracking-[0.16em] uppercase mb-7 block">Student Hub · E-Learning Reminder Platform</span>

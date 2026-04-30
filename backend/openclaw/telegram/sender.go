@@ -46,26 +46,14 @@ func (s *Sender) SendMessage(text string) error {
 		return fmt.Errorf("TELEGRAM_BOT_TOKEN is not configured")
 	}
 
-	var lastErr error
-	for attempt := 1; attempt <= 3; attempt++ {
-		err := s.doSend(text)
-		if err == nil {
-			log.Printf("[Telegram] Message sent successfully to %s (attempt %d)", s.ChannelID, attempt)
-			return nil
-		}
-
-		lastErr = err
-		log.Printf("[Telegram] Send failed (attempt %d/3): %v", attempt, err)
-
-		if attempt < 3 {
-			// Exponential backoff: 1s, 2s, 4s
-			backoff := time.Duration(1<<uint(attempt-1)) * time.Second
-			log.Printf("[Telegram] Retrying in %v...", backoff)
-			time.Sleep(backoff)
-		}
+	err := s.doSend(text)
+	if err == nil {
+		log.Printf("[Telegram] Message sent successfully to %s", s.ChannelID)
+		return nil
 	}
 
-	return fmt.Errorf("all 3 attempts failed, last error: %v", lastErr)
+	log.Printf("[Telegram] Send failed: %v", err)
+	return fmt.Errorf("failed to send message: %v", err)
 }
 
 // doSend performs the actual HTTP call to Telegram Bot API
@@ -108,52 +96,111 @@ func (s *Sender) doSend(text string) error {
 }
 
 // FormatInstantNotification formats the instant notification message
-func FormatInstantNotification(title, courseName, description, dueDate string, pertemuan int) string {
+func FormatInstantNotification(title, courseName, description, dueDate, category string, pertemuan int) string {
+	categoryLabel := ""
+	if category == "peminatan_cs" {
+		categoryLabel = " [PEMINATAN CS]"
+	} else if category == "peminatan_ai" {
+		categoryLabel = " [PEMINATAN AI]"
+	}
+
 	return fmt.Sprintf(
-		"📚 <b>TUGAS BARU!</b>\n\n"+
+		"📚 <b>TUGAS BARU!%s</b>\n\n"+
 			"📖 Mata Kuliah: <b>%s</b>\n"+
 			"📝 Judul: <b>%s</b>\n"+
 			"📋 Pertemuan: %d\n"+
 			"📄 Deskripsi: %s\n"+
 			"⏰ Deadline: <b>%s</b>\n\n"+
 			"Segera kerjakan dan kumpulkan sebelum deadline! 💪",
-		courseName, title, pertemuan, description, dueDate,
+		categoryLabel, courseName, title, pertemuan, description, dueDate,
 	)
 }
 
-func FormatReminderNotification(title, courseName, dueDate, reminderType string, daysLeft int) string {
-	var urgency string
-	switch reminderType {
-	case "h3":
-		urgency = "! 3 Hari Lagi"
-	case "h2":
-		urgency = "!! 2 Hari Lagi"
-	case "h1":
-		urgency = "!!! BESOK!"
-	case "h0":
-		urgency = "!!!! HARI INI!‼️"
-	default:
-		urgency = fmt.Sprintf("%d hari lagi", daysLeft)
-	}
+func FormatReminderNotification(title, courseName, dueDate, reminderType, category string, daysLeft int) string {
+	urgency := getUrgencyLabel(reminderType, daysLeft)
+	categoryLabel := getCategoryLabel(category)
 
 	return fmt.Sprintf(
-		"⏰ <b>REMINDER TUGAS</b> — %s\n\n"+
+		"⏰ <b>REMINDER TUGAS%s</b> — %s\n\n"+
 			"📖 Mata Kuliah: <b>%s</b>\n"+
 			"📝 Judul: <b>%s</b>\n"+
 			"📅 Deadline: <b>%s</b>\n\n"+
 			"Jangan lupa kumpulkan tugasmu! 📤",
-		urgency, courseName, title, dueDate,
+		categoryLabel, urgency, courseName, title, dueDate,
 	)
 }
 
-func FormatMateriNotification(title, courseName, description string, pertemuan int) string {
+// FormatGroupedReminderNotification formats multiple reminders into a single compact message
+func FormatGroupedReminderNotification(reminders []map[string]interface{}) string {
+	if len(reminders) == 0 {
+		return ""
+	}
+
+	now := time.Now().Format("02 Jan 2006")
+	header := fmt.Sprintf("⏰ <b>REMINDER TUGAS — %s</b>\n\n", now)
+	
+	var body string
+	for i, r := range reminders {
+		title := r["title"].(string)
+		courseName := r["courseName"].(string)
+		dueDate := r["dueDate"].(string)
+		reminderType := r["reminderType"].(string)
+		daysLeft := r["daysLeft"].(int)
+		pendingCount := r["pendingCount"].(int)
+		
+		urgency := getUrgencyLabel(reminderType, daysLeft)
+		
+		body += fmt.Sprintf(
+			"%d. <b>%s</b>\n"+
+				"📖 [%s] %s\n"+
+				"📅 %s (👥 %d mhs belum)\n\n",
+			i+1, urgency, courseName, title, dueDate, pendingCount,
+		)
+	}
+
+	footer := "Jangan lupa kumpulkan tugasmu! 📤"
+	return header + body + footer
+}
+
+func getUrgencyLabel(reminderType string, daysLeft int) string {
+	switch reminderType {
+	case "h3":
+		return "! 3 Hari Lagi"
+	case "h2":
+		return "!! 2 Hari Lagi"
+	case "h1":
+		return "!!! BESOK!"
+	case "h0":
+		return "!!!! HARI INI!‼️"
+	default:
+		return fmt.Sprintf("%d hari lagi", daysLeft)
+	}
+}
+
+func getCategoryLabel(category string) string {
+	if category == "peminatan_cs" {
+		return " [PEMINATAN CS]"
+	} else if category == "peminatan_ai" {
+		return " [PEMINATAN AI]"
+	}
+	return ""
+}
+
+func FormatMateriNotification(title, courseName, description, category string, pertemuan int) string {
+	categoryLabel := ""
+	if category == "peminatan_cs" {
+		categoryLabel = " [PEMINATAN CS]"
+	} else if category == "peminatan_ai" {
+		categoryLabel = " [PEMINATAN AI]"
+	}
+
 	return fmt.Sprintf(
-		"📘 <b>MATERI BARU!</b>\n\n"+
+		"📘 <b>MATERI BARU!%s</b>\n\n"+
 			"📖 Mata Kuliah: <b>%s</b>\n"+
 			"📝 Judul: <b>%s</b>\n"+
 			"📋 Pertemuan: %d\n"+
 			"📄 Deskripsi: %s\n\n"+
 			"Silakan pelajari materi yang baru diupload! 🤓",
-		courseName, title, pertemuan, description,
+		categoryLabel, courseName, title, pertemuan, description,
 	)
 }

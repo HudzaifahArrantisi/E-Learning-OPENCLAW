@@ -13,6 +13,7 @@ import {
 const DetailPertemuanDosen = () => {
   const { courseId, pertemuan } = useParams()
   const [detail, setDetail] = useState({ materi: [], tugas: [] })
+  const [courseName, setCourseName] = useState('')
   const [loading, setLoading] = useState(true)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [activeTab, setActiveTab] = useState('materi') // 'materi' or 'tugas'
@@ -25,7 +26,14 @@ const DetailPertemuanDosen = () => {
   const fetchPertemuanDetail = async () => {
     try {
       setLoading(true)
-      const response = await api.get(`/dosen/matkul/${courseId}/pertemuan/${pertemuan}`)
+
+      // Fetch course info
+      const courseRes = await api.getCourseInfo(courseId)
+      if (courseRes.data && courseRes.data.data) {
+        setCourseName(courseRes.data.data.nama)
+      }
+
+      const response = await api.get(`/api/dosen/matkul/${courseId}/pertemuan/${pertemuan}`)
       setDetail(response.data.data)
     } catch (error) {
       console.error('Error fetching pertemuan detail:', error)
@@ -61,25 +69,6 @@ const DetailPertemuanDosen = () => {
     setSidebarOpen(!sidebarOpen)
   }
 
-  const matkulData = {
-    'CS101': 'Pemrograman Dasar',
-    'CS201': 'Algoritma dan Struktur Data', 
-    'CS301': 'Basis Data',
-    'RPL001': 'Rekayasa Perangkat Lunak',
-    'PBO001': 'Pemrograman Berorientasi Objek',
-    'KP001': 'Komputasi Paralel & Terdistribusi',
-    'KW002': 'Keamanan Web',
-    'DEV001': 'DevOpsSec',
-    'KWU001': 'Kewirausahaan',
-    'BI002': 'Bahasa Inggris 2',
-    'IR001': 'Incident Response'
-  }
-
-  // Frontend blocker for invalid course IDs
-  if (!matkulData[courseId]) {
-    window.location.href = '/not-found';
-    return null;
-  }
 
   const formatFileSize = (bytes) => {
     if (bytes < 1024) return bytes + ' bytes'
@@ -150,7 +139,7 @@ const DetailPertemuanDosen = () => {
                   </div>
                   <div>
                     <h1 className="text-3xl lg:text-4xl font-bold bg-lp-bg bg-clip-text text-transparent">
-                      {matkulData[courseId] || courseId}
+                      {courseName || courseId}
                     </h1>
                     <p className="text-lp-text2 font-light mt-1">Pertemuan {pertemuan}</p>
                   </div>

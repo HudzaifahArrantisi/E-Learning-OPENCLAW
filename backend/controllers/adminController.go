@@ -1,9 +1,12 @@
 package controllers
 
 import (
+	"database/sql"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
+	"time"
 
 	"nf-student-hub-backend/config"
 	"nf-student-hub-backend/utils"
@@ -457,6 +460,419 @@ func SendReminder(c *gin.Context) {
 		mahasiswa.Name, mahasiswa.Email, mahasiswa.SisaUKT)
 
 	utils.SuccessResponse(c, mahasiswa.Name, "Pengingat telah dikirim")
+}
+
+// =============================================
+// SUPER DOSEN ADMIN - KELOLA MATKUL SEMUA
+// =============================================
+
+// GetAllCourses - Ambil semua matkul semester 4 (untuk super admin)
+func GetAllCourses(c *gin.Context) {
+	semesterStr := c.DefaultQuery("semester", "4")
+	kategori := c.Query("kategori")
+
+	query := `
+		SELECT 
+			mk.kode, mk.nama, mk.sks, mk.hari, mk.jam_mulai, mk.jam_selesai,
+			mk.semester, COALESCE(mk.kategori, 'wajib') as kategori,
+			COALESCE(d.name, 'N/A') as dosen_name,
+			(SELECT COUNT(DISTINCT mmk.mahasiswa_id) FROM mahasiswa_mata_kuliah mmk WHERE mmk.mata_kuliah_kode = mk.kode) as student_count
+		FROM mata_kuliah mk
+		LEFT JOIN dosen d ON mk.dosen_id = d.id
+		WHERE mk.semester = $1
+	`
+	args := []interface{}{semesterStr}
+
+	if kategori != "" {
+		query += fmt.Sprintf(" AND mk.kategori = $%d", len(args)+1)
+		args = append(args, kategori)
+	}
+
+	query += `
+		ORDER BY 
+			CASE mk.kategori
+				WHEN 'wajib' THEN 1
+				WHEN 'peminatan_cs' THEN 2
+				WHEN 'peminatan_ai' THEN 3
+			END,
+			mk.kode
+	`
+
+	rows, err := config.DB.Query(query, args...)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Gagal mengambil data matkul: "+err.Error())
+		return
+	}
+	defer rows.Close()
+
+	var courses []gin.H
+	for rows.Next() {
+		var kode, nama, hari, jamMulai, jamSelesai, dosenName, kategoriVal string
+		var sks, semester, studentCount int
+
+		err := rows.Scan(&kode, &nama, &sks, &hari, &jamMulai, &jamSelesai, &semester, &kategoriVal, &dosenName, &studentCount)
+		if err != nil {
+			continue
+		}
+
+		courses = append(courses, gin.H{
+			"kode":          kode,
+			"nama":          nama,
+			"sks":           sks,
+			"hari":          hari,
+			"jam_mulai":     jamMulai,
+			"jam_selesai":   jamSelesai,
+			"semester":      semester,
+			"kategori":      kategoriVal,
+			"dosen_name":    dosenName,
+			"student_count": studentCount,
+		})
+	}
+
+	utils.SuccessResponse(c, courses, "Semua matkul berhasil diambil")
+}
+
+// AdminUploadMateri - Upload materi (akses ke semua matkul)
+func AdminUploadMateri(c *gin.Context) {
+	if err := c.Request.ParseMultipartForm(32 << 20); err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, "Failed to parse form data")
+		return
+	}
+
+	courseID := c.PostForm("course_id")
+	pertemuanStr := c.PostForm("pertemuan")
+	title := c.PostForm("title")
+	desc := c.PostForm("desc")
+
+	if courseID == "" || pertemuanStr == "" || title == "" {
+		utils.ValidationError(c, "course_id, pertemuan, dan title wajib diisi")
+		return
+	}
+
+	userID, _ := c.Get("user_id")
+
+	// Verify course exists (no dosen ownership check - admin has access to ALL)
+	var exists bool
+	if err := config.DB.QueryRow("SELECT EXISTS(SELECT 1 FROM mata_kuliah WHERE kode = $1)", courseID).Scan(&exists); err != nil || !exists {
+		utils.ErrorResponse(c, http.StatusNotFound, "Mata kuliah tidak ditemukan")
+		return
+	}
+
+	pertemuan, _ := strconv.Atoi(pertemuanStr)
+	if pertemuan < 1 || pertemuan > 16 {
+		utils.ValidationError(c, "Pertemuan harus 1-16")
+		return
+	}
+
+	// File wajib untuk materi
+	if _, _, fErr := c.Request.FormFile("file"); fErr != nil {
+		utils.ValidationError(c, "File materi wajib diupload")
+		return
+	}
+
+	uid, _ := userID.(int)
+	uploadID, filePath, uploadErr := UploadFileToDB(c, "file", uid, "admin", "materi", nil, nil)
+	if uploadErr != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, uploadErr.Error())
+		return
+	}
+
+	query := `
+		INSERT INTO tugas 
+		(course_id, pertemuan, title, description, file_tugas, type, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, 'materi', NOW(), NOW())
+		RETURNING id
+	`
+	var id int64
+	err := config.DB.QueryRow(query, courseID, pertemuan, title, desc, filePath).Scan(&id)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Gagal upload materi: "+err.Error())
+		return
+	}
+
+	config.DB.Exec("UPDATE uploads SET related_id = $1, related_table = 'tugas' WHERE id = $2", id, uploadID)
+
+	utils.SuccessResponse(c, gin.H{
+		"id":        id,
+		"course_id": courseID,
+		"pertemuan": pertemuan,
+		"title":     title,
+		"file_path": filePath,
+	}, "Materi berhasil diupload oleh admin")
+}
+
+// AdminCreateTugas - Buat tugas (akses ke semua matkul)
+func AdminCreateTugas(c *gin.Context) {
+	if err := c.Request.ParseMultipartForm(32 << 20); err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, "Failed to parse form data")
+		return
+	}
+
+	courseID := c.PostForm("course_id")
+	pertemuanStr := c.PostForm("pertemuan")
+	title := c.PostForm("title")
+	desc := c.PostForm("desc")
+	dueDateStr := c.PostForm("due_date")
+
+	if courseID == "" || pertemuanStr == "" || title == "" || desc == "" {
+		utils.ValidationError(c, "course_id, pertemuan, title, dan desc wajib diisi")
+		return
+	}
+
+	userID, _ := c.Get("user_id")
+
+	// Verify course exists (no dosen ownership check)
+	var exists bool
+	if err := config.DB.QueryRow("SELECT EXISTS(SELECT 1 FROM mata_kuliah WHERE kode = $1)", courseID).Scan(&exists); err != nil || !exists {
+		utils.ErrorResponse(c, http.StatusNotFound, "Mata kuliah tidak ditemukan")
+		return
+	}
+
+	pertemuan, _ := strconv.Atoi(pertemuanStr)
+	if pertemuan < 1 || pertemuan > 16 {
+		utils.ValidationError(c, "Pertemuan harus 1-16")
+		return
+	}
+
+	var dueDate sql.NullTime
+	if dueDateStr != "" {
+		if t, err := time.Parse("2006-01-02T15:04", dueDateStr); err == nil {
+			dueDate = sql.NullTime{Time: t, Valid: true}
+		} else {
+			utils.ValidationError(c, "Format due_date salah (gunakan datetime-local)")
+			return
+		}
+	} else {
+		dueDate = sql.NullTime{Time: time.Now().Add(7 * 24 * time.Hour), Valid: true}
+	}
+
+	// File tugas opsional
+	var filePath sql.NullString
+	var uploadID int64
+	uid, _ := userID.(int)
+	if _, _, fErr := c.Request.FormFile("file_tugas"); fErr == nil {
+		uID, fileURL, uploadErr := UploadFileToDB(c, "file_tugas", uid, "admin", "tugas_admin", nil, nil)
+		if uploadErr != nil {
+			utils.ErrorResponse(c, http.StatusBadRequest, "File tugas: "+uploadErr.Error())
+			return
+		}
+		filePath.String = fileURL
+		filePath.Valid = true
+		uploadID = uID
+	}
+
+	query := `
+		INSERT INTO tugas 
+		(course_id, pertemuan, title, description, file_tugas, due_date, type, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, 'tugas', NOW(), NOW())
+		RETURNING id
+	`
+	var id int64
+	err := config.DB.QueryRow(query, courseID, pertemuan, title, desc, filePath, dueDate).Scan(&id)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Gagal membuat tugas: "+err.Error())
+		return
+	}
+
+	if uploadID > 0 {
+		config.DB.Exec("UPDATE uploads SET related_id = $1, related_table = 'tugas' WHERE id = $2", id, uploadID)
+	}
+
+	utils.SuccessResponse(c, gin.H{
+		"id":          id,
+		"course_id":   courseID,
+		"pertemuan":   pertemuan,
+		"title":       title,
+		"description": desc,
+		"file_tugas":  filePath.String,
+		"due_date":    dueDate.Time.Format("2006-01-02 15:04:05"),
+	}, "Tugas berhasil dibuat oleh admin")
+}
+
+// AdminGetPertemuanList - Get daftar pertemuan untuk course tertentu (admin akses semua)
+func AdminGetPertemuanList(c *gin.Context) {
+	courseID := c.Param("course_id")
+	if courseID == "" {
+		utils.ValidationError(c, "Course ID required")
+		return
+	}
+
+	type PertemuanInfo struct {
+		Pertemuan  int  `json:"pertemuan"`
+		HasMateri  bool `json:"has_materi"`
+		HasTugas   bool `json:"has_tugas"`
+	}
+
+	var pertemuanList []gin.H
+	for i := 1; i <= 16; i++ {
+		var materiCount, tugasCount int
+		config.DB.QueryRow("SELECT COUNT(*) FROM tugas WHERE course_id = $1 AND pertemuan = $2 AND type = 'materi'", courseID, i).Scan(&materiCount)
+		config.DB.QueryRow("SELECT COUNT(*) FROM tugas WHERE course_id = $1 AND pertemuan = $2 AND type = 'tugas'", courseID, i).Scan(&tugasCount)
+
+		pertemuanList = append(pertemuanList, gin.H{
+			"pertemuan":  i,
+			"has_materi": materiCount > 0,
+			"has_tugas":  tugasCount > 0,
+		})
+	}
+
+	utils.SuccessResponse(c, pertemuanList, "Pertemuan list retrieved")
+}
+
+// AdminGetPertemuanDetail - Get detail pertemuan (materi + tugas) untuk admin
+func AdminGetPertemuanDetail(c *gin.Context) {
+	courseID := c.Param("course_id")
+	pertemuanStr := c.Param("pertemuan")
+
+	if courseID == "" || pertemuanStr == "" {
+		utils.ValidationError(c, "course_id dan pertemuan diperlukan")
+		return
+	}
+
+	pertemuan, err := strconv.Atoi(pertemuanStr)
+	if err != nil || pertemuan < 1 || pertemuan > 16 {
+		utils.ValidationError(c, "Pertemuan harus angka 1-16")
+		return
+	}
+
+	// Get materi
+	materiRows, err := config.DB.Query(`
+		SELECT id, title, description, file_tugas, created_at 
+		FROM tugas 
+		WHERE course_id = $1 AND pertemuan = $2 AND type = 'materi'
+		ORDER BY created_at DESC
+	`, courseID, pertemuan)
+
+	var materiList []gin.H
+	if err == nil {
+		defer materiRows.Close()
+		for materiRows.Next() {
+			var id int
+			var title string
+			var desc sql.NullString
+			var filePath sql.NullString
+			var createdAt time.Time
+
+			materiRows.Scan(&id, &title, &desc, &filePath, &createdAt)
+			materiList = append(materiList, gin.H{
+				"id":         id,
+				"title":      title,
+				"desc":       desc.String,
+				"file_path":  filePath.String,
+				"created_at": createdAt.Format("2006-01-02 15:04:05"),
+			})
+		}
+	}
+
+	// Get tugas
+	tugasRows, err := config.DB.Query(`
+		SELECT id, title, description, file_tugas, due_date, created_at
+		FROM tugas 
+		WHERE course_id = $1 AND pertemuan = $2 AND type = 'tugas'
+		ORDER BY created_at DESC
+	`, courseID, pertemuan)
+
+	var tugasList []gin.H
+	if err == nil {
+		defer tugasRows.Close()
+		for tugasRows.Next() {
+			var id int
+			var title string
+			var desc sql.NullString
+			var filePath sql.NullString
+			var dueDate sql.NullTime
+			var createdAt time.Time
+
+			tugasRows.Scan(&id, &title, &desc, &filePath, &dueDate, &createdAt)
+
+			dueDateStr := ""
+			if dueDate.Valid {
+				dueDateStr = dueDate.Time.Format("2006-01-02 15:04:05")
+			}
+
+			tugasList = append(tugasList, gin.H{
+				"id":         id,
+				"title":      title,
+				"desc":       desc.String,
+				"file_path":  filePath.String,
+				"due_date":   dueDateStr,
+				"created_at": createdAt.Format("2006-01-02 15:04:05"),
+			})
+		}
+	}
+
+	utils.SuccessResponse(c, gin.H{
+		"materi": materiList,
+		"tugas":  tugasList,
+	}, "Detail pertemuan berhasil diambil")
+}
+
+// AdminDeleteMateri - Hapus materi (admin akses semua)
+func AdminDeleteMateri(c *gin.Context) {
+	materiID := c.Param("id")
+	if materiID == "" {
+		utils.ValidationError(c, "Materi ID diperlukan")
+		return
+	}
+
+	// Verify it's a materi
+	var filePath sql.NullString
+	err := config.DB.QueryRow("SELECT file_tugas FROM tugas WHERE id = $1 AND type = 'materi'", materiID).Scan(&filePath)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusNotFound, "Materi tidak ditemukan")
+		return
+	}
+
+	// Soft-delete file
+	if filePath.Valid && filePath.String != "" {
+		var uploadIDFromURL int64
+		if _, scanErr := fmt.Sscanf(filePath.String, "/api/files/%d", &uploadIDFromURL); scanErr == nil {
+			config.DB.Exec("UPDATE uploads SET deleted_at = NOW() WHERE id = $1", uploadIDFromURL)
+		}
+	}
+
+	_, err = config.DB.Exec("DELETE FROM tugas WHERE id = $1", materiID)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Gagal menghapus materi: "+err.Error())
+		return
+	}
+
+	utils.SuccessResponse(c, nil, "Materi berhasil dihapus oleh admin")
+}
+
+// AdminDeleteTugas - Hapus tugas (admin akses semua)
+func AdminDeleteTugas(c *gin.Context) {
+	tugasID := c.Param("id")
+	if tugasID == "" {
+		utils.ValidationError(c, "Tugas ID diperlukan")
+		return
+	}
+
+	var filePath sql.NullString
+	err := config.DB.QueryRow("SELECT file_tugas FROM tugas WHERE id = $1 AND type = 'tugas'", tugasID).Scan(&filePath)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusNotFound, "Tugas tidak ditemukan")
+		return
+	}
+
+	// Soft-delete file
+	if filePath.Valid && filePath.String != "" {
+		var uploadIDFromURL int64
+		if _, scanErr := fmt.Sscanf(filePath.String, "/api/files/%d", &uploadIDFromURL); scanErr == nil {
+			config.DB.Exec("UPDATE uploads SET deleted_at = NOW() WHERE id = $1", uploadIDFromURL)
+		}
+	}
+
+	// Delete submissions first
+	config.DB.Exec("DELETE FROM submissions WHERE task_id = $1", tugasID)
+
+	_, err = config.DB.Exec("DELETE FROM tugas WHERE id = $1", tugasID)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Gagal menghapus tugas: "+err.Error())
+		return
+	}
+
+	utils.SuccessResponse(c, nil, "Tugas berhasil dihapus oleh admin")
 }
 
 // GetAdminStats - Dashboard statistics for admin

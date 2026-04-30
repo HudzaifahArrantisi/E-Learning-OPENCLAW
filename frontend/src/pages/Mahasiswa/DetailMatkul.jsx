@@ -11,38 +11,33 @@ const DetailMatkul = () => {
   const { courseId } = useParams()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [pertemuanList, setPertemuanList] = useState([])
+  const [courseName, setCourseName] = useState('')
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetchPertemuanList()
+    fetchData()
   }, [courseId])
 
-  const fetchPertemuanList = async () => {
+  const fetchData = async () => {
     try {
+      setLoading(true)
+      // Fetch course info
+      const courseRes = await api.getCourseInfo(courseId)
+      if (courseRes.data && courseRes.data.data) {
+        setCourseName(courseRes.data.data.nama.toUpperCase())
+      }
+
+      // Fetch pertemuan list
       const response = await api.getPertemuanByMatkul(courseId)
       setPertemuanList(response.data.data || [])
     } catch (error) {
-      console.error('Error fetching pertemuan:', error)
+      console.error('Error fetching data:', error)
+      if (error.response?.status === 404) {
+        window.location.href = '/not-found';
+      }
     } finally {
       setLoading(false)
     }
-  }
-
-  const matkulData = {
-    'KP001': 'KOMPUTASI PARALEL & TERDISTRIBUSI',
-    'KW002': 'KEAMANAN WEB',
-    'PBO001': 'PEMROGRAMAN BERORIENTASI OBJEK',
-    'DEV001': 'DEVOPSSEC',
-    'RPL001': 'REKAYASA PERANGKAT LUNAK',
-    'KWU001': 'KEWIRAUSAHAAN',
-    'BI002': 'BAHASA INGGRIS 2',
-    'IR001': 'INCIDENT RESPONSE'
-  }
-
-  // Frontend blocker for invalid course IDs
-  if (!matkulData[courseId]) {
-    window.location.href = '/not-found';
-    return null;
   }
 
   if (loading) {
@@ -91,7 +86,7 @@ const DetailMatkul = () => {
                     Kode: {courseId}
                   </span>
                   <h1 className="text-2xl md:text-[28px] font-bold text-lp-text tracking-tight leading-tight">
-                    {matkulData[courseId] || courseId}
+                    {courseName || courseId}
                   </h1>
                 </div>
               </div>
