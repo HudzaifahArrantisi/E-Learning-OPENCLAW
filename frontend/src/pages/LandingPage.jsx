@@ -69,6 +69,7 @@ export default function LandingPage() {
               <a href="#features" className="text-lp-text2 text-[12.5px] px-4 py-2 rounded-full transition-all hover:text-lp-text hover:bg-black/5">Features</a>
               <a href="#platform" className="text-lp-text2 text-[12.5px] px-4 py-2 rounded-full transition-all hover:text-lp-text hover:bg-black/5">Platform</a>
               <a href="#kurikulum" className="text-lp-text2 text-[12.5px] px-4 py-2 rounded-full transition-all hover:text-lp-text hover:bg-black/5">Kurikulum</a>
+              <a href="#panduan" className="text-lp-text2 text-[12.5px] px-4 py-2 rounded-full transition-all hover:text-lp-text hover:bg-black/5">Panduan</a>
               <a href="#visi-misi" className="text-lp-text2 text-[12.5px] px-4 py-2 rounded-full transition-all hover:text-lp-text hover:bg-black/5">Visi Misi</a>
               <a href="#kalender" className="text-lp-text2 text-[12.5px] px-4 py-2 rounded-full transition-all hover:text-lp-text hover:bg-black/5">Kalender</a>
             </div>
@@ -87,11 +88,12 @@ export default function LandingPage() {
             </div>
           </nav>
 
-          <div className={`sm:hidden absolute top-[calc(100%+8px)] left-0 right-0 bg-lp-surface/80 backdrop-blur-2xl border border-lp-border/60 rounded-[20px] p-2 shadow-[0_24px_48px_rgba(0,0,0,0.1)] transition-all duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)] origin-top overflow-hidden ${isMobileMenuOpen ? 'opacity-100 scale-y-100 translate-y-0' : 'opacity-0 scale-y-95 -translate-y-4 pointer-events-none'}`}>
-            <div className="flex flex-col gap-1">
+          <div className={`sm:hidden absolute top-[calc(100%+8px)] left-0 right-0 bg-white/95 backdrop-blur-xl border border-black/10 rounded-[20px] shadow-[0_24px_48px_rgba(0,0,0,0.1)] transition-all duration-500 ease-in-out origin-top overflow-hidden ${isMobileMenuOpen ? 'max-h-[500px] opacity-100 translate-y-0' : 'max-h-0 opacity-0 -translate-y-4 pointer-events-none'}`}>
+            <div className="flex flex-col gap-1 p-2">
               <a href="#features" onClick={() => setIsMobileMenuOpen(false)} className="px-4 py-3 text-[13.5px] font-medium text-lp-text2 hover:text-lp-text hover:bg-black/5 rounded-xl transition-colors">Features</a>
               <a href="#platform" onClick={() => setIsMobileMenuOpen(false)} className="px-4 py-3 text-[13.5px] font-medium text-lp-text2 hover:text-lp-text hover:bg-black/5 rounded-xl transition-colors">Platform</a>
               <a href="#kurikulum" onClick={() => setIsMobileMenuOpen(false)} className="px-4 py-3 text-[13.5px] font-medium text-lp-text2 hover:text-lp-text hover:bg-black/5 rounded-xl transition-colors">Kurikulum</a>
+              <a href="#panduan" onClick={() => setIsMobileMenuOpen(false)} className="px-4 py-3 text-[13.5px] font-medium text-lp-text2 hover:text-lp-text hover:bg-black/5 rounded-xl transition-colors">Panduan</a>
               <a href="#visi-misi" onClick={() => setIsMobileMenuOpen(false)} className="px-4 py-3 text-[13.5px] font-medium text-lp-text2 hover:text-lp-text hover:bg-black/5 rounded-xl transition-colors">Visi Misi</a>
               <a href="#kalender" onClick={() => setIsMobileMenuOpen(false)} className="px-4 py-3 text-[13.5px] font-medium text-lp-text2 hover:text-lp-text hover:bg-black/5 rounded-xl transition-colors">Kalender</a>
             </div>
@@ -124,7 +126,7 @@ export default function LandingPage() {
       <section id="panduan" className="py-24 bg-lp-surface/30">
         <div className="max-w-[1120px] mx-auto px-7">
           <div className={`${rvBase} flex items-center gap-4 text-[10.5px] font-medium tracking-[0.16em] uppercase text-lp-text3 mb-10 after:content-[''] after:flex-1 after:h-px after:bg-lp-border`}>
-            <span className="font-mono">03</span> Role Guides
+            <span className="font-mono">01</span> Role Guides
           </div>
           <div className={`${rvBase} ${rvDelays[1]} text-center mb-14`}>
             <h2 className="font-sans text-[clamp(2.5rem,5vw,4rem)] leading-[1.06] tracking-tight text-lp-text max-w-[700px] mx-auto">Satu Platform untuk<br /><em className="italic text-lp-text/40">Semua Kebutuhan.</em></h2>
@@ -200,11 +202,13 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+
       {/* 01 - FEATURES */}
       <section id="features" className="py-24">
         <div className="max-w-[1120px] mx-auto px-7">
           <div className={`${rvBase} flex items-center gap-4 text-[10.5px] font-medium tracking-[0.16em] uppercase text-lp-text3 mb-10 after:content-[''] after:flex-1 after:h-px after:bg-lp-border`}>
-            <span className="font-mono">01</span> Core Features
+            <span className="font-mono">02</span> Core Features
           </div>
           <div className={`${rvBase} ${rvDelays[1]} flex flex-col md:flex-row md:justify-between md:items-end gap-6 mb-14`}>
             <h2 className="font-sans text-[clamp(2.8rem,5.5vw,4.5rem)] leading-[1.06] tracking-tight text-lp-text">Everything you need<br /><em className="italic text-lp-text/40">to stay on track.</em></h2>
@@ -234,7 +238,7 @@ export default function LandingPage() {
       <section className="py-24">
         <div className="max-w-[1120px] mx-auto px-7">
           <div className={`${rvBase} flex items-center gap-4 text-[10.5px] font-medium tracking-[0.16em] uppercase text-lp-text3 mb-10 after:content-[''] after:flex-1 after:h-px after:bg-lp-border`}>
-            <span className="font-mono">02</span> How It Works
+            <span className="font-mono">03</span> How It Works
           </div>
           <div className={`${rvBase} ${rvDelays[1]} text-center mb-14`}>
             <h2 className="font-sans text-[clamp(2.8rem,5.5vw,4.5rem)] leading-[1.06] tracking-tight text-lp-text max-w-[600px] mx-auto">Three steps to<br /><em className="italic text-lp-text/40">academic clarity.</em></h2>
