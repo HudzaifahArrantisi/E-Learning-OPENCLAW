@@ -206,6 +206,18 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB) {
 		dosen.GET("/stats", controllers.GetDosenStats)
 	}
 
+	// === SUPER DOSEN ROUTES (khusus super dosen — dosen biasa => 403) ===
+	superDosen := api.Group("/dosen/superdosen")
+	superDosen.Use(middlewares.RoleMiddleware("dosen"), middlewares.SuperDosenMiddleware())
+	{
+		superDosen.GET("/check", controllers.SuperDosenCheckAccess)
+		superDosen.GET("/matkul", controllers.SuperDosenGetCourses)
+		superDosen.POST("/matkul", controllers.SuperDosenCreateCourse)
+		superDosen.PUT("/matkul/:kode", controllers.SuperDosenUpdateCourse)
+		superDosen.DELETE("/matkul/:kode", controllers.SuperDosenDeleteCourse)
+		superDosen.GET("/dosen-list", controllers.SuperDosenGetDosenList)
+	}
+
 	// Admin routes
 	admin := api.Group("/admin")
 	admin.Use(middlewares.RoleMiddleware("admin"))

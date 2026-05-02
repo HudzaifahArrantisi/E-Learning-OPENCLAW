@@ -292,6 +292,29 @@ api.adminDeleteMateri = (materiId) =>
 api.adminDeleteTugas = (tugasId) =>
   api.delete(`/api/admin/tugas/${tugasId}/delete`)
 
+// === SUPER DOSEN ROUTES (role=dosen, super dosen only) ===
+api.checkSuperDosenAccess = () =>
+  api.get('/api/dosen/superdosen/check')
+
+api.getSuperDosenCourses = (filter = 'all') =>
+  api.get(`/api/dosen/superdosen/matkul?filter=${filter}`)
+
+api.createSuperDosenCourse = (data) =>
+  api.post('/api/dosen/superdosen/matkul', data, {
+    headers: { 'Content-Type': 'application/json' },
+  })
+
+api.updateSuperDosenCourse = (kode, data) =>
+  api.put(`/api/dosen/superdosen/matkul/${kode}`, data, {
+    headers: { 'Content-Type': 'application/json' },
+  })
+
+api.deleteSuperDosenCourse = (kode) =>
+  api.delete(`/api/dosen/superdosen/matkul/${kode}`)
+
+api.getSuperDosenDosenList = () =>
+  api.get('/api/dosen/superdosen/dosen-list')
+
 // ==============================================================
 // ==================== UKT ROUTES ==============================
 // ==============================================================

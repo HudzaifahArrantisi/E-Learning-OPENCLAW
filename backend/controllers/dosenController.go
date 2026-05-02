@@ -6,10 +6,10 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	"nf-student-hub-backend/config"
+	"nf-student-hub-backend/middlewares"
 	"nf-student-hub-backend/utils"
 
 	"github.com/gin-gonic/gin"
@@ -1169,23 +1169,11 @@ func getStatusLabel(status string) string {
 	}
 }
 
-// isSuperDosen - Check apakah user adalah super dosen (akses semua matkul)
+// isSuperDosen - Delegasi ke helper terpusat di middlewares.
+// Dipertahankan sebagai wrapper agar semua controller yang sudah memanggil fungsi ini
+// tidak perlu diubah.
 func isSuperDosen(userID interface{}) bool {
-	var email string
-	err := config.DB.QueryRow("SELECT email FROM users WHERE id = $1", userID).Scan(&email)
-	if err != nil {
-		log.Printf("[DEBUG] isSuperDosen failed for userID %v: %v", userID, err)
-		return false
-	}
-	
-	email = strings.ToLower(strings.TrimSpace(email))
-	isSuper := email == "superdosen@nurulfikri.ac.id" || email == "suerdosen@nurlfikri.ac.id"
-	
-	if isSuper {
-		log.Printf("[DEBUG] SuperDosen access granted for email: %s", email)
-	}
-	
-	return isSuper
+	return middlewares.IsSuperDosen(userID)
 }
 
 // =============================================
@@ -1630,13 +1618,6 @@ func UploadMateri(c *gin.Context) {
 
 	// Update related_id di uploads table untuk referensi ke tugas
 	config.DB.Exec("UPDATE uploads SET related_id = $1, related_table = 'tugas' WHERE id = $2", id, uploadID)
-
-	// ========== OpenClaw: Publish event materi-uploaded ==========
-	event := utils.BuildTugasEvent(id, courseID, pertemuan, title, desc, time.Now().Add(30*24*time.Hour), dosenID)
-	// Override event type parameter to indicate it's materi
-	event.Type = "materi-uploaded"
-	go utils.PublishTugasCreatedEvent(config.DB, event)
-	// ========== End OpenClaw ==========
 
 	utils.SuccessResponse(c, gin.H{
 		"id":        id,

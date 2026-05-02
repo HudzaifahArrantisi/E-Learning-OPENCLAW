@@ -7,7 +7,7 @@ import {
   FaComment, FaNewspaper, FaChartBar, FaCog, 
   FaTimes, FaGraduationCap, FaTasks, FaUpload,
   FaInstagram, FaBookmark, FaUsers, FaStore,
-  FaSignOutAlt
+  FaSignOutAlt, FaShieldAlt
 } from 'react-icons/fa'
 import { IoIosSettings, IoIosPaper } from 'react-icons/io'
 import { MdDashboard, MdClass, MdPayment } from 'react-icons/md'
@@ -71,6 +71,7 @@ const Sidebar = ({ role, isOpen, onClose }) => {
     dosen: [
       { path: '/dosen', label: 'Dashboard', icon: <MdDashboard className="text-lg" /> },
       { path: '/dosen/course', label: user?.email === 'superdosen@nurulfikri.ac.id' ? 'Kelola Semua Matkul' : 'Kelas Saya', icon: <FaBook className="text-lg" /> },
+      { path: '/dosen/manage-matkul', label: 'Manajemen Matkul', icon: <FaShieldAlt className="text-lg" />, hidden: user?.email !== 'superdosen@nurulfikri.ac.id' },
       { path: '/dosen/absensi', label: 'Absensi', icon: <FaCalendar className="text-lg" />, hidden: user?.email === 'superdosen@nurulfikri.ac.id' },
       { path: '/dosen/pesan', label: 'Pesan', icon: <FaComment className="text-lg" />, hidden: user?.email === 'superdosen@nurulfikri.ac.id' }
     ],

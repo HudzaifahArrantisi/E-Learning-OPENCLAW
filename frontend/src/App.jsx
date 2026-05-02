@@ -30,6 +30,7 @@ const PenilaianDosen = lazy(() => import('./pages/Dosen/PenilaianDosen'))
 const PesanDosen = lazy(() => import('./pages/Dosen/PesanDosen'))
 const KelolaMatkulDosen = lazy(() => import('./pages/Dosen/KelolaMatkulDosen'))
 const DetailPertemuanDosen = lazy(() => import('./pages/Dosen/DetailPertemuanDosen'))
+const ManageMatkulSuperDosen = lazy(() => import('./pages/Dosen/ManageMatkulSuperDosen'))
 
 const DashboardAdmin = lazy(() => import('./pages/Admin/DashboardAdmin'))
 const PostingPemberitahuan = lazy(() => import('./pages/Admin/PostingPemberitahuan'))
@@ -98,6 +99,7 @@ function App() {
               <Route path="/dosen/matkul/:courseId" element={<ProtectedRoute allowedRoles={['dosen']}><KelolaMatkulDosen /></ProtectedRoute>} />
               <Route path="/dosen/matkul/:courseId/pertemuan/:pertemuan" element={<ProtectedRoute allowedRoles={['dosen']}><DetailPertemuanDosen /></ProtectedRoute>} />
               <Route path="/dosen/penilaian/:courseId" element={<ProtectedRoute allowedRoles={['dosen']}><PenilaianDosen /></ProtectedRoute>} />
+              <Route path="/dosen/manage-matkul" element={<ProtectedRoute allowedRoles={['dosen']}><ManageMatkulSuperDosen /></ProtectedRoute>} />
 
               <Route path="/admin" element={<ProtectedRoute allowedRoles={['admin']}><DashboardAdmin /></ProtectedRoute>} />
               <Route path="/admin/posting-pemberitahuan" element={<ProtectedRoute allowedRoles={['admin']}><PostingPemberitahuan /></ProtectedRoute>} />
