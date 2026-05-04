@@ -213,7 +213,7 @@ const DetailPertemuanTugas = () => {
                             </div>
                           </div>
 
-                          <p className="text-[15px] text-lp-text2 font-light leading-relaxed mb-10 max-w-[620px]">
+                          <p className="text-[15px] text-lp-text2 font-light leading-relaxed mb-10 max-w-[620px] whitespace-pre-wrap">
                             {tugas.desc || "No special instructions provided for this task."}
                           </p>
 
@@ -314,7 +314,7 @@ const DetailPertemuanTugas = () => {
           {/* Submission Portal Modal */}
           <AnimatePresence>
             {showSubmitModal && (
-              <div className="fixed inset-0 bg-lp-text/20 backdrop-blur-md flex items-center justify-center p-4 z-50 overflow-y-auto">
+              <div className="fixed inset-0 bg-lp-text/20 backdrop-blur-md flex items-center justify-center p-4 z-[90] overflow-y-auto">
                 <motion.div 
                   initial={{ opacity: 0, scale: 0.95, y: 20 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}

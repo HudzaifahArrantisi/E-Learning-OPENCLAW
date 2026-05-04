@@ -285,7 +285,7 @@ const DetailPertemuanDosen = () => {
                               )}
                             </div>
                             {materi.desc && (
-                              <p className="text-lp-text2 font-light text-sm mb-3 line-clamp-2">{materi.desc}</p>
+                              <p className="text-lp-text2 font-light text-sm mb-3 line-clamp-2 whitespace-pre-wrap">{materi.desc}</p>
                             )}
                           </div>
                           <div className="flex gap-2">
@@ -379,7 +379,7 @@ const DetailPertemuanDosen = () => {
                               )}
                             </div>
                             {tugas.desc && (
-                              <p className="text-lp-text2 font-light text-sm mb-3 line-clamp-2">{tugas.desc}</p>
+                              <p className="text-lp-text2 font-light text-sm mb-3 line-clamp-2 whitespace-pre-wrap">{tugas.desc}</p>
                             )}
                           </div>
                           <div className="flex gap-2">
@@ -508,7 +508,7 @@ const DetailPertemuanDosen = () => {
 
           {/* Delete Confirmation Modal */}
           {showDeleteConfirm && (
-            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fadeIn">
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-[90] animate-fadeIn">
               <div className="bg-lp-surface rounded-2xl p-8 w-full max-w-md shadow-2xl animate-slideUp">
                 <div className="text-center mb-6">
                   <div className="p-3 bg-lp-bg rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">

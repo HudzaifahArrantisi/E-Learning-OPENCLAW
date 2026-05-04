@@ -563,7 +563,7 @@ const PenilaianDosen = () => {
 
           {/* Answer Modal */}
           {showAnswerModal && (
-            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fadeIn">
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-[90] animate-fadeIn">
               <div className="bg-lp-surface rounded-2xl p-8 w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col shadow-2xl animate-slideUp">
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-3">

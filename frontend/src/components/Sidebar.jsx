@@ -43,6 +43,11 @@ const Sidebar = ({ role, isOpen, onClose }) => {
     setInternalOpen(false)
   }
 
+  const shouldHideSidebar = useMemo(() => {
+    const hiddenPathMatchers = [/^\/profile\//i, /\/popup(\/|$)/i]
+    return hiddenPathMatchers.some((matcher) => matcher.test(location.pathname))
+  }, [location.pathname])
+
   const handleLogout = async () => {
     try {
       await logout()
@@ -80,6 +85,7 @@ const Sidebar = ({ role, isOpen, onClose }) => {
       { path: '/admin/akun', label: 'Akun Saya', icon: <FaUser className="text-lg" /> },
       { path: '/admin/posting-pemberitahuan', label: 'Buat Posting', icon: <IoIosPaper className="text-lg" /> },
       { path: '/admin/pemantauan-ukt', label: 'Monitor UKT', icon: <FaMoneyBill className="text-lg" /> },
+      { path: '/admin/pesan', label: 'Pesan', icon: <FaComment className="text-lg" /> },
       { path: '/admin/setting-profile', label: 'Pengaturan', icon: <IoIosSettings className="text-lg" /> }
     ],
     orangtua: [
@@ -103,23 +109,25 @@ const Sidebar = ({ role, isOpen, onClose }) => {
 
   const items = (menuItems[role] || []).filter(item => !item.hidden)
 
+  if (shouldHideSidebar) return null
+
   return (
     <>
       {/* Overlay untuk mobile */}
       {sidebarOpen && (
         <div 
-          className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 lg:hidden animate-fadeIn"
+          className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[70] lg:hidden animate-fadeIn"
           onClick={closeSidebar}
         />
       )}
       
       {/* Sidebar - Glassmorphism Style */}
       <div className={`
-        fixed lg:sticky top-0 left-0 z-50
+        fixed lg:sticky top-0 left-0 z-[80]
         w-[260px] bg-white/80 backdrop-blur-2xl border-r border-lp-border
         transform transition-all duration-500 ease-in-out
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-        flex flex-col h-screen
+        flex flex-col h-[100dvh] min-h-[100dvh] overflow-hidden
       `}>
 
         {/* Header Sidebar */}
@@ -152,7 +160,7 @@ const Sidebar = ({ role, isOpen, onClose }) => {
         </div>
 
         {/* Menu Items */}
-        <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto custom-scrollbar">
+        <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto overscroll-contain custom-scrollbar">
           {items.map((item) => (
             <Link
               key={item.path}
@@ -189,7 +197,7 @@ const Sidebar = ({ role, isOpen, onClose }) => {
         </nav>
 
         {/* Footer Sidebar */}
-        <div className="px-5 py-4 border-t border-lp-border">
+        <div className="px-5 py-4 border-t border-lp-border pb-[max(1rem,env(safe-area-inset-bottom))]">
           <div className="flex items-center gap-1.5 justify-center">
             <div className="w-1 h-1 rounded-full bg-lp-accent/40" />
             <span className="text-[9px] font-mono text-lp-text3 tracking-[0.06em]">© 2025 Student Hub</span>

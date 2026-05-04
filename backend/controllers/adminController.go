@@ -825,9 +825,9 @@ func AdminDeleteMateri(c *gin.Context) {
 
 	// Soft-delete file
 	if filePath.Valid && filePath.String != "" {
-		var uploadIDFromURL int64
-		if _, scanErr := fmt.Sscanf(filePath.String, "/api/files/%d", &uploadIDFromURL); scanErr == nil {
-			config.DB.Exec("UPDATE uploads SET deleted_at = NOW() WHERE id = $1", uploadIDFromURL)
+		var uploadUUIDFromURL string
+		if _, scanErr := fmt.Sscanf(filePath.String, "/api/files/%s", &uploadUUIDFromURL); scanErr == nil {
+			config.DB.Exec("UPDATE uploads SET deleted_at = NOW() WHERE uuid = $1", uploadUUIDFromURL)
 		}
 	}
 
@@ -857,9 +857,9 @@ func AdminDeleteTugas(c *gin.Context) {
 
 	// Soft-delete file
 	if filePath.Valid && filePath.String != "" {
-		var uploadIDFromURL int64
-		if _, scanErr := fmt.Sscanf(filePath.String, "/api/files/%d", &uploadIDFromURL); scanErr == nil {
-			config.DB.Exec("UPDATE uploads SET deleted_at = NOW() WHERE id = $1", uploadIDFromURL)
+		var uploadUUIDFromURL string
+		if _, scanErr := fmt.Sscanf(filePath.String, "/api/files/%s", &uploadUUIDFromURL); scanErr == nil {
+			config.DB.Exec("UPDATE uploads SET deleted_at = NOW() WHERE uuid = $1", uploadUUIDFromURL)
 		}
 	}
 

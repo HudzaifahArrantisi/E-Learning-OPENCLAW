@@ -8,8 +8,13 @@ import (
 type Ormawa struct {
 	ID        int          `json:"id"`
 	UserID    int          `json:"user_id"`
-	Name      string       `json:"name"`
-	CreatedAt time.Time    `json:"created_at"`
-	UpdatedAt time.Time    `json:"updated_at"`
-	DeletedAt sql.NullTime `json:"deleted_at,omitempty"`
+	Name           string       `json:"name"`
+	Username       string       `json:"username"`
+	Phone          string       `json:"phone"`
+	ProfilePicture string       `json:"profile_picture"`
+	CreatedAt      time.Time    `json:"created_at"`
+	UpdatedAt      time.Time    `json:"updated_at"`
+	DeletedAt      sql.NullTime `json:"deleted_at,omitempty"`
 }
+
+func (Ormawa) TableName() string { return "ormawa" }

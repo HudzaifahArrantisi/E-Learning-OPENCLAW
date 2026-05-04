@@ -587,7 +587,7 @@ const ScanAbsensi = () => {
 
       {/* Modal Actions untuk Mata Kuliah Terpilih */}
       {showActionsModal && selectedCourse && (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-[90] p-4">
           <div className="bg-lp-surface rounded-2xl p-6 max-w-md w-full">
             <div className="flex justify-between items-center mb-6">
               <div>
@@ -672,7 +672,7 @@ const ScanAbsensi = () => {
 
       {/* QR Scanner Modal */}
       {showQRScanner && (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-[90] p-4">
           <div className="bg-lp-surface rounded-2xl p-6 max-w-2xl w-full">
             <div className="flex justify-between items-center mb-6">
               <div>
@@ -737,7 +737,7 @@ const ScanAbsensi = () => {
 
       {/* History Modal */}
       {showHistoryModal && selectedCourse && (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-[90] p-4">
           <div className="bg-lp-surface rounded-2xl p-6 max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
             <div className="flex justify-between items-center mb-6">
               <div>

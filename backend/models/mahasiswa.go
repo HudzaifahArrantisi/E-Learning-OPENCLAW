@@ -17,6 +17,8 @@ type Mahasiswa struct {
 	DeletedAt sql.NullTime `json:"deleted_at,omitempty"`
 }
 
+func (Mahasiswa) TableName() string { return "mahasiswa" }
+
 type Attendance struct {
 	ID           int          `json:"id"`
 	StudentID    int          `json:"student_id"`

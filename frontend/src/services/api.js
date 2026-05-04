@@ -51,6 +51,8 @@ api.sendMessage = (conversationId, data) =>
   api.post(`/api/chat/conversations/${conversationId}/messages`, data)
 api.markMessagesAsRead = (conversationId) => 
   api.post(`/api/chat/conversations/${conversationId}/messages/read`)
+api.deleteMessage = (messageId) => 
+  api.delete(`/api/chat/messages/${messageId}`)
 
 // Group Management
 api.createMatkulGroup = (mataKuliahId) => 
@@ -58,8 +60,11 @@ api.createMatkulGroup = (mataKuliahId) =>
 // Get Mata Kuliah groups
 api.getMatkulGroups = () => api.get('/api/chat/groups/matkul')
 
-// Contacts
+// Contacts & User Search
 api.getContacts = () => api.get('/api/chat/contacts')
+api.searchUsers = (query = '', role = '') => 
+  api.get('/api/chat/users/search', { params: { q: query, role } })
+api.getOnlineUsers = () => api.get('/api/chat/users/online')
 
 // Utility
 api.getChatStats = () => api.get('/api/chat/stats')
@@ -86,6 +91,7 @@ class WebSocketService {
   }
 
   connect() {
+    this.intentionalDisconnect = false
     const token = localStorage.getItem('token')
     if (!token) {
       console.error('No token found')
@@ -124,15 +130,17 @@ class WebSocketService {
     }
 
     this.socket.onclose = (event) => {
-      console.log('WebSocket disconnected:', event.code, event.reason)
+      if (!this.intentionalDisconnect) {
+        console.log('WebSocket disconnected:', event.code, event.reason)
+      }
       this.isConnected = false
       this.connectionCallbacks.forEach(cb => cb(false))
       
       // Stop heartbeat
       this.stopHeartbeat()
       
-      // Attempt reconnection
-      if (this.reconnectAttempts < this.maxReconnectAttempts) {
+      // Attempt reconnection only if not intentionally disconnected
+      if (!this.intentionalDisconnect && this.reconnectAttempts < this.maxReconnectAttempts) {
         this.reconnectAttempts++
         console.log(`Attempting to reconnect... (${this.reconnectAttempts}/${this.maxReconnectAttempts})`)
         
@@ -143,12 +151,15 @@ class WebSocketService {
     }
 
     this.socket.onerror = (error) => {
-      console.error('WebSocket error:', error)
+      if (!this.intentionalDisconnect) {
+        console.error('WebSocket error:', error)
+      }
       this.connectionCallbacks.forEach(cb => cb(false))
     }
   }
 
   disconnect() {
+    this.intentionalDisconnect = true
     if (this.socket) {
       this.stopHeartbeat()
       this.socket.close()

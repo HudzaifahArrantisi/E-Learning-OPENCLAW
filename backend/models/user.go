@@ -11,10 +11,10 @@ type User struct {
 	Password string `json:"password"`
 	Role     string `json:"role"`
 	// Additional profile fields used by chat features
-	Name     string `json:"name,omitempty"`
-	Username string `json:"username,omitempty"`
-	Phone    string `json:"phone,omitempty"`
-	Photo    string `json:"photo,omitempty"`
+	Name     string `json:"name,omitempty" gorm:"-"`
+	Username string `json:"username,omitempty" gorm:"-"`
+	Phone    string `json:"phone,omitempty" gorm:"-"`
+	Photo    string `json:"photo,omitempty" gorm:"-"`
 
 	CreatedAt time.Time    `json:"created_at"`
 	UpdatedAt time.Time    `json:"updated_at"`
@@ -23,6 +23,8 @@ type User struct {
 	// Relations for extended user info
 	Mahasiswa *Mahasiswa `json:"mahasiswa,omitempty" gorm:"foreignKey:UserID"`
 	Dosen     *Dosen     `json:"dosen,omitempty" gorm:"foreignKey:UserID"`
+	Ukm       *UKM       `json:"ukm,omitempty" gorm:"foreignKey:UserID"`
+	Ormawa    *Ormawa    `json:"ormawa,omitempty" gorm:"foreignKey:UserID"`
 }
 
 type UserProfile struct {

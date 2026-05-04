@@ -253,6 +253,7 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB) {
 		chat.GET("/conversations/:conversation_id/messages", chatController.GetMessages)
 		chat.POST("/conversations/:conversation_id/messages", chatController.SendMessage)
 		chat.POST("/conversations/:conversation_id/messages/read", chatController.MarkMessagesAsRead)
+		chat.DELETE("/messages/:message_id", chatController.DeleteMessage)
 
 		// Group management endpoints
 		chat.GET("/groups/matkul", chatController.GetMatkulGroups)
@@ -260,6 +261,8 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB) {
 
 		// Contact & search endpoints
 		chat.GET("/contacts", chatController.GetContacts)
+		chat.GET("/users/search", chatController.SearchUsers)
+		chat.GET("/users/online", chatController.GetOnlineUsers)
 
 		// Utility endpoints
 		chat.GET("/stats", chatController.GetChatStats)

@@ -72,6 +72,18 @@ func (h *WebSocketHub) Run() {
 			}
 			client.SendMessage(msg)
 
+			// Broadcast user_online to all other clients
+			h.mu.RLock()
+			for _, c := range h.Clients {
+				if c.UserID != client.UserID {
+					c.SendMessage(models.WebsocketMessage{
+						Type: "user_online",
+						Data: gin.H{"user_id": client.UserID},
+					})
+				}
+			}
+			h.mu.RUnlock()
+
 		case client := <-h.Unregister:
 			h.mu.Lock()
 			if c, ok := h.Clients[client.UserID]; ok {
@@ -80,6 +92,16 @@ func (h *WebSocketHub) Run() {
 			}
 			h.mu.Unlock()
 			log.Printf("Client unregistered: %d (total: %d)", client.UserID, len(h.Clients))
+
+			// Broadcast user_offline to all remaining clients
+			h.mu.RLock()
+			for _, c := range h.Clients {
+				c.SendMessage(models.WebsocketMessage{
+					Type: "user_offline",
+					Data: gin.H{"user_id": client.UserID},
+				})
+			}
+			h.mu.RUnlock()
 
 		case message := <-h.Broadcast:
 			h.mu.RLock()
@@ -111,7 +133,7 @@ func (h *WebSocketHub) BroadcastToUser(userID int, message models.WebsocketMessa
 func (h *WebSocketHub) BroadcastToConversation(conversationID int, message models.WebsocketMessage) {
 	// Get all participants of the conversation
 	var participants []models.ConversationParticipant
-	h.DB.Where("conversation_id = ? AND deleted_at IS NULL", conversationID).
+	h.DB.Where("conversation_id = ?", conversationID).
 		Find(&participants)
 
 	// Broadcast to each participant
@@ -249,7 +271,7 @@ func (c *Client) handleTypingIndicator(wsMsg models.WebsocketMessage) {
 			
 			// Broadcast to conversation except sender
 			var participants []models.ConversationParticipant
-			c.Hub.DB.Where("conversation_id = ? AND user_id != ? AND deleted_at IS NULL", 
+			c.Hub.DB.Where("conversation_id = ? AND user_id != ?", 
 				typingIndicator.ConversationID, c.UserID).
 				Find(&participants)
 

@@ -19,6 +19,7 @@ import (
 	"nf-student-hub-backend/utils"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 // ============================================================
@@ -230,19 +231,22 @@ func UploadFile(c *gin.Context) {
 	}
 
 	// 12. Insert ke database
+	// Generate UUID for secure file access
+	fileUUID := uuid.New().String()
+
 	query := `
 		INSERT INTO uploads (
 			uploader_id, uploader_role, type, variant,
 			original_filename, mime_type, file_extension,
 			original_size, compressed_size, compression_ratio,
 			file_data, related_id, related_table,
-			visibility, status, checksum_hash, created_at, updated_at
+			visibility, status, checksum_hash, uuid, created_at, updated_at
 		) VALUES (
 			$1, $2, $3, 'original',
 			$4, $5, $6,
 			$7, $8, $9,
 			$10, $11, $12,
-			$13, 'ready', $14, NOW(), NOW()
+			$13, 'ready', $14, $15, NOW(), NOW()
 		)
 		RETURNING id, created_at
 	`
@@ -254,7 +258,7 @@ func UploadFile(c *gin.Context) {
 		filepath.Base(fileHeader.Filename), detectedMime, ext,
 		originalSize, compressedSize, compressionRatio,
 		compressedBytes, relatedID, relatedTable,
-		visibility, checksum,
+		visibility, checksum, fileUUID,
 	).Scan(&uploadID, &createdAt)
 
 	if err != nil {
@@ -264,8 +268,8 @@ func UploadFile(c *gin.Context) {
 		return
 	}
 
-	// 13. Generate virtual URL
-	fileURL := fmt.Sprintf("/api/files/%d", uploadID)
+	// 13. Generate virtual URL (UUID-based for security)
+	fileURL := fmt.Sprintf("/api/files/%s", fileUUID)
 
 	log.Printf("[Upload] ✅ File saved: id=%d, type=%s, size=%dKB→%dKB, url=%s",
 		uploadID, uploadType, originalSize/1024, compressedSize/1024, fileURL)
@@ -289,12 +293,12 @@ func UploadFile(c *gin.Context) {
 // GET /api/files/:id — Stream file dari database ke browser
 // ============================================================
 func ServeFile(c *gin.Context) {
-	fileID := c.Param("id")
+	fileUUID := c.Param("id")
 
 	// Check for signed URL token
 	token := c.Query("token")
 	if token != "" {
-		if !validateSignedURL(fileID, token) {
+		if !validateSignedURL(fileUUID, token) {
 			c.JSON(http.StatusForbidden, gin.H{"error": "Token tidak valid atau sudah expired"})
 			return
 		}
@@ -303,29 +307,55 @@ func ServeFile(c *gin.Context) {
 	// Variant query parameter
 	size := c.DefaultQuery("size", "original")
 
-	// Build query based on variant
+	// Determine if param is numeric (legacy ID) or UUID
+	isNumeric := false
+	if _, err := strconv.Atoi(fileUUID); err == nil {
+		isNumeric = true
+	}
+
+	// Build query based on variant and ID type
 	var query string
 	var args []interface{}
 
 	if size != "original" {
 		// Try to find variant first
-		query = `
-			SELECT file_data, mime_type, original_filename, compressed_size,
-			       visibility, uploader_id, uploader_role, checksum_hash
-			FROM uploads
-			WHERE parent_id = $1 AND variant = $2 
-			      AND deleted_at IS NULL AND status = 'ready'
-			LIMIT 1
-		`
-		args = []interface{}{fileID, size}
+		if isNumeric {
+			query = `
+				SELECT file_data, mime_type, original_filename, compressed_size,
+					   visibility, uploader_id, uploader_role, checksum_hash
+				FROM uploads
+				WHERE parent_id = $1 AND variant = $2 
+					  AND deleted_at IS NULL AND status = 'ready'
+				LIMIT 1
+			`
+		} else {
+			query = `
+				SELECT file_data, mime_type, original_filename, compressed_size,
+					   visibility, uploader_id, uploader_role, checksum_hash
+				FROM uploads
+				WHERE parent_id = (SELECT id FROM uploads WHERE uuid = $1 LIMIT 1) AND variant = $2 
+					  AND deleted_at IS NULL AND status = 'ready'
+				LIMIT 1
+			`
+		}
+		args = []interface{}{fileUUID, size}
 	} else {
-		query = `
-			SELECT file_data, mime_type, original_filename, compressed_size,
-			       visibility, uploader_id, uploader_role, checksum_hash
-			FROM uploads
-			WHERE id = $1 AND deleted_at IS NULL AND status = 'ready'
-		`
-		args = []interface{}{fileID}
+		if isNumeric {
+			query = `
+				SELECT file_data, mime_type, original_filename, compressed_size,
+					   visibility, uploader_id, uploader_role, checksum_hash
+				FROM uploads
+				WHERE id = $1 AND deleted_at IS NULL AND status = 'ready'
+			`
+		} else {
+			query = `
+				SELECT file_data, mime_type, original_filename, compressed_size,
+					   visibility, uploader_id, uploader_role, checksum_hash
+				FROM uploads
+				WHERE uuid = $1 AND deleted_at IS NULL AND status = 'ready'
+			`
+		}
+		args = []interface{}{fileUUID}
 	}
 
 	var fileData []byte
@@ -342,13 +372,23 @@ func ServeFile(c *gin.Context) {
 	if err != nil {
 		// If variant not found, fall back to original
 		if size != "original" {
-			fallbackQuery := `
-				SELECT file_data, mime_type, original_filename, compressed_size,
-				       visibility, uploader_id, uploader_role, checksum_hash
-				FROM uploads
-				WHERE id = $1 AND deleted_at IS NULL AND status = 'ready'
-			`
-			err = config.DB.QueryRow(fallbackQuery, fileID).Scan(
+			var fallbackQuery string
+			if isNumeric {
+				fallbackQuery = `
+					SELECT file_data, mime_type, original_filename, compressed_size,
+						   visibility, uploader_id, uploader_role, checksum_hash
+					FROM uploads
+					WHERE id = $1 AND deleted_at IS NULL AND status = 'ready'
+				`
+			} else {
+				fallbackQuery = `
+					SELECT file_data, mime_type, original_filename, compressed_size,
+						   visibility, uploader_id, uploader_role, checksum_hash
+					FROM uploads
+					WHERE uuid = $1 AND deleted_at IS NULL AND status = 'ready'
+				`
+			}
+			err = config.DB.QueryRow(fallbackQuery, fileUUID).Scan(
 				&fileData, &mimeType, &filename, &fileSize,
 				&visibility, &uploaderID, &uploaderRole, &checksum,
 			)
@@ -404,7 +444,7 @@ func ServeFile(c *gin.Context) {
 // GET /api/files/:id/download — Force download (Content-Disposition: attachment)
 // ============================================================
 func DownloadFile(c *gin.Context) {
-	fileID := c.Param("id")
+	fileUUID := c.Param("id")
 
 	var fileData []byte
 	var mimeType, filename string
@@ -412,8 +452,8 @@ func DownloadFile(c *gin.Context) {
 	err := config.DB.QueryRow(`
 		SELECT file_data, mime_type, original_filename
 		FROM uploads
-		WHERE id = $1 AND deleted_at IS NULL AND status = 'ready'
-	`, fileID).Scan(&fileData, &mimeType, &filename)
+		WHERE uuid = $1 AND deleted_at IS NULL AND status = 'ready'
+	`, fileUUID).Scan(&fileData, &mimeType, &filename)
 
 	if err != nil {
 		c.Status(http.StatusNotFound)
@@ -443,7 +483,7 @@ func GetUploadsByType(c *gin.Context) {
 	}
 
 	query := `
-		SELECT id, uploader_id, uploader_role, type,
+		SELECT id, uuid, uploader_id, uploader_role, type,
 		       original_filename, mime_type, file_extension,
 		       original_size, compressed_size, compression_ratio,
 		       visibility, status, created_at
@@ -467,12 +507,12 @@ func GetUploadsByType(c *gin.Context) {
 	for rows.Next() {
 		var id, origSize, compSize int64
 		var uploaderID int
-		var uploaderRole, uType, filename, mimeType, extStr, vis, status string
+		var fileUUIDStr, uploaderRole, uType, filename, mimeType, extStr, vis, status string
 		var ratio float32
 		var createdAt time.Time
 
 		err := rows.Scan(
-			&id, &uploaderID, &uploaderRole, &uType,
+			&id, &fileUUIDStr, &uploaderID, &uploaderRole, &uType,
 			&filename, &mimeType, &extStr,
 			&origSize, &compSize, &ratio,
 			&vis, &status, &createdAt,
@@ -484,7 +524,7 @@ func GetUploadsByType(c *gin.Context) {
 		lastID = id
 		uploads = append(uploads, gin.H{
 			"id":                id,
-			"file_url":          fmt.Sprintf("/api/files/%d", id),
+			"file_url":          fmt.Sprintf("/api/files/%s", fileUUIDStr),
 			"uploader_id":      uploaderID,
 			"uploader_role":    uploaderRole,
 			"type":             uType,
@@ -513,16 +553,17 @@ func GetUploadsByType(c *gin.Context) {
 // DELETE /api/uploads/:id — Soft delete upload
 // ============================================================
 func DeleteUpload(c *gin.Context) {
-	fileID := c.Param("id")
+	fileUUID := c.Param("id")
 	userID, _ := c.Get("user_id")
 	role, _ := c.Get("role")
 
 	// Verify ownership
 	var uploaderID int
+	var uploadID int64
 	err := config.DB.QueryRow(
-		"SELECT uploader_id FROM uploads WHERE id = $1 AND deleted_at IS NULL",
-		fileID,
-	).Scan(&uploaderID)
+		"SELECT id, uploader_id FROM uploads WHERE uuid = $1 AND deleted_at IS NULL",
+		fileUUID,
+	).Scan(&uploadID, &uploaderID)
 
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusNotFound, "File tidak ditemukan")
@@ -539,7 +580,7 @@ func DeleteUpload(c *gin.Context) {
 	// Soft delete file + all variants
 	_, err = config.DB.Exec(
 		"UPDATE uploads SET deleted_at = NOW() WHERE (id = $1 OR parent_id = $1) AND deleted_at IS NULL",
-		fileID,
+		uploadID,
 	)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, "Gagal menghapus file: "+err.Error())
@@ -553,16 +594,25 @@ func DeleteUpload(c *gin.Context) {
 // GET /api/uploads/:id/signed-url — Generate Signed URL
 // ============================================================
 func GenerateSignedURL(c *gin.Context) {
-	fileID := c.Param("id")
+	fileUUID := c.Param("id")
 	userID, _ := c.Get("user_id")
 
 	// Verify file exists
 	var uploaderID int
 	var visibility string
-	err := config.DB.QueryRow(
-		"SELECT uploader_id, visibility FROM uploads WHERE id = $1 AND deleted_at IS NULL",
-		fileID,
-	).Scan(&uploaderID, &visibility)
+	var err error
+
+	if _, numErr := strconv.Atoi(fileUUID); numErr == nil {
+		err = config.DB.QueryRow(
+			"SELECT uploader_id, visibility FROM uploads WHERE id = $1 AND deleted_at IS NULL",
+			fileUUID,
+		).Scan(&uploaderID, &visibility)
+	} else {
+		err = config.DB.QueryRow(
+			"SELECT uploader_id, visibility FROM uploads WHERE uuid = $1 AND deleted_at IS NULL",
+			fileUUID,
+		).Scan(&uploaderID, &visibility)
+	}
 
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusNotFound, "File tidak ditemukan")
@@ -571,14 +621,14 @@ func GenerateSignedURL(c *gin.Context) {
 
 	// Generate signed token
 	expiry := time.Now().Add(SignedURLExpiry).Unix()
-	payload := fmt.Sprintf("%s:%d:%d", fileID, userID, expiry)
+	payload := fmt.Sprintf("%s:%d:%d", fileUUID, userID, expiry)
 
 	mac := hmac.New(sha256.New, []byte(getSignedURLSecret()))
 	mac.Write([]byte(payload))
 	signature := hex.EncodeToString(mac.Sum(nil))
 
 	token := fmt.Sprintf("%d:%d:%s", userID, expiry, signature)
-	signedURL := fmt.Sprintf("/api/files/%s?token=%s", fileID, token)
+	signedURL := fmt.Sprintf("/api/files/%s?token=%s", fileUUID, token)
 
 	utils.SuccessResponse(c, gin.H{
 		"signed_url": signedURL,
@@ -640,7 +690,11 @@ func GetUploadStatus(c *gin.Context) {
 	}
 
 	if uploadID != nil {
-		response["file_url"] = fmt.Sprintf("/api/files/%d", *uploadID)
+		// Look up UUID for this upload
+		var fileUUIDStr string
+		if err := config.DB.QueryRow("SELECT uuid FROM uploads WHERE id = $1", *uploadID).Scan(&fileUUIDStr); err == nil {
+			response["file_url"] = fmt.Sprintf("/api/files/%s", fileUUIDStr)
+		}
 	}
 
 	utils.SuccessResponse(c, response, "Status upload")
@@ -735,33 +789,34 @@ func UploadFileToDB(c *gin.Context, formFieldName string, uploaderID int, upload
 
 	// Insert ke database
 	var uploadIDResult int64
+	var returnedUUID string
 	err = config.DB.QueryRow(`
 		INSERT INTO uploads (
 			uploader_id, uploader_role, type, variant,
 			original_filename, mime_type, file_extension,
 			original_size, compressed_size, compression_ratio,
 			file_data, related_id, related_table,
-			visibility, status, checksum_hash, created_at, updated_at
+			visibility, status, checksum_hash, uuid, created_at, updated_at
 		) VALUES (
 			$1, $2, $3, 'original',
 			$4, $5, $6,
 			$7, $8, $9,
 			$10, $11, $12,
-			'public', 'ready', $13, NOW(), NOW()
+			'public', 'ready', $13, $14, NOW(), NOW()
 		)
-		RETURNING id
+		RETURNING id, uuid
 	`, uploaderID, uploaderRole, uploadType,
 		filepath.Base(fileHeader.Filename), detectedMime, ext,
 		originalSize, compressedSize, compressionRatio,
 		compressedBytes, relatedID, relatedTable,
-		checksum,
-	).Scan(&uploadIDResult)
+		checksum, uuid.New().String(),
+	).Scan(&uploadIDResult, &returnedUUID)
 
 	if err != nil {
 		return 0, "", fmt.Errorf("gagal menyimpan file ke database: %v", err)
 	}
 
-	fileURL := fmt.Sprintf("/api/files/%d", uploadIDResult)
+	fileURL := fmt.Sprintf("/api/files/%s", returnedUUID)
 
 	log.Printf("[Upload] ✅ Saved: id=%d, type=%s, role=%s, %dKB→%dKB",
 		uploadIDResult, uploadType, uploaderRole, originalSize/1024, compressedSize/1024)
@@ -840,32 +895,33 @@ func uploadBytesToDB(fh *multipart.FileHeader, fileBytes []byte, uploaderID int,
 
 	// Insert ke database
 	var uploadIDResult int64
+	var returnedUUID string
 	err := config.DB.QueryRow(`
 		INSERT INTO uploads (
 			uploader_id, uploader_role, type, variant,
 			original_filename, mime_type, file_extension,
 			original_size, compressed_size, compression_ratio,
 			file_data, related_id, related_table,
-			visibility, status, checksum_hash, created_at, updated_at
+			visibility, status, checksum_hash, uuid, created_at, updated_at
 		) VALUES (
 			$1, $2, $3, 'original',
 			$4, $5, $6,
 			$7, $8, $9,
 			$10, NULL, NULL,
-			'public', 'ready', $11, NOW(), NOW()
+			'public', 'ready', $11, $12, NOW(), NOW()
 		)
-		RETURNING id
+		RETURNING id, uuid
 	`, uploaderID, uploaderRole, uploadType,
 		filepath.Base(fh.Filename), detectedMime, ext,
 		originalSize, compressedSize, compressionRatio,
-		compressedBytes, checksum,
-	).Scan(&uploadIDResult)
+		compressedBytes, checksum, uuid.New().String(),
+	).Scan(&uploadIDResult, &returnedUUID)
 
 	if err != nil {
 		return 0, "", fmt.Errorf("gagal menyimpan file ke database: %v", err)
 	}
 
-	fileURL := fmt.Sprintf("/api/files/%d", uploadIDResult)
+	fileURL := fmt.Sprintf("/api/files/%s", returnedUUID)
 
 	log.Printf("[Upload] ✅ Carousel file saved: id=%d, %dKB→%dKB",
 		uploadIDResult, originalSize/1024, compressedSize/1024)

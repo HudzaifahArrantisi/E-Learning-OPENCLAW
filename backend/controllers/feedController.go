@@ -720,7 +720,39 @@ func GetPost(c *gin.Context) {
     }
     post.Comments = comments
 
-    utils.SuccessResponse(c, post, "Post berhasil diambil")
+    // Fetch carousel media items (same as GetFeed)
+    mediaMap := getPostMediaItems([]int{post.ID})
+    var mediaItems []map[string]interface{}
+    if items, ok := mediaMap[post.ID]; ok && len(items) > 0 {
+        mediaItems = items
+    } else if post.MediaURL != "" {
+        mediaItems = []map[string]interface{}{{
+            "id":         0,
+            "media_type": "image",
+            "media_url":  post.MediaURL,
+            "sort_order": 0,
+        }}
+    } else {
+        mediaItems = []map[string]interface{}{}
+    }
+
+    utils.SuccessResponse(c, gin.H{
+        "id":               post.ID,
+        "title":            post.Title,
+        "content":          post.Content,
+        "media_url":        post.MediaURL,
+        "created_at":       post.CreatedAt,
+        "author_name":      post.AuthorName,
+        "author_username":  post.AuthorUsername,
+        "author_avatar":    post.AuthorAvatar,
+        "role":             post.Role,
+        "likes_count":      post.LikesCount,
+        "comments_count":   post.CommentsCount,
+        "user_has_liked":   post.UserHasLiked,
+        "user_has_saved":   post.UserHasSaved,
+        "comments":         post.Comments,
+        "media":            mediaItems,
+    }, "Post berhasil diambil")
 }
 
 

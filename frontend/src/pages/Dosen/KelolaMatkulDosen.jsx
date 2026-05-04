@@ -446,7 +446,7 @@ const KelolaMatkulDosen = () => {
           <AnimatePresence>
             {/* Modal Upload Materi */}
             {showUploadMateri && (
-              <div className="fixed inset-0 bg-lp-text/20 backdrop-blur-md flex items-center justify-center p-4 z-50 overflow-y-auto">
+              <div className="fixed inset-0 bg-lp-text/20 backdrop-blur-md flex items-center justify-center p-4 z-[90] overflow-y-auto">
                 <motion.div 
                   initial={{ opacity: 0, scale: 0.9, y: 20 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -500,7 +500,7 @@ const KelolaMatkulDosen = () => {
                       <textarea
                         value={formData.desc}
                         onChange={(e) => setFormData(prev => ({ ...prev, desc: e.target.value }))}
-                        className="w-full bg-lp-surface font-light text-[15px] border border-lp-border rounded-2xl px-5 py-4 focus:outline-none focus:ring-2 focus:ring-lp-accent/5 focus:border-lp-text transition-all duration-500 resize-none"
+                        className="w-full bg-lp-surface font-light text-[15px] border border-lp-border rounded-2xl px-5 py-4 focus:outline-none focus:ring-2 focus:ring-lp-accent/5 focus:border-lp-text transition-all duration-500 resize-none whitespace-pre-wrap"
                         rows="3"
                         placeholder="Detail tentang materi yang dibagikan..."
                       />
@@ -576,7 +576,7 @@ const KelolaMatkulDosen = () => {
 
             {/* Modal Buat Tugas */}
             {showCreateTugas && (
-              <div className="fixed inset-0 bg-lp-text/20 backdrop-blur-md flex items-center justify-center p-4 z-50 overflow-y-auto">
+              <div className="fixed inset-0 bg-lp-text/20 backdrop-blur-md flex items-center justify-center p-4 z-[90] overflow-y-auto">
                 <motion.div 
                   initial={{ opacity: 0, scale: 0.9, y: 20 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -630,7 +630,7 @@ const KelolaMatkulDosen = () => {
                       <textarea
                         value={formData.desc}
                         onChange={(e) => setFormData(prev => ({ ...prev, desc: e.target.value }))}
-                        className="w-full bg-lp-surface font-light text-[15px] border border-lp-border rounded-2xl px-5 py-4 focus:outline-none focus:ring-2 focus:ring-lp-accent/5 focus:border-lp-text transition-all duration-500 resize-none"
+                        className="w-full bg-lp-surface font-light text-[15px] border border-lp-border rounded-2xl px-5 py-4 focus:outline-none focus:ring-2 focus:ring-lp-accent/5 focus:border-lp-text transition-all duration-500 resize-none whitespace-pre-wrap"
                         rows="4"
                         placeholder="Deskripsikan tantangan bagi mahasiswa..."
                         required
@@ -712,7 +712,7 @@ const KelolaMatkulDosen = () => {
 
             {/* Modal Detail Pertemuan */}
             {showDetailPertemuan && (
-              <div className="fixed inset-0 bg-lp-text/30 backdrop-blur-md flex items-center justify-center p-4 z-50 overflow-y-auto">
+              <div className="fixed inset-0 bg-lp-text/30 backdrop-blur-md flex items-center justify-center p-4 z-[90] overflow-y-auto">
                 <motion.div 
                   initial={{ opacity: 0, y: 50 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -775,7 +775,7 @@ const KelolaMatkulDosen = () => {
                                   <div className="flex-1 min-w-0">
                                     <p className="text-[10px] font-mono font-bold text-lp-text3 tracking-widest uppercase mb-2">MOD-{materi.id}</p>
                                     <h5 className="text-[18px] font-normal text-lp-text tracking-tight mb-2 truncate italic">{materi.title}</h5>
-                                    <p className="text-[13px] text-lp-text2 font-light line-clamp-2">{materi.desc || "Tidak ada deskripsi."}</p>
+                                    <p className="text-[13px] text-lp-text2 font-light line-clamp-2 whitespace-pre-wrap">{materi.desc || "Tidak ada deskripsi."}</p>
                                   </div>
                                   <div className="flex flex-col gap-2">
                                     {materi.file_path && (

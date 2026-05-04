@@ -249,7 +249,7 @@ const ManageMatkulSuperDosen = () => {
 
           {/* Form Modal */}
           {showForm && (
-            <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowForm(false)}>
+            <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[90] flex items-center justify-center p-4" onClick={() => setShowForm(false)}>
               <div className="bg-white rounded-2xl shadow-2xl border border-lp-border w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
                 <div className="px-6 py-5 border-b border-lp-border flex items-center justify-between">
                   <h3 className="text-xl font-bold text-lp-text">{editingCourse ? 'Edit Mata Kuliah' : 'Tambah Mata Kuliah'}</h3>

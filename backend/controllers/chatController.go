@@ -75,8 +75,6 @@ func (cc *ChatController) GetConversations(c *gin.Context) {
 		Select("conversations.*").
 		Joins("JOIN conversation_participants ON conversation_participants.conversation_id = conversations.id").
 		Where("conversation_participants.user_id = ?", userID).
-		Where("conversations.deleted_at IS NULL").
-		Where("conversation_participants.deleted_at IS NULL").
 		Order("conversations.updated_at DESC")
 
 	if err := query.Find(&conversations).Error; err != nil {
@@ -117,10 +115,12 @@ func (cc *ChatController) GetConversations(c *gin.Context) {
 
 		// Get participants
 		var participants []models.ConversationParticipant
-		cc.db.Where("conversation_id = ? AND deleted_at IS NULL", conv.ID).
+		cc.db.Where("conversation_id = ?", conv.ID).
 			Preload("User").
 			Preload("User.Mahasiswa").
 			Preload("User.Dosen").
+			Preload("User.Ukm").
+			Preload("User.Ormawa").
 			Find(&participants)
 
 		// Map participants
@@ -208,7 +208,7 @@ func (cc *ChatController) GetConversationDetail(c *gin.Context) {
 
 	// Check if user is participant
 	var participant models.ConversationParticipant
-	if err := cc.db.Where("conversation_id = ? AND user_id = ? AND deleted_at IS NULL", conversationID, userID).
+	if err := cc.db.Where("conversation_id = ? AND user_id = ?", conversationID, userID).
 		First(&participant).Error; err != nil {
 		c.JSON(http.StatusForbidden, gin.H{
 			"success": false,
@@ -229,10 +229,12 @@ func (cc *ChatController) GetConversationDetail(c *gin.Context) {
 
 	// Get participants
 	var participants []models.ConversationParticipant
-	cc.db.Where("conversation_id = ? AND deleted_at IS NULL", conversationID).
+	cc.db.Where("conversation_id = ?", conversationID).
 		Preload("User").
 		Preload("User.Mahasiswa").
 		Preload("User.Dosen").
+		Preload("User.Ukm").
+		Preload("User.Ormawa").
 		Find(&participants)
 
 	// Get unread count
@@ -365,11 +367,8 @@ func (cc *ChatController) CreateConversation(c *gin.Context) {
 			JOIN conversation_participants cp1 ON cp1.conversation_id = c.id
 			JOIN conversation_participants cp2 ON cp2.conversation_id = c.id
 			WHERE c.type = 'private' 
-			AND c.deleted_at IS NULL
 			AND cp1.user_id = ? 
 			AND cp2.user_id = ?
-			AND cp1.deleted_at IS NULL 
-			AND cp2.deleted_at IS NULL
 		`, userID, req.Participants[0]).Scan(&existingCount)
 
 		if existingCount > 0 {
@@ -381,11 +380,8 @@ func (cc *ChatController) CreateConversation(c *gin.Context) {
 				JOIN conversation_participants cp1 ON cp1.conversation_id = c.id
 				JOIN conversation_participants cp2 ON cp2.conversation_id = c.id
 				WHERE c.type = 'private' 
-				AND c.deleted_at IS NULL
 				AND cp1.user_id = ? 
 				AND cp2.user_id = ?
-				AND cp1.deleted_at IS NULL 
-				AND cp2.deleted_at IS NULL
 				LIMIT 1
 			`, userID, req.Participants[0]).Scan(&existingConv)
 
@@ -466,6 +462,17 @@ func (cc *ChatController) CreateConversation(c *gin.Context) {
 
 	tx.Commit()
 
+	// Broadcast new_conversation event to all participants via WebSocket
+	for _, participantID := range allParticipants {
+		cc.hub.BroadcastToUser(participantID, models.WebsocketMessage{
+			Type: "new_conversation",
+			Data: gin.H{
+				"conversation_id": conversation.ID,
+				"created_by":      userID,
+			},
+		})
+	}
+
 	c.JSON(http.StatusCreated, gin.H{
 		"success": true,
 		"message": "Conversation created successfully",
@@ -493,7 +500,7 @@ func (cc *ChatController) GetMessages(c *gin.Context) {
 
 	// Check if user is participant
 	var participant models.ConversationParticipant
-	if err := cc.db.Where("conversation_id = ? AND user_id = ? AND deleted_at IS NULL", conversationID, userID).
+	if err := cc.db.Where("conversation_id = ? AND user_id = ?", conversationID, userID).
 		First(&participant).Error; err != nil {
 		c.JSON(http.StatusForbidden, gin.H{
 			"success": false,
@@ -587,7 +594,7 @@ func (cc *ChatController) SendMessage(c *gin.Context) {
 
 	// Check if user is participant
 	var participant models.ConversationParticipant
-	if err := cc.db.Where("conversation_id = ? AND user_id = ? AND deleted_at IS NULL", req.ConversationID, userID).
+	if err := cc.db.Where("conversation_id = ? AND user_id = ?", req.ConversationID, userID).
 		First(&participant).Error; err != nil {
 		c.JSON(http.StatusForbidden, gin.H{
 			"success": false,
@@ -648,8 +655,52 @@ func (cc *ChatController) SendMessage(c *gin.Context) {
 
 	c.JSON(http.StatusCreated, gin.H{
 		"success": true,
-		"message": "Message sent successfully",
 		"data":    messageResponse,
+	})
+}
+
+// DeleteMessage - Delete a message (unsend)
+func (cc *ChatController) DeleteMessage(c *gin.Context) {
+	userID, ok := getUserIDFromContext(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"success": false, "error": "Unauthorized"})
+		return
+	}
+
+	messageID := c.Param("message_id")
+	var message models.Message
+
+	// Find the message
+	if err := cc.db.Where("id = ? AND deleted_at IS NULL", messageID).First(&message).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"success": false, "error": "Message not found"})
+		return
+	}
+
+	// Check ownership (only sender can delete)
+	if message.SenderID != userID {
+		c.JSON(http.StatusForbidden, gin.H{"success": false, "error": "You can only delete your own messages"})
+		return
+	}
+
+	// Perform soft delete
+	now := time.Now()
+	if err := cc.db.Model(&message).Update("deleted_at", now).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Failed to delete message"})
+		return
+	}
+
+	// Broadcast deletion
+	cc.hub.BroadcastToConversation(message.ConversationID, models.WebsocketMessage{
+		Type: "message_deleted",
+		Data: gin.H{
+			"conversation_id": message.ConversationID,
+			"message_id":      message.ID,
+		},
+	})
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "Message deleted successfully",
 	})
 }
 
@@ -948,6 +999,93 @@ func (cc *ChatController) GetContacts(c *gin.Context) {
 	})
 }
 
+// SearchUsers - Search users by name/email with role filter (for New Chat)
+func (cc *ChatController) SearchUsers(c *gin.Context) {
+	userID, ok := getUserIDFromContext(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"success": false, "error": "Unauthorized"})
+		return
+	}
+
+	query := strings.TrimSpace(c.Query("q"))
+	roleFilter := strings.TrimSpace(c.Query("role"))
+
+	// Build base query - exclude current user and deleted users
+	dbQuery := cc.db.Model(&models.User{}).
+		Where("users.id != ?", userID).
+		Where("users.deleted_at IS NULL")
+
+	// Apply role filter if provided
+	validRoles := map[string]bool{"admin": true, "mahasiswa": true, "dosen": true, "ukm": true, "ormawa": true}
+	if roleFilter != "" && validRoles[roleFilter] {
+		dbQuery = dbQuery.Where("users.role = ?", roleFilter)
+	}
+
+	// Apply search query (case-insensitive by name or email)
+	if query != "" {
+		searchPattern := "%" + strings.ToLower(query) + "%"
+		dbQuery = dbQuery.
+			Joins("LEFT JOIN mahasiswa ON mahasiswa.user_id = users.id").
+			Joins("LEFT JOIN dosen ON dosen.user_id = users.id").
+			Joins("LEFT JOIN ukm ON ukm.user_id = users.id").
+			Joins("LEFT JOIN ormawa ON ormawa.user_id = users.id").
+			Where(`LOWER(users.email) LIKE ? OR 
+				LOWER(mahasiswa.name) LIKE ? OR 
+				LOWER(dosen.name) LIKE ? OR 
+				LOWER(ukm.name) LIKE ? OR LOWER(ukm.username) LIKE ? OR
+				LOWER(ormawa.name) LIKE ? OR LOWER(ormawa.username) LIKE ?`,
+				searchPattern, searchPattern, searchPattern, searchPattern, searchPattern, searchPattern, searchPattern)
+	}
+
+	// Fetch results
+	var users []models.User
+	err := dbQuery.
+		Preload("Mahasiswa").
+		Preload("Dosen").
+		Preload("Ukm").
+		Preload("Ormawa").
+		Order("users.created_at DESC").
+		Limit(30).
+		Find(&users).Error
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"error":   "Failed to search users: " + err.Error(),
+		})
+		return
+	}
+
+	// Map to response
+	var response []models.UserResponse
+	for _, user := range users {
+		response = append(response, models.MapUserToResponse(user))
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"data":    response,
+		"count":   len(response),
+	})
+}
+
+// GetOnlineUsers - Get list of currently connected users
+func (cc *ChatController) GetOnlineUsers(c *gin.Context) {
+	_, ok := getUserIDFromContext(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"success": false, "error": "Unauthorized"})
+		return
+	}
+
+	onlineUserIDs := cc.hub.GetConnectedUsers()
+
+	c.JSON(http.StatusOK, gin.H{
+		"success":    true,
+		"online_ids": onlineUserIDs,
+		"count":      len(onlineUserIDs),
+	})
+}
+
 // MarkMessagesAsRead - Mark messages as read
 func (cc *ChatController) MarkMessagesAsRead(c *gin.Context) {
 	userID, ok := getUserIDFromContext(c)
@@ -967,7 +1105,7 @@ func (cc *ChatController) MarkMessagesAsRead(c *gin.Context) {
 
 	// Check if user is participant
 	var participant models.ConversationParticipant
-	if err := cc.db.Where("conversation_id = ? AND user_id = ? AND deleted_at IS NULL", conversationID, userID).
+	if err := cc.db.Where("conversation_id = ? AND user_id = ?", conversationID, userID).
 		First(&participant).Error; err != nil {
 		c.JSON(http.StatusForbidden, gin.H{
 			"success": false,
@@ -1020,7 +1158,7 @@ func (cc *ChatController) PinConversation(c *gin.Context) {
 
 	// Check if conversation exists and user is participant
 	var participant models.ConversationParticipant
-	if err := cc.db.Where("conversation_id = ? AND user_id = ? AND deleted_at IS NULL", conversationID, userID).
+	if err := cc.db.Where("conversation_id = ? AND user_id = ?", conversationID, userID).
 		First(&participant).Error; err != nil {
 		c.JSON(http.StatusForbidden, gin.H{
 			"success": false,
@@ -1104,7 +1242,7 @@ func (cc *ChatController) GetChatStats(c *gin.Context) {
 	// Total conversations
 	var totalConversations int64
 	cc.db.Model(&models.ConversationParticipant{}).
-		Where("user_id = ? AND deleted_at IS NULL", userID).
+		Where("user_id = ?", userID).
 		Count(&totalConversations)
 
 	// Total messages
@@ -1131,7 +1269,6 @@ func (cc *ChatController) GetChatStats(c *gin.Context) {
 		Joins("JOIN conversations ON conversations.id = conversation_participants.conversation_id").
 		Where("conversation_participants.user_id = ?", userID).
 		Where("conversations.type = 'group'").
-		Where("conversations.deleted_at IS NULL").
 		Count(&groupChats)
 
 	privateChats := totalConversations - groupChats

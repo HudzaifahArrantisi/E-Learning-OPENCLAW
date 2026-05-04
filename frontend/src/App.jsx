@@ -37,6 +37,7 @@ const PostingPemberitahuan = lazy(() => import('./pages/Admin/PostingPemberitahu
 const PemantauanUKT = lazy(() => import('./pages/Admin/PemantauanUKT'))
 const SettingProfileAdmin = lazy(() => import('./pages/Admin/SettingProfileAdmin'))
 const AkunAdmin = lazy(() => import('./pages/Admin/AkunAdmin'))
+const PesanAdmin = lazy(() => import('./pages/Admin/pesanAdmin'))
 
 const DashboardOrtu = lazy(() => import('./pages/Ortu/DashboardOrtu'))
 const PantauKehadiran = lazy(() => import('./pages/Ortu/PantauKehadiran'))
@@ -84,6 +85,7 @@ function App() {
               <Route path="/mahasiswa/scan-absensi" element={<ProtectedRoute allowedRoles={['mahasiswa']}><ScanAbsensi /></ProtectedRoute>} />
               <Route path="/mahasiswa/transkrip-nilai" element={<ProtectedRoute allowedRoles={['mahasiswa']}><TranskripNilai /></ProtectedRoute>} />
               <Route path="/mahasiswa/pesan" element={<ProtectedRoute allowedRoles={['mahasiswa']}><PesanMahasiswa /></ProtectedRoute>} />
+              <Route path="/mahasiswa/pesan/:conversationId" element={<ProtectedRoute allowedRoles={['mahasiswa']}><PesanMahasiswa /></ProtectedRoute>} />
               <Route path="/mahasiswa/cari-invoice" element={<ProtectedRoute allowedRoles={['mahasiswa']}><CariInvoice /></ProtectedRoute>} />
               <Route path="/mahasiswa/tugas" element={<ProtectedRoute allowedRoles={['mahasiswa']}><TugasMahasiswa /></ProtectedRoute>} />
               <Route path="/mahasiswa/materi" element={<ProtectedRoute allowedRoles={['mahasiswa']}><MateriMahasiswa /></ProtectedRoute>} />
@@ -96,6 +98,7 @@ function App() {
               <Route path="/dosen/absensi" element={<ProtectedRoute allowedRoles={['dosen']}><AbsensiDosen /></ProtectedRoute>} />
               <Route path="/dosen/penilaian" element={<ProtectedRoute allowedRoles={['dosen']}><PenilaianDosen /></ProtectedRoute>} />
               <Route path="/dosen/pesan" element={<ProtectedRoute allowedRoles={['dosen']}><PesanDosen /></ProtectedRoute>} />
+              <Route path="/dosen/pesan/:conversationId" element={<ProtectedRoute allowedRoles={['dosen']}><PesanDosen /></ProtectedRoute>} />
               <Route path="/dosen/matkul/:courseId" element={<ProtectedRoute allowedRoles={['dosen']}><KelolaMatkulDosen /></ProtectedRoute>} />
               <Route path="/dosen/matkul/:courseId/pertemuan/:pertemuan" element={<ProtectedRoute allowedRoles={['dosen']}><DetailPertemuanDosen /></ProtectedRoute>} />
               <Route path="/dosen/penilaian/:courseId" element={<ProtectedRoute allowedRoles={['dosen']}><PenilaianDosen /></ProtectedRoute>} />
@@ -106,6 +109,8 @@ function App() {
               <Route path="/admin/pemantauan-ukt" element={<ProtectedRoute allowedRoles={['admin']}><PemantauanUKT /></ProtectedRoute>} />
               <Route path="/admin/setting-profile" element={<ProtectedRoute allowedRoles={['admin']}><SettingProfileAdmin /></ProtectedRoute>} />
               <Route path="/admin/akun" element={<ProtectedRoute allowedRoles={['admin']}><AkunAdmin /></ProtectedRoute>} />
+              <Route path="/admin/pesan" element={<ProtectedRoute allowedRoles={['admin']}><PesanAdmin /></ProtectedRoute>} />
+              <Route path="/admin/pesan/:conversationId" element={<ProtectedRoute allowedRoles={['admin']}><PesanAdmin /></ProtectedRoute>} />
 
               <Route path="/ortu" element={<ProtectedRoute allowedRoles={['orangtua']}><DashboardOrtu /></ProtectedRoute>} />
               <Route path="/ortu/pantau-kehadiran" element={<ProtectedRoute allowedRoles={['orangtua']}><PantauKehadiran /></ProtectedRoute>} />

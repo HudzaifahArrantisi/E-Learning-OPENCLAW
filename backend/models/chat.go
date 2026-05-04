@@ -15,7 +15,7 @@ type Conversation struct {
 	CreatedBy    int        `json:"created_by" gorm:"not null"`
 	CreatedAt    time.Time  `json:"created_at" gorm:"autoCreateTime"`
 	UpdatedAt    time.Time  `json:"updated_at" gorm:"autoUpdateTime"`
-	DeletedAt    *time.Time `json:"deleted_at"`
+	DeletedAt    *time.Time `json:"deleted_at" gorm:"-"`
 	
 	// Relations
 	MataKuliah   *MataKuliah              `json:"mata_kuliah,omitempty" gorm:"foreignKey:MataKuliahID"`
@@ -31,7 +31,7 @@ type ConversationParticipant struct {
 	Role           string     `json:"role" gorm:"type:ENUM('admin','member','owner');default:'member'"`
 	JoinedAt       time.Time  `json:"joined_at" gorm:"autoCreateTime"`
 	LastReadAt     *time.Time `json:"last_read_at"`
-	DeletedAt      *time.Time `json:"deleted_at"`
+	DeletedAt      *time.Time `json:"deleted_at" gorm:"-"`
 	
 	// Relations
 	User         User        `json:"user" gorm:"foreignKey:UserID"`
@@ -191,26 +191,34 @@ type TypingIndicator struct {
 
 // Helper functions
 func MapUserToResponse(user User) UserResponse {
-	photo := ""
-	if user.Photo != "" {
-		photo = user.Photo
-	}
-	
 	resp := UserResponse{
-		ID:       user.ID,
-		Name:     user.Name,
-		Username: user.Username,
-		Role:     user.Role,
-		Photo:    photo,
-		Email:    user.Email,
-		Phone:    sql.NullString{String: user.Phone, Valid: user.Phone != ""}.String,
+		ID:    user.ID,
+		Role:  user.Role,
+		Email: user.Email,
 	}
 
-	// Add role-specific fields
+	// Extract fields based on role
 	if user.Role == "mahasiswa" && user.Mahasiswa != nil {
+		resp.Name = user.Mahasiswa.Name
+		resp.Photo = user.Mahasiswa.Photo
 		resp.NIM = user.Mahasiswa.NIM
 	} else if user.Role == "dosen" && user.Dosen != nil {
+		resp.Name = user.Dosen.Name
+		// Assuming Dosen does not have photo based on schema, or if it does, add it here
 		resp.NIP = sql.NullString{String: user.Dosen.NIP, Valid: user.Dosen.NIP != ""}.String
+	} else if user.Role == "ukm" && user.Ukm != nil {
+		resp.Name = user.Ukm.Name
+		resp.Username = user.Ukm.Username
+		resp.Photo = user.Ukm.ProfilePicture
+		resp.Phone = user.Ukm.Phone
+	} else if user.Role == "ormawa" && user.Ormawa != nil {
+		resp.Name = user.Ormawa.Name
+		resp.Username = user.Ormawa.Username
+		resp.Photo = user.Ormawa.ProfilePicture
+		resp.Phone = user.Ormawa.Phone
+	} else {
+		// Fallback for admin or if relations are missing
+		resp.Name = user.Email // Fallback to email if name is truly unknown
 	}
 
 	return resp

@@ -2030,10 +2030,10 @@ func DeleteMateri(c *gin.Context) {
 
 	// Soft-delete file dari uploads table jika ada
 	if filePath.Valid && filePath.String != "" {
-		// Extract upload ID from /api/files/{id} URL pattern
-		var uploadIDFromURL int64
-		if _, scanErr := fmt.Sscanf(filePath.String, "/api/files/%d", &uploadIDFromURL); scanErr == nil {
-			config.DB.Exec("UPDATE uploads SET deleted_at = NOW() WHERE id = $1", uploadIDFromURL)
+		// Extract upload UUID from /api/files/{uuid} URL pattern
+		var uploadUUIDFromURL string
+		if _, scanErr := fmt.Sscanf(filePath.String, "/api/files/%s", &uploadUUIDFromURL); scanErr == nil {
+			config.DB.Exec("UPDATE uploads SET deleted_at = NOW() WHERE uuid = $1", uploadUUIDFromURL)
 		}
 	}
 
@@ -2091,9 +2091,9 @@ func DeleteTugas(c *gin.Context) {
 
 	// Soft-delete file dari uploads table jika ada
 	if filePath.Valid && filePath.String != "" {
-		var uploadIDFromURL int64
-		if _, scanErr := fmt.Sscanf(filePath.String, "/api/files/%d", &uploadIDFromURL); scanErr == nil {
-			config.DB.Exec("UPDATE uploads SET deleted_at = NOW() WHERE id = $1", uploadIDFromURL)
+		var uploadUUIDFromURL string
+		if _, scanErr := fmt.Sscanf(filePath.String, "/api/files/%s", &uploadUUIDFromURL); scanErr == nil {
+			config.DB.Exec("UPDATE uploads SET deleted_at = NOW() WHERE uuid = $1", uploadUUIDFromURL)
 		}
 	}
 
@@ -2174,9 +2174,9 @@ func DeleteSubmission(c *gin.Context) {
 	err = config.DB.QueryRow("SELECT file_url FROM submissions WHERE id = $1", submissionID).Scan(&fileURL)
 	// Soft-delete file dari uploads table jika ada
 	if err == nil && fileURL.Valid && fileURL.String != "" {
-		var uploadIDFromURL int64
-		if _, scanErr := fmt.Sscanf(fileURL.String, "/api/files/%d", &uploadIDFromURL); scanErr == nil {
-			config.DB.Exec("UPDATE uploads SET deleted_at = NOW() WHERE id = $1", uploadIDFromURL)
+		var uploadUUIDFromURL string
+		if _, scanErr := fmt.Sscanf(fileURL.String, "/api/files/%s", &uploadUUIDFromURL); scanErr == nil {
+			config.DB.Exec("UPDATE uploads SET deleted_at = NOW() WHERE uuid = $1", uploadUUIDFromURL)
 		}
 	}
 
