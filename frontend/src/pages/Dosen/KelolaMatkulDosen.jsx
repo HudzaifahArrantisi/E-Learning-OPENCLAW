@@ -31,7 +31,8 @@ const KelolaMatkulDosen = () => {
   const [courseName, setCourseName] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [detailLoading, setDetailLoading] = useState(false)
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+const [toast, setToast] = useState(null);
   const [viewMode, setViewMode] = useState('grid') 
 
   useEffect(() => {
@@ -85,13 +86,13 @@ const KelolaMatkulDosen = () => {
       if (formData.file) data.append('file', formData.file)
 
       await api.uploadMateri(data)
-      alert('Materi berhasil diupload!')
+      setToast({ message: 'Materi berhasil diupload!', type: 'success' })
       setShowUploadMateri(false)
       setFormData(prev => ({ ...prev, title: '', desc: '', file: null }))
       fetchPertemuanList()
     } catch (error) {
       console.error('Error uploading materi:', error)
-      alert('Gagal upload materi: ' + (error.response?.data?.message || error.message))
+      setToast({ message: 'Gagal upload materi: ' + (error.response?.data?.message || error.message), type: 'error' })
     } finally {
       setSubmitting(false)
     }

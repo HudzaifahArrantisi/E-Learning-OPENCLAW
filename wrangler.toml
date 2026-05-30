@@ -1,0 +1,14 @@
+# =============================================================================
+# Cloudflare Worker Configuration — NF Student HUB Reverse Proxy
+# =============================================================================
+
+name = "nf-student-hub"
+main = "src/index.js"
+compatibility_date = "2025-05-26"
+
+# ---------------------------------------------------------------------------
+# Environment variables accessible via `env.TARGET_API` inside the Worker.
+# Replace the placeholder URL with your actual backend API origin.
+# ---------------------------------------------------------------------------
+[vars]
+TARGET_API = "https://jsonplaceholder.typicode.com"
