@@ -11,7 +11,7 @@ import (
 	"github.com/joho/godotenv"
 )
 
-func main() {
+func checkDB() {
 	// Load .env
 	err := godotenv.Load(".env")
 	if err != nil {
