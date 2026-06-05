@@ -65,6 +65,10 @@ api.getContacts = () => api.get('/api/chat/contacts')
 api.searchUsers = (query = '', role = '') => 
   api.get('/api/chat/users/search', { params: { q: query, role } })
 api.getOnlineUsers = () => api.get('/api/chat/users/online')
+api.uploadFile = (formData) => 
+  api.post('/api/uploads', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  })
 
 // Utility
 api.getChatStats = () => api.get('/api/chat/stats')

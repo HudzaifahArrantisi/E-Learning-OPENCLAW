@@ -1015,32 +1015,71 @@ func (cc *ChatController) SearchUsers(c *gin.Context) {
 		dbQuery = dbQuery.Where("users.role = ?", roleFilter)
 	}
 
+	// Determine required Joins to prevent duplicates
+	needMahasiswaJoin := (query != "" || roleFilter == "mahasiswa")
+	needDosenJoin := (query != "" || roleFilter == "dosen")
+	needUkmJoin := (query != "" || roleFilter == "ukm")
+	needOrmawaJoin := (query != "" || roleFilter == "ormawa")
+
+	if needMahasiswaJoin {
+		dbQuery = dbQuery.Joins("LEFT JOIN mahasiswa ON mahasiswa.user_id = users.id")
+	}
+	if needDosenJoin {
+		dbQuery = dbQuery.Joins("LEFT JOIN dosen ON dosen.user_id = users.id")
+	}
+	if needUkmJoin {
+		dbQuery = dbQuery.Joins("LEFT JOIN ukm ON ukm.user_id = users.id")
+	}
+	if needOrmawaJoin {
+		dbQuery = dbQuery.Joins("LEFT JOIN ormawa ON ormawa.user_id = users.id")
+	}
+
 	// Apply search query (case-insensitive by name or email)
 	if query != "" {
 		searchPattern := "%" + strings.ToLower(query) + "%"
-		dbQuery = dbQuery.
-			Joins("LEFT JOIN mahasiswa ON mahasiswa.user_id = users.id").
-			Joins("LEFT JOIN dosen ON dosen.user_id = users.id").
-			Joins("LEFT JOIN ukm ON ukm.user_id = users.id").
-			Joins("LEFT JOIN ormawa ON ormawa.user_id = users.id").
-			Where(`LOWER(users.email) LIKE ? OR 
-				LOWER(mahasiswa.name) LIKE ? OR 
-				LOWER(dosen.name) LIKE ? OR 
-				LOWER(ukm.name) LIKE ? OR LOWER(ukm.username) LIKE ? OR
-				LOWER(ormawa.name) LIKE ? OR LOWER(ormawa.username) LIKE ?`,
-				searchPattern, searchPattern, searchPattern, searchPattern, searchPattern, searchPattern, searchPattern)
+		dbQuery = dbQuery.Where(`LOWER(users.email) LIKE ? OR 
+			LOWER(mahasiswa.name) LIKE ? OR 
+			LOWER(dosen.name) LIKE ? OR 
+			LOWER(ukm.name) LIKE ? OR LOWER(ukm.username) LIKE ? OR
+			LOWER(ormawa.name) LIKE ? OR LOWER(ormawa.username) LIKE ?`,
+			searchPattern, searchPattern, searchPattern, searchPattern, searchPattern, searchPattern, searchPattern)
+	}
+
+	// Set ordering based on role filter
+	if roleFilter == "mahasiswa" {
+		dbQuery = dbQuery.Order("mahasiswa.name ASC")
+	} else if roleFilter == "dosen" {
+		dbQuery = dbQuery.Order("dosen.name ASC")
+	} else if roleFilter == "ukm" {
+		dbQuery = dbQuery.Order("ukm.name ASC")
+	} else if roleFilter == "ormawa" {
+		dbQuery = dbQuery.Order("ormawa.name ASC")
+	} else {
+		dbQuery = dbQuery.Order("users.created_at DESC")
 	}
 
 	// Fetch results
 	var users []models.User
-	err := dbQuery.
-		Preload("Mahasiswa").
-		Preload("Dosen").
-		Preload("Ukm").
-		Preload("Ormawa").
-		Order("users.created_at DESC").
-		Limit(30).
-		Find(&users).Error
+	var err error
+
+	// If query is empty and role filter is selected, fetch all users of that role
+	if query == "" && roleFilter != "" {
+		err = dbQuery.
+			Preload("Mahasiswa").
+			Preload("Dosen").
+			Preload("Ukm").
+			Preload("Ormawa").
+			Find(&users).Error
+	} else {
+		// If searching or viewing all, set a reasonable limit (100)
+		err = dbQuery.
+			Preload("Mahasiswa").
+			Preload("Dosen").
+			Preload("Ukm").
+			Preload("Ormawa").
+			Limit(100).
+			Find(&users).Error
+	}
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{

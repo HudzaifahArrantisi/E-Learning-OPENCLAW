@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import api from '../services/api'
 import useAuth from '../hooks/useAuth'
 import Sidebar from './Sidebar'
+import { resolveBackendAssetUrl } from '../utils/assetUrl'
 
 const _MOTION = motion
 
@@ -41,6 +42,10 @@ const ChatPage = ({ role }) => {
   const [searchResults, setSearchResults] = useState([])
   const [searching, setSearching] = useState(false)
   const [startingChat, setStartingChat] = useState(null)
+
+  // Sidebar user search results
+  const [sidebarSearchResults, setSidebarSearchResults] = useState([])
+  const [searchingSidebar, setSearchingSidebar] = useState(false)
   
   // Hidden chats (local swipe-to-delete)
   const [hiddenChats, setHiddenChats] = useState(() => {
@@ -52,6 +57,8 @@ const ChatPage = ({ role }) => {
   const typingTimeoutRef = useRef(null)
   const searchTimeoutRef = useRef(null)
   const selectedConvRef = useRef(null)
+  const fileInputRef = useRef(null)
+  const [uploadingFile, setUploadingFile] = useState(false)
 
   // Keep ref in sync with state
   useEffect(() => {
@@ -105,11 +112,6 @@ const ChatPage = ({ role }) => {
   // Search users debounced
   useEffect(() => {
     if (!showNewChat) return
-    // Don't search if query is empty and no role filter
-    if (!searchQuery.trim() && !roleFilter) {
-      setSearchResults([])
-      return
-    }
     if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current)
     searchTimeoutRef.current = setTimeout(() => {
       doSearch()
@@ -128,6 +130,47 @@ const ChatPage = ({ role }) => {
     }
     setSearching(false)
   }
+
+  // Debounced search for the main sidebar search input
+  useEffect(() => {
+    const query = listQuery.trim()
+    if (!query) {
+      setSidebarSearchResults([])
+      return
+    }
+    
+    setSearchingSidebar(true)
+    const delayDebounce = setTimeout(async () => {
+      try {
+        const r = await api.searchUsers(query, '')
+        if (r.data?.success) {
+          const results = r.data.data || []
+          
+          // Get user IDs of current active private conversations to exclude
+          const activePrivateUserIds = new Set(
+            conversations
+              .filter(c => c.type === 'private' && c.participants)
+              .map(c => {
+                const other = c.participants.find(p => p.user_id !== user?.id)
+                return other?.user_id
+              })
+              .filter(Boolean)
+          )
+          
+          // Only show users who don't have an active conversation yet
+          const filteredResults = results.filter(u => !activePrivateUserIds.has(u.id))
+          setSidebarSearchResults(filteredResults)
+        }
+      } catch (err) {
+        console.error('Sidebar user search error:', err)
+        setSidebarSearchResults([])
+      } finally {
+        setSearchingSidebar(false)
+      }
+    }, 400)
+    
+    return () => clearTimeout(delayDebounce)
+  }, [listQuery, conversations, user])
 
   const loadConversations = async () => {
     try {
@@ -234,6 +277,59 @@ const ChatPage = ({ role }) => {
     }
   }
 
+  const handleAttachClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click()
+    }
+  }
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file || !selectedConversation) return
+    
+    e.target.value = ''
+    
+    setUploadingFile(true)
+    const formData = new FormData()
+    formData.append('file', file)
+    
+    const isImage = file.type.startsWith('image/')
+    formData.append('type', isImage ? 'post' : 'document')
+    
+    try {
+      const r = await api.uploadFile(formData)
+      if (r.data?.success) {
+        const uploadData = r.data.data
+        const fileUrl = uploadData.file_url
+        const fileName = uploadData.original_filename
+        const fileSize = uploadData.original_size
+        
+        const sendRes = await api.sendMessage(selectedConversation.id, {
+          conversation_id: selectedConversation.id,
+          content: fileName,
+          message_type: isImage ? 'image' : 'file',
+          file_url: fileUrl,
+          file_name: fileName,
+          file_size: Number(fileSize)
+        })
+        
+        if (sendRes.data?.success) {
+          setMessages(prev => [...prev, sendRes.data.data])
+          setTimeout(() => {
+            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+          }, 100)
+        }
+      } else {
+        alert(r.data?.message || 'Gagal mengunggah file')
+      }
+    } catch (err) {
+      console.error('File upload error:', err)
+      alert(err.response?.data?.message || 'Gagal mengunggah file. Pastikan ukuran file tidak melebihi batas.')
+    } finally {
+      setUploadingFile(false)
+    }
+  }
+
   const handleWsMessage = useCallback((msg) => {
     const currentConv = selectedConvRef.current
     switch (msg.type) {
@@ -303,6 +399,7 @@ const ChatPage = ({ role }) => {
       if (r.data?.success) {
         setShowNewChat(false)
         setSearchQuery('')
+        setListQuery('')
         setRoleFilter('')
         await loadConversations()
         const convId = r.data.data
@@ -329,6 +426,15 @@ const ChatPage = ({ role }) => {
     return conv.name
   }
 
+  const getInitials = (name) => {
+    if (!name) return '?'
+    const parts = name.trim().split(/\s+/)
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase()
+    }
+    return parts[0].substring(0, 2).toUpperCase()
+  }
+
   const getTypingText = () => {
     const t = Object.values(typingUsers).filter(x => x.isTyping && Date.now() - x.ts < 3000)
     if (!t.length) return null
@@ -340,14 +446,115 @@ const ChatPage = ({ role }) => {
     return m[r] || 'bg-gray-100 text-gray-800'
   }
 
+  const renderConvItem = (conv) => {
+    const isSelected = selectedConversation?.id === conv.id;
+    const convName = getConvName(conv);
+    const initials = getInitials(convName);
+    
+    return (
+      <motion.div 
+        key={conv.id}
+        layout
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0 }}
+        className="relative px-2 py-0.5 overflow-hidden"
+      >
+        {/* Background Delete Button (iOS style) */}
+        <div className="absolute inset-y-0.5 right-2 w-20 bg-[#FF3B30] flex items-center justify-center rounded-r-xl">
+          <button 
+            onClick={(e) => handleHideConversation(e, conv)} 
+            className="w-full h-full text-white flex flex-col items-center justify-center active:bg-red-700 transition-colors rounded-r-xl"
+          >
+            <i className="fas fa-trash-alt text-[15px]" />
+            <span className="text-[10px] font-semibold mt-0.5">Delete</span>
+          </button>
+        </div>
+        
+        {/* Draggable Foreground */}
+        <motion.div 
+          drag="x"
+          dragConstraints={{ left: -80, right: 0 }}
+          dragSnapToOrigin={false}
+          className={`group px-3 py-2.5 cursor-pointer relative z-10 transition-all duration-150 rounded-xl border ${
+            isSelected
+              ? 'bg-[#007AFF] border-[#007AFF] text-white shadow-sm'
+              : 'bg-white border-[#E5E5EA] hover:bg-[#F2F2F7] active:bg-[#E5E5EA] text-black shadow-sm'
+          }`} 
+          onClick={() => selectConversation(conv)}
+        >
+          <div className="flex items-center gap-3 relative pl-4">
+            {/* Unread Dot (iOS style) */}
+            <div className="absolute left-[-2px] w-2 h-2 flex items-center justify-center">
+              {!isSelected && conv.unread_count > 0 && (
+                <div className="w-2.5 h-2.5 bg-[#007AFF] rounded-full" />
+              )}
+            </div>
+            
+            {/* Avatar */}
+            <div className="relative flex-shrink-0">
+              <div className={`w-11 h-11 rounded-full flex items-center justify-center font-bold text-[15px] shadow-sm select-none ${
+                isSelected 
+                  ? 'bg-white/20 text-white' 
+                  : 'bg-gradient-to-br from-[#BAC6D1] to-[#A2ADB8] text-white border border-gray-200'
+              }`}>
+                {conv.type === 'group' ? (
+                  <i className="fas fa-users text-sm" />
+                ) : (
+                  <span>{initials}</span>
+                )}
+              </div>
+              {conv.type === 'private' && conv.participants && (() => {
+                const other = conv.participants.find(p => p.user_id !== user?.id)
+                return other && onlineUsers.has(other.user_id) ? (
+                  <div className={`absolute bottom-0.5 right-0.5 w-3 h-3 bg-[#34C759] rounded-full border-2 ${isSelected ? 'border-[#007AFF]' : 'border-[#F4F4F6]'} shadow-sm`} />
+                ) : null
+              })()}
+            </div>
+            
+            {/* Text Details */}
+            <div className="flex-1 min-w-0 pr-1">
+              <div className="flex justify-between items-baseline mb-0.5">
+                <h3 className={`font-semibold text-[14px] truncate leading-snug ${isSelected ? 'text-white' : 'text-black'}`}>
+                  {convName}
+                </h3>
+                {conv.last_message && (
+                  <span className={`text-[11px] font-medium ml-2 flex-shrink-0 ${isSelected ? 'text-white/80' : 'text-gray-400'}`}>
+                    {formatTime(conv.last_message.created_at)}
+                  </span>
+                )}
+              </div>
+              <div className="flex justify-between items-center">
+                <p className={`text-[13px] truncate leading-tight pr-1 ${
+                  isSelected 
+                    ? 'text-white/90' 
+                    : (conv.unread_count > 0 ? 'text-black font-semibold' : 'text-gray-500')
+                }`}>
+                  {conv.last_message ? (
+                    <>
+                      <span className="opacity-70">{conv.last_message.sender?.id === user?.id ? 'Anda: ' : ''}</span>
+                      {conv.last_message.content}
+                    </>
+                  ) : (
+                    <span className="italic opacity-50">No messages yet</span>
+                  )}
+                </p>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      </motion.div>
+    )
+  }
+
   if (loading && !conversations.length) {
     return (
       <div className="flex">
         <Sidebar role={role} />
-        <div className="main-content w-full flex items-center justify-center h-screen">
+        <div className="main-content w-full flex items-center justify-center h-screen bg-white">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-lp-accent mx-auto" />
-            <p className="mt-4 text-lp-text2">Memuat percakapan...</p>
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#007AFF] mx-auto" />
+            <p className="mt-4 text-gray-500 text-sm">Memuat percakapan...</p>
           </div>
         </div>
       </div>
@@ -365,247 +572,323 @@ const ChatPage = ({ role }) => {
     : visibleConversations
   const unreadTotal = visibleConversations.reduce((acc, conv) => acc + (conv.unread_count || 0), 0)
 
+  const styles = `
+    /* Bouncing typing animation dots */
+    .typing-dot {
+      width: 6px;
+      height: 6px;
+      background-color: #8E8E93;
+      border-radius: 50%;
+      display: inline-block;
+      animation: typing-bounce 1.4s infinite ease-in-out both;
+    }
+    .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+    .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+    
+    @keyframes typing-bounce {
+      0%, 80%, 100% { transform: scale(0.3); opacity: 0.3; }
+      40% { transform: scale(1); opacity: 1; }
+    }
+  `;
+
   return (
     <div className="flex">
+      <style>{styles}</style>
       <Sidebar role={role} />
-      <div className="main-content w-full bg-gradient-to-br from-[#F7F9FF] via-[#FCFDFF] to-[#F1F5FF]">
+      <div className="main-content w-full bg-white">
         <div className="flex h-screen overflow-hidden">
           {/* Sidebar - Conversation List */}
-          <div className={`${showMobileList ? 'flex' : 'hidden'} md:flex flex-col w-full md:w-[360px] lg:w-[390px] border-r border-white/70 bg-white/70 backdrop-blur-xl flex-shrink-0 z-30 shadow-[0_10px_40px_rgba(12,30,90,0.06)]`}>
+          <div className={`${showMobileList ? 'flex' : 'hidden'} md:flex flex-col w-full md:w-[350px] lg:w-[380px] border-r border-gray-200/80 bg-[#F4F4F6]/90 backdrop-blur-xl flex-shrink-0 z-30`}>
             {/* Header */}
-            <div className="pt-7 pb-3 px-5 sticky top-0 bg-white/70 backdrop-blur-md z-40 border-b border-white/80">
-              <div className="flex items-center justify-between mb-5">
-                <h2 className="text-[32px] font-extrabold text-gray-900 tracking-tight leading-none">Messages</h2>
-                <button onClick={() => setShowNewChat(true)} className="w-10 h-10 flex items-center justify-center bg-white hover:bg-[#F2F6FF] text-[#007AFF] rounded-full transition-all active:scale-95 border border-[#DCE6FF] shadow-sm">
-                  <i className="far fa-edit text-lg" />
+            <div className="pt-6 pb-2 px-5 sticky top-0 bg-[#F4F4F6]/90 backdrop-blur-md z-40">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-[28px] font-bold text-gray-900 tracking-tight leading-none">Messages</h2>
+                <button onClick={() => setShowNewChat(true)} className="text-[#007AFF] hover:opacity-75 transition-opacity active:scale-95">
+                  <i className="fas fa-plus-circle text-2xl" />
                 </button>
               </div>
-              <div className="relative group">
+              <div className="relative group mb-2">
                 <input 
                   type="text" 
                   value={listQuery}
                   onChange={(e) => setListQuery(e.target.value)}
-                  placeholder="Cari pesan atau orang..." 
-                  className="w-full pl-10 pr-4 py-2.5 bg-white border border-[#E4EBFF] rounded-2xl text-[14px] focus:outline-none focus:ring-2 focus:ring-[#007AFF]/20 transition-all placeholder-gray-500 text-black shadow-[0_6px_18px_rgba(20,64,140,0.05)]" 
+                  placeholder="Search" 
+                  className="w-full pl-9 pr-4 py-1.5 bg-[#E3E3E8] rounded-xl text-[14px] focus:outline-none placeholder-[#8E8E93] text-black transition-all border-none" 
                 />
-                <i className="fas fa-search absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm group-focus-within:text-[#007AFF] transition-colors" />
+                <i className="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-[#8E8E93] text-xs transition-colors" />
               </div>
-              <div className="mt-3 flex items-center gap-2">
-                <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-[#EDF3FF] text-[#2D5FB6] border border-[#D8E6FF]">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-white text-[#5A6C94] border border-[#E3EAFF]">
                   {visibleConversations.length} chat
                 </span>
-                <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-white text-[#5A6C94] border border-[#E3EAFF]">
-                  {unreadTotal} belum dibaca
-                </span>
+                {unreadTotal > 0 && (
+                  <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[#007AFF] text-white">
+                    {unreadTotal} unread
+                  </span>
+                )}
               </div>
             </div>
 
             {/* Conversation List */}
-            <div className="flex-1 overflow-x-hidden overflow-y-auto">
-              {!filteredConversations.length ? (
-                <div className="p-8 text-center text-lp-text3">
-                  <i className="fas fa-comments text-4xl mb-3 text-gray-300 block" />
-                  <p>{normalizedListQuery ? 'Percakapan tidak ditemukan' : 'Belum ada percakapan'}</p>
-                  {!normalizedListQuery && (
-                    <button onClick={() => setShowNewChat(true)} className="mt-3 text-lp-accent hover:underline text-sm">Mulai percakapan baru</button>
-                  )}
-                </div>
+            <div className="flex-1 overflow-x-hidden overflow-y-auto pb-4">
+              {!normalizedListQuery ? (
+                /* Mode 1: Search Empty -> show regular list */
+                !filteredConversations.length ? (
+                  <div className="p-8 text-center text-gray-400">
+                    <i className="fas fa-comments text-4xl mb-3 text-gray-300 block" />
+                    <p className="text-[14px]">No conversations yet</p>
+                    <button onClick={() => setShowNewChat(true)} className="mt-3 text-[#007AFF] hover:underline text-sm font-semibold">Start a conversation</button>
+                  </div>
+                ) : (
+                  <AnimatePresence>
+                    {filteredConversations.map(conv => renderConvItem(conv))}
+                  </AnimatePresence>
+                )
               ) : (
-                <AnimatePresence>
-                  {filteredConversations.map(conv => (
-                    <motion.div 
-                      key={conv.id}
-                      layout
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -20 }}
-                      className="relative px-2 py-1.5 overflow-hidden"
-                    >
-                      {/* Background Delete Button (iOS style) */}
-                      <div className="absolute inset-y-1.5 right-2 w-24 bg-red-500 flex items-center justify-center rounded-r-2xl">
-                        <button 
-                          onClick={(e) => handleHideConversation(e, conv)} 
-                          className="w-full h-full text-white flex flex-col items-center justify-center active:bg-red-600 transition-colors rounded-r-2xl"
-                        >
-                          <i className="fas fa-trash-alt text-lg" />
-                          <span className="text-[10px] font-bold mt-1 uppercase tracking-wider">Hapus</span>
-                        </button>
+                /* Mode 2: Searching -> show results grouped */
+                <>
+                  {/* Percakapan Aktif Section */}
+                  {filteredConversations.length > 0 && (
+                    <div className="mb-4">
+                      <div className="px-5 py-2 text-[11px] font-bold text-gray-400 uppercase tracking-wider select-none">
+                        Percakapan Aktif ({filteredConversations.length})
                       </div>
-                      {/* Draggable Foreground */}
-                      <motion.div 
-                        drag="x"
-                        dragConstraints={{ left: -96, right: 0 }}
-                        dragSnapToOrigin={false}
-                        className={`group px-4 py-3.5 cursor-pointer relative z-10 transition-all duration-300 rounded-2xl border shadow-sm ${
-                          selectedConversation?.id === conv.id
-                            ? 'bg-[#EEF4FF] border-[#CFE0FF] shadow-[0_12px_28px_rgba(35,83,180,0.12)]'
-                            : 'bg-white border-[#EEF2FF] hover:bg-[#F8FAFF] active:bg-[#F1F5FF]'
-                        }`} 
-                        onClick={() => selectConversation(conv)}
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className="relative flex-shrink-0">
-                            <div className={`w-14 h-14 rounded-full flex items-center justify-center border-2 transition-transform duration-300 group-hover:scale-105 ${selectedConversation?.id === conv.id ? 'border-[#007AFF]/30 bg-[#007AFF]/10' : 'border-gray-100 bg-gray-50'}`}>
-                              {conv.type === 'group' ? (
-                                <i className="fas fa-users text-[#007AFF] text-xl" />
-                              ) : (
-                                <span className="font-bold text-[#007AFF] text-xl">{getConvName(conv)?.[0]?.toUpperCase() || '?'}</span>
-                              )}
-                            </div>
-                            {conv.type === 'private' && conv.participants && (() => {
-                              const other = conv.participants.find(p => p.user_id !== user?.id)
-                              return other && onlineUsers.has(other.user_id) ? (
-                                <div className="absolute bottom-0.5 right-0.5 w-4 h-4 bg-green-500 rounded-full border-2 border-white shadow-sm ring-1 ring-black/5" />
-                              ) : null
-                            })()}
-                          </div>
-                          <div className="flex-1 min-w-0 py-0.5">
-                            <div className="flex justify-between items-baseline mb-1">
-                              <h3 className={`font-bold truncate transition-colors ${selectedConversation?.id === conv.id ? 'text-[#007AFF]' : 'text-gray-900'}`}>{getConvName(conv)}</h3>
-                              {conv.last_message && <span className="text-[11px] font-medium text-gray-400 uppercase tracking-tighter ml-2">{formatTime(conv.last_message.created_at)}</span>}
-                            </div>
-                            <div className="flex justify-between items-center">
-                              <p className={`text-[13px] truncate pr-2 ${conv.unread_count > 0 ? 'text-gray-900 font-semibold' : 'text-gray-500'}`}>
-                                {conv.last_message ? (
-                                  <>
-                                    <span className="opacity-70">{conv.last_message.sender?.id === user?.id ? 'Anda: ' : ''}</span>
-                                    {conv.last_message.content}
-                                  </>
+                      <AnimatePresence>
+                        {filteredConversations.map(conv => renderConvItem(conv))}
+                      </AnimatePresence>
+                    </div>
+                  )}
+
+                  {/* Cari Pengguna Lain Section */}
+                  <div>
+                    <div className="px-5 py-2 text-[11px] font-bold text-gray-400 uppercase tracking-wider select-none flex items-center justify-between">
+                      <span>Cari Pengguna Lain</span>
+                      {searchingSidebar && (
+                        <div className="w-3.5 h-3.5 border-2 border-[#007AFF]/30 border-t-[#007AFF] rounded-full animate-spin" />
+                      )}
+                    </div>
+
+                    {!searchingSidebar && sidebarSearchResults.length === 0 ? (
+                      <div className="px-5 py-3 text-xs text-gray-400 italic">
+                        Tidak ada pengguna lain yang cocok
+                      </div>
+                    ) : (
+                      <div className="space-y-1 mt-1">
+                        {sidebarSearchResults.map(u => {
+                          const initials = getInitials(u.name)
+                          return (
+                            <div 
+                              key={u.id}
+                              className="group mx-2 px-3 py-2.5 bg-white border border-[#E5E5EA] hover:bg-[#F2F2F7] active:bg-[#E5E5EA] text-black shadow-sm rounded-xl cursor-pointer transition-all duration-150 flex items-center justify-between"
+                              onClick={() => startNewChat(u.id)}
+                            >
+                              <div className="flex items-center gap-3 min-w-0 flex-1">
+                                <div className="relative flex-shrink-0">
+                                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#BAC6D1] to-[#A2ADB8] flex items-center justify-center text-white font-bold text-[14px]">
+                                    <span>{initials}</span>
+                                  </div>
+                                  {onlineUsers.has(u.id) && (
+                                    <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-[#34C759] rounded-full border-2 border-white shadow-sm" />
+                                  )}
+                                </div>
+                                <div className="flex-grow min-w-0">
+                                  <h4 className="font-semibold text-[13px] text-black truncate leading-tight">{u.name}</h4>
+                                  <p className="text-[11px] text-gray-500 truncate leading-none mt-1">{u.email}</p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2 flex-shrink-0">
+                                <span className={`px-2 py-0.5 rounded-full text-[9px] font-semibold uppercase ${getRoleBadge(u.role)}`}>{u.role}</span>
+                                {startingChat === u.id ? (
+                                  <i className="fas fa-spinner fa-spin text-[#007AFF] text-xs" />
                                 ) : (
-                                  <span className="italic opacity-40">Belum ada pesan</span>
+                                  <i className="fas fa-plus text-[#007AFF] text-xs opacity-60 group-hover:opacity-100 transition-opacity" />
                                 )}
-                              </p>
-                              {conv.unread_count > 0 && (
-                                <motion.span 
-                                  initial={{ scale: 0 }}
-                                  animate={{ scale: 1 }}
-                                  className="bg-[#007AFF] text-white text-[10px] rounded-full h-5 min-w-[20px] px-1.5 flex items-center justify-center font-bold shadow-lg shadow-[#007AFF]/20"
-                                >
-                                  {conv.unread_count}
-                                </motion.span>
-                              )}
+                              </div>
                             </div>
-                          </div>
-                        </div>
-                      </motion.div>
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  {filteredConversations.length === 0 && sidebarSearchResults.length === 0 && !searchingSidebar && (
+                    <div className="p-8 text-center text-gray-400">
+                      <i className="fas fa-search-minus text-4xl mb-3 text-gray-300 block" />
+                      <p className="text-[14px]">Hasil pencarian tidak ditemukan</p>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>
 
           {/* Main Chat Area */}
-          <div className={`${!showMobileList ? 'flex' : 'hidden'} md:flex flex-col flex-1 bg-transparent`}>
+          <div className={`${!showMobileList ? 'flex' : 'hidden'} md:flex flex-col flex-1 bg-white`}>
             {selectedConversation ? (
               <>
-                {/* Chat Header (iMessage style) */}
-                <div className="px-6 py-4 border-b border-white/80 bg-white/75 backdrop-blur-2xl sticky top-0 z-40 flex items-center justify-between shadow-[0_10px_30px_rgba(30,64,130,0.08)]">
-                  <div className="flex items-center gap-3">
-                    <button onClick={() => setShowMobileList(true)} className="md:hidden w-10 h-10 -ml-2 text-[#007AFF] flex items-center justify-center hover:bg-blue-50 rounded-full transition-colors">
-                      <i className="fas fa-chevron-left text-xl" />
+                {/* Chat Header (iMessage style centered) */}
+                <div className="px-6 py-2.5 border-b border-[#E3E3E8] bg-white/90 backdrop-blur-xl sticky top-0 z-40 flex items-center justify-between shadow-sm">
+                  <div className="flex items-center w-1/3">
+                    <button onClick={() => setShowMobileList(true)} className="md:hidden flex items-center gap-1 text-[#007AFF] font-normal text-[17px] active:opacity-50">
+                      <i className="fas fa-chevron-left" />
+                      <span>Pesan</span>
                     </button>
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#EAF1FF] to-white border border-[#DCE7FF] flex items-center justify-center overflow-hidden shadow-sm">
-                        {selectedConversation.type === 'group' ? <i className="fas fa-users text-[#007AFF]" /> : <span className="font-bold text-[#007AFF] text-lg">{getConvName(selectedConversation)?.[0]?.toUpperCase() || '?'}</span>}
-                      </div>
-                      <div className="flex flex-col">
-                        <h2 className="font-bold text-gray-900 text-[16px] leading-tight">{getConvName(selectedConversation)}</h2>
-                        <div className="flex items-center gap-1.5 mt-0.5">
-                          <div className={`w-2 h-2 rounded-full ${isWsConnected ? 'bg-green-500 animate-pulse' : 'bg-red-400'}`} />
-                          <span className="text-[11px] font-medium text-gray-500 uppercase tracking-widest">{isWsConnected ? 'Online' : 'Menghubungkan...'}</span>
-                        </div>
-                      </div>
-                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <button className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-[#007AFF] hover:bg-blue-50 rounded-full transition-all">
+
+                  <div className="flex flex-col items-center justify-center w-1/3 cursor-pointer group">
+                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#BAC6D1] to-[#A2ADB8] text-white flex items-center justify-center text-[15px] font-bold shadow-sm transition-transform duration-200 group-hover:scale-105">
+                      {selectedConversation.type === 'group' ? (
+                        <i className="fas fa-users text-sm" />
+                      ) : (
+                        <span>{getInitials(getConvName(selectedConversation))}</span>
+                      )}
+                    </div>
+                    <span className="font-semibold text-gray-900 text-[13px] mt-1 truncate max-w-full">{getConvName(selectedConversation)}</span>
+                    <span className="text-[10px] text-gray-400 mt-0.5 flex items-center gap-1">
+                      <span>{selectedConversation.type === 'group' ? 'Grup' : 'iMessage'}</span>
+                      <span className={`w-1.5 h-1.5 rounded-full ${isWsConnected ? 'bg-[#34C759]' : 'bg-red-400'}`} />
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-end gap-5 w-1/3 text-[#007AFF] text-[17px]">
+                    <button className="hover:opacity-75 active:opacity-50">
                       <i className="fas fa-phone-alt" />
                     </button>
-                    <button className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-[#007AFF] hover:bg-blue-50 rounded-full transition-all">
+                    <button className="hover:opacity-75 active:opacity-50">
                       <i className="fas fa-video" />
                     </button>
-                    <button className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-[#007AFF] hover:bg-blue-50 rounded-full transition-all">
-                      <i className="fas fa-info-circle" />
+                    <button className="hover:opacity-75 active:opacity-50">
+                      <i className="fas fa-info-circle text-[19px]" />
                     </button>
                   </div>
                 </div>
 
                 {/* Messages */}
-                <div className="flex-1 overflow-y-auto px-4 md:px-6 py-6 bg-gradient-to-b from-[#F8FAFF] via-[#FAFCFF] to-[#F3F7FF] custom-scrollbar">
-                  <div className="max-w-4xl mx-auto w-full space-y-2">
+                <div className="flex-1 overflow-y-auto px-4 md:px-6 py-6 bg-white custom-scrollbar">
+                  <div className="max-w-3xl mx-auto w-full space-y-1">
                     {messages.map((msg, i) => {
-                    const showDate = i === 0 || formatDate(messages[i-1].created_at) !== formatDate(msg.created_at)
-                    const isMine = msg.sender?.id === user?.id
-                    const isSequential = i > 0 && messages[i-1].sender?.id === msg.sender?.id && !showDate
-                    const isLastInSequence = i === messages.length - 1 || messages[i+1]?.sender?.id !== msg.sender?.id || (formatDate(messages[i+1].created_at) !== formatDate(msg.created_at))
-                    
-                    return (
-                      <React.Fragment key={msg.id}>
-                        {showDate && (
-                          <div className="flex items-center justify-center my-6">
-                            <div className="h-px bg-[#DCE5FF] flex-1" />
-                            <span className="px-3 py-1 text-[#6D7EA8] text-[10px] font-bold uppercase tracking-widest bg-white/90 border border-[#E1E9FF] rounded-full shadow-sm">{formatDate(msg.created_at)}</span>
-                            <div className="h-px bg-[#DCE5FF] flex-1" />
-                          </div>
-                        )}
-                        
-                        <motion.div 
-                          initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                          animate={{ opacity: 1, y: 0, scale: 1 }}
-                          transition={{ duration: 0.2 }}
-                          className={`flex ${isMine ? 'justify-end' : 'justify-start'} group items-end gap-1.5`}
-                        >
-                          {isMine && !msg.id.toString().startsWith('opt-') && (
-                            <button 
-                              onClick={() => handleDeleteMessage(msg.id)} 
-                              className="opacity-0 group-hover:opacity-100 w-8 h-8 flex items-center justify-center text-gray-400 hover:text-red-500 transition-all active:scale-90"
-                            >
-                              <i className="fas fa-trash-alt text-xs" />
-                            </button>
+                      const showDate = i === 0 || formatDate(messages[i-1].created_at) !== formatDate(msg.created_at)
+                      const isMine = msg.sender?.id === user?.id
+                      const isSequential = i > 0 && messages[i-1].sender?.id === msg.sender?.id && !showDate
+                      const isLastInSequence = i === messages.length - 1 || messages[i+1]?.sender?.id !== msg.sender?.id || (formatDate(messages[i+1].created_at) !== formatDate(msg.created_at))
+                      
+                      return (
+                        <React.Fragment key={msg.id}>
+                          {showDate && (
+                            <div className="flex items-center justify-center my-6 select-none">
+                              <span className="text-gray-400 text-[11px] font-semibold uppercase tracking-widest">{formatDate(msg.created_at)}</span>
+                            </div>
                           )}
                           
-                          <div className={`flex flex-col ${isMine ? 'items-end' : 'items-start'} max-w-[80%]`}>
-                            {!isMine && !isSequential && selectedConversation.type === 'group' && (
-                              <div className="text-[11px] font-bold text-gray-400 ml-3 mb-1 uppercase tracking-tight">{msg.sender?.name}</div>
-                            )}
-                            <div className={`relative px-4 py-2.5 text-[15px] leading-relaxed shadow-sm transition-all ${
-                              isMine 
-                                ? `bg-gradient-to-br from-[#0A84FF] to-[#0071F3] text-white ${isLastInSequence ? 'rounded-2xl rounded-br-sm' : 'rounded-2xl'} ${msg.status === 'sending' ? 'opacity-70' : ''} shadow-[0_10px_22px_rgba(0,113,243,0.28)]` 
-                                : `bg-white text-[#101828] border border-[#E6ECFF] ${isLastInSequence ? 'rounded-2xl rounded-bl-sm' : 'rounded-2xl'} shadow-[0_8px_18px_rgba(16,24,40,0.06)]`
-                            }`}>
-                              {msg.message_type === 'image' ? (
-                                <img src={msg.file_url} alt="" className="max-w-full rounded-xl shadow-md" />
-                              ) : (
-                                <div className="whitespace-pre-wrap">{msg.content}</div>
+                          {msg.message_type === 'system' ? (
+                            <div className="flex items-center justify-center my-3 select-none">
+                              <span className="px-3 py-1 bg-[#F2F2F7] text-gray-500 text-[11px] font-semibold rounded-full uppercase tracking-wider">
+                                {msg.content}
+                              </span>
+                            </div>
+                          ) : (
+                            <motion.div 
+                              initial={{ opacity: 0, y: 5 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ duration: 0.15 }}
+                              className={`flex w-full ${isMine ? 'justify-end' : 'justify-start'} group items-end gap-1.5 ${isSequential ? 'mt-[2px]' : 'mt-[10px]'}`}
+                            >
+                              {isMine && !msg.id.toString().startsWith('opt-') && (
+                                <button 
+                                  onClick={() => handleDeleteMessage(msg.id)} 
+                                  className="opacity-0 group-hover:opacity-100 w-8 h-8 flex items-center justify-center text-gray-400 hover:text-red-500 transition-all mr-2 self-center flex-shrink-0"
+                                >
+                                  <i className="fas fa-trash-alt text-xs" />
+                                </button>
                               )}
                               
-                              {/* Status Indicators */}
-                              {isMine && msg.status === 'sending' && (
-                                <div className="absolute -left-5 bottom-1">
-                                  <div className="w-3 h-3 border-2 border-[#007AFF]/30 border-t-[#007AFF] rounded-full animate-spin" />
+                              <div className={`flex flex-col ${isMine ? 'items-end' : 'items-start'} max-w-[70%]`}>
+                                {!isMine && !isSequential && selectedConversation.type === 'group' && (
+                                  <div className="text-[11px] font-semibold text-gray-400 ml-3 mb-1 uppercase tracking-tight">{msg.sender?.name}</div>
+                                )}
+                                <div className={`relative px-4 py-2 text-[15px] leading-snug ${
+                                  isMine 
+                                    ? `bg-[#007AFF] text-white ${isLastInSequence ? 'rounded-[18px] rounded-br-[4px]' : 'rounded-[18px]'} ${msg.status === 'sending' ? 'opacity-70' : ''}` 
+                                    : `bg-[#E9E9EB] text-black ${isLastInSequence ? 'rounded-[18px] rounded-bl-[4px]' : 'rounded-[18px]'}`
+                                }`}>
+                                  {msg.message_type === 'image' ? (
+                                    <img src={resolveBackendAssetUrl(msg.file_url)} alt={msg.content} className="max-w-xs md:max-w-md rounded-xl shadow-sm cursor-pointer hover:opacity-95 transition-opacity" onClick={() => window.open(resolveBackendAssetUrl(msg.file_url), '_blank')} />
+                                  ) : msg.message_type === 'file' ? (
+                                    <a href={resolveBackendAssetUrl(msg.file_url)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 py-1 text-inherit hover:opacity-85 no-underline">
+                                      <div className="w-10 h-10 rounded-lg bg-black/5 flex items-center justify-center text-lg flex-shrink-0">
+                                        <i className="fas fa-file-alt" />
+                                      </div>
+                                      <div className="min-w-0 flex-1">
+                                        <div className="font-semibold text-sm truncate leading-tight">{msg.content}</div>
+                                        <div className="text-[11px] opacity-75 mt-0.5">
+                                          {msg.file_size ? `${(msg.file_size / (1024 * 1024)).toFixed(2)} MB` : 'Unduh berkas'}
+                                        </div>
+                                      </div>
+                                      <i className="fas fa-download text-sm opacity-60 ml-2 flex-shrink-0" />
+                                    </a>
+                                  ) : (
+                                    <div className="whitespace-pre-wrap break-words">{msg.content}</div>
+                                  )}
+                                  
+                                  {/* Status Indicators */}
+                                  {isMine && msg.status === 'sending' && (
+                                    <div className="absolute -left-5 bottom-1">
+                                      <div className="w-3 h-3 border-2 border-[#007AFF]/30 border-t-[#007AFF] rounded-full animate-spin" />
+                                    </div>
+                                  )}
+
+                                  {/* SVG Tail */}
+                                  {isLastInSequence && (
+                                    isMine ? (
+                                      <svg width="9" height="16" viewBox="0 0 9 16" fill="none" xmlns="http://www.w3.org/2000/svg" className="absolute bottom-0 -right-[8px] text-[#007AFF] pointer-events-none">
+                                        <path d="M0 16C3 16 6 13 9 8C9 8 9 0 9 0C9 0 6 6 0 6V16Z" fill="currentColor"/>
+                                      </svg>
+                                    ) : (
+                                      <svg width="9" height="16" viewBox="0 0 9 16" fill="none" xmlns="http://www.w3.org/2000/svg" className="absolute bottom-0 -left-[8px] text-[#E9E9EB] transform scale-x-[-1] pointer-events-none">
+                                        <path d="M0 16C3 16 6 13 9 8C9 8 9 0 9 0C9 0 6 6 0 6V16Z" fill="currentColor"/>
+                                      </svg>
+                                    )
+                                  )}
                                 </div>
-                              )}
-                            </div>
-                            
-                            {isMine && isLastInSequence && (
-                              <div className="flex items-center gap-1 mt-1 mr-1">
-                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">
-                                  {msg.is_read ? 'Dibaca' : (msg.status === 'sending' ? 'Mengirim' : formatTime(msg.created_at))}
-                                </span>
-                                {msg.is_read && <i className="fas fa-check-double text-[8px] text-[#007AFF]" />}
+                                
+                                {isMine && isLastInSequence && (
+                                  <div className="flex items-center gap-1 mt-1 mr-1 select-none">
+                                    <span className="text-[10px] font-medium text-gray-400">
+                                      {msg.is_read ? 'Dibaca' : (msg.status === 'sending' ? 'Mengirim' : formatTime(msg.created_at))}
+                                    </span>
+                                    {msg.is_read && <i className="fas fa-check-double text-[8px] text-[#007AFF]" />}
+                                  </div>
+                                )}
+
+                                {!isMine && isLastInSequence && (
+                                  <div className="text-[10px] text-gray-400 mt-1 ml-1 font-medium select-none">
+                                    {formatTime(msg.created_at)}
+                                  </div>
+                                )}
                               </div>
-                            )}
-                          </div>
-                        </motion.div>
-                      </React.Fragment>
-                    )
-                  })}
+                            </motion.div>
+                          )}
+                        </React.Fragment>
+                      )
+                    })}
                     {getTypingText() && (
-                      <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} className="flex justify-start items-end gap-2 mt-2 ml-1">
-                        <div className="bg-white border border-[#E2E9FF] rounded-2xl rounded-bl-sm px-4 py-3 flex items-center gap-2 shadow-sm">
-                          {[0,0.15,0.3].map((d,i) => <motion.div key={i} animate={{ y: [0, -4, 0] }} transition={{ repeat: Infinity, duration: 0.6, delay: d }} className="w-1.5 h-1.5 bg-[#7F90B8] rounded-full" />)}
-                          <span className="text-[11px] text-[#7A8CB5] font-medium">{getTypingText()}</span>
+                      <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} className="flex justify-start items-end mt-2 ml-1">
+                        <div className="relative px-4 py-2.5 bg-[#E9E9EB] text-black rounded-[18px] rounded-bl-[4px] flex items-center gap-1.5 w-16 h-9 justify-center">
+                          <span className="typing-dot" />
+                          <span className="typing-dot" />
+                          <span className="typing-dot" />
+                          {/* SVG Tail for typing indicator */}
+                          <svg width="9" height="16" viewBox="0 0 9 16" fill="none" xmlns="http://www.w3.org/2000/svg" className="absolute bottom-0 -left-[8px] text-[#E9E9EB] transform scale-x-[-1] pointer-events-none">
+                            <path d="M0 16C3 16 6 13 9 8C9 8 9 0 9 0C9 0 6 6 0 6V16Z" fill="currentColor"/>
+                          </svg>
+                        </div>
+                      </motion.div>
+                    )}
+                    {uploadingFile && (
+                      <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} className="flex justify-end items-center mt-2 mr-2">
+                        <div className="flex items-center gap-2 text-xs text-gray-500 bg-[#F2F2F7] px-3 py-1.5 rounded-full shadow-sm">
+                          <div className="w-3.5 h-3.5 border-2 border-gray-400/30 border-t-gray-600 rounded-full animate-spin" />
+                          <span>Mengirim file...</span>
                         </div>
                       </motion.div>
                     )}
@@ -614,39 +897,64 @@ const ChatPage = ({ role }) => {
                 </div>
 
                 {/* Input (iMessage style) */}
-                <form onSubmit={sendMessage} className="px-4 md:px-6 py-4 bg-white/70 backdrop-blur-xl border-t border-white/80 z-40">
-                  <div className="max-w-4xl mx-auto">
-                    <div className="flex items-end gap-2.5 bg-white border border-[#DCE6FF] rounded-[26px] pl-3.5 pr-2 py-2 focus-within:border-[#7BA9FF] focus-within:shadow-[0_10px_25px_rgba(0,122,255,0.14)] transition-all">
-                    <button type="button" className="w-9 h-9 flex items-center justify-center text-[#007AFF] hover:bg-blue-50 rounded-full transition-colors">
-                      <i className="fas fa-plus" />
-                    </button>
-                    <button type="button" className="w-9 h-9 flex items-center justify-center text-gray-400 hover:text-[#007AFF] hover:bg-blue-50 rounded-full transition-colors">
-                      <i className="far fa-smile" />
-                    </button>
-                    <textarea
-                      value={newMessage} onChange={handleInputChange}
-                      onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(e) } }}
-                      placeholder="Ketik pesan..."
-                      className="flex-1 py-1.5 text-[15px] resize-none focus:outline-none bg-transparent max-h-32 self-center text-gray-800 placeholder:text-gray-400"
-                      rows="1"
+                <form onSubmit={sendMessage} className="px-4 md:px-6 py-3 bg-[#F4F4F6]/95 backdrop-blur-xl border-t border-[#D2D2D7]/50 z-40">
+                  <div className="max-w-4xl mx-auto flex items-center gap-2">
+                    <input 
+                      type="file" 
+                      ref={fileInputRef} 
+                      onChange={handleFileChange} 
+                      className="hidden" 
                     />
-                    <button type="submit" disabled={!newMessage.trim() && !sending}
-                      className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${newMessage.trim() ? 'bg-gradient-to-br from-[#0A84FF] to-[#0071F3] text-white scale-100 shadow-[0_8px_18px_rgba(0,113,243,0.35)]' : 'bg-[#EEF2FF] text-gray-400 scale-95'}`}>
-                      {sending ? <i className="fas fa-spinner fa-spin text-sm" /> : <i className="fas fa-arrow-up text-sm" />}
-                    </button>
+                    
+                    {/* Pill Input Container */}
+                    <div className="flex-grow flex items-center bg-white border border-[#D2D2D7]/80 rounded-[20px] pl-2 pr-1.5 py-1 focus-within:border-[#007AFF]/60 focus-within:ring-1 focus-within:ring-[#007AFF]/30 transition-all">
+                      {/* Attach button */}
+                      <button type="button" onClick={handleAttachClick} className="w-8 h-8 flex items-center justify-center text-[#007AFF] hover:opacity-75 transition-opacity rounded-full active:scale-95 flex-shrink-0 mr-1">
+                        <i className="fas fa-plus-circle text-xl" />
+                      </button>
+                      <textarea
+                        value={newMessage} 
+                        onChange={handleInputChange}
+                        onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(e) } }}
+                        placeholder="iMessage (Klik + untuk file/gambar...)"
+                        className="flex-1 py-1.5 text-[15px] resize-none focus:outline-none bg-transparent max-h-32 self-center text-black placeholder-[#8E8E93] border-none focus:ring-0"
+                        rows="1"
+                      />
+                      
+                      {/* Emoji icon */}
+                      <button type="button" className="w-8 h-8 flex items-center justify-center text-[#8E8E93] hover:text-[#007AFF] transition-colors rounded-full mr-1">
+                        <i className="far fa-smile text-[18px]" />
+                      </button>
+                      
+                      {/* Send button (iPhone style: circle with white arrow pointing up) */}
+                      <button 
+                        type="submit" 
+                        disabled={!newMessage.trim() && !sending}
+                        className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
+                          newMessage.trim() 
+                            ? 'bg-[#007AFF] text-white scale-100' 
+                            : 'bg-[#E9E9EB] text-white scale-95 cursor-default'
+                        }`}
+                      >
+                        {sending ? (
+                          <i className="fas fa-spinner fa-spin text-xs" />
+                        ) : (
+                          <i className="fas fa-arrow-up text-xs font-bold" />
+                        )}
+                      </button>
                     </div>
                   </div>
                 </form>
               </>
             ) : (
-              <div className="flex-1 flex flex-col items-center justify-center p-8 bg-gradient-to-b from-[#F8FAFF] to-[#F1F6FF]">
-                <div className="w-16 h-16 bg-white shadow-[0_10px_22px_rgba(41,78,153,0.14)] rounded-full flex items-center justify-center mb-4 border border-[#E2EBFF]">
-                  <i className="fas fa-comment-dots text-2xl text-[#7E90B8]" />
+              <div className="flex-1 flex flex-col items-center justify-center p-8 bg-[#F4F4F6]/20">
+                <div className="w-16 h-16 bg-white shadow-sm rounded-full flex items-center justify-center mb-4 border border-gray-100">
+                  <i className="fas fa-comment-dots text-2xl text-gray-400" />
                 </div>
-                <h3 className="text-[17px] font-semibold text-[#62749C] mb-1">Mulai Obrolan</h3>
-                <p className="text-[13px] text-[#90A0C3] text-center max-w-md">Pilih percakapan atau buat chat baru untuk mulai kirim pesan.</p>
-                <button onClick={() => setShowNewChat(true)} className="mt-6 text-[#007AFF] text-[15px] font-semibold hover:underline transition-colors">
-                  New Message
+                <h3 className="text-[17px] font-bold text-gray-700 mb-1">Mulai Obrolan</h3>
+                <p className="text-[13px] text-gray-400 text-center max-w-sm">Pilih percakapan atau buat chat baru untuk mulai berkirim pesan.</p>
+                <button onClick={() => setShowNewChat(true)} className="mt-6 text-[#007AFF] text-[15px] font-semibold hover:opacity-80 transition-opacity">
+                  Pesan Baru
                 </button>
               </div>
             )}
@@ -655,60 +963,70 @@ const ChatPage = ({ role }) => {
 
         {/* New Chat Modal */}
         {showNewChat && (
-          <div className="fixed inset-0 bg-[#0B1220]/55 backdrop-blur-md flex items-center justify-center z-[90] p-4" onClick={() => setShowNewChat(false)}>
-            <div className="bg-white/95 rounded-3xl w-full max-w-md max-h-[80vh] flex flex-col shadow-[0_30px_60px_rgba(15,23,42,0.35)] border border-[#DCE6FF]" onClick={e => e.stopPropagation()}>
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[90] p-4" onClick={() => setShowNewChat(false)}>
+            <div className="bg-white rounded-2xl w-full max-w-md max-h-[80vh] flex flex-col shadow-[0_20px_40px_rgba(0,0,0,0.15)] border border-gray-200" onClick={e => e.stopPropagation()}>
               {/* Modal Header */}
-              <div className="p-5 border-b border-[#E4EBFF]">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-bold text-[#1D2B4F] tracking-tight">Chat Baru</h3>
-                  <button onClick={() => setShowNewChat(false)} className="text-[#7E8CAD] hover:text-[#2F3F63] w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#EEF3FF] transition-colors"><i className="fas fa-times" /></button>
-                </div>
+              <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+                <h3 className="text-[17px] font-bold text-black">Pesan Baru</h3>
+                <button onClick={() => setShowNewChat(false)} className="text-[#007AFF] hover:opacity-85 font-medium text-sm">Batal</button>
+              </div>
 
-                {/* Role Filter */}
-                <div className="flex gap-1.5 mb-3 flex-wrap">
+              {/* Search Bar / To Field (iOS Style) */}
+              <div className="px-4 py-2 border-b border-gray-100 flex flex-col gap-2">
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="text-gray-400">Kepada:</span>
+                  <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+                    placeholder="Nama atau email..."
+                    className="flex-1 py-1 text-sm text-black focus:outline-none border-none focus:ring-0"
+                    autoFocus />
+                </div>
+                {/* Role Filter tags */}
+                <div className="flex gap-1.5 flex-wrap py-1">
                   {ROLES.map(r => (
                     <button key={r.value} onClick={() => setRoleFilter(r.value)}
-                      className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${roleFilter === r.value ? 'bg-gradient-to-r from-[#0A84FF] to-[#0071F3] text-white shadow-[0_8px_18px_rgba(0,113,243,0.3)]' : 'bg-white text-[#596B91] border border-[#DEE7FF] hover:border-[#8DB2FF]'}`}>
+                      className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${
+                        roleFilter === r.value 
+                          ? 'bg-[#007AFF] text-white' 
+                          : 'bg-[#F2F2F7] text-gray-600 hover:bg-[#E5E5EA]'
+                      }`}>
                       {r.label}
                     </button>
                   ))}
                 </div>
-
-                {/* Search Input */}
-                <div className="relative">
-                  <i className="fas fa-search absolute left-3 top-2.5 text-[#8C9AC0] text-sm" />
-                  <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-                    placeholder="Cari nama atau email..."
-                    className="w-full pl-9 pr-4 py-2.5 bg-[#F8FAFF] border border-[#DFE8FF] rounded-xl text-sm text-[#1C2746] focus:outline-none focus:ring-2 focus:ring-[#0A84FF]/25"
-                    autoFocus />
-                </div>
               </div>
 
               {/* Search Results */}
-              <div className="flex-1 overflow-y-auto p-2">
+              <div className="flex-grow overflow-y-auto p-2">
                 {searching ? (
-                  <div className="text-center py-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0A84FF] mx-auto" /><p className="mt-2 text-[#7E90B8] text-sm">Mencari...</p></div>
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#007AFF] mx-auto" />
+                    <p className="mt-2 text-gray-500 text-sm">Mencari...</p>
+                  </div>
                 ) : !searchResults.length ? (
-                  <div className="text-center py-8 text-[#8394BA]">
-                    <i className="fas fa-users text-3xl mb-3 text-gray-300 block" />
-                    <p className="text-sm">{searchQuery ? 'Tidak ditemukan' : 'Ketik untuk mencari pengguna'}</p>
+                  <div className="text-center py-8 text-gray-400">
+                    <i className="fas fa-users text-3xl mb-2 text-gray-200 block" />
+                    <p className="text-sm">Pengguna tidak ditemukan</p>
                   </div>
                 ) : (
                   searchResults.map(u => (
-                    <div key={u.id} className="flex items-center gap-3 p-3 hover:bg-[#F2F6FF] rounded-2xl cursor-pointer transition-colors group border border-transparent hover:border-[#DDE7FF]" onClick={() => startNewChat(u.id)}>
+                    <div key={u.id} className="flex items-center gap-3 p-2.5 hover:bg-[#F2F2F7] rounded-xl cursor-pointer transition-colors group" onClick={() => startNewChat(u.id)}>
                       <div className="relative flex-shrink-0">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#DCE9FF] to-[#F2F7FF] flex items-center justify-center border border-[#D8E5FF]">
-                          <span className="font-bold text-[#0A84FF] text-sm">{u.name?.[0]?.toUpperCase() || '?'}</span>
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#BAC6D1] to-[#A2ADB8] flex items-center justify-center text-white">
+                          <span className="font-semibold text-sm">{getInitials(u.name)}</span>
                         </div>
-                        {onlineUsers.has(u.id) && <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-white" />}
+                        {onlineUsers.has(u.id) && <div className="absolute bottom-0 right-0 w-3 h-3 bg-[#34C759] rounded-full border-2 border-white" />}
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-semibold text-sm text-[#1A2646] truncate">{u.name}</h4>
-                        <p className="text-xs text-[#8494B8] truncate">{u.email}</p>
+                      <div className="flex-grow min-w-0">
+                        <h4 className="font-semibold text-sm text-black truncate">{u.name}</h4>
+                        <p className="text-xs text-gray-500 truncate">{u.email}</p>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${getRoleBadge(u.role)}`}>{u.role}</span>
-                        {startingChat === u.id ? <i className="fas fa-spinner fa-spin text-[#0A84FF]" /> : <i className="fas fa-comment text-[#0A84FF] opacity-0 group-hover:opacity-100 transition-opacity" />}
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${getRoleBadge(u.role)}`}>{u.role}</span>
+                        {startingChat === u.id ? (
+                          <i className="fas fa-spinner fa-spin text-[#007AFF]" />
+                        ) : (
+                          <i className="fas fa-chevron-right text-gray-300 group-hover:text-[#007AFF] transition-colors" />
+                        )}
                       </div>
                     </div>
                   ))
