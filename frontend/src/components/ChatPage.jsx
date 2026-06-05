@@ -909,8 +909,13 @@ const ChatPage = ({ role }) => {
                     {/* Pill Input Container */}
                     <div className="flex-grow flex items-center bg-white border border-[#D2D2D7]/80 rounded-[20px] pl-2 pr-1.5 py-1 focus-within:border-[#007AFF]/60 focus-within:ring-1 focus-within:ring-[#007AFF]/30 transition-all">
                       {/* Attach button */}
-                      <button type="button" onClick={handleAttachClick} className="w-8 h-8 flex items-center justify-center text-[#007AFF] hover:opacity-75 transition-opacity rounded-full active:scale-95 flex-shrink-0 mr-1">
-                        <i className="fas fa-plus-circle text-xl" />
+                      <button 
+                        type="button" 
+                        onClick={handleAttachClick} 
+                        className="w-8 h-8 flex items-center justify-center bg-[#007AFF] hover:bg-[#0066CC] text-white rounded-full active:scale-95 flex-shrink-0 mr-2 shadow-sm transition-all"
+                        title="Unggah File/Gambar"
+                      >
+                        <i className="fas fa-plus text-[14px]" />
                       </button>
                       <textarea
                         value={newMessage} 
@@ -933,7 +938,7 @@ const ChatPage = ({ role }) => {
                         className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
                           newMessage.trim() 
                             ? 'bg-[#007AFF] text-white scale-100' 
-                            : 'bg-[#E9E9EB] text-white scale-95 cursor-default'
+                            : 'bg-[#E9E9EB] text-[#8E8E93] scale-95 cursor-default'
                         }`}
                       >
                         {sending ? (
