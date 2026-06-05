@@ -2,17 +2,22 @@ package controllers
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"nf-student-hub-backend/handlers"
 	"nf-student-hub-backend/models"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
+
+var conversationPublicIDMigration sync.Once
 
 type ChatController struct {
 	db  *gorm.DB
@@ -20,10 +25,58 @@ type ChatController struct {
 }
 
 func NewChatController(db *gorm.DB, hub *handlers.WebSocketHub) *ChatController {
+	conversationPublicIDMigration.Do(func() {
+		if err := ensureConversationPublicIDs(db); err != nil {
+			log.Printf("WARNING: failed to ensure conversation public IDs: %v", err)
+		}
+	})
+
 	return &ChatController{
 		db:  db,
 		hub: hub,
 	}
+}
+
+func ensureConversationPublicIDs(db *gorm.DB) error {
+	if err := db.Exec(`ALTER TABLE conversations ADD COLUMN IF NOT EXISTS public_id VARCHAR(36)`).Error; err != nil {
+		return err
+	}
+
+	type ConversationPublicIDSeed struct {
+		ID int
+	}
+
+	var missing []ConversationPublicIDSeed
+	if err := db.Raw(`SELECT id FROM conversations WHERE public_id IS NULL OR public_id = ''`).Scan(&missing).Error; err != nil {
+		return err
+	}
+
+	for _, conv := range missing {
+		if err := db.Model(&models.Conversation{}).
+			Where("id = ?", conv.ID).
+			Update("public_id", uuid.NewString()).Error; err != nil {
+			return err
+		}
+	}
+
+	if err := db.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_conversations_public_id ON conversations(public_id)`).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (cc *ChatController) resolveConversationForUser(publicID string, userID int) (models.Conversation, error) {
+	if _, err := uuid.Parse(publicID); err != nil {
+		return models.Conversation{}, fmt.Errorf("invalid conversation id")
+	}
+
+	var conversation models.Conversation
+	err := cc.db.Model(&models.Conversation{}).
+		Joins("JOIN conversation_participants ON conversation_participants.conversation_id = conversations.id").
+		Where("conversations.public_id = ? AND conversation_participants.user_id = ?", publicID, userID).
+		First(&conversation).Error
+	return conversation, err
 }
 
 // helpers to safely extract user info from context
@@ -162,7 +215,7 @@ func (cc *ChatController) GetConversations(c *gin.Context) {
 		}
 
 		response = append(response, models.ConversationResponse{
-			ID:           conv.ID,
+			ID:           conv.PublicID,
 			Type:         conv.Type,
 			Name:         conv.Name,
 			LastMessage:  lastMsgResp,
@@ -174,7 +227,6 @@ func (cc *ChatController) GetConversations(c *gin.Context) {
 		})
 	}
 
-
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"data":    response,
@@ -184,15 +236,6 @@ func (cc *ChatController) GetConversations(c *gin.Context) {
 
 // GetConversationDetail - Get detailed information about a conversation
 func (cc *ChatController) GetConversationDetail(c *gin.Context) {
-	conversationID, err := strconv.Atoi(c.Param("conversation_id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"success": false,
-			"error":   "Invalid conversation ID",
-		})
-		return
-	}
-
 	// get user id
 	userID, ok := getUserIDFromContext(c)
 	if !ok {
@@ -200,20 +243,8 @@ func (cc *ChatController) GetConversationDetail(c *gin.Context) {
 		return
 	}
 
-	// Check if user is participant
-	var participant models.ConversationParticipant
-	if err := cc.db.Where("conversation_id = ? AND user_id = ?", conversationID, userID).
-		First(&participant).Error; err != nil {
-		c.JSON(http.StatusForbidden, gin.H{
-			"success": false,
-			"error":   "You are not a participant in this conversation",
-		})
-		return
-	}
-
-	// Get conversation
-	var conversation models.Conversation
-	if err := cc.db.First(&conversation, conversationID).Error; err != nil {
+	conversation, err := cc.resolveConversationForUser(c.Param("conversation_id"), userID)
+	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"success": false,
 			"error":   "Conversation not found",
@@ -223,7 +254,7 @@ func (cc *ChatController) GetConversationDetail(c *gin.Context) {
 
 	// Get participants
 	var participants []models.ConversationParticipant
-	cc.db.Where("conversation_id = ?", conversationID).
+	cc.db.Where("conversation_id = ?", conversation.ID).
 		Preload("User").
 		Preload("User.Mahasiswa").
 		Preload("User.Dosen").
@@ -234,12 +265,12 @@ func (cc *ChatController) GetConversationDetail(c *gin.Context) {
 	// Get unread count
 	var unreadCount int64
 	cc.db.Model(&models.Message{}).
-		Where("conversation_id = ? AND sender_id != ? AND is_read = false AND deleted_at IS NULL", conversationID, userID).
+		Where("conversation_id = ? AND sender_id != ? AND is_read = false AND deleted_at IS NULL", conversation.ID, userID).
 		Count(&unreadCount)
 
 	// Get last message
 	var lastMessage models.Message
-	cc.db.Where("conversation_id = ? AND deleted_at IS NULL", conversationID).
+	cc.db.Where("conversation_id = ? AND deleted_at IS NULL", conversation.ID).
 		Order("created_at DESC").
 		Preload("Sender").
 		First(&lastMessage)
@@ -248,7 +279,7 @@ func (cc *ChatController) GetConversationDetail(c *gin.Context) {
 	var isPinned bool
 	var pinnedCount int64
 	cc.db.Model(&models.PinnedConversation{}).
-		Where("user_id = ? AND conversation_id = ?", userID, conversationID).
+		Where("user_id = ? AND conversation_id = ?", userID, conversation.ID).
 		Count(&pinnedCount)
 	isPinned = pinnedCount > 0
 
@@ -299,7 +330,7 @@ func (cc *ChatController) GetConversationDetail(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"data": models.ConversationResponse{
-			ID:           conversation.ID,
+			ID:           conversation.PublicID,
 			Type:         conversation.Type,
 			Name:         conversation.Name,
 			MataKuliah:   mataKuliah,
@@ -382,7 +413,7 @@ func (cc *ChatController) CreateConversation(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{
 				"success": true,
 				"message": "Conversation already exists",
-				"data":    existingConv.ID,
+				"data":    existingConv.PublicID,
 			})
 			return
 		}
@@ -396,6 +427,7 @@ func (cc *ChatController) CreateConversation(c *gin.Context) {
 
 	// Create conversation
 	conversation := models.Conversation{
+		PublicID:     uuid.NewString(),
 		Type:         req.Type,
 		Name:         convName,
 		MataKuliahID: req.MataKuliahID,
@@ -461,7 +493,7 @@ func (cc *ChatController) CreateConversation(c *gin.Context) {
 		cc.hub.BroadcastToUser(participantID, models.WebsocketMessage{
 			Type: "new_conversation",
 			Data: gin.H{
-				"conversation_id": conversation.ID,
+				"conversation_id": conversation.PublicID,
 				"created_by":      userID,
 			},
 		})
@@ -470,21 +502,12 @@ func (cc *ChatController) CreateConversation(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{
 		"success": true,
 		"message": "Conversation created successfully",
-		"data":    conversation.ID,
+		"data":    conversation.PublicID,
 	})
 }
 
 // GetMessages - Get messages in a conversation
 func (cc *ChatController) GetMessages(c *gin.Context) {
-	conversationID, err := strconv.Atoi(c.Param("conversation_id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"success": false,
-			"error":   "Invalid conversation ID",
-		})
-		return
-	}
-
 	// get user id
 	userID, ok := getUserIDFromContext(c)
 	if !ok {
@@ -492,13 +515,11 @@ func (cc *ChatController) GetMessages(c *gin.Context) {
 		return
 	}
 
-	// Check if user is participant
-	var participant models.ConversationParticipant
-	if err := cc.db.Where("conversation_id = ? AND user_id = ?", conversationID, userID).
-		First(&participant).Error; err != nil {
-		c.JSON(http.StatusForbidden, gin.H{
+	conversation, err := cc.resolveConversationForUser(c.Param("conversation_id"), userID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
 			"success": false,
-			"error":   "You are not a participant in this conversation",
+			"error":   "Conversation not found",
 		})
 		return
 	}
@@ -511,12 +532,12 @@ func (cc *ChatController) GetMessages(c *gin.Context) {
 	// Get total count
 	var totalCount int64
 	cc.db.Model(&models.Message{}).
-		Where("conversation_id = ? AND deleted_at IS NULL", conversationID).
+		Where("conversation_id = ? AND deleted_at IS NULL", conversation.ID).
 		Count(&totalCount)
 
 	// Get messages
 	var messages []models.Message
-	err = cc.db.Where("conversation_id = ? AND deleted_at IS NULL", conversationID).
+	err = cc.db.Where("conversation_id = ? AND deleted_at IS NULL", conversation.ID).
 		Order("created_at DESC").
 		Limit(limit).
 		Offset(offset).
@@ -539,7 +560,7 @@ func (cc *ChatController) GetMessages(c *gin.Context) {
 	}
 
 	// Mark messages as read in background
-	go cc.markMessagesAsRead(conversationID, userID)
+	go cc.markMessagesAsRead(conversation.ID, userID)
 
 	// Build response
 	var response []models.MessageResponse
@@ -586,20 +607,18 @@ func (cc *ChatController) SendMessage(c *gin.Context) {
 		return
 	}
 
-	// Check if user is participant
-	var participant models.ConversationParticipant
-	if err := cc.db.Where("conversation_id = ? AND user_id = ?", req.ConversationID, userID).
-		First(&participant).Error; err != nil {
-		c.JSON(http.StatusForbidden, gin.H{
+	conversation, err := cc.resolveConversationForUser(c.Param("conversation_id"), userID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
 			"success": false,
-			"error":   "You are not a participant in this conversation",
+			"error":   "Conversation not found",
 		})
 		return
 	}
 
 	// Create message
 	message := models.Message{
-		ConversationID: req.ConversationID,
+		ConversationID: conversation.ID,
 		SenderID:       userID,
 		MessageType:    req.MessageType,
 		Content:        req.Content,
@@ -618,7 +637,7 @@ func (cc *ChatController) SendMessage(c *gin.Context) {
 
 	// Update conversation timestamp
 	cc.db.Model(&models.Conversation{}).
-		Where("id = ?", req.ConversationID).
+		Where("id = ?", conversation.ID).
 		Update("updated_at", time.Now())
 
 	// Get sender info
@@ -639,10 +658,10 @@ func (cc *ChatController) SendMessage(c *gin.Context) {
 	}
 
 	// Broadcast via WebSocket
-	cc.hub.BroadcastToConversation(req.ConversationID, models.WebsocketMessage{
+	cc.hub.BroadcastToConversation(conversation.ID, models.WebsocketMessage{
 		Type: "new_message",
 		Data: gin.H{
-			"conversation_id": req.ConversationID,
+			"conversation_id": conversation.PublicID,
 			"message":         messageResponse,
 		},
 	})
@@ -684,10 +703,12 @@ func (cc *ChatController) DeleteMessage(c *gin.Context) {
 	}
 
 	// Broadcast deletion
+	var conversation models.Conversation
+	cc.db.First(&conversation, message.ConversationID)
 	cc.hub.BroadcastToConversation(message.ConversationID, models.WebsocketMessage{
 		Type: "message_deleted",
 		Data: gin.H{
-			"conversation_id": message.ConversationID,
+			"conversation_id": conversation.PublicID,
 			"message_id":      message.ID,
 		},
 	})
@@ -695,6 +716,95 @@ func (cc *ChatController) DeleteMessage(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "Message deleted successfully",
+	})
+}
+
+// DeleteConversation - Permanently remove a conversation from the current user's chat history
+func (cc *ChatController) DeleteConversation(c *gin.Context) {
+	userID, ok := getUserIDFromContext(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"success": false, "error": "Unauthorized"})
+		return
+	}
+
+	conversation, err := cc.resolveConversationForUser(c.Param("conversation_id"), userID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"success": false,
+			"error":   "Conversation not found in your history",
+		})
+		return
+	}
+
+	var participant models.ConversationParticipant
+	if err := cc.db.Where("conversation_id = ? AND user_id = ?", conversation.ID, userID).
+		First(&participant).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"success": false,
+			"error":   "Conversation not found in your history",
+		})
+		return
+	}
+
+	tx := cc.db.Begin()
+	if tx.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Failed to start transaction"})
+		return
+	}
+
+	if err := tx.Where("user_id = ? AND conversation_id = ?", userID, conversation.ID).
+		Delete(&models.PinnedConversation{}).Error; err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Failed to remove pinned conversation"})
+		return
+	}
+
+	if err := tx.Delete(&participant).Error; err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Failed to delete conversation from history"})
+		return
+	}
+
+	var remainingParticipants int64
+	if err := tx.Model(&models.ConversationParticipant{}).
+		Where("conversation_id = ?", conversation.ID).
+		Count(&remainingParticipants).Error; err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Failed to verify conversation participants"})
+		return
+	}
+
+	if remainingParticipants == 0 {
+		if err := tx.Where("conversation_id = ?", conversation.ID).Delete(&models.Message{}).Error; err != nil {
+			tx.Rollback()
+			c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Failed to delete empty conversation messages"})
+			return
+		}
+		if err := tx.Where("conversation_id = ?", conversation.ID).Delete(&models.PinnedConversation{}).Error; err != nil {
+			tx.Rollback()
+			c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Failed to delete empty conversation pins"})
+			return
+		}
+		if err := tx.Where("conversation_id = ?", conversation.ID).Delete(&models.MataKuliahChatGroup{}).Error; err != nil {
+			tx.Rollback()
+			c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Failed to delete empty conversation group link"})
+			return
+		}
+		if err := tx.Delete(&models.Conversation{}, conversation.ID).Error; err != nil {
+			tx.Rollback()
+			c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Failed to delete empty conversation"})
+			return
+		}
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Failed to commit delete"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "Conversation deleted from your history",
 	})
 }
 
@@ -760,6 +870,7 @@ func (cc *ChatController) CreateMatkulGroup(c *gin.Context) {
 
 	// Create conversation
 	conversation := models.Conversation{
+		PublicID:     uuid.NewString(),
 		Type:         "group",
 		Name:         fmt.Sprintf("%s - %s", mataKuliah.Kode, mataKuliah.Nama),
 		MataKuliahID: &mataKuliah.ID,
@@ -850,7 +961,7 @@ func (cc *ChatController) CreateMatkulGroup(c *gin.Context) {
 		"success": true,
 		"message": "Mata kuliah group created successfully",
 		"data": gin.H{
-			"conversation_id": conversation.ID,
+			"conversation_id": conversation.PublicID,
 			"mata_kuliah": gin.H{
 				"id":   mataKuliah.ID,
 				"nama": mataKuliah.Nama,
@@ -898,7 +1009,7 @@ func (cc *ChatController) GetMatkulGroups(c *gin.Context) {
 		resp = append(resp, gin.H{
 			"id":              g.ID,
 			"mata_kuliah_id":  g.MataKuliahID,
-			"conversation_id": g.ConversationID,
+			"conversation_id": g.Conversation.PublicID,
 			"created_by":      g.CreatedBy,
 			"created_at":      g.CreatedAt,
 			"mata_kuliah": gin.H{
@@ -1127,29 +1238,18 @@ func (cc *ChatController) MarkMessagesAsRead(c *gin.Context) {
 		return
 	}
 
-	conversationID, err := strconv.Atoi(c.Param("conversation_id"))
+	conversation, err := cc.resolveConversationForUser(c.Param("conversation_id"), userID)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
+		c.JSON(http.StatusNotFound, gin.H{
 			"success": false,
-			"error":   "Invalid conversation ID",
-		})
-		return
-	}
-
-	// Check if user is participant
-	var participant models.ConversationParticipant
-	if err := cc.db.Where("conversation_id = ? AND user_id = ?", conversationID, userID).
-		First(&participant).Error; err != nil {
-		c.JSON(http.StatusForbidden, gin.H{
-			"success": false,
-			"error":   "You are not a participant in this conversation",
+			"error":   "Conversation not found",
 		})
 		return
 	}
 
 	// Mark messages as read
 	if err := cc.db.Model(&models.Message{}).
-		Where("conversation_id = ? AND sender_id != ? AND is_read = false", conversationID, userID).
+		Where("conversation_id = ? AND sender_id != ? AND is_read = false", conversation.ID, userID).
 		Updates(map[string]interface{}{
 			"is_read": true,
 			"read_at": time.Now(),
@@ -1163,7 +1263,7 @@ func (cc *ChatController) MarkMessagesAsRead(c *gin.Context) {
 
 	// Update participant's last read
 	cc.db.Model(&models.ConversationParticipant{}).
-		Where("conversation_id = ? AND user_id = ?", conversationID, userID).
+		Where("conversation_id = ? AND user_id = ?", conversation.ID, userID).
 		Update("last_read_at", time.Now())
 
 	c.JSON(http.StatusOK, gin.H{
@@ -1180,29 +1280,18 @@ func (cc *ChatController) PinConversation(c *gin.Context) {
 		return
 	}
 
-	conversationID, err := strconv.Atoi(c.Param("conversation_id"))
+	conversation, err := cc.resolveConversationForUser(c.Param("conversation_id"), userID)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
+		c.JSON(http.StatusNotFound, gin.H{
 			"success": false,
-			"error":   "Invalid conversation ID",
-		})
-		return
-	}
-
-	// Check if conversation exists and user is participant
-	var participant models.ConversationParticipant
-	if err := cc.db.Where("conversation_id = ? AND user_id = ?", conversationID, userID).
-		First(&participant).Error; err != nil {
-		c.JSON(http.StatusForbidden, gin.H{
-			"success": false,
-			"error":   "You are not a participant in this conversation",
+			"error":   "Conversation not found",
 		})
 		return
 	}
 
 	// Check if already pinned
 	var existingPin models.PinnedConversation
-	if err := cc.db.Where("user_id = ? AND conversation_id = ?", userID, conversationID).
+	if err := cc.db.Where("user_id = ? AND conversation_id = ?", userID, conversation.ID).
 		First(&existingPin).Error; err == nil {
 		c.JSON(http.StatusConflict, gin.H{
 			"success": false,
@@ -1214,7 +1303,7 @@ func (cc *ChatController) PinConversation(c *gin.Context) {
 	// Create pin
 	pin := models.PinnedConversation{
 		UserID:         userID,
-		ConversationID: conversationID,
+		ConversationID: conversation.ID,
 	}
 
 	if err := cc.db.Create(&pin).Error; err != nil {
@@ -1239,17 +1328,17 @@ func (cc *ChatController) UnpinConversation(c *gin.Context) {
 		return
 	}
 
-	conversationID, err := strconv.Atoi(c.Param("conversation_id"))
+	conversation, err := cc.resolveConversationForUser(c.Param("conversation_id"), userID)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
+		c.JSON(http.StatusNotFound, gin.H{
 			"success": false,
-			"error":   "Invalid conversation ID",
+			"error":   "Conversation not found",
 		})
 		return
 	}
 
 	// Delete pin
-	if err := cc.db.Where("user_id = ? AND conversation_id = ?", userID, conversationID).
+	if err := cc.db.Where("user_id = ? AND conversation_id = ?", userID, conversation.ID).
 		Delete(&models.PinnedConversation{}).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,

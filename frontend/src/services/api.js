@@ -43,6 +43,8 @@ api.getConversations = () => api.get('/api/chat/conversations')
 api.getConversationDetail = (conversationId) => 
   api.get(`/api/chat/conversations/${conversationId}`)
 api.createConversation = (data) => api.post('/api/chat/conversations', data)
+api.deleteConversation = (conversationId) =>
+  api.delete(`/api/chat/conversations/${conversationId}`)
 
 // Messages
 api.getMessages = (conversationId, params = {}) => 
@@ -102,7 +104,7 @@ class WebSocketService {
       return
     }
 
-    if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+    if (this.socket && (this.socket.readyState === WebSocket.OPEN || this.socket.readyState === WebSocket.CONNECTING)) {
       return
     }
 
@@ -144,13 +146,14 @@ class WebSocketService {
       this.stopHeartbeat()
       
       // Attempt reconnection only if not intentionally disconnected
-      if (!this.intentionalDisconnect && this.reconnectAttempts < this.maxReconnectAttempts) {
+      if (!this.intentionalDisconnect) {
         this.reconnectAttempts++
-        console.log(`Attempting to reconnect... (${this.reconnectAttempts}/${this.maxReconnectAttempts})`)
+        const delay = Math.min(this.reconnectDelay * this.reconnectAttempts, 30000)
+        console.log(`Attempting to reconnect in ${delay}ms...`)
         
         setTimeout(() => {
           this.connect()
-        }, this.reconnectDelay * this.reconnectAttempts)
+        }, delay)
       }
     }
 

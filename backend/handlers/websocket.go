@@ -10,6 +10,7 @@ import (
 	"nf-student-hub-backend/models"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"gorm.io/gorm"
 )
@@ -24,20 +25,20 @@ var upgrader = websocket.Upgrader{
 
 // Client represents a WebSocket connection
 type Client struct {
-	UserID   int
-	Conn     *websocket.Conn
-	Send     chan []byte
-	Hub      *WebSocketHub
+	UserID int
+	Conn   *websocket.Conn
+	Send   chan []byte
+	Hub    *WebSocketHub
 }
 
 // WebSocketHub manages WebSocket connections
 type WebSocketHub struct {
-	Clients      map[int]*Client // Map user ID to client
-	Register     chan *Client
-	Unregister   chan *Client
-	Broadcast    chan models.WebsocketMessage
-	mu           sync.RWMutex
-	DB           *gorm.DB
+	Clients    map[int]*Client // Map user ID to client
+	Register   chan *Client
+	Unregister chan *Client
+	Broadcast  chan models.WebsocketMessage
+	mu         sync.RWMutex
+	DB         *gorm.DB
 }
 
 // NewWebSocketHub creates a new WebSocket hub
@@ -249,8 +250,10 @@ func (c *Client) handleMessage(message []byte) {
 		// Broadcast to appropriate recipients
 		if data, ok := wsMsg.Data.(map[string]interface{}); ok {
 			if conversationID, exists := data["conversation_id"]; exists {
-				if convID, ok := conversationID.(float64); ok {
-					c.Hub.BroadcastToConversation(int(convID), wsMsg)
+				if publicID, ok := conversationID.(string); ok {
+					if conversation, err := c.Hub.resolveConversationPublicID(publicID, c.UserID); err == nil {
+						c.Hub.BroadcastToConversation(conversation.ID, wsMsg)
+					}
 				}
 			}
 		}
@@ -262,17 +265,22 @@ func (c *Client) handleTypingIndicator(wsMsg models.WebsocketMessage) {
 	var typingIndicator models.TypingIndicator
 	if data, err := json.Marshal(wsMsg.Data); err == nil {
 		if err := json.Unmarshal(data, &typingIndicator); err == nil {
+			conversation, err := c.Hub.resolveConversationPublicID(typingIndicator.ConversationID, c.UserID)
+			if err != nil {
+				return
+			}
+
 			// Get user info for the typing indicator
 			var user models.User
 			if err := c.Hub.DB.First(&user, c.UserID).Error; err == nil {
 				typingIndicator.UserName = user.Name
 				typingIndicator.UserID = c.UserID
 			}
-			
+
 			// Broadcast to conversation except sender
 			var participants []models.ConversationParticipant
-			c.Hub.DB.Where("conversation_id = ? AND user_id != ?", 
-				typingIndicator.ConversationID, c.UserID).
+			c.Hub.DB.Where("conversation_id = ? AND user_id != ?",
+				conversation.ID, c.UserID).
 				Find(&participants)
 
 			for _, p := range participants {
@@ -288,27 +296,33 @@ func (c *Client) handleTypingIndicator(wsMsg models.WebsocketMessage) {
 // handleMessageRead processes message read receipts
 func (c *Client) handleMessageRead(wsMsg models.WebsocketMessage) {
 	var readData struct {
-		ConversationID int `json:"conversation_id"`
-		MessageID      int `json:"message_id"`
+		ConversationID string `json:"conversation_id"`
+		MessageID      int    `json:"message_id"`
 	}
-	
+
 	if data, err := json.Marshal(wsMsg.Data); err == nil {
 		if err := json.Unmarshal(data, &readData); err == nil {
+			conversation, err := c.Hub.resolveConversationPublicID(readData.ConversationID, c.UserID)
+			if err != nil {
+				return
+			}
+
 			// Update message as read in database
 			c.Hub.DB.Model(&models.Message{}).
-				Where("id = ? AND conversation_id = ?", readData.MessageID, readData.ConversationID).
+				Where("id = ? AND conversation_id = ?", readData.MessageID, conversation.ID).
 				Updates(map[string]interface{}{
 					"is_read": true,
 					"read_at": time.Now(),
 				})
 
 			// Broadcast read receipt to conversation
-			c.Hub.BroadcastToConversation(readData.ConversationID, models.WebsocketMessage{
+			c.Hub.BroadcastToConversation(conversation.ID, models.WebsocketMessage{
 				Type: "message_read",
 				Data: gin.H{
-					"message_id": readData.MessageID,
-					"user_id":    c.UserID,
-					"read_at":    time.Now(),
+					"conversation_id": readData.ConversationID,
+					"message_id":      readData.MessageID,
+					"user_id":         c.UserID,
+					"read_at":         time.Now(),
 				},
 			})
 		}
@@ -345,7 +359,7 @@ func (h *WebSocketHub) marshalMessage(msg models.WebsocketMessage) []byte {
 func (h *WebSocketHub) GetConnectedUsers() []int {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
-	
+
 	var userIDs []int
 	for userID := range h.Clients {
 		userIDs = append(userIDs, userID)
@@ -357,7 +371,20 @@ func (h *WebSocketHub) GetConnectedUsers() []int {
 func (h *WebSocketHub) IsUserConnected(userID int) bool {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
-	
+
 	_, ok := h.Clients[userID]
 	return ok
+}
+
+func (h *WebSocketHub) resolveConversationPublicID(publicID string, userID int) (models.Conversation, error) {
+	if _, err := uuid.Parse(publicID); err != nil {
+		return models.Conversation{}, err
+	}
+
+	var conversation models.Conversation
+	err := h.DB.Model(&models.Conversation{}).
+		Joins("JOIN conversation_participants ON conversation_participants.conversation_id = conversations.id").
+		Where("conversations.public_id = ? AND conversation_participants.user_id = ?", publicID, userID).
+		First(&conversation).Error
+	return conversation, err
 }

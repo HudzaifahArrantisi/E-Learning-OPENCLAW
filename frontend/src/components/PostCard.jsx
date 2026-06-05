@@ -22,43 +22,62 @@ const cleanUsername = (username) => {
     .trim()
 }
 
-const CommentItem = memo(({ comment, getRelativeTime }) => {
+const CommentItem = memo(({ comment, getRelativeTime, onReply }) => {
   if (!comment) return null
   
   return (
-    <div className="flex items-start space-x-3 group mb-4 animate-fadeIn">
-      <Link 
-        to={`/profile/${comment.user_role || 'mahasiswa'}/${cleanUsername(comment.author_username || comment.author_name)}`}
-        className="flex-shrink-0"
-      >
-        <div className="w-8 h-8 bg-lp-surface border border-lp-border rounded-full flex items-center justify-center text-lp-text2 text-xs font-bold shrink-0 overflow-hidden">
-          {comment.author_avatar ? (
-            <img src={resolveBackendAssetUrl(comment.author_avatar)} alt={comment.author_name} className="w-full h-full object-cover" />
-          ) : (
-            comment.author_name?.[0]?.toUpperCase() || '?'
-          )}
+    <div className="flex flex-col mb-4">
+      <div className="flex items-start space-x-3 group animate-fadeIn">
+        <Link 
+          to={`/profile/${comment.user_role || 'mahasiswa'}/${cleanUsername(comment.author_username || comment.author_name)}`}
+          className="flex-shrink-0"
+        >
+          <div className="w-8 h-8 bg-lp-surface border border-lp-border rounded-full flex items-center justify-center text-lp-text2 text-xs font-bold shrink-0 overflow-hidden">
+            {comment.author_avatar ? (
+              <img src={resolveBackendAssetUrl(comment.author_avatar)} alt={comment.author_name} className="w-full h-full object-cover" />
+            ) : (
+              comment.author_name?.[0]?.toUpperCase() || '?'
+            )}
+          </div>
+        </Link>
+        <div className="flex-1 min-w-0 pt-1">
+          <span className="font-semibold text-lp-text text-[14px] tracking-tight mr-2">
+            <Link 
+              to={`/profile/${comment.user_role || 'mahasiswa'}/${cleanUsername(comment.author_username || comment.author_name)}`}
+              className="hover:opacity-80 transition-opacity"
+            >
+              {comment.author_name || 'Unknown'}
+            </Link>
+          </span>
+          <span className="text-lp-text text-[14px] font-normal break-words leading-relaxed">
+            {comment.content || ''}
+          </span>
+          <div className="text-lp-text3 text-[12px] font-normal mt-1 flex gap-3">
+            <span>{getRelativeTime ? getRelativeTime(comment.created_at) : new Date(comment.created_at).toLocaleDateString('id-ID')}</span>
+            <button 
+              onClick={() => onReply && onReply(comment)}
+              className="font-semibold hidden group-hover:block hover:text-lp-text2"
+            >
+              Balas
+            </button>
+          </div>
         </div>
-      </Link>
-      <div className="flex-1 min-w-0 pt-1">
-        <span className="font-semibold text-lp-text text-[14px] tracking-tight mr-2">
-          <Link 
-            to={`/profile/${comment.user_role || 'mahasiswa'}/${cleanUsername(comment.author_username || comment.author_name)}`}
-            className="hover:opacity-80 transition-opacity"
-          >
-            {comment.author_name || 'Unknown'}
-          </Link>
-        </span>
-        <span className="text-lp-text text-[14px] font-normal break-words leading-relaxed">
-          {comment.content || ''}
-        </span>
-        <div className="text-lp-text3 text-[12px] font-normal mt-1 flex gap-3">
-          <span>{getRelativeTime ? getRelativeTime(comment.created_at) : new Date(comment.created_at).toLocaleDateString('id-ID')}</span>
-          <button className="font-semibold hidden group-hover:block hover:text-lp-text2">Balas</button>
-        </div>
+        <button className="pt-2 text-lp-text3 hover:text-lp-red px-1">
+          <FaRegHeart className="text-[10px]" />
+        </button>
       </div>
-      <button className="pt-2 text-lp-text3 hover:text-lp-red px-1">
-        <FaRegHeart className="text-[10px]" />
-      </button>
+      {comment.replies && comment.replies.length > 0 && (
+        <div className="pl-11 mt-2 space-y-3">
+          {comment.replies.map((reply) => (
+            <CommentItem 
+              key={reply.id} 
+              comment={reply} 
+              getRelativeTime={getRelativeTime} 
+              onReply={onReply}
+            />
+          ))}
+        </div>
+      )}
     </div>
   )
 })
@@ -113,8 +132,22 @@ const PostCard = memo(({ post, getRelativeTime }) => {
   const [animateLike, setAnimateLike] = useState(false)
   const [imageLoaded, setImageLoaded] = useState(false)
   const [commentsLoading, setCommentsLoading] = useState(false)
+  const [replyingTo, setReplyingTo] = useState(null)
   
   const commentInputRef = useRef(null)
+  const isMountedRef = useRef(true)
+
+  useEffect(() => {
+    isMountedRef.current = true
+    return () => {
+      isMountedRef.current = false
+    }
+  }, [])
+
+  const handleReplyClick = (comment) => {
+    setReplyingTo(comment)
+    commentInputRef.current?.focus()
+  }
 
   // Sync dengan data terbaru
   useEffect(() => {
@@ -124,32 +157,32 @@ const PostCard = memo(({ post, getRelativeTime }) => {
     setLocalComments(Array.isArray(post?.comments) ? post.comments : [])
   }, [post])
 
+  const fetchLatestComments = async (mountedRef = isMountedRef) => {
+    try {
+      const response = await api.get(`/api/feed/${post.id}`, { skipErrorRedirect: true })
+      if (!mountedRef.current) return
+      const comments = Array.isArray(response?.data?.data?.comments)
+        ? response.data.data.comments
+        : []
+      setLocalComments(comments)
+    } catch (error) {
+      console.error("Failed to fetch comments:", error)
+    }
+  }
+
   useEffect(() => {
-    let cancelled = false
+    if (!showComments) return
 
-    const fetchLatestComments = async () => {
-      if (!showComments) return
-
+    const loadComments = async () => {
       setCommentsLoading(true)
       try {
-        const response = await api.get(`/api/feed/${post.id}`, { skipErrorRedirect: true })
-        if (cancelled) return
-
-        const comments = Array.isArray(response?.data?.data?.comments)
-          ? response.data.data.comments
-          : []
-        setLocalComments(comments)
-      } catch (error) {
-        if (cancelled) return
+        await fetchLatestComments(isMountedRef)
       } finally {
-        if (!cancelled) setCommentsLoading(false)
+        if (isMountedRef.current) setCommentsLoading(false)
       }
     }
 
-    fetchLatestComments()
-    return () => {
-      cancelled = true
-    }
+    loadComments()
   }, [showComments, post.id])
 
   const username = cleanUsername(post.author_username || post.author_name?.toLowerCase().replace(/\s+/g, '_'))
@@ -234,22 +267,71 @@ const PostCard = memo(({ post, getRelativeTime }) => {
     e.preventDefault()
     if (!commentText.trim() || isCommenting) return
 
+    const parentId = replyingTo ? replyingTo.id : null
+
     const tempComment = {
       id: Date.now(),
       content: commentText.trim(),
       author_name: 'Anda',
       user_role: 'current_user',
       created_at: new Date().toISOString(),
+      parent_id: parentId,
       replies: []
     }
 
-    setLocalComments(prev => [tempComment, ...prev])
+    if (parentId) {
+      const addReplyToLocal = (comments) => {
+        return comments.map(comment => {
+          if (comment.id === parentId) {
+            return {
+              ...comment,
+              replies: [...(comment.replies || []), tempComment]
+            }
+          }
+          if (comment.replies && comment.replies.length > 0) {
+            return {
+              ...comment,
+              replies: addReplyToLocal(comment.replies)
+            }
+          }
+          return comment
+        })
+      }
+      setLocalComments(prev => addReplyToLocal(prev))
+    } else {
+      setLocalComments(prev => [tempComment, ...prev])
+    }
+
     setCommentText('')
+    setReplyingTo(null)
 
     try {
-      await addComment(post.id, commentText.trim())
+      await addComment(post.id, tempComment.content, parentId)
+      fetchLatestComments()
     } catch (error) {
-      setLocalComments(prev => prev.filter(comment => comment.id !== tempComment.id))
+      // Revert local comments on error
+      if (parentId) {
+        const removeReplyFromLocal = (comments) => {
+          return comments.map(comment => {
+            if (comment.id === parentId) {
+              return {
+                ...comment,
+                replies: (comment.replies || []).filter(reply => reply.id !== tempComment.id)
+              }
+            }
+            if (comment.replies && comment.replies.length > 0) {
+              return {
+                ...comment,
+                replies: removeReplyFromLocal(comment.replies)
+              }
+            }
+            return comment
+          })
+        }
+        setLocalComments(prev => removeReplyFromLocal(prev))
+      } else {
+        setLocalComments(prev => prev.filter(comment => comment.id !== tempComment.id))
+      }
     }
   }
 
@@ -626,40 +708,12 @@ const PostCard = memo(({ post, getRelativeTime }) => {
                         </div>
                       ) : localComments.length > 0 ? (
                         localComments.map((comment) => (
-                          <div key={comment.id} className="flex items-start space-x-3 group">
-                            <Link 
-                              to={`/profile/${comment.user_role || 'mahasiswa'}/${cleanUsername(comment.author_username || comment.author_name)}`}
-                              className="flex-shrink-0"
-                            >
-                              <div className="w-8 h-8 bg-lp-surface border border-lp-border rounded-full flex items-center justify-center text-lp-text2 text-xs font-bold shrink-0 overflow-hidden">
-                                {comment.author_avatar ? (
-                                  <img src={resolveBackendAssetUrl(comment.author_avatar)} alt={comment.author_name} className="w-full h-full object-cover" />
-                                ) : (
-                                  comment.author_name?.[0]?.toUpperCase() || '?'
-                                )}
-                              </div>
-                            </Link>
-                            <div className="flex-1 min-w-0 pt-1">
-                              <span className="font-semibold text-lp-text text-[14px] tracking-tight mr-2">
-                                <Link 
-                                  to={`/profile/${comment.user_role || 'mahasiswa'}/${cleanUsername(comment.author_username || comment.author_name)}`}
-                                  className="hover:opacity-80 transition-opacity"
-                                >
-                                  {comment.author_name || 'Unknown'}
-                                </Link>
-                              </span>
-                              <span className="text-lp-text text-[14px] font-normal break-words leading-relaxed">
-                                {comment.content}
-                              </span>
-                              <div className="text-lp-text3 text-[12px] font-normal mt-1 flex gap-3">
-                                <span>{getRelativeTime ? getRelativeTime(comment.created_at) : new Date(comment.created_at).toLocaleDateString('id-ID')}</span>
-                                <button className="font-semibold hidden group-hover:block hover:text-lp-text2">Balas</button>
-                              </div>
-                            </div>
-                            <button className="pt-2 text-lp-text3 hover:text-lp-red px-1">
-                              <FaRegHeart className="text-[10px]" />
-                            </button>
-                          </div>
+                          <CommentItem 
+                            key={comment.id} 
+                            comment={comment} 
+                            getRelativeTime={getRelativeTime} 
+                            onReply={handleReplyClick}
+                          />
                         ))
                       ) : (
                         <div className="text-center py-8">
@@ -722,6 +776,19 @@ const PostCard = memo(({ post, getRelativeTime }) => {
                       </div>
                     </div>
 
+                    {replyingTo && (
+                      <div className="px-4 py-1.5 bg-gray-50 border-t border-lp-border flex items-center justify-between text-[12px] text-lp-text3">
+                        <span>Membalas <span className="font-semibold text-lp-text">@{replyingTo.author_name}</span></span>
+                        <button 
+                          type="button" 
+                          onClick={() => setReplyingTo(null)}
+                          className="text-lp-red font-semibold hover:underline text-[12px]"
+                        >
+                          Batal
+                        </button>
+                      </div>
+                    )}
+
                     {/* Input Komentar Area */}
                     <form onSubmit={handleCommentSubmit} className="px-4 py-3 border-t border-lp-border flex items-center space-x-3">
                       <button type="button" className="text-lp-text hover:text-lp-text2">
@@ -773,7 +840,12 @@ const PostCard = memo(({ post, getRelativeTime }) => {
                   {localComments.length > 0 ? (
                     <div className="space-y-3">
                       {localComments.map((comment) => (
-                        <CommentItem key={comment.id} comment={comment} getRelativeTime={getRelativeTime} />
+                        <CommentItem 
+                          key={comment.id} 
+                          comment={comment} 
+                          getRelativeTime={getRelativeTime} 
+                          onReply={handleReplyClick}
+                        />
                       ))}
                     </div>
                   ) : (
@@ -788,8 +860,21 @@ const PostCard = memo(({ post, getRelativeTime }) => {
                 </div>
 
                 <div className="border-t border-lp-border p-4">
+                  {replyingTo && (
+                    <div className="mb-2 flex items-center justify-between text-xs text-lp-text3 bg-gray-50 p-2 rounded-lg">
+                      <span>Membalas <span className="font-semibold text-lp-text">@{replyingTo.author_name}</span></span>
+                      <button 
+                        type="button" 
+                        onClick={() => setReplyingTo(null)}
+                        className="text-lp-red font-semibold hover:underline"
+                      >
+                        Batal
+                      </button>
+                    </div>
+                  )}
                   <form onSubmit={handleCommentSubmit} className="flex items-center gap-3">
                     <input
+                      ref={commentInputRef}
                       type="text"
                       placeholder="Tambahkan komentar..."
                       value={commentText}

@@ -17,37 +17,35 @@ def optimize_image(input_path: str, output_path: str, mime_type: str, ext: str, 
         with Image.open(input_path) as img:
             img.load()
             width, height = img.size
+            
+            # Resize if wider than max_width
             if max_width > 0 and width > max_width:
                 new_height = int((height * max_width) / width)
                 img = img.resize((max_width, new_height), Image.Resampling.LANCZOS)
 
             ext_lower = (ext or "").lower()
-            if ext_lower in [".jpg", ".jpeg"]:
-                if img.mode not in ("RGB", "L"):
-                    img = img.convert("RGB")
-                img.save(output_path, format="JPEG", quality=quality, optimize=True)
-                return True, "image/jpeg", ".jpg"
-
-            if ext_lower == ".png":
-                if img.mode not in ("RGB", "RGBA", "L"):
-                    img = img.convert("RGBA")
-                img.save(output_path, format="PNG", optimize=True, compress_level=9)
-                return True, "image/png", ".png"
-
-            if ext_lower == ".webp":
-                img.save(output_path, format="WEBP", quality=quality, method=6)
-                return True, "image/webp", ".webp"
-
+            
+            # If it's GIF, preserve it (especially for animated GIFs)
             if ext_lower == ".gif":
                 img.save(output_path, format="GIF", optimize=True)
                 return True, "image/gif", ".gif"
 
-            # Fallback: convert unknown image extension to JPEG
-            if img.mode not in ("RGB", "L"):
+            # For all other image formats (PNG, JPEG, WebP, BMP, TIFF, etc.), convert to JPEG
+            # for high compression down to KB size.
+            # Handle transparency (RGBA/LA/Palette with transparency) by pasting on white background
+            if img.mode in ("RGBA", "LA") or (img.mode == "P" and "transparency" in img.info):
+                background = Image.new("RGB", img.size, (255, 255, 255))
+                img_rgba = img.convert("RGBA")
+                background.paste(img_rgba, mask=img_rgba.split()[3]) # split()[3] is the alpha channel
+                img = background
+            elif img.mode != "RGB" and img.mode != "L":
                 img = img.convert("RGB")
+
+            # Save as JPEG with specified quality
             img.save(output_path, format="JPEG", quality=quality, optimize=True)
             return True, "image/jpeg", ".jpg"
-    except Exception:
+    except Exception as e:
+        sys.stderr.write(f"PIL error: {str(e)}\n")
         shutil.copyfile(input_path, output_path)
         return False, mime_type, ext
 
@@ -55,6 +53,7 @@ def optimize_image(input_path: str, output_path: str, mime_type: str, ext: str, 
 def optimize_pdf(input_path: str, output_path: str, mime_type: str, ext: str):
     # Try pikepdf first (best result), fallback to pypdf, else passthrough.
     try:
+        # pyrefly: ignore [missing-import]
         import pikepdf
 
         with pikepdf.open(input_path) as pdf:
@@ -69,6 +68,7 @@ def optimize_pdf(input_path: str, output_path: str, mime_type: str, ext: str):
         pass
 
     try:
+        # pyrefly: ignore [missing-import]
         from pypdf import PdfReader, PdfWriter
 
         reader = PdfReader(input_path)

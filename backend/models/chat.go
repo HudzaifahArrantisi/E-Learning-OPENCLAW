@@ -9,6 +9,7 @@ import (
 
 type Conversation struct {
 	ID           int        `json:"id" gorm:"primaryKey"`
+	PublicID     string     `json:"public_id" gorm:"column:public_id;size:36;uniqueIndex"`
 	Type         string     `json:"type" gorm:"type:ENUM('private','group');not null;default:'private'"`
 	Name         string     `json:"name" gorm:"size:255"`
 	MataKuliahID *int       `json:"mata_kuliah_id"`
@@ -16,12 +17,12 @@ type Conversation struct {
 	CreatedAt    time.Time  `json:"created_at" gorm:"autoCreateTime"`
 	UpdatedAt    time.Time  `json:"updated_at" gorm:"autoUpdateTime"`
 	DeletedAt    *time.Time `json:"deleted_at" gorm:"-"`
-	
+
 	// Relations
-	MataKuliah   *MataKuliah              `json:"mata_kuliah,omitempty" gorm:"foreignKey:MataKuliahID"`
+	MataKuliah   *MataKuliah               `json:"mata_kuliah,omitempty" gorm:"foreignKey:MataKuliahID"`
 	Participants []ConversationParticipant `json:"participants,omitempty" gorm:"foreignKey:ConversationID"`
-	Messages     []Message                `json:"messages,omitempty" gorm:"foreignKey:ConversationID"`
-	Creator      User                     `json:"creator,omitempty" gorm:"foreignKey:CreatedBy"`
+	Messages     []Message                 `json:"messages,omitempty" gorm:"foreignKey:ConversationID"`
+	Creator      User                      `json:"creator,omitempty" gorm:"foreignKey:CreatedBy"`
 }
 
 type ConversationParticipant struct {
@@ -32,9 +33,9 @@ type ConversationParticipant struct {
 	JoinedAt       time.Time  `json:"joined_at" gorm:"autoCreateTime"`
 	LastReadAt     *time.Time `json:"last_read_at"`
 	DeletedAt      *time.Time `json:"deleted_at" gorm:"-"`
-	
+
 	// Relations
-	User         User        `json:"user" gorm:"foreignKey:UserID"`
+	User         User         `json:"user" gorm:"foreignKey:UserID"`
 	Conversation Conversation `json:"conversation,omitempty" gorm:"foreignKey:ConversationID"`
 }
 
@@ -52,9 +53,9 @@ type Message struct {
 	CreatedAt      time.Time  `json:"created_at" gorm:"autoCreateTime"`
 	UpdatedAt      time.Time  `json:"updated_at" gorm:"autoUpdateTime"`
 	DeletedAt      *time.Time `json:"deleted_at"`
-	
+
 	// Relations
-	Sender       User        `json:"sender" gorm:"foreignKey:SenderID"`
+	Sender       User         `json:"sender" gorm:"foreignKey:SenderID"`
 	Conversation Conversation `json:"conversation,omitempty" gorm:"foreignKey:ConversationID"`
 }
 
@@ -65,7 +66,7 @@ type MataKuliahChatGroup struct {
 	CreatedBy      int        `json:"created_by" gorm:"not null"`
 	CreatedAt      time.Time  `json:"created_at" gorm:"autoCreateTime"`
 	DeletedAt      *time.Time `json:"deleted_at"`
-	
+
 	// Relations
 	MataKuliah   MataKuliah   `json:"mata_kuliah" gorm:"foreignKey:MataKuliahID"`
 	Conversation Conversation `json:"conversation" gorm:"foreignKey:ConversationID"`
@@ -77,9 +78,9 @@ type PinnedConversation struct {
 	UserID         int       `json:"user_id" gorm:"not null"`
 	ConversationID int       `json:"conversation_id" gorm:"not null"`
 	CreatedAt      time.Time `json:"created_at" gorm:"autoCreateTime"`
-	
+
 	// Relations
-	User         User        `json:"user" gorm:"foreignKey:UserID"`
+	User         User         `json:"user" gorm:"foreignKey:UserID"`
 	Conversation Conversation `json:"conversation" gorm:"foreignKey:ConversationID"`
 }
 
@@ -93,7 +94,7 @@ type CreateConversationRequest struct {
 }
 
 type SendMessageRequest struct {
-	ConversationID int     `json:"conversation_id" binding:"required"`
+	ConversationID int     `json:"conversation_id,omitempty"`
 	Content        string  `json:"content" binding:"required"`
 	MessageType    string  `json:"message_type" binding:"required,oneof=text image file"`
 	FileURL        *string `json:"file_url"`
@@ -116,16 +117,16 @@ type UpdateConversationRequest struct {
 // ==================== RESPONSE STRUCTS ====================
 
 type ConversationResponse struct {
-	ID           int                  `json:"id"`
-	Type         string               `json:"type"`
-	Name         string               `json:"name"`
-	MataKuliah   *MataKuliahResponse  `json:"mata_kuliah,omitempty"`
-	LastMessage  *MessageResponse     `json:"last_message,omitempty"`
-	UnreadCount  int                  `json:"unread_count"`
+	ID           string                `json:"id"`
+	Type         string                `json:"type"`
+	Name         string                `json:"name"`
+	MataKuliah   *MataKuliahResponse   `json:"mata_kuliah,omitempty"`
+	LastMessage  *MessageResponse      `json:"last_message,omitempty"`
+	UnreadCount  int                   `json:"unread_count"`
 	Participants []ParticipantResponse `json:"participants"`
-	IsPinned     bool                 `json:"is_pinned"`
-	CreatedAt    time.Time            `json:"created_at"`
-	UpdatedAt    time.Time            `json:"updated_at"`
+	IsPinned     bool                  `json:"is_pinned"`
+	CreatedAt    time.Time             `json:"created_at"`
+	UpdatedAt    time.Time             `json:"updated_at"`
 }
 
 type MessageResponse struct {
@@ -161,10 +162,10 @@ type UserResponse struct {
 }
 
 type MataKuliahResponse struct {
-	ID    int         `json:"id"`
-	Kode  string      `json:"kode"`
-	Nama  string      `json:"nama"`
-	SKS   int         `json:"sks"`
+	ID    int          `json:"id"`
+	Kode  string       `json:"kode"`
+	Nama  string       `json:"nama"`
+	SKS   int          `json:"sks"`
 	Dosen UserResponse `json:"dosen"`
 }
 
@@ -177,13 +178,13 @@ type ChatStatsResponse struct {
 }
 
 type WebsocketMessage struct {
-	Type    string      `json:"type"`
-	Data    interface{} `json:"data"`
-	UserID  int         `json:"user_id,omitempty"`
+	Type   string      `json:"type"`
+	Data   interface{} `json:"data"`
+	UserID int         `json:"user_id,omitempty"`
 }
 
 type TypingIndicator struct {
-	ConversationID int    `json:"conversation_id"`
+	ConversationID string `json:"conversation_id"`
 	UserID         int    `json:"user_id"`
 	UserName       string `json:"user_name"`
 	IsTyping       bool   `json:"is_typing"`

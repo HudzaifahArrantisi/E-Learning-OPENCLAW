@@ -444,7 +444,7 @@ func GetRecommendedAccounts(c *gin.Context) {
 		SELECT id, name, username, profile_picture
 		FROM ormawa
 		WHERE deleted_at IS NULL
-		ORDER BY created_at DESC
+		ORDER BY created_at DESC, id DESC
 		LIMIT 6
 	`
 	ormawaRows, err := config.DB.Query(ormawaQuery)
@@ -474,7 +474,7 @@ func GetRecommendedAccounts(c *gin.Context) {
 		SELECT id, name, username, profile_picture
 		FROM ukm
 		WHERE deleted_at IS NULL
-		ORDER BY created_at DESC
+		ORDER BY created_at DESC, id DESC
 		LIMIT 6
 	`
 	ukmRows, err := config.DB.Query(ukmQuery)

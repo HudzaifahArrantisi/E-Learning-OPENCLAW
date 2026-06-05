@@ -1,10 +1,10 @@
 const featureCards = [
-  { icon: '⚡', cls: 'feat-icon-blue', title: 'Smart Reminder System', desc: 'AI-powered scheduling that learns your routine. Get notified before classes, deadlines, and important events — automatically.' },
-  { icon: '✈️', cls: 'feat-icon-tg', title: 'Telegram Integration', desc: 'Reminders delivered directly to Telegram. No app-switching, no missed notifications. Your academic life in your pocket.' },
-  { icon: '📊', cls: 'feat-icon-green', title: 'Automated Attendance', desc: 'QR-based check-in synced to dashboards in real time. Faculty gets instant visibility, students get frictionless check-in.' },
-  { icon: '📝', cls: 'feat-icon-amber', title: 'Assignment Tracker', desc: 'Every deadline tracked, every submission monitored. Visual timeline of upcoming tasks with urgency indicators.' },
-  { icon: '📈', cls: 'feat-icon-purple', title: 'Academic Dashboard', desc: 'Instagram-style feed for learning activities. Grades, attendance, courses — all in one elegant, social interface.' },
-  { icon: '🔄', cls: 'feat-icon-red', title: 'Course Sync Engine', desc: 'OpenClaw continuously syncs your course schedules, materials, and assignments. Zero manual input required.' },
+  { icon: '1', cls: 'feat-icon-blue', title: 'Smart Reminder System', desc: 'AI-powered scheduling that learns your routine. Get notified before classes, deadlines, and important events — automatically.' },
+  { icon: '2', cls: 'feat-icon-tg', title: 'Telegram Integration', desc: 'Reminders delivered directly to Telegram. No app-switching, no missed notifications. Your academic life in your pocket.' },
+  { icon: '3', cls: 'feat-icon-green', title: 'Automated Attendance', desc: 'QR-based check-in synced to dashboards in real time. Faculty gets instant visibility, students get frictionless check-in.' },
+  { icon: '4', cls: 'feat-icon-amber', title: 'Assignment Tracker', desc: 'Every deadline tracked, every submission monitored. Visual timeline of upcoming tasks with urgency indicators.' },
+  { icon: '5', cls: 'feat-icon-purple', title: 'Academic Dashboard', desc: 'Instagram-style feed for learning activities. Grades, attendance, courses — all in one elegant, social interface.' },
+  { icon: '6', cls: 'feat-icon-red', title: 'Course Sync Engine', desc: 'OpenClaw continuously syncs your course schedules, materials, and assignments. Zero manual input required.' },
 ]
 
 const howItWorks = [
@@ -14,9 +14,9 @@ const howItWorks = [
 ]
 
 const benefits = [
-  { icon: '🎯', title: 'Reduce Missed Deadlines', desc: 'Proactive reminders ensure you never miss an assignment submission or exam date again.', stat: '95% FEWER MISSED DEADLINES' },
-  { icon: '🚀', title: 'Boost Productivity', desc: 'Automated tracking eliminates mental overhead. Focus on learning, not remembering.', stat: '3× PRODUCTIVITY IMPROVEMENT' },
-  { icon: '🤖', title: 'Smart Academic Assistant', desc: 'OpenClaw works 24/7 behind the scenes — syncing, reminding, reporting. Your invisible academic ally.', stat: 'ALWAYS-ON AUTOMATION' },
+  { icon: '', title: 'Reduce Missed Deadlines', desc: 'Proactive reminders ensure you never miss an assignment submission or exam date again.', stat: '95% FEWER MISSED DEADLINES' },
+  { icon: '', title: 'Boost Productivity', desc: 'Automated tracking eliminates mental overhead. Focus on learning, not remembering.', stat: '3× PRODUCTIVITY IMPROVEMENT' },
+  { icon: '', title: 'Smart Academic Assistant', desc: 'OpenClaw works 24/7 behind the scenes — syncing, reminding, reporting. Your invisible academic ally.', stat: 'ALWAYS-ON AUTOMATION' },
 ]
 
 const roles = [

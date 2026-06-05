@@ -2,6 +2,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import useAuth from '../hooks/useAuth'
+import useChatNotification from '../hooks/useChatNotification'
 import { 
   FaHome, FaUser, FaBook, FaMoneyBill, FaCalendar, 
   FaComment, FaNewspaper, FaChartBar, FaCog, 
@@ -16,6 +17,7 @@ const Sidebar = ({ role, isOpen, onClose }) => {
   const location = useLocation()
   const navigate = useNavigate()
   const { logout, user } = useAuth()
+  const { unreadCount } = useChatNotification()
   const [internalOpen, setInternalOpen] = useState(false)
 
   const isControlled = useMemo(() => typeof isOpen === 'boolean', [isOpen])
@@ -178,7 +180,13 @@ const Sidebar = ({ role, isOpen, onClose }) => {
                 {item.icon}
               </div>
               <span className="text-[13px] font-light">{item.label}</span>
-              {(isActive(item.path) || location.pathname.startsWith(item.path)) && (
+              {/* Unread badge for Chat/Pesan menu */}
+              {item.path.includes('/pesan') && unreadCount > 0 && (
+                <span className="ml-auto flex items-center justify-center min-w-[20px] h-[20px] px-1.5 rounded-full bg-red-500 text-white text-[10px] font-bold leading-none shadow-sm animate-pulse">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
+              {!(item.path.includes('/pesan') && unreadCount > 0) && (isActive(item.path) || location.pathname.startsWith(item.path)) && (
                 <div className="ml-auto w-1.5 h-1.5 rounded-full bg-lp-accent animate-pulse" />
               )}
             </Link>

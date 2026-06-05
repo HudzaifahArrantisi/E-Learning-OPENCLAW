@@ -27,8 +27,8 @@ import (
 // ============================================================
 
 const (
-	MaxImageSize     = 10 * 1024 * 1024 // 10MB
-	MaxDocumentSize  = 32 * 1024 * 1024 // 32MB
+	MaxImageSize     = 20 * 1024 * 1024 // 20MB
+	MaxDocumentSize  = 50 * 1024 * 1024 // 50MB
 	DefaultURLSecret = "nf-student-hub-signed-url-secret-change-me"
 	SignedURLExpiry   = 1 * time.Hour
 )

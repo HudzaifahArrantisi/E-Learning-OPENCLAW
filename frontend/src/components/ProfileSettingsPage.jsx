@@ -128,6 +128,8 @@ const ProfileSettingsPage = ({ role }) => {
       await api.updateMyProfile(payload)
       await queryClient.invalidateQueries({ queryKey: ['my-profile'] })
       await queryClient.invalidateQueries({ queryKey: ['public-profile'] })
+      await queryClient.invalidateQueries({ queryKey: [`${role}-profile`] })
+      await queryClient.invalidateQueries({ queryKey: ['public-recommendations'] })
       setSelectedFile(null)
       setMessage('Profil berhasil diperbarui.')
     } catch (err) {

@@ -66,8 +66,8 @@ func InitDB() {
 			log.Fatalf("FATAL: %v", initErr)
 		}
 
-		sqlDB.SetMaxOpenConns(5)                // Max 5 active connections per instance
-		sqlDB.SetMaxIdleConns(2)                // Keep 2 idle connections warm
+		sqlDB.SetMaxOpenConns(25)                // Allow more concurrent connections to avoid queuing latency
+		sqlDB.SetMaxIdleConns(10)                // Keep 10 idle connections warm to avoid connection startup latency
 		sqlDB.SetConnMaxLifetime(5 * time.Minute) // Recycle connections every 5 min
 		sqlDB.SetConnMaxIdleTime(1 * time.Minute) // Close idle connections after 1 min
 		// ──────────────────────────────────────────────────────────

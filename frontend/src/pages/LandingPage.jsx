@@ -220,12 +220,12 @@ export default function LandingPage() {
             {featureCards.map((f, i) => (
               <div key={f.title} className={`${rvBase} ${rvDelays[Math.min(i+1, 5)]} border border-lp-border rounded-2xl p-8 relative overflow-hidden transition-all duration-300 hover:border-lp-borderA hover:bg-lp-borderA/5 hover:-translate-y-0.5 group`}>
                 <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-lp-accent/30 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-                {f.icon === '⚡' && <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-5 text-xl bg-lp-accentS text-lp-atext">{f.icon}</div>}
-                {f.icon === '✈️' && <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-5 text-xl bg-lp-tg/10 text-lp-tg">{f.icon}</div>}
-                {f.icon === '📊' && <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-5 text-xl bg-lp-green/10 text-lp-green">{f.icon}</div>}
-                {f.icon === '📝' && <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-5 text-xl bg-lp-amber/10 text-lp-amber">{f.icon}</div>}
-                {f.icon === '📈' && <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-5 text-xl bg-purple-500/10 text-purple-400">{f.icon}</div>}
-                {f.icon === '🔄' && <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-5 text-xl bg-lp-red/10 text-lp-red">{f.icon}</div>}
+                {f.icon === '1' && <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-5 text-xl bg-lp-accentS text-lp-atext">{f.icon}</div>}
+                {f.icon === '2' && <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-5 text-xl bg-lp-tg/10 text-lp-tg">{f.icon}</div>}
+                {f.icon === '3' && <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-5 text-xl bg-lp-green/10 text-lp-green">{f.icon}</div>}
+                {f.icon === '4' && <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-5 text-xl bg-lp-amber/10 text-lp-amber">{f.icon}</div>}
+                {f.icon === '5' && <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-5 text-xl bg-purple-500/10 text-purple-400">{f.icon}</div>}
+                {f.icon === '6' && <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-5 text-xl bg-lp-red/10 text-lp-red">{f.icon}</div>}
                 <div className="text-[15px] font-semibold text-lp-text mb-2.5 tracking-tight leading-snug">{f.title}</div>
                 <div className="text-[13.5px] font-light text-lp-text2 leading-relaxed">{f.desc}</div>
               </div>
@@ -550,7 +550,6 @@ export default function LandingPage() {
         </p>
         <div className="flex items-center justify-center gap-4 flex-wrap">
           <button onClick={() => setIsLoginModalOpen(true)} className="inline-flex items-center gap-2 bg-lp-text text-lp-bg font-sans text-[14px] font-semibold py-[13px] px-7 rounded-full transition-all hover:bg-lp-atext hover:-translate-y-px">Enter Platform →</button>
-          <a href="#" className="inline-flex items-center gap-2 bg-lp-tg text-white font-sans text-[14px] font-semibold py-[13px] px-7 rounded-full transition-all hover:bg-[#1e96d3] hover:-translate-y-px">Connect Telegram ✈️</a>
         </div>
       </div>
 

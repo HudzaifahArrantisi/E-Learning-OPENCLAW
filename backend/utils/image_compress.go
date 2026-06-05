@@ -9,11 +9,6 @@ import (
 
 	"golang.org/x/image/draw"
 )
-
-// CompressImage compresses an image byte slice to JPEG format
-// maxWidth: maximum width in pixels (0 = no resize)
-// quality: JPEG quality (1-100, recommended 70-80)
-// Returns compressed bytes or error
 func CompressImage(data []byte, maxWidth int, quality int) ([]byte, error) {
 	// Decode image (auto-detect format from header: jpeg, png, gif)
 	img, _, err := image.Decode(bytes.NewReader(data))

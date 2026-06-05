@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useParams, useNavigate } from 'react-router-dom'
 import api from '../services/api'
 import useAuth from '../hooks/useAuth'
+import useChatNotification from '../hooks/useChatNotification'
 import Sidebar from './Sidebar'
 import { resolveBackendAssetUrl } from '../utils/assetUrl'
 
@@ -17,8 +18,41 @@ const ROLES = [
   { value: 'ormawa', label: 'Ormawa' },
 ]
 
+const renderMessageContent = (text, isMine, extraClasses = '') => {
+  if (!text) return null
+
+  const urlRegex = /(https?:\/\/[^\s]+|www\.[^\s]+)/gi
+  const parts = text.split(urlRegex)
+
+  return (
+    <div className={`whitespace-pre-wrap break-words break-all ${extraClasses}`}>
+      {parts.map((part, index) => {
+        if (part.match(urlRegex)) {
+          const href = part.toLowerCase().startsWith('www.') ? `https://${part}` : part
+          return (
+            <a
+              key={index}
+              href={href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`underline break-all transition-all hover:opacity-85 ${
+                isMine ? 'text-white font-semibold' : 'text-[#007AFF] font-semibold'
+              }`}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {part}
+            </a>
+          )
+        }
+        return part
+      })}
+    </div>
+  )
+}
+
 const ChatPage = ({ role }) => {
   const { user } = useAuth()
+  const { updateUnreadCount } = useChatNotification()
   const navigate = useNavigate()
   const { conversationId } = useParams()
   const basePath = `/${role}/pesan`
@@ -77,35 +111,78 @@ const ChatPage = ({ role }) => {
       if (r.data?.online_ids) setOnlineUsers(new Set(r.data.online_ids))
     }).catch(() => {})
     return () => {
-      api.webSocket.disconnect()
       api.webSocket.removeMessageCallback(handleWsMessage)
     }
   }, [user])
 
   // Select conversation from URL
   useEffect(() => {
-    if (conversationId && conversations.length) {
-      const targetId = parseInt(conversationId)
-      if (selectedConvRef.current?.id !== targetId) {
-        const conv = conversations.find(c => c.id === targetId)
-        if (conv) {
-          // Jika percakapan masih disembunyikan, jangan tampilkan di panel kanan
-          const isStillHidden = hiddenChats[conv.id] === (conv.last_message?.id || 'none')
-          if (isStillHidden) {
-            setSelectedConversation(null)
-            setMessages([])
-            setShowMobileList(true)
-            navigate(basePath, { replace: true })
-            return
-          }
+    if (!conversationId) return
+
+    const selectOrFetch = async () => {
+      const conv = conversations.find(c => c.id === conversationId)
+      if (conv) {
+        // Jika user secara aktif membuka percakapan ini, hapus dari hiddenChats
+        if (hiddenChats[conv.id]) {
+          const updated = { ...hiddenChats }
+          delete updated[conv.id]
+          setHiddenChats(updated)
+          localStorage.setItem('hiddenChats', JSON.stringify(updated))
+        }
+
+        if (selectedConvRef.current?.id !== conv.id) {
           selectConversation(conv)
-        } else {
-          // Jika tidak ada, kembalikan ke basePath
-          navigate(basePath, { replace: true })
+        }
+      } else {
+        // Jika tidak ada di daftar local, tapi loading sudah selesai
+        if (!loading) {
+          try {
+            const res = await api.getConversationDetail(conversationId)
+            if (res.data?.success && res.data.data) {
+              const fetchedConv = res.data.data
+
+              // Hapus dari hiddenChats
+              if (hiddenChats[fetchedConv.id]) {
+                const updated = { ...hiddenChats }
+                delete updated[fetchedConv.id]
+                setHiddenChats(updated)
+                localStorage.setItem('hiddenChats', JSON.stringify(updated))
+              }
+
+              // Masukkan ke state conversations
+              setConversations(prev => {
+                if (prev.some(c => c.id === fetchedConv.id)) return prev
+                return [fetchedConv, ...prev]
+              })
+
+              setSelectedConversation(fetchedConv)
+              setMessages([])
+              setShowMobileList(false)
+
+              const msgRes = await api.getMessages(fetchedConv.id)
+              if (msgRes.data?.success) setMessages(msgRes.data.data || [])
+              api.markMessagesAsRead(fetchedConv.id).catch(() => {})
+            } else {
+              navigate(basePath, { replace: true })
+            }
+          } catch (err) {
+            console.error('Fetch conversation detail error:', err)
+            navigate(basePath, { replace: true })
+          }
         }
       }
     }
-  }, [conversationId, conversations, hiddenChats])
+
+    selectOrFetch()
+  }, [conversationId, conversations, hiddenChats, loading])
+
+  // Sync global unread count with local conversations list
+  useEffect(() => {
+    if (!loading) {
+      const total = conversations.reduce((sum, c) => sum + (c.unread_count || 0), 0)
+      updateUnreadCount(total)
+    }
+  }, [conversations, loading, updateUnreadCount])
 
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages])
 
@@ -228,7 +305,6 @@ const ChatPage = ({ role }) => {
     try {
       api.webSocket.sendTypingIndicator(selectedConversation.id, false)
       const r = await api.sendMessage(selectedConversation.id, { 
-        conversation_id: selectedConversation.id, 
         content: messageContent, 
         message_type: 'text' 
       })
@@ -343,10 +419,19 @@ const ChatPage = ({ role }) => {
             }
             return [...prev, msg.data.message]
           })
+          // Auto-mark active messages as read and send WS receipt
+          api.markMessagesAsRead(currentConv.id).catch(() => {})
+          api.webSocket.sendReadReceipt(currentConv.id, msg.data.message.id)
         }
         setConversations(prev => {
           const idx = prev.findIndex(c => c.id === msg.data.conversation_id)
-          if (idx === -1) return prev
+          if (idx === -1) {
+            // New or hidden conversation, reload the list to display it
+            setTimeout(() => {
+              loadConversations()
+            }, 50)
+            return prev
+          }
           
           const newConvs = [...prev]
           const conv = { ...newConvs[idx] }
@@ -397,13 +482,28 @@ const ChatPage = ({ role }) => {
     try {
       const r = await api.createConversation({ type: 'private', participants: [contactId] })
       if (r.data?.success) {
+        const convId = r.data.data
+
+        // Hapus dari hiddenChats agar langsung terlihat
+        if (convId) {
+          const updated = { ...hiddenChats }
+          delete updated[convId]
+          setHiddenChats(updated)
+          localStorage.setItem('hiddenChats', JSON.stringify(updated))
+        }
+
         setShowNewChat(false)
         setSearchQuery('')
         setListQuery('')
         setRoleFilter('')
-        await loadConversations()
-        const convId = r.data.data
-        if (convId) navigate(`${basePath}/${convId}`)
+
+        // Navigasi langsung tanpa menunggu loading penuh seluruh list conversation
+        if (convId) {
+          navigate(`${basePath}/${convId}`)
+        }
+
+        // Jalankan pemuatan ulang list secara asynchronous di background
+        loadConversations()
       }
     } catch (e) { console.error('Start chat:', e) }
     setStartingChat(null)
@@ -602,7 +702,17 @@ const ChatPage = ({ role }) => {
             {/* Header */}
             <div className="pt-6 pb-2 px-5 sticky top-0 bg-[#F4F4F6]/90 backdrop-blur-md z-40">
               <div className="flex items-center justify-between mb-3">
-                <h2 className="text-[28px] font-bold text-gray-900 tracking-tight leading-none">Messages</h2>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => window.dispatchEvent(new CustomEvent('nf-sidebar-toggle'))}
+                    className="lg:hidden text-gray-500 hover:text-gray-800 p-1.5 hover:bg-[#E3E3E8] rounded-xl transition-all flex items-center justify-center"
+                    type="button"
+                    aria-label="Toggle Sidebar"
+                  >
+                    <i className="fas fa-bars text-xl" />
+                  </button>
+                  <h2 className="text-[28px] font-bold text-gray-900 tracking-tight leading-none">Messages</h2>
+                </div>
                 <button onClick={() => setShowNewChat(true)} className="text-[#007AFF] hover:opacity-75 transition-opacity active:scale-95">
                   <i className="fas fa-plus-circle text-2xl" />
                 </button>
@@ -827,7 +937,7 @@ const ChatPage = ({ role }) => {
                                       <i className="fas fa-download text-sm opacity-60 ml-2 flex-shrink-0" />
                                     </a>
                                   ) : (
-                                    <div className="whitespace-pre-wrap break-words">{msg.content}</div>
+                                    renderMessageContent(msg.content, isMine)
                                   )}
                                   
                                   {/* Status Indicators */}
@@ -921,7 +1031,7 @@ const ChatPage = ({ role }) => {
                         value={newMessage} 
                         onChange={handleInputChange}
                         onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(e) } }}
-                        placeholder="iMessage (Klik + untuk file/gambar...)"
+                        placeholder="Kirim pesan"
                         className="flex-1 py-1.5 text-[15px] resize-none focus:outline-none bg-transparent max-h-32 self-center text-black placeholder-[#8E8E93] border-none focus:ring-0"
                         rows="1"
                       />

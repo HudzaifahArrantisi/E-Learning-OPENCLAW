@@ -16,13 +16,13 @@ type UploadConfig struct {
 // DefaultImageConfig konfigurasi default untuk upload gambar
 var DefaultImageConfig = UploadConfig{
 	AllowedExtensions: []string{".jpg", ".jpeg", ".png", ".gif", ".webp"},
-	MaxFileSize:       5 * 1024 * 1024, // 5MB
+	MaxFileSize:       20 * 1024 * 1024, // 20MB
 }
 
 // DefaultDocumentConfig konfigurasi default untuk upload dokumen (tugas/materi)
 var DefaultDocumentConfig = UploadConfig{
 	AllowedExtensions: []string{".pdf", ".doc", ".docx", ".zip", ".jpg", ".jpeg", ".png"},
-	MaxFileSize:       32 * 1024 * 1024, // 32MB
+	MaxFileSize:       50 * 1024 * 1024, // 50MB
 }
 
 // ValidateUpload memvalidasi file upload terhadap konfigurasi

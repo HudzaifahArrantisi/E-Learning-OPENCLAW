@@ -58,6 +58,8 @@ const NotFound = lazy(() => import('./pages/NotFound'))
 
 import ProtectedRoute from './components/ProtectedRoute'
 import { AuthProvider } from './hooks/useAuth'
+import { ChatNotificationProvider } from './hooks/useChatNotification'
+import ChatToastNotification from './components/ChatToastNotification'
 
 import queryClient from './lib/queryClient'
 
@@ -68,6 +70,8 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <Router>
         <AuthProvider>
+        <ChatNotificationProvider>
+        <ChatToastNotification />
         <div className="App">
           <Suspense fallback={<Loading />}>
             <Routes>
@@ -131,6 +135,7 @@ function App() {
             </Routes>
           </Suspense>
         </div>
+        </ChatNotificationProvider>
         </AuthProvider>
       </Router>
     </QueryClientProvider>

@@ -248,6 +248,7 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB) {
 		chat.GET("/conversations", chatController.GetConversations)
 		chat.GET("/conversations/:conversation_id", chatController.GetConversationDetail)
 		chat.POST("/conversations", chatController.CreateConversation)
+		chat.DELETE("/conversations/:conversation_id", chatController.DeleteConversation)
 
 		// Message endpoints
 		chat.GET("/conversations/:conversation_id/messages", chatController.GetMessages)
