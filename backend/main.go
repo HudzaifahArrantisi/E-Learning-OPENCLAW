@@ -34,7 +34,7 @@ func main() {
 	if config.DB == nil {
 		log.Fatal("FATAL: Database connection is nil after initialization")
 	} else {
-		log.Println("Database connected successfully ✅")
+		log.Println("Database connected successfully ✅")	
 	}
 
 	r := gin.New()
