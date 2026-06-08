@@ -264,6 +264,7 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB) {
 		chat.GET("/contacts", chatController.GetContacts)
 		chat.GET("/users/search", chatController.SearchUsers)
 		chat.GET("/users/online", chatController.GetOnlineUsers)
+		chat.GET("/users/:user_id", chatController.GetUserDetail)
 
 		// Utility endpoints
 		chat.GET("/stats", chatController.GetChatStats)

@@ -96,7 +96,7 @@ type CreateConversationRequest struct {
 type SendMessageRequest struct {
 	ConversationID int     `json:"conversation_id,omitempty"`
 	Content        string  `json:"content" binding:"required"`
-	MessageType    string  `json:"message_type" binding:"required,oneof=text image file"`
+	MessageType    string  `json:"message_type" binding:"required,oneof=text image file system"`
 	FileURL        *string `json:"file_url"`
 	FileName       *string `json:"file_name"`
 	FileSize       *int    `json:"file_size"`
@@ -127,6 +127,8 @@ type ConversationResponse struct {
 	IsPinned     bool                  `json:"is_pinned"`
 	CreatedAt    time.Time             `json:"created_at"`
 	UpdatedAt    time.Time             `json:"updated_at"`
+	CreatedBy    int                   `json:"created_by"`
+	HasReplied   bool                  `json:"has_replied"`
 }
 
 type MessageResponse struct {

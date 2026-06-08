@@ -236,23 +236,114 @@ func UpdateMyProfile(c *gin.Context) {
 func GetPublicProfile(c *gin.Context) {
     role := c.Param("role")
     username := c.Param("username")
+    cleanUsername := cleanUsernameParam(username)
 
     // Validasi role dengan pesan lebih jelas
     validRoles := map[string]string{
-        "admin":   "Administrator",
-        "ukm":     "Unit Kegiatan Mahasiswa", 
-        "ormawa":  "Organisasi Mahasiswa",
+        "admin":     "Administrator",
+        "ukm":       "Unit Kegiatan Mahasiswa", 
+        "ormawa":    "Organisasi Mahasiswa",
+        "mahasiswa": "Mahasiswa",
+        "dosen":     "Dosen",
     }
     
     if _, exists := validRoles[role]; !exists {
         utils.ErrorResponse(c, http.StatusBadRequest, 
-            "Role tidak valid. Harus: admin, ukm, atau ormawa")
+            "Role tidak valid. Harus: admin, ukm, ormawa, mahasiswa, atau dosen")
+        return
+    }
+
+    if role == "mahasiswa" {
+        var profile struct {
+            ID        int            `json:"id"`
+            Name      string         `json:"name"`
+            NIM       string         `json:"nim"`
+            Alamat    sql.NullString `json:"alamat"`
+            Photo     sql.NullString `json:"photo"`
+            CreatedAt string         `json:"created_at"`
+            UpdatedAt string         `json:"updated_at"`
+        }
+        
+        query := `
+            SELECT id, name, nim, alamat, photo, created_at, updated_at
+            FROM mahasiswa
+            WHERE (LOWER(name) = $1 OR LOWER(REPLACE(name, ' ', '_')) = $1 OR LOWER(name) LIKE $2) AND deleted_at IS NULL
+            LIMIT 1
+        `
+        
+        err := config.DB.QueryRow(query, cleanUsername, "%"+cleanUsername+"%").Scan(
+            &profile.ID, &profile.Name, &profile.NIM, &profile.Alamat, &profile.Photo, &profile.CreatedAt, &profile.UpdatedAt,
+        )
+        if err != nil {
+            if err == sql.ErrNoRows {
+                utils.ErrorResponse(c, http.StatusNotFound, "Profile mahasiswa tidak ditemukan")
+                return
+            }
+            utils.ErrorResponse(c, http.StatusInternalServerError, "Database error: "+err.Error())
+            return
+        }
+        
+        utils.SuccessResponse(c, gin.H{
+            "id":               profile.ID,
+            "name":             profile.Name,
+            "username":         username,
+            "nim":              profile.NIM,
+            "alamat":           profile.Alamat.String,
+            "profile_picture":  profile.Photo.String,
+            "role":             role,
+            "created_at":       profile.CreatedAt,
+            "updated_at":       profile.UpdatedAt,
+            "followers_count":  0,
+            "following_count":  0,
+            "bio":              "Mahasiswa STT Nurul Fikri",
+        }, "Profile publik mahasiswa berhasil diambil")
+        return
+    }
+
+    if role == "dosen" {
+        var profile struct {
+            ID        int            `json:"id"`
+            Name      string         `json:"name"`
+            NIP       string         `json:"nip"`
+            CreatedAt string         `json:"created_at"`
+            UpdatedAt string         `json:"updated_at"`
+        }
+        
+        query := `
+            SELECT id, name, nip, created_at, updated_at
+            FROM dosen
+            WHERE (LOWER(name) = $1 OR LOWER(REPLACE(name, ' ', '_')) = $1 OR LOWER(name) LIKE $2) AND deleted_at IS NULL
+            LIMIT 1
+        `
+        
+        err := config.DB.QueryRow(query, cleanUsername, "%"+cleanUsername+"%").Scan(
+            &profile.ID, &profile.Name, &profile.NIP, &profile.CreatedAt, &profile.UpdatedAt,
+        )
+        if err != nil {
+            if err == sql.ErrNoRows {
+                utils.ErrorResponse(c, http.StatusNotFound, "Profile dosen tidak ditemukan")
+                return
+            }
+            utils.ErrorResponse(c, http.StatusInternalServerError, "Database error: "+err.Error())
+            return
+        }
+        
+        utils.SuccessResponse(c, gin.H{
+            "id":               profile.ID,
+            "name":             profile.Name,
+            "username":         username,
+            "nip":              profile.NIP,
+            "role":             role,
+            "created_at":       profile.CreatedAt,
+            "updated_at":       profile.UpdatedAt,
+            "followers_count":  0,
+            "following_count":  0,
+            "bio":              "Dosen STT Nurul Fikri",
+        }, "Profile publik dosen berhasil diambil")
         return
     }
 
     table := role
-    cleanUsername := cleanUsernameParam(username)
-
     log.Printf("Mencari profile: role=%s, username=%s, cleanUsername=%s", role, username, cleanUsername)
 
     var profile struct {
@@ -269,12 +360,12 @@ func GetPublicProfile(c *gin.Context) {
         UpdatedAt      string         `json:"updated_at"`
     }
 
-        query := `
-            SELECT id, name, username, bio, website, phone, profile_picture, 
-                followers_count, following_count, created_at, updated_at
-            FROM ` + table + ` 
-            WHERE (username = $1 OR username = $2) AND deleted_at IS NULL
-        `
+    query := `
+        SELECT id, name, username, bio, website, phone, profile_picture, 
+            followers_count, following_count, created_at, updated_at
+        FROM ` + table + ` 
+        WHERE (username = $1 OR username = $2) AND deleted_at IS NULL
+    `
 
     // Coba dengan username yang sudah dibersihkan
     err := config.DB.QueryRow(query, username, cleanUsername).Scan(

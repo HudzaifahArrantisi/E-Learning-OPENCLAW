@@ -146,6 +146,21 @@ func (cc *ChatController) GetConversations(c *gin.Context) {
 		convIDs = append(convIDs, conv.ID)
 	}
 
+	hasReplied := make(map[int]bool)
+	if len(convIDs) > 0 {
+		type RepliedResult struct {
+			ConversationID int
+		}
+		var repliedResults []RepliedResult
+		cc.db.Model(&models.Message{}).
+			Select("distinct conversation_id").
+			Where("conversation_id IN ? AND sender_id = ? AND deleted_at IS NULL", convIDs, userID).
+			Scan(&repliedResults)
+		for _, r := range repliedResults {
+			hasReplied[r.ConversationID] = true
+		}
+	}
+
 	lastMessages := make(map[int]models.Message)
 	if len(convIDs) > 0 {
 		var msgs []models.Message
@@ -224,6 +239,8 @@ func (cc *ChatController) GetConversations(c *gin.Context) {
 			IsPinned:     pinnedMap[conv.ID],
 			CreatedAt:    conv.CreatedAt,
 			UpdatedAt:    conv.UpdatedAt,
+			CreatedBy:    conv.CreatedBy,
+			HasReplied:   hasReplied[conv.ID],
 		})
 	}
 
@@ -327,6 +344,13 @@ func (cc *ChatController) GetConversationDetail(c *gin.Context) {
 		}
 	}
 
+	// Check if user has replied
+	var msgCount int64
+	cc.db.Model(&models.Message{}).
+		Where("conversation_id = ? AND sender_id = ? AND deleted_at IS NULL", conversation.ID, userID).
+		Count(&msgCount)
+	hasRepliedVal := msgCount > 0
+
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"data": models.ConversationResponse{
@@ -340,6 +364,8 @@ func (cc *ChatController) GetConversationDetail(c *gin.Context) {
 			IsPinned:     isPinned,
 			CreatedAt:    conversation.CreatedAt,
 			UpdatedAt:    conversation.UpdatedAt,
+			CreatedBy:    conversation.CreatedBy,
+			HasReplied:   hasRepliedVal,
 		},
 	})
 }
@@ -657,8 +683,8 @@ func (cc *ChatController) SendMessage(c *gin.Context) {
 		CreatedAt:   message.CreatedAt,
 	}
 
-	// Broadcast via WebSocket
-	cc.hub.BroadcastToConversation(conversation.ID, models.WebsocketMessage{
+	// Broadcast via WebSocket asynchronously to avoid blocking the HTTP response
+	go cc.hub.BroadcastToConversation(conversation.ID, models.WebsocketMessage{
 		Type: "new_message",
 		Data: gin.H{
 			"conversation_id": conversation.PublicID,
@@ -1210,6 +1236,33 @@ func (cc *ChatController) SearchUsers(c *gin.Context) {
 		"success": true,
 		"data":    response,
 		"count":   len(response),
+	})
+}
+
+// GetUserDetail - Get details for a single user by ID
+func (cc *ChatController) GetUserDetail(c *gin.Context) {
+	_, ok := getUserIDFromContext(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"success": false, "error": "Unauthorized"})
+		return
+	}
+
+	userIDStr := c.Param("user_id")
+	userID, err := strconv.Atoi(userIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "Invalid user ID"})
+		return
+	}
+
+	var user models.User
+	if err := cc.db.Preload("Mahasiswa").Preload("Dosen").Preload("Ukm").Preload("Ormawa").First(&user, userID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"success": false, "error": "User not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"data":    models.MapUserToResponse(user),
 	})
 }
 

@@ -199,7 +199,7 @@ const DashboardLayout = ({
                 </button>
 
                 {/* Logo */}
-                <Link to="/" className="flex items-center gap-2">
+                <Link to="" className="flex items-center gap-2">
                   <div className="w-6 h-6 rounded-md bg-lp-accentS border border-lp-borderA flex items-center justify-center">
                     <svg className="w-3 h-3 stroke-lp-accent fill-none stroke-2 [stroke-linecap:round]" viewBox="0 0 24 24">
                       <path d="M22 10v6M2 10l10-5 10 5-10 5-10-5z" />

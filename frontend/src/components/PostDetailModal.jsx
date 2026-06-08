@@ -10,6 +10,7 @@ import {
   FaTimes, FaChevronLeft, FaChevronRight 
 } from 'react-icons/fa'
 import { resolveBackendAssetUrl } from '../utils/assetUrl'
+import ProfileHoverCard from './ProfileHoverCard'
 
 const cleanUsername = (username) => {
   if (!username) return ''
@@ -259,18 +260,25 @@ const PostDetailModal = ({ post, onClose, getRelativeTime }) => {
             
             {/* Header */}
             <div className="flex items-center justify-between p-3 sm:p-4 border-b border-lp-border bg-white flex-shrink-0">
-              <Link to={`/profile/${post.role}/${username}`} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-                <div className="w-8 h-8 bg-lp-accentS border border-lp-borderA rounded-full flex items-center justify-center text-lp-atext text-xs font-bold shrink-0 overflow-hidden">
-                  {post.author_avatar ? (
-                    <img src={resolveBackendAssetUrl(post.author_avatar)} alt={username} className="w-full h-full object-cover" />
-                  ) : (
-                    username?.[0]?.toUpperCase() || '?'
-                  )}
+              <ProfileHoverCard 
+                role={post.role} 
+                username={username}
+                displayName={post.author_name || username}
+                displayAvatar={post.author_avatar}
+              >
+                <div className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+                  <div className="w-8 h-8 bg-lp-accentS border border-lp-borderA rounded-full flex items-center justify-center text-lp-atext text-xs font-bold shrink-0 overflow-hidden">
+                    {post.author_avatar ? (
+                      <img src={resolveBackendAssetUrl(post.author_avatar)} alt={username} className="w-full h-full object-cover" />
+                    ) : (
+                      username?.[0]?.toUpperCase() || '?'
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-lp-text text-[14px] tracking-tight">{username}</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="font-semibold text-lp-text text-[14px] tracking-tight">{username}</span>
-                </div>
-              </Link>
+              </ProfileHoverCard>
               <button className="text-lp-text3 hover:text-lp-text2 p-1 font-bold tracking-widest leading-none pb-2">
                 ...
               </button>
@@ -281,8 +289,11 @@ const PostDetailModal = ({ post, onClose, getRelativeTime }) => {
               {/* Caption */}
               {post.content && (
                 <div className="p-5 flex items-start space-x-4 border-b-[3px] border-gray-100 bg-gray-50/50 mb-2 relative">
-                  <Link 
-                    to={`/profile/${post.role}/${username}`}
+                  <ProfileHoverCard 
+                    role={post.role} 
+                    username={username}
+                    displayName={post.author_name || username}
+                    displayAvatar={post.author_avatar}
                     className="flex-shrink-0 mt-0.5"
                   >
                     <div className="w-9 h-9 bg-lp-bg rounded-full flex items-center justify-center text-lp-text border-2 border-white shadow-sm text-sm font-bold shrink-0 overflow-hidden">
@@ -292,15 +303,19 @@ const PostDetailModal = ({ post, onClose, getRelativeTime }) => {
                         username?.[0]?.toUpperCase() || '?'
                       )}
                     </div>
-                  </Link>
+                  </ProfileHoverCard>
                   <div className="flex-1 min-w-0">
                     <span className="font-bold text-gray-800 text-[14px] tracking-tight mr-2">
-                      <Link 
-                        to={`/profile/${post.role}/${username}`}
-                        className="hover:text-lp-accent transition-colors"
+                      <ProfileHoverCard 
+                        role={post.role} 
+                        username={username}
+                        displayName={post.author_name || username}
+                        displayAvatar={post.author_avatar}
                       >
-                        {post.author_name || username}
-                      </Link>
+                        <span className="hover:text-lp-accent transition-colors">
+                          {post.author_name || username}
+                        </span>
+                      </ProfileHoverCard>
                     </span>
                     <div className="text-gray-700 font-normal whitespace-pre-line break-words text-[14px] leading-relaxed mt-1">
                       {post.content}
@@ -321,8 +336,12 @@ const PostDetailModal = ({ post, onClose, getRelativeTime }) => {
                 ) : localComments.length > 0 ? (
                   localComments.map((comment) => (
                     <div key={comment.id} className="flex items-start space-x-3 group">
-                      <Link 
-                        to={`/profile/${comment.user_role || 'mahasiswa'}/${cleanUsername(comment.author_username || comment.author_name)}`}
+                      <ProfileHoverCard 
+                        role={comment.user_role} 
+                        username={comment.author_username || comment.author_name}
+                        displayName={comment.author_name}
+                        displayAvatar={comment.author_avatar}
+                        userId={comment.author_id || comment.user_id}
                         className="flex-shrink-0"
                       >
                         <div className="w-8 h-8 bg-lp-surface border border-lp-border rounded-full flex items-center justify-center text-lp-text2 text-xs font-bold shrink-0 overflow-hidden">
@@ -332,15 +351,20 @@ const PostDetailModal = ({ post, onClose, getRelativeTime }) => {
                             comment.author_name?.[0]?.toUpperCase() || '?'
                           )}
                         </div>
-                      </Link>
+                      </ProfileHoverCard>
                       <div className="flex-1 min-w-0 pt-1">
                         <span className="font-semibold text-lp-text text-[14px] tracking-tight mr-2">
-                          <Link 
-                            to={`/profile/${comment.user_role || 'mahasiswa'}/${cleanUsername(comment.author_username || comment.author_name)}`}
-                            className="hover:opacity-80 transition-opacity"
+                          <ProfileHoverCard 
+                            role={comment.user_role} 
+                            username={comment.author_username || comment.author_name}
+                            displayName={comment.author_name}
+                            displayAvatar={comment.author_avatar}
+                            userId={comment.author_id || comment.user_id}
                           >
-                            {comment.author_name || 'Unknown'}
-                          </Link>
+                            <span className="hover:opacity-80 transition-opacity">
+                              {comment.author_name || 'Unknown'}
+                            </span>
+                          </ProfileHoverCard>
                         </span>
                         <span className="text-lp-text text-[14px] font-normal break-words leading-relaxed">
                           {comment.content}
@@ -476,15 +500,36 @@ const PostDetailModal = ({ post, onClose, getRelativeTime }) => {
             <div className="space-y-3">
               {localComments.map((comment) => (
                 <div key={comment.id} className="flex items-start space-x-3 group">
-                  <div className="w-8 h-8 bg-lp-surface border border-lp-border rounded-full flex items-center justify-center text-lp-text2 text-xs font-bold shrink-0 overflow-hidden">
-                    {comment.author_avatar ? (
-                      <img src={resolveBackendAssetUrl(comment.author_avatar)} alt={comment.author_name} className="w-full h-full object-cover" />
-                    ) : (
-                      comment.author_name?.[0]?.toUpperCase() || '?'
-                    )}
-                  </div>
+                  <ProfileHoverCard 
+                    role={comment.user_role} 
+                    username={comment.author_username || comment.author_name}
+                    displayName={comment.author_name}
+                    displayAvatar={comment.author_avatar}
+                    userId={comment.author_id || comment.user_id}
+                    className="flex-shrink-0"
+                  >
+                    <div className="w-8 h-8 bg-lp-surface border border-lp-border rounded-full flex items-center justify-center text-lp-text2 text-xs font-bold shrink-0 overflow-hidden">
+                      {comment.author_avatar ? (
+                        <img src={resolveBackendAssetUrl(comment.author_avatar)} alt={comment.author_name} className="w-full h-full object-cover" />
+                      ) : (
+                        comment.author_name?.[0]?.toUpperCase() || '?'
+                      )}
+                    </div>
+                  </ProfileHoverCard>
                   <div className="flex-1 min-w-0 pt-1">
-                    <span className="font-semibold text-lp-text text-[14px] tracking-tight mr-2">{comment.author_name || 'Unknown'}</span>
+                    <span className="font-semibold text-lp-text text-[14px] tracking-tight mr-2">
+                      <ProfileHoverCard 
+                        role={comment.user_role} 
+                        username={comment.author_username || comment.author_name}
+                        displayName={comment.author_name}
+                        displayAvatar={comment.author_avatar}
+                        userId={comment.author_id || comment.user_id}
+                      >
+                        <span className="hover:opacity-80 transition-opacity">
+                          {comment.author_name || 'Unknown'}
+                        </span>
+                      </ProfileHoverCard>
+                    </span>
                     <span className="text-lp-text text-[14px] font-normal break-words leading-relaxed">{comment.content}</span>
                     <div className="text-lp-text3 text-[12px] font-normal mt-1">
                       <span>{formatTime(comment.created_at)}</span>

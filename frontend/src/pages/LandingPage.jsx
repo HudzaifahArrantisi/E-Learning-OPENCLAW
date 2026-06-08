@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   featureCards, howItWorks, benefits, roles, semesters, visiData, platformFeatures,
@@ -8,6 +8,9 @@ import {
 import LoginModal from '../components/LoginModal'
 
 export default function LandingPage() {
+  const openClawRef = useRef(null)
+  const openClawAltRef = useRef(null)
+  const openClawVisiRef = useRef(null)
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [showTutorial, setShowTutorial] = useState(false)
@@ -39,6 +42,191 @@ export default function LandingPage() {
     return () => obs.disconnect()
   }, [])
 
+  useEffect(() => {
+    const openClaw = openClawRef.current
+    const openClawAlt = openClawAltRef.current
+    const openClawVisi = openClawVisiRef.current
+    if (!openClaw || !openClawAlt || !openClawVisi) return undefined
+
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
+    let animationFrame = null
+    let lastScrollY = window.scrollY
+
+    const updateOpenClawPosition = () => {
+      animationFrame = null
+
+      const sections = [...document.querySelectorAll('section')]
+      if (!sections.length) return
+
+      const scrollFocus = window.scrollY + window.innerHeight * 0.5
+      const sectionCenters = sections.map(section => (
+        section.offsetTop + section.offsetHeight * 0.5
+      ))
+      const currentIndex = sectionCenters.findIndex(center => center >= scrollFocus)
+      const nextIndex = currentIndex === -1 ? sections.length - 1 : currentIndex
+      const previousIndex = Math.max(0, nextIndex - 1)
+      const previousCenter = sectionCenters[previousIndex]
+      const nextCenter = sectionCenters[nextIndex]
+      const rawProgress = nextCenter === previousCenter
+        ? 0
+        : (scrollFocus - previousCenter) / (nextCenter - previousCenter)
+      const progress = Math.min(1, Math.max(0, rawProgress))
+      const easedProgress = progress * progress * (3 - 2 * progress)
+
+      const mascotWidth = openClaw.offsetWidth
+      const isMobile = window.innerWidth < 1024
+      const edgeGap = isMobile ? 4 : Math.max(8, Math.min(18, window.innerWidth * 0.012))
+      const leftX = edgeGap
+      const rightX = window.innerWidth - mascotWidth - edgeGap
+      const centerLeftX = isMobile
+        ? leftX + mascotWidth * 0.35
+        : Math.min(window.innerWidth * 0.2, leftX + mascotWidth * 0.55)
+      const centerRightX = isMobile
+        ? rightX - mascotWidth * 0.35
+        : Math.max(window.innerWidth - mascotWidth - window.innerWidth * 0.2, rightX - mascotWidth * 0.55)
+      const sectionPath = [
+        { x: rightX, y: 0.28 },
+        { x: leftX, y: 0.64 },
+        { x: leftX, y: 0.25 },
+        { x: leftX, y: 0.7 },
+        { x: centerRightX, y: 0.42 },
+        { x: rightX, y: 0.68 },
+        { x: rightX, y: 0.24 },
+        { x: centerLeftX, y: 0.5 },
+      ]
+      const getPathPoint = index => sectionPath[index % sectionPath.length]
+      const getX = index => getPathPoint(index).x
+      const getY = index => window.innerHeight * getPathPoint(index).y
+      const getScale = index => (index === 0 ? (isMobile ? 1.05 : 1.2) : 1)
+
+      const x = getX(previousIndex) + (getX(nextIndex) - getX(previousIndex)) * easedProgress
+      const y = getY(previousIndex) + (getY(nextIndex) - getY(previousIndex)) * easedProgress
+      const scrollDirection = window.scrollY >= lastScrollY ? 1 : -1
+      const rotation = reducedMotion.matches ? 0 : Math.sin(progress * Math.PI) * 8 * scrollDirection
+      const scale = getScale(previousIndex) + (getScale(nextIndex) - getScale(previousIndex)) * easedProgress
+      const pageProgress = window.scrollY / Math.max(1, document.documentElement.scrollHeight - window.innerHeight)
+      const fadeOut = pageProgress > 0.94 ? Math.max(0, (1 - pageProgress) / 0.06) : 1
+      const mascotOpacity = (reducedMotion.matches ? 0.5 : 0.82) * fadeOut
+      const visiTarget = document.getElementById('visi-misi')
+      const visiSection = visiTarget?.closest('section') || visiTarget
+      const visiRect = visiSection?.getBoundingClientRect()
+      const visiEnter = visiRect
+        ? Math.min(1, Math.max(0, (window.innerHeight * 0.85 - visiRect.top) / (window.innerHeight * 0.35)))
+        : 0
+      const visiExit = visiRect
+        ? Math.min(1, Math.max(0, (visiRect.bottom - window.innerHeight * 0.15) / (window.innerHeight * 0.35)))
+        : 0
+      const visiInfluence = Math.min(visiEnter, visiExit)
+      const visiPageTop = visiRect ? window.scrollY + visiRect.top : document.documentElement.scrollHeight
+      const companionTravel = Math.max(window.innerHeight, document.documentElement.scrollHeight - visiPageTop - window.innerHeight)
+      const companionProgress = Math.min(1, Math.max(0, (scrollFocus - visiPageTop) / companionTravel))
+      const isMascotSwitch = previousIndex === 4 && nextIndex === 5
+      const exitProgress = Math.min(1, easedProgress * 2)
+      const enterProgress = Math.max(0, easedProgress * 2 - 1)
+      const offscreenRightX = window.innerWidth + mascotWidth * 0.35
+      const exitX = x + (offscreenRightX - x) * exitProgress
+      const enterTargetX = getX(nextIndex)
+      const enterX = offscreenRightX + (enterTargetX - offscreenRightX) * enterProgress
+      const exitRotation = rotation + exitProgress * 12
+      const enterRotation = (1 - enterProgress) * -12 + rotation
+      const defaultTransform = `translate3d(${x}px, ${y}px, 0) rotate(${rotation}deg) scale(${scale})`
+
+      if (isMascotSwitch) {
+        openClaw.style.transform = `translate3d(${exitX}px, ${y}px, 0) rotate(${exitRotation}deg) scale(${scale})`
+        openClawAlt.style.transform = `translate3d(${enterX}px, ${y}px, 0) rotate(${enterRotation}deg) scale(${scale})`
+        openClaw.style.opacity = String(mascotOpacity * Math.min(1, (1 - exitProgress) * 4))
+        openClawAlt.style.opacity = String(mascotOpacity * Math.min(1, enterProgress * 4))
+      } else {
+        const showAltMascot = previousIndex >= 5 || nextIndex >= 5
+        openClaw.style.transform = defaultTransform
+        openClawAlt.style.transform = defaultTransform
+        openClaw.style.opacity = String(showAltMascot ? 0 : mascotOpacity)
+        openClawAlt.style.opacity = String(showAltMascot ? mascotOpacity : 0)
+      }
+
+      if (visiInfluence > 0) {
+        const visiEase = visiInfluence * visiInfluence * (3 - 2 * visiInfluence)
+        const visiY = window.innerHeight * (isMobile ? 0.7 : 0.46)
+        const altX = x + (rightX - x) * visiEase
+        const float = reducedMotion.matches ? 0 : Math.sin(visiInfluence * Math.PI) * 10
+
+        openClaw.style.opacity = '0'
+        openClawAlt.style.transform = `translate3d(${altX}px, ${visiY - float}px, 0) rotate(${4 * visiEase}deg) scale(${scale})`
+        openClawAlt.style.opacity = String(mascotOpacity)
+      }
+
+      if (visiEnter > 0) {
+        const companionPath = [
+          { x: leftX, y: 0.46, rotation: 0, scale: 1 },
+          { x: leftX, y: 0.7, rotation: -10, scale: 0.92 },
+          { x: centerLeftX, y: 0.24, rotation: 8, scale: 1.06 },
+          { x: rightX, y: 0.62, rotation: 14, scale: 0.9 },
+          { x: centerLeftX, y: 0.38, rotation: -7, scale: 1.03 },
+          { x: leftX, y: 0.68, rotation: -12, scale: 0.94 },
+        ]
+        const pathPosition = companionProgress * (companionPath.length - 1)
+        const pathIndex = Math.min(companionPath.length - 2, Math.floor(pathPosition))
+        const pathProgress = pathPosition - pathIndex
+        const pathEase = pathProgress * pathProgress * (3 - 2 * pathProgress)
+        const fromPoint = companionPath[pathIndex]
+        const toPoint = companionPath[pathIndex + 1]
+        const targetX = fromPoint.x + (toPoint.x - fromPoint.x) * pathEase
+        const targetY = window.innerHeight * (fromPoint.y + (toPoint.y - fromPoint.y) * pathEase)
+        const targetRotation = fromPoint.rotation + (toPoint.rotation - fromPoint.rotation) * pathEase
+        const targetScale = fromPoint.scale + (toPoint.scale - fromPoint.scale) * pathEase
+        const entryEase = visiEnter * visiEnter * (3 - 2 * visiEnter)
+        const companionX = -mascotWidth * 1.2 + (targetX + mascotWidth * 1.2) * entryEase
+        const companionFloat = reducedMotion.matches ? 0 : Math.sin(companionProgress * Math.PI * 8) * (isMobile ? 7 : 12)
+        const companionOpacity = reducedMotion.matches ? 0.5 : 0.82
+
+        openClawVisi.style.transform = `translate3d(${companionX}px, ${targetY + companionFloat}px, 0) rotate(${targetRotation}deg) scale(${targetScale})`
+        openClawVisi.style.opacity = String(companionOpacity * Math.min(1, entryEase * 3))
+      } else {
+        openClawVisi.style.opacity = '0'
+      }
+
+      const ctaRect = document.getElementById('landing-cta')?.getBoundingClientRect()
+      const ctaInfluence = ctaRect
+        ? Math.min(1, Math.max(0, (window.innerHeight * 0.9 - ctaRect.top) / (window.innerHeight * 0.45)))
+        : 0
+
+      if (ctaInfluence > 0) {
+        const ctaEase = ctaInfluence * ctaInfluence * (3 - 2 * ctaInfluence)
+        const ctaY = window.innerHeight * (isMobile ? 0.72 : 0.5)
+        const ctaFloat = reducedMotion.matches ? 0 : Math.sin(ctaInfluence * Math.PI * 3) * (isMobile ? 5 : 9)
+        const leftTarget = leftX
+        const rightTarget = rightX
+        const lobsterX = x + (leftTarget - x) * ctaEase
+        const altX = x + (rightTarget - x) * ctaEase
+
+        openClaw.style.opacity = '0'
+        openClawVisi.style.transform = `translate3d(${lobsterX}px, ${ctaY + ctaFloat}px, 0) rotate(${-8 * ctaEase}deg) scale(${0.96 + ctaEase * 0.04})`
+        openClawAlt.style.transform = `translate3d(${altX}px, ${ctaY - ctaFloat}px, 0) rotate(${8 * ctaEase}deg) scale(${0.96 + ctaEase * 0.04})`
+        openClawVisi.style.opacity = String((reducedMotion.matches ? 0.5 : 0.82) * ctaEase)
+        openClawAlt.style.opacity = String((reducedMotion.matches ? 0.5 : 0.82) * ctaEase)
+      }
+      lastScrollY = window.scrollY
+    }
+
+    const scheduleUpdate = () => {
+      if (animationFrame === null) {
+        animationFrame = window.requestAnimationFrame(updateOpenClawPosition)
+      }
+    }
+
+    updateOpenClawPosition()
+    window.addEventListener('scroll', scheduleUpdate, { passive: true })
+    window.addEventListener('resize', scheduleUpdate)
+    reducedMotion.addEventListener('change', scheduleUpdate)
+
+    return () => {
+      window.removeEventListener('scroll', scheduleUpdate)
+      window.removeEventListener('resize', scheduleUpdate)
+      reducedMotion.removeEventListener('change', scheduleUpdate)
+      if (animationFrame !== null) window.cancelAnimationFrame(animationFrame)
+    }
+  }, [])
+
   const [activeProg, setActiveProg] = useState('ti')
   const [activeInst, setActiveInst] = useState('stt-nf')
   const [selectedDate, setSelectedDate] = useState(null)
@@ -59,6 +247,33 @@ export default function LandingPage() {
         {/* Edges mask so grid fades nicely toward the sides/bottom */}
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,transparent_0%,rgba(255,255,255,0.85)_70%,#ffffff_100%)]" />
       </div>
+
+      {/* Scroll-driven OpenClaw mascot that travels between page sections. */}
+      <img
+        ref={openClawRef}
+        src="/openclaw1.png"
+        alt=""
+        aria-hidden="true"
+        draggable="false"
+        className="fixed top-0 left-0 z-[5] block w-[clamp(64px,20vw,96px)] origin-center select-none pointer-events-none mix-blend-multiply drop-shadow-[0_8px_14px_rgba(15,23,42,0.16)] will-change-transform lg:w-[clamp(112px,10vw,164px)] lg:drop-shadow-[0_14px_24px_rgba(15,23,42,0.18)]"
+      />
+      <img
+        ref={openClawAltRef}
+        src="/openclaw.png"
+        alt=""
+        aria-hidden="true"
+        draggable="false"
+        className="fixed top-0 left-0 z-[5] block w-[clamp(64px,20vw,96px)] origin-center select-none pointer-events-none mix-blend-multiply drop-shadow-[0_8px_14px_rgba(15,23,42,0.16)] will-change-transform lg:w-[clamp(112px,10vw,164px)] lg:drop-shadow-[0_14px_24px_rgba(15,23,42,0.18)]"
+      />
+      <img
+        ref={openClawVisiRef}
+        src="/openclaw1.png"
+        alt=""
+        aria-hidden="true"
+        draggable="false"
+        className="fixed top-0 left-0 z-[5] block w-[clamp(64px,20vw,96px)] origin-center select-none pointer-events-none mix-blend-multiply drop-shadow-[0_8px_14px_rgba(15,23,42,0.16)] will-change-transform lg:w-[clamp(112px,10vw,164px)] lg:drop-shadow-[0_14px_24px_rgba(15,23,42,0.18)]"
+      />
+
       {/* HEADER / NAV */}
       <div className="fixed top-5 left-0 right-0 z-50 flex justify-center px-4 sm:px-5 pointer-events-none">
         <div className={`pointer-events-auto transition-all duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)] relative ${isMobileMenuOpen ? 'w-full sm:w-max' : 'w-max max-w-full'}`}>
@@ -148,7 +363,7 @@ export default function LandingPage() {
                       : 'bg-lp-surface border-lp-border hover:bg-white/60 hover:border-lp-borderA/50'
                   }`}
                 >
-                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl shrink-0 bg-gradient-to-br ${role.color} text-white shadow-inner`}>
+                  <div className="w-12 h-12 flex items-center justify-center text-2xl shrink-0">
                     {role.icon}
                   </div>
                   <div>
@@ -169,7 +384,7 @@ export default function LandingPage() {
               <div className={`absolute -top-20 -right-20 w-64 h-64 rounded-full blur-[80px] opacity-10 bg-gradient-to-br ${roleGuides[activeRoleGuide].color} pointer-events-none transition-colors duration-700`}></div>
               
               <div className="flex items-center gap-4 mb-8 relative z-10">
-                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-3xl shrink-0 bg-gradient-to-br ${roleGuides[activeRoleGuide].color} text-white shadow-lg`}>
+                <div className="w-14 h-14 flex items-center justify-center text-3xl shrink-0">
                   {roleGuides[activeRoleGuide].icon}
                 </div>
                 <div>
@@ -539,7 +754,7 @@ export default function LandingPage() {
       </section>
 
       {/* CTA */}
-      <div className={`${rvBase} text-center pt-[118px] pb-[112px] px-6 relative overflow-hidden`}>
+      <div id="landing-cta" className={`${rvBase} text-center pt-[118px] pb-[112px] px-6 relative overflow-hidden`}>
         <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[640px] h-[360px] bg-[radial-gradient(ellipse_at_50%_100%,rgba(75,115,255,0.06),transparent_72%)] pointer-events-none" />
         <span className="text-[10.5px] font-mono text-lp-text3 tracking-[0.16em] uppercase mb-7 block">Student Hub · E-Learning Reminder Platform</span>
         <h2 className="font-sans text-[clamp(3.2rem,7vw,6rem)] font-normal tracking-[-0.04em] leading-[0.97] text-lp-text mb-6 relative">

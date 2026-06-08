@@ -96,7 +96,14 @@ export function ChatNotificationProvider({ children }) {
         // Parse share_post content for preview
         let preview = content
         if (content.startsWith('{"type":"share_post"')) {
-          preview = '📎 Berbagi postingan'
+          try {
+            const data = JSON.parse(content)
+            if (data.type === 'share_post') {
+              preview = `(postingan dari ${data.author_name || 'User'})`
+            }
+          } catch (e) {
+            preview = '📎 Berbagi postingan'
+          }
         }
 
         const toast = {

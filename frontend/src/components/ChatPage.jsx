@@ -21,6 +21,76 @@ const ROLES = [
 const renderMessageContent = (text, isMine, extraClasses = '') => {
   if (!text) return null
 
+  // Detect shared post messages
+  try {
+    if (text.startsWith('{"type":"share_post"')) {
+      const data = JSON.parse(text)
+      if (data.type === 'share_post') {
+        const mediaUrl = data.media_url ? resolveBackendAssetUrl(data.media_url) : null
+        const cleanName = (data.author_name || '').toLowerCase()
+          .replace(/^ormawa_/, '').replace(/^ukm_/, '').replace(/^admin_/, '').trim()
+        const profileUrl = `/profile/${data.author_role || 'mahasiswa'}/${cleanName}`
+
+        return (
+          <div className={`w-[240px] sm:w-[280px] -mx-2 -my-0.5 ${extraClasses}`}>
+            <a
+              href={profileUrl}
+              className="block no-underline text-inherit"
+              onClick={e => e.stopPropagation()}
+            >
+              {/* Post thumbnail */}
+              {mediaUrl && (
+                <div className="w-full aspect-square rounded-t-lg overflow-hidden bg-gray-100">
+                  <img
+                    src={mediaUrl}
+                    alt="Shared post"
+                    className="w-full h-full object-cover"
+                    onError={e => { e.target.style.display = 'none' }}
+                  />
+                </div>
+              )}
+              {/* Post info */}
+              <div className={`p-2.5 ${mediaUrl ? 'border-t' : ''} ${
+                isMine ? 'border-white/15' : 'border-black/5'
+              }`}>
+                <div className="flex items-center gap-2 mb-1.5">
+                  <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-bold flex-shrink-0 ${
+                    isMine ? 'bg-white/20 text-white' : 'bg-black/8 text-gray-600'
+                  }`}>
+                    {data.author_avatar ? (
+                      <img src={resolveBackendAssetUrl(data.author_avatar)} alt="" className="w-full h-full object-cover rounded-full" />
+                    ) : (
+                      (data.author_name || '?')[0].toUpperCase()
+                    )}
+                  </div>
+                  <span className={`text-[12px] font-semibold truncate ${
+                    isMine ? 'text-white' : 'text-gray-800'
+                  }`}>
+                    {data.author_name || 'Unknown'}
+                  </span>
+                </div>
+                {data.content && (
+                  <p className={`text-[12px] leading-snug line-clamp-2 ${
+                    isMine ? 'text-white/80' : 'text-gray-600'
+                  }`}>
+                    {data.content}
+                  </p>
+                )}
+                <div className={`text-[10px] font-semibold mt-1.5 ${
+                  isMine ? 'text-white/60' : 'text-[#007AFF]'
+                }`}>
+                  Lihat Postingan →
+                </div>
+              </div>
+            </a>
+          </div>
+        )
+      }
+    }
+  } catch (e) {
+    // Not JSON — render as normal text below
+  }
+
   const urlRegex = /(https?:\/\/[^\s]+|www\.[^\s]+)/gi
   const parts = text.split(urlRegex)
 
@@ -50,6 +120,22 @@ const renderMessageContent = (text, isMine, extraClasses = '') => {
   )
 }
 
+const formatLastMessagePreview = (message) => {
+  if (!message) return ''
+  const content = message.content || ''
+  try {
+    if (content.startsWith('{"type":"share_post"')) {
+      const data = JSON.parse(content)
+      if (data.type === 'share_post') {
+        return `(postingan dari ${data.author_name || 'User'})`
+      }
+    }
+  } catch (e) {
+    // not JSON
+  }
+  return content
+}
+
 const ChatPage = ({ role }) => {
   const { user } = useAuth()
   const { updateUnreadCount } = useChatNotification()
@@ -67,6 +153,7 @@ const ChatPage = ({ role }) => {
   const [isWsConnected, setIsWsConnected] = useState(false)
   const [onlineUsers, setOnlineUsers] = useState(new Set())
   const [showMobileList, setShowMobileList] = useState(true)
+  const [activeTab, setActiveTab] = useState('pesan') // 'pesan' | 'permintaan'
 
   // New Chat Modal state
   const [showNewChat, setShowNewChat] = useState(false)
@@ -87,6 +174,17 @@ const ChatPage = ({ role }) => {
     catch { return {} }
   })
 
+  // Custom Confirmation Modal state
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    confirmText: 'Hapus',
+    cancelText: 'Batal',
+    isDanger: true,
+    onConfirm: null
+  })
+
   const messagesEndRef = useRef(null)
   const typingTimeoutRef = useRef(null)
   const searchTimeoutRef = useRef(null)
@@ -99,21 +197,6 @@ const ChatPage = ({ role }) => {
     selectedConvRef.current = selectedConversation
   }, [selectedConversation])
 
-  // Load conversations & connect WS
-  useEffect(() => {
-    if (!user) return
-    loadConversations()
-    api.webSocket.connect()
-    api.webSocket.onMessage(handleWsMessage)
-    api.webSocket.onConnectionChange(setIsWsConnected)
-    // Load online users
-    api.getOnlineUsers().then(r => {
-      if (r.data?.online_ids) setOnlineUsers(new Set(r.data.online_ids))
-    }).catch(() => {})
-    return () => {
-      api.webSocket.removeMessageCallback(handleWsMessage)
-    }
-  }, [user])
 
   // Select conversation from URL
   useEffect(() => {
@@ -137,7 +220,36 @@ const ChatPage = ({ role }) => {
         // Jika tidak ada di daftar local, tapi loading sudah selesai
         if (!loading) {
           try {
-            const res = await api.getConversationDetail(conversationId)
+              if (conversationId.startsWith('temp-')) {
+                const contactIdStr = conversationId.replace('temp-', '')
+                const contactId = parseInt(contactIdStr, 10)
+                
+                if (selectedConvRef.current?.id === conversationId) return
+                
+                const r = await api.getUserDetail(contactId)
+                if (r.data?.success && r.data.data) {
+                  const contactUser = r.data.data
+                  const tempConv = {
+                    id: conversationId,
+                    type: 'private',
+                    name: contactUser.name,
+                    participants: [
+                      { user_id: user.id, user: { id: user.id, name: user.name } },
+                      { user_id: contactId, user: { id: contactUser.id, name: contactUser.name, role: contactUser.role, email: contactUser.email } }
+                    ],
+                    isTemp: true,
+                    tempContactId: contactId
+                  }
+                  setSelectedConversation(tempConv)
+                  setMessages([])
+                  setShowMobileList(false)
+                } else {
+                  navigate(basePath, { replace: true })
+                }
+                return
+              }
+
+              const res = await api.getConversationDetail(conversationId)
             if (res.data?.success && res.data.data) {
               const fetchedConv = res.data.data
 
@@ -184,7 +296,7 @@ const ChatPage = ({ role }) => {
     }
   }, [conversations, loading, updateUnreadCount])
 
-  useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages])
+  useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'auto' }) }, [messages])
 
   // Search users debounced
   useEffect(() => {
@@ -288,6 +400,33 @@ const ChatPage = ({ role }) => {
     
     const messageContent = newMessage.trim()
     setNewMessage('')
+    _setSending(true)
+    
+    let activeConversationId = selectedConversation.id
+    let isTemporary = selectedConversation.isTemp
+
+    if (isTemporary) {
+      try {
+        const r = await api.createConversation({
+          type: 'private',
+          participants: [selectedConversation.tempContactId]
+        })
+        if (r.data?.success) {
+          activeConversationId = r.data.data
+          setSelectedConversation(prev => ({
+            ...prev,
+            id: activeConversationId,
+            isTemp: false
+          }))
+        } else {
+          throw new Error('Failed to create conversation')
+        }
+      } catch (err) {
+        console.error('Create conversation error before sending:', err)
+        _setSending(false)
+        return
+      }
+    }
     
     // Optimistic Update
     const optimisticMsg = {
@@ -303,8 +442,8 @@ const ChatPage = ({ role }) => {
     setMessages(prev => [...prev, optimisticMsg])
     
     try {
-      api.webSocket.sendTypingIndicator(selectedConversation.id, false)
-      const r = await api.sendMessage(selectedConversation.id, { 
+      api.webSocket.sendTypingIndicator(activeConversationId, false)
+      const r = await api.sendMessage(activeConversationId, { 
         content: messageContent, 
         message_type: 'text' 
       })
@@ -312,39 +451,69 @@ const ChatPage = ({ role }) => {
       if (r.data?.success) {
         // Replace optimistic message with actual one
         setMessages(prev => prev.map(m => m.id === optimisticMsg.id ? { ...r.data.data, status: 'sent' } : m))
+        
+        // Mark conversation as replied locally so it moves to "Pesan" tab immediately
+        setConversations(prev => prev.map(c => c.id === activeConversationId ? { ...c, has_replied: true } : c))
+        setSelectedConversation(prev => prev && prev.id === activeConversationId ? { ...prev, has_replied: true } : prev)
+        
+        if (isTemporary) {
+          navigate(`${basePath}/${activeConversationId}`, { replace: true })
+          loadConversations()
+        }
       }
     } catch (e) { 
       console.error('Send:', e)
       // Mark as failed
       setMessages(prev => prev.map(m => m.id === optimisticMsg.id ? { ...m, status: 'error' } : m))
+    } finally {
+      _setSending(false)
     }
   }
 
-  const handleDeleteMessage = async (msgId) => {
-    if (!window.confirm('Hapus pesan ini?')) return
-    try {
-      await api.deleteMessage(msgId)
-      setMessages(prev => prev.filter(m => m.id !== msgId))
-    } catch (e) {
-      console.error('Delete message:', e)
-    }
+  const handleDeleteMessage = (msgId) => {
+    setConfirmModal({
+      isOpen: true,
+      title: 'Hapus Pesan',
+      message: 'Apakah Anda yakin ingin menghapus pesan ini?',
+      confirmText: 'Hapus',
+      cancelText: 'Batal',
+      isDanger: true,
+      onConfirm: async () => {
+        try {
+          await api.deleteMessage(msgId)
+          setMessages(prev => prev.filter(m => m.id !== msgId))
+        } catch (e) {
+          console.error('Delete message:', e)
+        }
+      }
+    })
   }
 
   const handleHideConversation = (e, conv) => {
     e.stopPropagation()
-    const newHidden = { ...hiddenChats, [conv.id]: conv.last_message?.id || 'none' }
-    setHiddenChats(newHidden)
-    localStorage.setItem('hiddenChats', JSON.stringify(newHidden))
-    if (selectedConversation?.id === conv.id) {
-      setSelectedConversation(null)
-      navigate(basePath)
-      setShowMobileList(true)
-    }
+    setConfirmModal({
+      isOpen: true,
+      title: 'Hapus Obrolan',
+      message: `Apakah Anda yakin ingin menghapus percakapan dengan ${getConvName(conv)}?`,
+      confirmText: 'Hapus',
+      cancelText: 'Batal',
+      isDanger: true,
+      onConfirm: () => {
+        const newHidden = { ...hiddenChats, [conv.id]: conv.last_message?.id || 'none' }
+        setHiddenChats(newHidden)
+        localStorage.setItem('hiddenChats', JSON.stringify(newHidden))
+        if (selectedConversation?.id === conv.id) {
+          setSelectedConversation(null)
+          navigate(basePath)
+          setShowMobileList(true)
+        }
+      }
+    })
   }
 
   const handleInputChange = (e) => {
     setNewMessage(e.target.value)
-    if (selectedConversation && e.target.value.length > 0) {
+    if (selectedConversation && !selectedConversation.isTemp && e.target.value.length > 0) {
       api.webSocket.sendTypingIndicator(selectedConversation.id, true)
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current)
       typingTimeoutRef.current = setTimeout(() => {
@@ -364,8 +533,34 @@ const ChatPage = ({ role }) => {
     if (!file || !selectedConversation) return
     
     e.target.value = ''
-    
     setUploadingFile(true)
+    
+    let activeConversationId = selectedConversation.id
+    let isTemporary = selectedConversation.isTemp
+
+    if (isTemporary) {
+      try {
+        const r = await api.createConversation({
+          type: 'private',
+          participants: [selectedConversation.tempContactId]
+        })
+        if (r.data?.success) {
+          activeConversationId = r.data.data
+          setSelectedConversation(prev => ({
+            ...prev,
+            id: activeConversationId,
+            isTemp: false
+          }))
+        } else {
+          throw new Error('Failed to create conversation')
+        }
+      } catch (err) {
+        console.error('Create conversation error before file upload:', err)
+        setUploadingFile(false)
+        return
+      }
+    }
+    
     const formData = new FormData()
     formData.append('file', file)
     
@@ -380,8 +575,8 @@ const ChatPage = ({ role }) => {
         const fileName = uploadData.original_filename
         const fileSize = uploadData.original_size
         
-        const sendRes = await api.sendMessage(selectedConversation.id, {
-          conversation_id: selectedConversation.id,
+        const sendRes = await api.sendMessage(activeConversationId, {
+          conversation_id: activeConversationId,
           content: fileName,
           message_type: isImage ? 'image' : 'file',
           file_url: fileUrl,
@@ -390,9 +585,23 @@ const ChatPage = ({ role }) => {
         })
         
         if (sendRes.data?.success) {
-          setMessages(prev => [...prev, sendRes.data.data])
+          setMessages(prev => {
+            const exists = prev.some(m => m.id === sendRes.data.data.id)
+            if (exists) return prev
+            return [...prev, sendRes.data.data]
+          })
+          
+          // Mark conversation as replied locally so it moves to "Pesan" tab immediately
+          setConversations(prev => prev.map(c => c.id === activeConversationId ? { ...c, has_replied: true } : c))
+          setSelectedConversation(prev => prev && prev.id === activeConversationId ? { ...prev, has_replied: true } : prev)
+          
+          if (isTemporary) {
+            navigate(`${basePath}/${activeConversationId}`, { replace: true })
+            loadConversations()
+          }
+          
           setTimeout(() => {
-            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+            messagesEndRef.current?.scrollIntoView({ behavior: 'auto' })
           }, 100)
         }
       } else {
@@ -412,11 +621,22 @@ const ChatPage = ({ role }) => {
       case 'new_message':
         if (msg.data.conversation_id === currentConv?.id) {
           setMessages(prev => {
-            // Avoid duplicates if optimistic update already added it
-            const exists = prev.some(m => m.id === msg.data.message.id || (m.status === 'sending' && m.content === msg.data.message.content))
-            if (exists) {
-              return prev.map(m => (m.status === 'sending' && m.content === msg.data.message.content) ? msg.data.message : m)
+            // Check if this specific message ID already exists
+            const hasId = prev.some(m => m.id === msg.data.message.id)
+            if (hasId) {
+              return prev.map(m => m.id === msg.data.message.id ? msg.data.message : m)
             }
+            
+            // Otherwise, check if we can match it to an optimistic message we sent
+            const isMsgMine = msg.data.message.sender?.id === user?.id
+            if (isMsgMine) {
+              const optIndex = prev.findIndex(m => m.status === 'sending' && m.content === msg.data.message.content)
+              if (optIndex !== -1) {
+                return prev.map((m, idx) => idx === optIndex ? msg.data.message : m)
+              }
+            }
+            
+            // If it's a completely new message or from another user
             return [...prev, msg.data.message]
           })
           // Auto-mark active messages as read and send WS receipt
@@ -474,38 +694,74 @@ const ChatPage = ({ role }) => {
         setOnlineUsers(prev => { const s = new Set(prev); s.delete(msg.data.user_id); return s })
         break
     }
-  }, []) // No dependencies — uses ref instead
+  }, [user])
+
+  // Load conversations & connect WS
+  useEffect(() => {
+    if (!user) return
+    loadConversations()
+    api.webSocket.connect()
+    api.webSocket.onMessage(handleWsMessage)
+    api.webSocket.onConnectionChange(setIsWsConnected)
+    // Load online users
+    api.getOnlineUsers().then(r => {
+      if (r.data?.online_ids) setOnlineUsers(new Set(r.data.online_ids))
+    }).catch(() => {})
+    return () => {
+      api.webSocket.removeMessageCallback(handleWsMessage)
+      api.webSocket.removeConnectionCallback(setIsWsConnected)
+    }
+  }, [user, handleWsMessage])
 
   const startNewChat = async (contactId) => {
     if (startingChat) return
     setStartingChat(contactId)
     try {
-      const r = await api.createConversation({ type: 'private', participants: [contactId] })
-      if (r.data?.success) {
-        const convId = r.data.data
-
-        // Hapus dari hiddenChats agar langsung terlihat
-        if (convId) {
-          const updated = { ...hiddenChats }
-          delete updated[convId]
-          setHiddenChats(updated)
-          localStorage.setItem('hiddenChats', JSON.stringify(updated))
-        }
-
+      // Check if a conversation already exists in conversations list
+      const existing = conversations.find(c => c.type === 'private' && c.participants?.some(p => p.user_id === contactId))
+      if (existing) {
         setShowNewChat(false)
         setSearchQuery('')
         setListQuery('')
         setRoleFilter('')
-
-        // Navigasi langsung tanpa menunggu loading penuh seluruh list conversation
-        if (convId) {
-          navigate(`${basePath}/${convId}`)
-        }
-
-        // Jalankan pemuatan ulang list secara asynchronous di background
-        loadConversations()
+        selectConversation(existing)
+        setStartingChat(null)
+        return
       }
-    } catch (e) { console.error('Start chat:', e) }
+
+      // Otherwise, redirect to a temporary local conversation state
+      let contactUser = searchResults.find(u => u.id === contactId) || sidebarSearchResults.find(u => u.id === contactId)
+      if (!contactUser) {
+        const r = await api.getUserDetail(contactId)
+        if (r.data?.success) {
+          contactUser = r.data.data
+        }
+      }
+
+      const tempConvId = `temp-${contactId}`
+      const tempConv = {
+        id: tempConvId,
+        type: 'private',
+        name: contactUser ? contactUser.name : 'User',
+        participants: [
+          { user_id: user.id, user: { id: user.id, name: user.name } },
+          { user_id: contactId, user: contactUser ? { id: contactUser.id, name: contactUser.name, role: contactUser.role, email: contactUser.email } : { id: contactId } }
+        ],
+        isTemp: true,
+        tempContactId: contactId
+      }
+
+      setSelectedConversation(tempConv)
+      setMessages([])
+      setShowMobileList(false)
+      setShowNewChat(false)
+      setSearchQuery('')
+      setListQuery('')
+      setRoleFilter('')
+      navigate(`${basePath}/${tempConvId}`)
+    } catch (e) {
+      console.error('Start chat error:', e)
+    }
     setStartingChat(null)
   }
 
@@ -633,7 +889,7 @@ const ChatPage = ({ role }) => {
                   {conv.last_message ? (
                     <>
                       <span className="opacity-70">{conv.last_message.sender?.id === user?.id ? 'Anda: ' : ''}</span>
-                      {conv.last_message.content}
+                      {formatLastMessagePreview(conv.last_message)}
                     </>
                   ) : (
                     <span className="italic opacity-50">No messages yet</span>
@@ -662,15 +918,28 @@ const ChatPage = ({ role }) => {
   }
 
   const visibleConversations = conversations.filter(c => hiddenChats[c.id] !== (c.last_message?.id || 'none') && c.last_message)
+  
+  const unreadTotal = visibleConversations
+    .filter(c => !(c.type === 'private' && c.created_by !== user?.id && !c.has_replied))
+    .reduce((acc, conv) => acc + (conv.unread_count || 0), 0)
+
+  const unreadRequestsCount = visibleConversations
+    .filter(c => c.type === 'private' && c.created_by !== user?.id && !c.has_replied)
+    .reduce((acc, conv) => acc + (conv.unread_count || 0), 0)
+
+  const activeTabConversations = visibleConversations.filter(c => {
+    const isRequest = c.type === 'private' && c.created_by !== user?.id && !c.has_replied
+    return activeTab === 'permintaan' ? isRequest : !isRequest
+  })
+
   const normalizedListQuery = listQuery.trim().toLowerCase()
   const filteredConversations = normalizedListQuery
-    ? visibleConversations.filter((conv) => {
+    ? activeTabConversations.filter((conv) => {
         const convName = (getConvName(conv) || '').toLowerCase()
-        const lastContent = (conv.last_message?.content || '').toLowerCase()
+        const lastContent = (conv.last_message ? formatLastMessagePreview(conv.last_message) : '').toLowerCase()
         return convName.includes(normalizedListQuery) || lastContent.includes(normalizedListQuery)
       })
-    : visibleConversations
-  const unreadTotal = visibleConversations.reduce((acc, conv) => acc + (conv.unread_count || 0), 0)
+    : activeTabConversations
 
   const styles = `
     /* Bouncing typing animation dots */
@@ -727,15 +996,38 @@ const ChatPage = ({ role }) => {
                 />
                 <i className="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-[#8E8E93] text-xs transition-colors" />
               </div>
-              <div className="flex items-center gap-2 mb-2">
-                <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-white text-[#5A6C94] border border-[#E3EAFF]">
-                  {visibleConversations.length} chat
-                </span>
-                {unreadTotal > 0 && (
-                  <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[#007AFF] text-white">
-                    {unreadTotal} unread
-                  </span>
-                )}
+              {/* Tabs: Pesan vs Permintaan */}
+              <div className="flex border-b border-gray-200/50 mb-3 px-3">
+                <button
+                  onClick={() => setActiveTab('pesan')}
+                  className={`flex-1 pb-2 text-[13px] font-bold text-center border-b-2 transition-all relative ${
+                    activeTab === 'pesan'
+                      ? 'border-[#007AFF] text-[#007AFF]'
+                      : 'border-transparent text-gray-400 hover:text-gray-600'
+                  }`}
+                >
+                  Pesan
+                  {unreadTotal > 0 && (
+                    <span className="ml-1.5 px-1.5 py-0.5 text-[10px] bg-[#007AFF] text-white rounded-full">
+                      {unreadTotal}
+                    </span>
+                  )}
+                </button>
+                <button
+                  onClick={() => setActiveTab('permintaan')}
+                  className={`flex-1 pb-2 text-[13px] font-bold text-center border-b-2 transition-all relative ${
+                    activeTab === 'permintaan'
+                      ? 'border-[#007AFF] text-[#007AFF]'
+                      : 'border-transparent text-gray-400 hover:text-gray-600'
+                  }`}
+                >
+                  Permintaan
+                  {unreadRequestsCount > 0 && (
+                    <span className="ml-1.5 px-1.5 py-0.5 text-[10px] bg-[#FF3B30] text-white rounded-full">
+                      {unreadRequestsCount}
+                    </span>
+                  )}
+                </button>
               </div>
             </div>
 
@@ -744,11 +1036,23 @@ const ChatPage = ({ role }) => {
               {!normalizedListQuery ? (
                 /* Mode 1: Search Empty -> show regular list */
                 !filteredConversations.length ? (
-                  <div className="p-8 text-center text-gray-400">
-                    <i className="fas fa-comments text-4xl mb-3 text-gray-300 block" />
-                    <p className="text-[14px]">No conversations yet</p>
-                    <button onClick={() => setShowNewChat(true)} className="mt-3 text-[#007AFF] hover:underline text-sm font-semibold">Start a conversation</button>
-                  </div>
+                  activeTab === 'permintaan' ? (
+                    <div className="flex flex-col items-center justify-center py-16 px-6 text-center select-none">
+                      <div className="w-14 h-14 bg-white shadow-sm border border-gray-100 rounded-full flex items-center justify-center mb-4">
+                        <i className="fas fa-comment-slash text-gray-400 text-xl" />
+                      </div>
+                      <p className="text-[14px] font-semibold text-gray-700">Tidak Ada Permintaan Pesan</p>
+                      <p className="text-[12px] text-gray-400 mt-1 max-w-[240px] mx-auto leading-normal">
+                        Chats will appear here after you send or receive a message
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="p-8 text-center text-gray-400">
+                      <i className="fas fa-comments text-4xl mb-3 text-gray-300 block" />
+                      <p className="text-[14px]">No conversations yet</p>
+                      <button onClick={() => setShowNewChat(true)} className="mt-3 text-[#007AFF] hover:underline text-sm font-semibold">Start a conversation</button>
+                    </div>
+                  )
                 ) : (
                   <AnimatePresence>
                     {filteredConversations.map(conv => renderConvItem(conv))}
@@ -859,18 +1163,7 @@ const ChatPage = ({ role }) => {
                       <span className={`w-1.5 h-1.5 rounded-full ${isWsConnected ? 'bg-[#34C759]' : 'bg-red-400'}`} />
                     </span>
                   </div>
-
-                  <div className="flex items-center justify-end gap-5 w-1/3 text-[#007AFF] text-[17px]">
-                    <button className="hover:opacity-75 active:opacity-50">
-                      <i className="fas fa-phone-alt" />
-                    </button>
-                    <button className="hover:opacity-75 active:opacity-50">
-                      <i className="fas fa-video" />
-                    </button>
-                    <button className="hover:opacity-75 active:opacity-50">
-                      <i className="fas fa-info-circle text-[19px]" />
-                    </button>
-                  </div>
+                  <div className="w-1/3" />
                 </div>
 
                 {/* Messages */}
@@ -1005,61 +1298,113 @@ const ChatPage = ({ role }) => {
                     <div ref={messagesEndRef} />
                   </div>
                 </div>
-
-                {/* Input (iMessage style) */}
-                <form onSubmit={sendMessage} className="px-4 md:px-6 py-3 bg-[#F4F4F6]/95 backdrop-blur-xl border-t border-[#D2D2D7]/50 z-40">
-                  <div className="max-w-4xl mx-auto flex items-center gap-2">
-                    <input 
-                      type="file" 
-                      ref={fileInputRef} 
-                      onChange={handleFileChange} 
-                      className="hidden" 
-                    />
-                    
-                    {/* Pill Input Container */}
-                    <div className="flex-grow flex items-center bg-white border border-[#D2D2D7]/80 rounded-[20px] pl-2 pr-1.5 py-1 focus-within:border-[#007AFF]/60 focus-within:ring-1 focus-within:ring-[#007AFF]/30 transition-all">
-                      {/* Attach button */}
-                      <button 
-                        type="button" 
-                        onClick={handleAttachClick} 
-                        className="w-8 h-8 flex items-center justify-center bg-[#007AFF] hover:bg-[#0066CC] text-white rounded-full active:scale-95 flex-shrink-0 mr-2 shadow-sm transition-all"
-                        title="Unggah File/Gambar"
+                {/* Input (iMessage style) / Request Banner */}
+                {selectedConversation.type === 'private' && selectedConversation.created_by !== user?.id && !selectedConversation.has_replied && !selectedConversation.isTemp ? (
+                  <div className="px-4 md:px-6 py-4 bg-[#F4F4F6]/95 backdrop-blur-xl border-t border-[#D2D2D7]/50 z-40 text-center flex flex-col items-center justify-center gap-3">
+                    <p className="text-[13px] text-gray-500 max-w-sm">
+                      Pengguna ini ingin mengirim pesan kepada Anda. Ingin menerima obrolan ini?
+                    </p>
+                    <div className="flex gap-3 w-full max-w-xs">
+                      <button
+                        onClick={async () => {
+                          try {
+                            const r = await api.sendMessage(selectedConversation.id, {
+                              content: "Permintaan obrolan disetujui",
+                              message_type: "system"
+                            })
+                            if (r.data?.success) {
+                              setConversations(prev => prev.map(c => c.id === selectedConversation.id ? { ...c, has_replied: true } : c))
+                              setSelectedConversation(prev => ({ ...prev, has_replied: true }))
+                              setMessages(prev => [...prev, r.data.data])
+                            }
+                          } catch (err) {
+                            console.error('Accept request error:', err)
+                          }
+                        }}
+                        className="flex-1 py-2.5 bg-[#007AFF] hover:bg-[#0066CC] active:scale-95 text-white font-semibold text-xs rounded-xl shadow-sm transition-all"
                       >
-                        <i className="fas fa-plus text-[14px]" />
+                        Terima
                       </button>
-                      <textarea
-                        value={newMessage} 
-                        onChange={handleInputChange}
-                        onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(e) } }}
-                        placeholder="Kirim pesan"
-                        className="flex-1 py-1.5 text-[15px] resize-none focus:outline-none bg-transparent max-h-32 self-center text-black placeholder-[#8E8E93] border-none focus:ring-0"
-                        rows="1"
-                      />
-                      
-                      {/* Emoji icon */}
-                      <button type="button" className="w-8 h-8 flex items-center justify-center text-[#8E8E93] hover:text-[#007AFF] transition-colors rounded-full mr-1">
-                        <i className="far fa-smile text-[18px]" />
-                      </button>
-                      
-                      {/* Send button (iPhone style: circle with white arrow pointing up) */}
-                      <button 
-                        type="submit" 
-                        disabled={!newMessage.trim() && !sending}
-                        className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
-                          newMessage.trim() 
-                            ? 'bg-[#007AFF] text-white scale-100' 
-                            : 'bg-[#E9E9EB] text-[#8E8E93] scale-95 cursor-default'
-                        }`}
+                      <button
+                        onClick={() => {
+                          setConfirmModal({
+                            isOpen: true,
+                            title: 'Abaikan Obrolan',
+                            message: 'Abaikan obrolan ini? Obrolan ini akan disembunyikan dari daftar Anda.',
+                            confirmText: 'Abaikan',
+                            cancelText: 'Batal',
+                            isDanger: true,
+                            onConfirm: () => {
+                              const newHidden = { ...hiddenChats, [selectedConversation.id]: selectedConversation.last_message?.id || 'none' }
+                              setHiddenChats(newHidden)
+                              localStorage.setItem('hiddenChats', JSON.stringify(newHidden))
+                              setSelectedConversation(null)
+                              navigate(basePath)
+                              setShowMobileList(true)
+                            }
+                          })
+                        }}
+                        className="flex-1 py-2.5 bg-gray-200 hover:bg-gray-300 active:scale-95 text-gray-700 font-semibold text-xs rounded-xl transition-all"
                       >
-                        {sending ? (
-                          <i className="fas fa-spinner fa-spin text-xs" />
-                        ) : (
-                          <i className="fas fa-arrow-up text-xs font-bold" />
-                        )}
+                        Abaikan
                       </button>
                     </div>
                   </div>
-                </form>
+                ) : (
+                  <form onSubmit={sendMessage} className="px-4 md:px-6 py-3 bg-[#F4F4F6]/95 backdrop-blur-xl border-t border-[#D2D2D7]/50 z-40">
+                    <div className="max-w-4xl mx-auto flex items-center gap-2">
+                      <input 
+                        type="file" 
+                        ref={fileInputRef} 
+                        onChange={handleFileChange} 
+                        className="hidden" 
+                      />
+                      
+                      {/* Pill Input Container */}
+                      <div className="flex-grow flex items-center bg-white border border-[#D2D2D7]/80 rounded-[20px] pl-2 pr-1.5 py-1 focus-within:border-[#007AFF]/60 focus-within:ring-1 focus-within:ring-[#007AFF]/30 transition-all">
+                        {/* Attach button */}
+                        <button 
+                          type="button" 
+                          onClick={handleAttachClick} 
+                          className="w-8 h-8 flex items-center justify-center bg-[#007AFF] hover:bg-[#0066CC] text-white rounded-full active:scale-95 flex-shrink-0 mr-2 shadow-sm transition-all"
+                          title="Unggah File/Gambar"
+                        >
+                          <i className="fas fa-plus text-[14px]" />
+                        </button>
+                        <textarea
+                          value={newMessage} 
+                          onChange={handleInputChange}
+                          onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(e) } }}
+                          placeholder="Kirim pesan"
+                          className="flex-1 py-1.5 text-[15px] resize-none focus:outline-none bg-transparent max-h-32 self-center text-black placeholder-[#8E8E93] border-none focus:ring-0"
+                          rows="1"
+                        />
+                        
+                        {/* Emoji icon */}
+                        <button type="button" className="w-8 h-8 flex items-center justify-center text-[#8E8E93] hover:text-[#007AFF] transition-colors rounded-full mr-1">
+                          <i className="far fa-smile text-[18px]" />
+                        </button>
+                        
+                        {/* Send button (iPhone style: circle with white arrow pointing up) */}
+                        <button 
+                          type="submit" 
+                          disabled={!newMessage.trim() && !sending}
+                          className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
+                            newMessage.trim() 
+                              ? 'bg-[#007AFF] text-white scale-100' 
+                              : 'bg-[#E9E9EB] text-[#8E8E93] scale-95 cursor-default'
+                          }`}
+                        >
+                          {sending ? (
+                            <i className="fas fa-spinner fa-spin text-xs" />
+                          ) : (
+                            <i className="fas fa-arrow-up text-xs font-bold" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </form>
+                )}
               </>
             ) : (
               <div className="flex-1 flex flex-col items-center justify-center p-8 bg-[#F4F4F6]/20">
@@ -1150,6 +1495,55 @@ const ChatPage = ({ role }) => {
             </div>
           </div>
         )}
+
+        {/* Custom Confirmation Modal */}
+        <AnimatePresence>
+          {confirmModal.isOpen && (
+            <div 
+              className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[100] p-4"
+              onClick={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+            >
+              <motion.div 
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.95, opacity: 0 }}
+                className="bg-white rounded-2xl w-full max-w-xs p-5 shadow-[0_20px_40px_rgba(0,0,0,0.15)] border border-gray-200 flex flex-col items-center text-center"
+                onClick={e => e.stopPropagation()}
+              >
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center text-lg mb-3 ${
+                  confirmModal.isDanger 
+                    ? 'bg-red-50 text-red-500' 
+                    : 'bg-[#007AFF]/10 text-[#007AFF]'
+                }`}>
+                  <i className={confirmModal.isDanger ? "fas fa-trash-alt" : "fas fa-info-circle"} />
+                </div>
+                <h3 className="text-[16px] font-bold text-gray-900 mb-1">{confirmModal.title}</h3>
+                <p className="text-[13px] text-gray-500 leading-normal mb-5">{confirmModal.message}</p>
+                <div className="flex gap-2.5 w-full">
+                  <button
+                    onClick={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+                    className="flex-1 py-2.5 bg-[#F2F2F7] hover:bg-[#E5E5EA] active:scale-95 text-gray-700 font-semibold text-xs rounded-xl transition-all"
+                  >
+                    {confirmModal.cancelText}
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (confirmModal.onConfirm) confirmModal.onConfirm()
+                      setConfirmModal(prev => ({ ...prev, isOpen: false }))
+                    }}
+                    className={`flex-1 py-2.5 active:scale-95 text-white font-semibold text-xs rounded-xl transition-all ${
+                      confirmModal.isDanger
+                        ? 'bg-red-500 hover:bg-red-600 shadow-sm shadow-red-500/20'
+                        : 'bg-[#007AFF] hover:bg-[#0066CC] shadow-sm shadow-[#007AFF]/20'
+                    }`}
+                  >
+                    {confirmModal.confirmText}
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   )

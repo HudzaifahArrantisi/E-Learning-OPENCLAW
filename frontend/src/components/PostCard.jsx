@@ -1,6 +1,7 @@
 // components/PostCard.jsx
 import React, { useState, memo, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
+import { AnimatePresence } from 'framer-motion'
 import { usePostInteractions } from '../hooks/usePostInteractions'
 import api from '../services/api'
 import { 
@@ -12,6 +13,8 @@ import { FiSend } from 'react-icons/fi'
 import { BsBookmark, BsBookmarkFill, BsHeart, BsHeartFill } from 'react-icons/bs'
 import { MdCropSquare, MdCropPortrait, MdCropLandscape, MdCrop169 } from 'react-icons/md'
 import { resolveBackendAssetUrl } from '../utils/assetUrl'
+import SharePostModal from './SharePostModal'
+import ProfileHoverCard from './ProfileHoverCard'
 
 const cleanUsername = (username) => {
   if (!username) return ''
@@ -28,8 +31,12 @@ const CommentItem = memo(({ comment, getRelativeTime, onReply }) => {
   return (
     <div className="flex flex-col mb-4">
       <div className="flex items-start space-x-3 group animate-fadeIn">
-        <Link 
-          to={`/profile/${comment.user_role || 'mahasiswa'}/${cleanUsername(comment.author_username || comment.author_name)}`}
+        <ProfileHoverCard 
+          role={comment.user_role} 
+          username={comment.author_username || comment.author_name}
+          displayName={comment.author_name}
+          displayAvatar={comment.author_avatar}
+          userId={comment.author_id || comment.user_id}
           className="flex-shrink-0"
         >
           <div className="w-8 h-8 bg-lp-surface border border-lp-border rounded-full flex items-center justify-center text-lp-text2 text-xs font-bold shrink-0 overflow-hidden">
@@ -39,15 +46,20 @@ const CommentItem = memo(({ comment, getRelativeTime, onReply }) => {
               comment.author_name?.[0]?.toUpperCase() || '?'
             )}
           </div>
-        </Link>
+        </ProfileHoverCard>
         <div className="flex-1 min-w-0 pt-1">
           <span className="font-semibold text-lp-text text-[14px] tracking-tight mr-2">
-            <Link 
-              to={`/profile/${comment.user_role || 'mahasiswa'}/${cleanUsername(comment.author_username || comment.author_name)}`}
-              className="hover:opacity-80 transition-opacity"
+            <ProfileHoverCard 
+              role={comment.user_role} 
+              username={comment.author_username || comment.author_name}
+              displayName={comment.author_name}
+              displayAvatar={comment.author_avatar}
+              userId={comment.author_id || comment.user_id}
             >
-              {comment.author_name || 'Unknown'}
-            </Link>
+              <span className="hover:opacity-80 transition-opacity">
+                {comment.author_name || 'Unknown'}
+              </span>
+            </ProfileHoverCard>
           </span>
           <span className="text-lp-text text-[14px] font-normal break-words leading-relaxed">
             {comment.content || ''}
@@ -133,6 +145,7 @@ const PostCard = memo(({ post, getRelativeTime }) => {
   const [imageLoaded, setImageLoaded] = useState(false)
   const [commentsLoading, setCommentsLoading] = useState(false)
   const [replyingTo, setReplyingTo] = useState(null)
+  const [showShareModal, setShowShareModal] = useState(false)
   
   const commentInputRef = useRef(null)
   const isMountedRef = useRef(true)
@@ -381,26 +394,28 @@ const PostCard = memo(({ post, getRelativeTime }) => {
       <div className="bg-white border border-lp-border rounded-2xl mb-4 w-full overflow-hidden max-w-[470px] mx-auto hover:border-lp-borderA hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] hover:-translate-y-0.5 transition-all duration-300 group">
       {/* Header */}
       <div className="flex items-center justify-between p-4 pb-3">
-        <Link
-          to={`/profile/${post.role}/${username}`}
-          className="flex items-center gap-3 hover:opacity-90 transition-opacity"
+        <ProfileHoverCard 
+          role={post.role} 
+          username={username}
+          displayName={post.author_name || username}
+          displayAvatar={post.author_avatar}
         >
-          <div className="w-8 h-8 bg-lp-accentS border border-lp-borderA rounded-full flex items-center justify-center text-lp-atext text-[11px] font-bold overflow-hidden shrink-0">
-            {post.author_avatar ? (
-              <img src={resolveBackendAssetUrl(post.author_avatar)} alt={username} className="w-full h-full object-cover" />
-            ) : (
-              username?.[0]?.toUpperCase() || '?'
-            )}
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-lp-accentS border border-lp-borderA rounded-full flex items-center justify-center text-lp-atext text-[11px] font-bold overflow-hidden shrink-0">
+              {post.author_avatar ? (
+                <img src={resolveBackendAssetUrl(post.author_avatar)} alt={username} className="w-full h-full object-cover" />
+              ) : (
+                username?.[0]?.toUpperCase() || '?'
+              )}
+            </div>
+            <div>
+              <div className="font-semibold text-lp-text text-[13px] hover:underline tracking-tight">{username}</div>
+              <div className="text-[10px] text-lp-text3 font-mono tracking-wider uppercase">{post.role}</div>
+            </div>
           </div>
-          <div>
-            <div className="font-semibold text-lp-text text-[13px] hover:underline tracking-tight">{username}</div>
-            <div className="text-[10px] text-lp-text3 font-mono tracking-wider uppercase">{post.role}</div>
-          </div>
-        </Link>
+        </ProfileHoverCard>
 
-        <button className="text-lp-text3 hover:text-lp-text2 p-1.5 rounded-full hover:bg-lp-surface transition-colors">
-          <FaEllipsisH className="text-sm" />
-        </button>
+    
       </div>
 
       {/* Image Carousel */}
@@ -519,7 +534,7 @@ const PostCard = memo(({ post, getRelativeTime }) => {
               <FaComment className="text-lg text-lp-text hover:text-lp-accent transition-colors scale-x-[-1]" />
               <span className="text-[12px] font-semibold text-lp-text">{post.comments_count || 0}</span>
             </button>
-            <button className="flex items-center gap-1.5 hover:opacity-70 transition-opacity">
+            <button onClick={() => setShowShareModal(true)} className="flex items-center gap-1.5 hover:opacity-70 transition-opacity">
               <FiSend className="text-lg text-lp-text hover:text-lp-green transition-colors -rotate-45" />
             </button>
           </div>
@@ -529,7 +544,14 @@ const PostCard = memo(({ post, getRelativeTime }) => {
         {displayContent && (
           <div className="mb-2">
             <div className="text-lp-text text-[13px] font-light leading-relaxed">
-              <span className="font-semibold mr-1.5 hover:underline cursor-pointer tracking-tight">{username}</span>
+              <ProfileHoverCard 
+                role={post.role} 
+                username={username}
+                displayName={post.author_name || username}
+                displayAvatar={post.author_avatar}
+              >
+                <span className="font-semibold mr-1.5 hover:underline cursor-pointer tracking-tight">{username}</span>
+              </ProfileHoverCard>
               <span className="whitespace-pre-line">
                 {truncatedCaption}
               </span>
@@ -648,18 +670,25 @@ const PostCard = memo(({ post, getRelativeTime }) => {
                   
                   {/* Header Post */}
                   <div className="flex items-center justify-between p-3 sm:p-4 border-b border-lp-border bg-white flex-shrink-0">
-                    <Link to={`/profile/${post.role}/${username}`} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-                      <div className="w-8 h-8 bg-lp-accentS border border-lp-borderA rounded-full flex items-center justify-center text-lp-atext text-xs font-bold shrink-0 overflow-hidden">
-                        {post.author_avatar ? (
-                          <img src={resolveBackendAssetUrl(post.author_avatar)} alt={username} className="w-full h-full object-cover" />
-                        ) : (
-                          username?.[0]?.toUpperCase() || '?'
-                        )}
+                    <ProfileHoverCard 
+                      role={post.role} 
+                      username={username}
+                      displayName={post.author_name || username}
+                      displayAvatar={post.author_avatar}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-lp-accentS border border-lp-borderA rounded-full flex items-center justify-center text-lp-atext text-xs font-bold shrink-0 overflow-hidden">
+                          {post.author_avatar ? (
+                            <img src={resolveBackendAssetUrl(post.author_avatar)} alt={username} className="w-full h-full object-cover" />
+                          ) : (
+                            username?.[0]?.toUpperCase() || '?'
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-lp-text text-[14px] tracking-tight">{username}</span>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-lp-text text-[14px] tracking-tight">{username}</span>
-                      </div>
-                    </Link>
+                    </ProfileHoverCard>
                     <button className="text-lp-text3 hover:text-lp-text2 p-1 font-bold tracking-widest leading-none pb-2">
                       ...
                     </button>
@@ -670,8 +699,11 @@ const PostCard = memo(({ post, getRelativeTime }) => {
                     {/* Caption diposisikan di puncak area */}
                     {post.content && (
                       <div className="p-5 flex items-start space-x-4 border-b-[3px] border-gray-100 bg-gray-50/50 mb-2 relative">
-                        <Link 
-                          to={`/profile/${post.role}/${username}`}
+                        <ProfileHoverCard 
+                          role={post.role} 
+                          username={username}
+                          displayName={post.author_name || username}
+                          displayAvatar={post.author_avatar}
                           className="flex-shrink-0 mt-0.5"
                         >
                           <div className="w-9 h-9 bg-lp-bg rounded-full flex items-center justify-center text-lp-text border-2 border-white shadow-sm text-sm font-bold shrink-0 overflow-hidden">
@@ -681,15 +713,19 @@ const PostCard = memo(({ post, getRelativeTime }) => {
                               username?.[0]?.toUpperCase() || '?'
                             )}
                           </div>
-                        </Link>
+                        </ProfileHoverCard>
                         <div className="flex-1 min-w-0">
                           <span className="font-bold text-gray-800 text-[14px] tracking-tight mr-2">
-                            <Link 
-                              to={`/profile/${post.role}/${username}`}
-                              className="hover:text-lp-accent transition-colors"
+                            <ProfileHoverCard 
+                              role={post.role} 
+                              username={username}
+                              displayName={post.author_name || username}
+                              displayAvatar={post.author_avatar}
                             >
-                              {username}
-                            </Link>
+                              <span className="hover:text-lp-accent transition-colors">
+                                {username}
+                              </span>
+                            </ProfileHoverCard>
                           </span>
                           <div className="text-gray-700 font-normal whitespace-pre-line break-words text-[14px] leading-relaxed mt-1">
                             {post.content}
@@ -746,7 +782,7 @@ const PostCard = memo(({ post, getRelativeTime }) => {
                         <button className="text-lp-text hover:text-lp-text2">
                           <FaComment className="text-2xl transform scale-x-[-1]" />
                         </button>
-                        <button className="text-lp-text hover:text-lp-text2 mb-1">
+                        <button onClick={() => setShowShareModal(true)} className="text-lp-text hover:text-lp-text2 mb-1">
                           <FaPaperPlane className="text-2xl transform -rotate-12" />
                         </button>
                       </div>
@@ -900,6 +936,13 @@ const PostCard = memo(({ post, getRelativeTime }) => {
           )}
         </>
       )}
+
+      {/* Share Post Modal */}
+      <AnimatePresence>
+        {showShareModal && (
+          <SharePostModal post={post} onClose={() => setShowShareModal(false)} />
+        )}
+      </AnimatePresence>
     </>
   )
 })

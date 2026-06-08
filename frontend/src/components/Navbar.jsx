@@ -76,7 +76,7 @@ const Navbar = ({ onMenuToggle, onToggleSidebar }) => {
 
         {/* Logo */}
         <Link 
-          to="/" 
+          to="" 
           className="flex items-center gap-2"
         >
           <div className="w-7 h-7 rounded-lg bg-lp-accentS border border-lp-borderA flex items-center justify-center">

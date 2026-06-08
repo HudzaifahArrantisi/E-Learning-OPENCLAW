@@ -67,6 +67,7 @@ api.getContacts = () => api.get('/api/chat/contacts')
 api.searchUsers = (query = '', role = '') => 
   api.get('/api/chat/users/search', { params: { q: query, role } })
 api.getOnlineUsers = () => api.get('/api/chat/users/online')
+api.getUserDetail = (userId) => api.get(`/api/chat/users/${userId}`)
 api.uploadFile = (formData) => 
   api.post('/api/uploads', formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
@@ -124,11 +125,23 @@ class WebSocketService {
     this.socket.onmessage = (event) => {
       try {
         const message = JSON.parse(event.data)
-        this.messageCallbacks.forEach(cb => cb(message))
+        this.messageCallbacks.forEach(cb => {
+          try {
+            cb(message)
+          } catch (err) {
+            console.error('Error in WebSocket callback:', err)
+          }
+        })
         
         // Handle typing indicators separately
         if (message.type === 'typing') {
-          this.typingCallbacks.forEach(cb => cb(message.data))
+          this.typingCallbacks.forEach(cb => {
+            try {
+              cb(message.data)
+            } catch (err) {
+              console.error('Error in WebSocket typing callback:', err)
+            }
+          })
         }
       } catch (error) {
         console.error('Error parsing WebSocket message:', error)
@@ -224,6 +237,11 @@ class WebSocketService {
 
   onConnectionChange(callback) {
     this.connectionCallbacks.push(callback)
+    callback(this.getConnectionStatus())
+  }
+
+  removeConnectionCallback(callback) {
+    this.connectionCallbacks = this.connectionCallbacks.filter(cb => cb !== callback)
   }
 
   onTyping(callback) {
