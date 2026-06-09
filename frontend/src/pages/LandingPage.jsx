@@ -6,6 +6,7 @@ import {
   EVENT_COLORS, EVENT_LABELS, getEventsForDate, fmtDate, dashboardFeed, roleGuides
 } from '../data/landingData'
 import LoginModal from '../components/LoginModal'
+import AnimatedBeamSection from '../components/AnimatedBeamSection'
 
 export default function LandingPage() {
   const openClawRef = useRef(null)
@@ -336,6 +337,9 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* 11 - ANIMATED BEAM ECOSYSTEM */}
+      <AnimatedBeamSection />
       
             {/* 03 - PANDUAN AKSES (ROLE GUIDES) */}
       <section id="panduan" className="py-24 bg-lp-surface/30">
@@ -719,25 +723,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* 10 - PLATFORM FEATURES */}
-      <section className="py-24">
-        <div className="max-w-[1120px] mx-auto px-7">
-          <div className={`${rvBase} flex items-center gap-4 text-[10.5px] font-medium tracking-[0.16em] uppercase text-lp-text3 mb-10 after:content-[''] after:flex-1 after:h-px after:bg-lp-border`}>
-            <span className="font-mono">10</span> Platform Features
-          </div>
-          <div className={`${rvBase} ${rvDelays[1]}`}>
-            <h2 className="font-sans text-[clamp(2.8rem,5.5vw,4.5rem)] leading-[1.06] tracking-tight text-lp-text max-w-[480px]">Everything your campus needs.<br /><em className="italic text-lp-text/40">Nothing it doesn't.</em></h2>
-          </div>
-          <div className={`${rvBase} ${rvDelays[2]} border-t border-lp-border mt-14`}>
-            {platformFeatures.map(f => (
-              <div key={f.name} className="grid grid-cols-1 sm:grid-cols-[1fr_1.4fr] gap-6 sm:gap-20 items-start py-7 border-b border-lp-border transition-colors hover:bg-lp-accent/5 hover:rounded-xl px-2">
-                <div className="text-[15px] font-medium text-lp-text tracking-tight leading-snug">{f.name}</div>
-                <div className="text-[13.5px] font-light text-lp-text2 leading-relaxed">{f.desc}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+
 
       {/* 14 - STATS */}
       <section className="py-24">

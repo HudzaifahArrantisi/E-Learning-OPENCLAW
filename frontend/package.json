@@ -18,6 +18,7 @@
     "@tanstack/query-core": "^5.99.1",
     "@tanstack/react-query": "^5.99.1",
     "axios": "^1.13.2",
+    "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "face-api.js": "^0.22.2",
     "framer-motion": "^12.23.26",
@@ -33,6 +34,7 @@
     "react-qr-code": "^2.0.18",
     "react-router-dom": "^7.10.1",
     "tailwind-merge": "^3.4.0",
+    "tailwindcss-animate": "^1.0.7",
     "three": "^0.168.0"
   },
   "devDependencies": {
