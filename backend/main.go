@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"os"
 	"strings"
@@ -30,11 +31,11 @@ func main() {
 	// Initialize database
 	log.Println("Initializing database...")
 	config.InitDB()
-	
+
 	if config.DB == nil {
 		log.Fatal("FATAL: Database connection is nil after initialization")
 	} else {
-		log.Println("Database connected successfully ✅")	
+		log.Println("Database connected successfully ✅")
 	}
 
 	r := gin.New()
@@ -66,24 +67,20 @@ func main() {
 		method := c.Request.Method
 		size := c.Writer.Size()
 
-		// Color status code for readability
-		var level string
-		switch {
-		case status >= 500:
-			level = "ERROR"
-		case status >= 400:
-			level = "WARN"
-		default:
-			level = "INFO"
-		}
-
-		log.Printf("[%s] %s %s | status=%d | time=%v | ip=%s | size=%d",
-			level, method, path, status, latency, clientIP, size)
+		log.Printf("%s %s %s | status=%s | time=%s | ip=%s | size=%s",
+			colorizeLevel(status),
+			colorizeMethod(method),
+			color.New(color.FgWhite).Sprint(path),
+			colorizeStatus(status),
+			colorizeLatency(latency),
+			color.New(color.FgCyan).Sprint(clientIP),
+			color.New(color.FgHiBlack).Sprint(formatResponseSize(size)),
+		)
 
 		// Log errors in detail
 		if len(c.Errors) > 0 {
 			for _, e := range c.Errors {
-				log.Printf("[ERROR] %s", e.Error())
+				log.Printf("%s %s", color.New(color.FgHiRed, color.Bold).Sprint("[ERROR]"), e.Error())
 			}
 		}
 	})
@@ -161,7 +158,6 @@ func main() {
 
 	routes.SetupRoutes(r, config.GormDB)
 
-
 	startOpenClaw(r)
 
 	nama := os.Getenv("NAMA")
@@ -213,6 +209,93 @@ func main() {
 		port = "8080"
 	}
 	r.Run("0.0.0.0:" + port)
+}
+
+func colorizeLevel(status int) string {
+	switch {
+	case status >= 500:
+		return color.New(color.FgHiRed, color.Bold).Sprint("[ERROR]")
+	case status >= 400:
+		return color.New(color.FgYellow, color.Bold).Sprint("[WARN]")
+	case status >= 300:
+		return color.New(color.FgCyan, color.Bold).Sprint("[REDIRECT]")
+	default:
+		return color.New(color.FgGreen, color.Bold).Sprint("[INFO]")
+	}
+}
+
+func colorizeMethod(method string) string {
+	methodColors := map[string]*color.Color{
+		"GET":     color.New(color.FgHiGreen, color.Bold),
+		"POST":    color.New(color.FgHiBlue, color.Bold),
+		"PUT":     color.New(color.FgHiYellow, color.Bold),
+		"PATCH":   color.New(color.FgHiMagenta, color.Bold),
+		"DELETE":  color.New(color.FgHiRed, color.Bold),
+		"OPTIONS": color.New(color.FgHiCyan, color.Bold),
+		"HEAD":    color.New(color.FgCyan, color.Bold),
+	}
+
+	if methodColor, ok := methodColors[method]; ok {
+		return methodColor.Sprintf("%-7s", method)
+	}
+
+	return color.New(color.FgWhite, color.Bold).Sprintf("%-7s", method)
+}
+
+func colorizeStatus(status int) string {
+	statusText := fmt.Sprintf("%d %s", status, statusDescription(status))
+
+	switch {
+	case status >= 500:
+		return color.New(color.FgHiWhite, color.BgRed, color.Bold).Sprint(statusText)
+	case status >= 400:
+		return color.New(color.FgHiRed, color.Bold).Sprint(statusText)
+	case status >= 300:
+		return color.New(color.FgHiCyan, color.Bold).Sprint(statusText)
+	case status >= 200:
+		return color.New(color.FgHiGreen, color.Bold).Sprint(statusText)
+	default:
+		return color.New(color.FgWhite, color.Bold).Sprint(statusText)
+	}
+}
+
+func statusDescription(status int) string {
+	switch {
+	case status >= 500:
+		return "SERVER ERROR"
+	case status >= 400:
+		return "CLIENT ERROR"
+	case status >= 300:
+		return "REDIRECT"
+	case status >= 200:
+		return "SUCCESS"
+	default:
+		return "INFORMATION"
+	}
+}
+
+func colorizeLatency(latency time.Duration) string {
+	switch {
+	case latency >= time.Second:
+		return color.New(color.FgHiRed, color.Bold).Sprint(latency.Round(time.Millisecond))
+	case latency >= 300*time.Millisecond:
+		return color.New(color.FgYellow, color.Bold).Sprint(latency.Round(time.Millisecond))
+	default:
+		return color.New(color.FgGreen).Sprint(latency.Round(time.Microsecond))
+	}
+}
+
+func formatResponseSize(size int) string {
+	if size < 0 {
+		return "-"
+	}
+	if size < 1024 {
+		return fmt.Sprintf("%d B", size)
+	}
+	if size < 1024*1024 {
+		return fmt.Sprintf("%.1f KB", float64(size)/1024)
+	}
+	return fmt.Sprintf("%.1f MB", float64(size)/(1024*1024))
 }
 
 // startOpenClaw initializes and embeds the OpenClaw reminder system
