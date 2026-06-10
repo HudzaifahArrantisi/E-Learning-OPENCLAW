@@ -29,7 +29,7 @@ export const resolveBackendAssetUrl = (input) => {
         return `${getBackendOrigin()}${parsed.pathname}${parsed.search}${parsed.hash}`
       }
       return raw
-    } catch (error) {
+    } catch {
       return raw
     }
   }

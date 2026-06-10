@@ -18,11 +18,7 @@ const TranskripNilai = () => {
   const [viewMode, setViewMode] = useState('matkul') // 'matkul' | 'pertemuan'
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
-  useEffect(() => {
-    fetchTranskrip()
-  }, [])
-
-  const fetchTranskrip = async () => {
+  async function fetchTranskrip() {
     try {
       setLoading(true)
       const res = await api.getTranskripNilai()
@@ -33,6 +29,11 @@ const TranskripNilai = () => {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    const timeout = window.setTimeout(fetchTranskrip, 0)
+    return () => window.clearTimeout(timeout)
+  }, [])
 
   const getGradeBadgeClass = (letter) => {
     if (['A', 'A-'].includes(letter)) return 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'

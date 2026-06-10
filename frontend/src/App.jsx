@@ -60,6 +60,7 @@ import ProtectedRoute from './components/ProtectedRoute'
 import { AuthProvider } from './hooks/useAuth'
 import { ChatNotificationProvider } from './hooks/useChatNotification'
 import ChatToastNotification from './components/ChatToastNotification'
+import DashboardIdleRedirect from './components/DashboardIdleRedirect'
 
 import queryClient from './lib/queryClient'
 
@@ -72,6 +73,7 @@ function App() {
         <AuthProvider>
         <ChatNotificationProvider>
         <ChatToastNotification />
+        <DashboardIdleRedirect />
         <div className="App">
           <Suspense fallback={<Loading />}>
             <Routes>

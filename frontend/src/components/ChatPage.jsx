@@ -10,7 +10,6 @@ import { resolveBackendAssetUrl } from '../utils/assetUrl'
 const _MOTION = motion
 
 const ROLES = [
-  { value: '', label: 'Semua' },
   { value: 'mahasiswa', label: 'Mahasiswa' },
   { value: 'dosen', label: 'Dosen' },
   { value: 'admin', label: 'Admin' },
@@ -159,7 +158,7 @@ const ChatPage = ({ role }) => {
   const [showNewChat, setShowNewChat] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [listQuery, setListQuery] = useState('')
-  const [roleFilter, setRoleFilter] = useState('')
+  const [roleFilter, setRoleFilter] = useState('mahasiswa')
   const [searchResults, setSearchResults] = useState([])
   const [searching, setSearching] = useState(false)
   const [startingChat, setStartingChat] = useState(null)
@@ -233,6 +232,8 @@ const ChatPage = ({ role }) => {
                     id: conversationId,
                     type: 'private',
                     name: contactUser.name,
+                    created_by: user.id,
+                    has_replied: true,
                     participants: [
                       { user_id: user.id, user: { id: user.id, name: user.name } },
                       { user_id: contactId, user: { id: contactUser.id, name: contactUser.name, role: contactUser.role, email: contactUser.email } }
@@ -312,7 +313,10 @@ const ChatPage = ({ role }) => {
     setSearching(true)
     try {
       const r = await api.searchUsers(searchQuery, roleFilter)
-      if (r.data?.success) setSearchResults(r.data.data || [])
+      if (r.data?.success) {
+        const users = r.data.data || []
+        setSearchResults(users.filter(u => u.role !== 'orangtua'))
+      }
     } catch (err) {
       console.error('Search users error:', err)
       setSearchResults([])
@@ -346,8 +350,8 @@ const ChatPage = ({ role }) => {
               .filter(Boolean)
           )
           
-          // Only show users who don't have an active conversation yet
-          const filteredResults = results.filter(u => !activePrivateUserIds.has(u.id))
+          // Only show users who don't have an active conversation yet and are not 'orangtua'
+          const filteredResults = results.filter(u => u.role !== 'orangtua' && !activePrivateUserIds.has(u.id))
           setSidebarSearchResults(filteredResults)
         }
       } catch (err) {
@@ -723,7 +727,7 @@ const ChatPage = ({ role }) => {
         setShowNewChat(false)
         setSearchQuery('')
         setListQuery('')
-        setRoleFilter('')
+        setRoleFilter('mahasiswa')
         selectConversation(existing)
         setStartingChat(null)
         return
@@ -743,6 +747,8 @@ const ChatPage = ({ role }) => {
         id: tempConvId,
         type: 'private',
         name: contactUser ? contactUser.name : 'User',
+        created_by: user.id,
+        has_replied: true,
         participants: [
           { user_id: user.id, user: { id: user.id, name: user.name } },
           { user_id: contactId, user: contactUser ? { id: contactUser.id, name: contactUser.name, role: contactUser.role, email: contactUser.email } : { id: contactId } }
@@ -757,7 +763,7 @@ const ChatPage = ({ role }) => {
       setShowNewChat(false)
       setSearchQuery('')
       setListQuery('')
-      setRoleFilter('')
+      setRoleFilter('mahasiswa')
       navigate(`${basePath}/${tempConvId}`)
     } catch (e) {
       console.error('Start chat error:', e)
@@ -801,6 +807,14 @@ const ChatPage = ({ role }) => {
     const m = { dosen: 'bg-amber-100 text-amber-800', admin: 'bg-red-100 text-red-800', mahasiswa: 'bg-blue-100 text-blue-800', ukm: 'bg-green-100 text-green-800', ormawa: 'bg-purple-100 text-purple-800' }
     return m[r] || 'bg-gray-100 text-gray-800'
   }
+
+  const isMessageRequest = (conv) => (
+    conv?.type === 'private' &&
+    conv.created_by != null &&
+    Number(conv.created_by) !== Number(user?.id) &&
+    !conv.has_replied &&
+    !conv.isTemp
+  )
 
   const renderConvItem = (conv) => {
     const isSelected = selectedConversation?.id === conv.id;
@@ -920,15 +934,15 @@ const ChatPage = ({ role }) => {
   const visibleConversations = conversations.filter(c => hiddenChats[c.id] !== (c.last_message?.id || 'none') && c.last_message)
   
   const unreadTotal = visibleConversations
-    .filter(c => !(c.type === 'private' && c.created_by !== user?.id && !c.has_replied))
+    .filter(c => !isMessageRequest(c))
     .reduce((acc, conv) => acc + (conv.unread_count || 0), 0)
 
   const unreadRequestsCount = visibleConversations
-    .filter(c => c.type === 'private' && c.created_by !== user?.id && !c.has_replied)
+    .filter(c => isMessageRequest(c))
     .reduce((acc, conv) => acc + (conv.unread_count || 0), 0)
 
   const activeTabConversations = visibleConversations.filter(c => {
-    const isRequest = c.type === 'private' && c.created_by !== user?.id && !c.has_replied
+    const isRequest = isMessageRequest(c)
     return activeTab === 'permintaan' ? isRequest : !isRequest
   })
 
@@ -1299,7 +1313,7 @@ const ChatPage = ({ role }) => {
                   </div>
                 </div>
                 {/* Input (iMessage style) / Request Banner */}
-                {selectedConversation.type === 'private' && selectedConversation.created_by !== user?.id && !selectedConversation.has_replied && !selectedConversation.isTemp ? (
+                {isMessageRequest(selectedConversation) ? (
                   <div className="px-4 md:px-6 py-4 bg-[#F4F4F6]/95 backdrop-blur-xl border-t border-[#D2D2D7]/50 z-40 text-center flex flex-col items-center justify-center gap-3">
                     <p className="text-[13px] text-gray-500 max-w-sm">
                       Pengguna ini ingin mengirim pesan kepada Anda. Ingin menerima obrolan ini?

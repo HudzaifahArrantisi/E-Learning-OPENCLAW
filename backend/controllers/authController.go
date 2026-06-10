@@ -140,7 +140,7 @@ func Login(c *gin.Context) {
 		if err == sql.ErrNoRows {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"success": false,
-				"message": "Login gagal atau kredensial tidak aktif",
+				"message": "Login gagal",
 			})
 			return
 		}

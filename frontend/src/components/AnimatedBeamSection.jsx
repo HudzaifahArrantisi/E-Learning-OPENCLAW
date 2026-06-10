@@ -119,7 +119,7 @@ const Circle = forwardRef(({ className, children, label }, ref) => (
     <div
       ref={ref}
       className={cn(
-        "z-10 flex size-12 items-center justify-center rounded-full border-2 border-lp-border bg-white p-3 shadow-[0_0_20px_-12px_rgba(0,0,0,0.8)] transition-all duration-300 hover:shadow-[0_0_28px_-8px_rgba(75,115,255,0.35)] hover:scale-110 hover:border-lp-borderA",
+        "z-10 flex size-12 items-center justify-center rounded-full border-2 border-lp-border bg-lp-surface/90 p-3 shadow-[0_0_20px_-12px_rgba(0,0,0,0.8)] transition-all duration-300 hover:shadow-[0_0_28px_-8px_rgba(75,115,255,0.35)] hover:scale-110 hover:border-lp-borderA",
         className
       )}
     >
@@ -220,32 +220,25 @@ export default function AnimatedBeamSection() {
   return (
     <section className="py-24">
       <div className="max-w-[1120px] mx-auto px-7">
-        {/* Section Header */}
         <div className="rv opacity-0 translate-y-4 transition-all duration-700 ease-in-out flex items-center gap-4 text-[10.5px] font-medium tracking-[0.16em] uppercase text-lp-text3 mb-10 after:content-[''] after:flex-1 after:h-px after:bg-lp-border">
         </div>
 
         <div className="rv opacity-0 translate-y-4 transition-all duration-700 ease-in-out delay-100 text-center mb-14">
-          <h2 className="font-sans text-[clamp(2.5rem,5vw,4rem)] leading-[1.06] tracking-tight text-lp-text max-w-[700px] mx-auto">
-            Everything connects to<br />
-            <em className="italic text-lp-text/40">Student Hub.</em>
-          </h2>
+          <h3 className="font-sans text-[clamp(2.5rem,5vw,4rem)] leading-[1.06] tracking-tight text-lp-text max-w-[700px] mx-auto">
+            Everything connects to 
+            <em className="italic text-lp-text/40"> Student Hub.</em>
+          </h3>
           <p className="text-[14px] font-light text-lp-text2 max-w-[460px] mx-auto mt-6">
             Satu platform terpusat yang menghubungkan semua layanan akademik — dari notifikasi Telegram hingga absensi QR, jadwal, nilai, dan tugas.
           </p>
         </div>
 
-        {/* AnimatedBeam Area */}
         <div className="rv opacity-0 translate-y-4 transition-all duration-700 ease-in-out delay-200">
           <div
             ref={containerRef}
-            className="relative flex h-[420px] w-full items-center justify-center overflow-hidden rounded-[24px] border border-lp-border bg-white p-10 shadow-[0_20px_60px_rgba(0,0,0,0.04)]"
+            className="relative flex h-[420px] w-full items-center justify-center overflow-hidden p-10"
           >
-            {/* Decorative background gradient blobs */}
-            <div className="absolute -top-32 -left-32 w-80 h-80 rounded-full blur-[100px] opacity-[0.06] bg-gradient-to-br from-blue-500 to-cyan-400 pointer-events-none" />
-            <div className="absolute -bottom-32 -right-32 w-80 h-80 rounded-full blur-[100px] opacity-[0.06] bg-gradient-to-br from-purple-500 to-pink-400 pointer-events-none" />
-
             <div className="flex size-full max-h-[320px] max-w-2xl flex-col items-stretch justify-between gap-8">
-              {/* Top Row */}
               <div className="flex flex-row items-center justify-between px-4">
                 <Circle ref={telegramRef} label="Telegram">
                   <HubIcons.telegram />
@@ -255,14 +248,13 @@ export default function AnimatedBeamSection() {
                 </Circle>
               </div>
 
-              {/* Middle Row */}
               <div className="flex flex-row items-center justify-between">
                 <Circle ref={qrRef} label="Absensi QR">
                   <HubIcons.qrAttendance />
                 </Circle>
                 <Circle
                   ref={centerRef}
-                  className="size-20 border-red-200 bg-white p-1.5 shadow-[0_0_34px_-8px_rgba(239,68,68,0.4)]"
+                  className="size-20 border-red-200 bg-lp-surface/90 p-1.5 shadow-[0_0_34px_-8px_rgba(239,68,68,0.4)]"
                   label="Student Hub"
                 >
                   <HubIcons.studentHub />
@@ -272,7 +264,6 @@ export default function AnimatedBeamSection() {
                 </Circle>
               </div>
 
-              {/* Bottom Row */}
               <div className="flex flex-row items-center justify-between px-4">
                 <Circle ref={calendarRef} label="Jadwal">
                   <HubIcons.calendar />
@@ -283,7 +274,6 @@ export default function AnimatedBeamSection() {
               </div>
             </div>
 
-            {/* Beams: Left side → Center */}
             <AnimatedBeam
               containerRef={containerRef}
               fromRef={telegramRef}
@@ -309,8 +299,6 @@ export default function AnimatedBeamSection() {
               gradientStartColor="#f59e0b"
               gradientStopColor="#4b73ff"
             />
-
-            {/* Beams: Center → Right side (reverse) */}
             <AnimatedBeam
               containerRef={containerRef}
               fromRef={gradesRef}
@@ -340,26 +328,6 @@ export default function AnimatedBeamSection() {
               gradientStopColor="#4b73ff"
             />
           </div>
-        </div>
-
-        {/* Feature pills beneath the beam */}
-        <div className="rv opacity-0 translate-y-4 transition-all duration-700 ease-in-out delay-300 flex flex-wrap justify-center gap-3 mt-10">
-          {[
-            { label: "Notifikasi Real-time", icon: "⚡" },
-            { label: "Absensi QR Otomatis", icon: "📱" },
-            { label: "Jadwal Terintegrasi", icon: "📅" },
-            { label: "Laporan Nilai", icon: "📊" },
-            { label: "Manajemen Tugas", icon: "📝" },
-            { label: "Chat Dosen-Mahasiswa", icon: "💬" },
-          ].map((pill) => (
-            <span
-              key={pill.label}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-lp-border bg-lp-surface text-[12px] font-medium text-lp-text2 transition-all duration-300 hover:border-lp-borderA hover:bg-white hover:text-lp-text hover:shadow-sm"
-            >
-              <span>{pill.icon}</span>
-              {pill.label}
-            </span>
-          ))}
         </div>
       </div>
 

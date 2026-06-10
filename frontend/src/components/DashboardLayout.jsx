@@ -8,7 +8,7 @@ import useAuth from '../hooks/useAuth'
 import PostCard from './PostCard'
 import { 
   FaBars, FaSignOutAlt, FaClock, FaPaperclip,
-  FaChevronRight, FaUsers, FaTimes
+  FaChevronRight, FaUsers, FaTimes, FaHome, FaUser
 } from 'react-icons/fa'
 import { MdOutlineSchool } from 'react-icons/md'
 import { BsPeopleFill } from 'react-icons/bs'
@@ -64,10 +64,6 @@ const getFileUrl = (filePath) => {
 const DashboardLayout = ({ 
   role, 
   profileEndpoint,
-  statsEndpoint, 
-  quickActions = [],
-  statsComponent,
-  children 
 }) => {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
@@ -75,6 +71,7 @@ const DashboardLayout = ({
   const [activeTab, setActiveTab] = useState('all')
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
   const [showAccountsDropdown, setShowAccountsDropdown] = useState(false)
+  const [showProfileActions, setShowProfileActions] = useState(false)
   const [activeAccountTab, setActiveAccountTab] = useState('ormawa')
 
   useEffect(() => {
@@ -164,8 +161,14 @@ const DashboardLayout = ({
 
   const profileUsername = cleanUsername(profile?.username || user?.username || user?.name || 'user')
   const profileName = profile?.name || user?.name || 'User'
-  const profileEmail = profile?.email || user?.email || ''
   const profilePhoto = profile?.profile_picture || profile?.photo || user?.profile_picture || user?.photo || ''
+  const profilePaths = {
+    admin: '/admin/akun',
+    mahasiswa: '/mahasiswa/profile',
+    ukm: '/ukm/akun',
+    ormawa: '/ormawa/akun',
+  }
+  const roleProfilePath = profilePaths[role] || `/${role}`
 
   return (
     <div className="bg-lp-bg text-lp-text font-sans font-light min-h-screen relative z-0">
@@ -210,9 +213,13 @@ const DashboardLayout = ({
                 </Link>
               </div>
 
-              {/* Right Side: Profile Info & Mobile Logout */}
-              <div className="flex items-center gap-3 lg:hidden">
-                <Link to={`/${role}/profile`} className="flex items-center gap-2">
+              {/* Right Side: Mobile Profile Actions */}
+              <div className="relative flex items-center gap-3 lg:hidden">
+                <button
+                  type="button"
+                  onClick={() => setShowProfileActions(prev => !prev)}
+                  className="flex items-center gap-2 rounded-xl px-2 py-1 transition-colors hover:bg-lp-surface"
+                >
                   <div className="flex flex-col items-end">
                     <span className="text-[12px] font-semibold text-lp-text leading-tight max-w-[100px] truncate">{profileName}</span>
                     <span className="text-[10px] text-lp-text3 font-mono hidden sm:block">@{profileUsername}</span>
@@ -235,14 +242,39 @@ const DashboardLayout = ({
                       {getInitials(profileName)}
                     </div>
                   </div>
-                </Link>
-                <button 
-                  onClick={() => setShowLogoutConfirm(true)}
-                  className="p-1.5 text-lp-red/80 hover:text-white hover:bg-lp-red rounded-lg transition-colors border border-transparent hover:border-lp-red/20"
-                  title="Keluar"
-                >
-                  <FaSignOutAlt className="text-[14px]" />
                 </button>
+
+                {showProfileActions && (
+                  <div className="absolute right-0 top-[calc(100%+8px)] w-48 bg-white border border-lp-border rounded-2xl shadow-[0_16px_40px_rgba(0,0,0,0.12)] p-1.5 z-40 animate-scaleIn">
+                    <Link
+                      to={roleProfilePath}
+                      onClick={() => setShowProfileActions(false)}
+                      className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[12.5px] font-medium text-lp-text2 hover:text-lp-text hover:bg-lp-surface transition-colors"
+                    >
+                      <FaUser className="text-xs" />
+                      Profile
+                    </Link>
+                    <Link
+                      to="/"
+                      onClick={() => setShowProfileActions(false)}
+                      className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[12.5px] font-medium text-lp-text2 hover:text-lp-text hover:bg-lp-surface transition-colors"
+                    >
+                      <FaHome className="text-xs" />
+                      Home
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowProfileActions(false)
+                        setShowLogoutConfirm(true)
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[12.5px] font-medium text-lp-red hover:bg-lp-red/5 transition-colors text-left"
+                    >
+                      <FaSignOutAlt className="text-xs" />
+                      Logout
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -494,11 +526,11 @@ const DashboardLayout = ({
 
         {/* Right Sidebar - Desktop Only */}
         <div className="hidden lg:block flex-1 max-w-sm sticky top-0 h-screen overflow-y-auto p-6 custom-scrollbar">
-          {/* User Profile with Logout */}
+          {/* User Profile Actions */}
           <div className="mb-6 animate-fadeIn">
             <div className="flex items-center gap-4 p-4 bg-white border border-lp-border rounded-2xl hover:border-lp-borderA hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] transition-all duration-300">
               <Link 
-                to={`/mahasiswa/profile`}
+                to={roleProfilePath}
                 className="w-14 h-14 rounded-2xl flex items-center justify-center text-white font-bold text-base hover:scale-105 transition-transform overflow-hidden border border-lp-border"
               >
                 {profilePhoto ? (
@@ -521,21 +553,29 @@ const DashboardLayout = ({
               
               <div className="flex-1 min-w-0">
                 <Link 
-                  to={`/mahasiswa/profile`}
+                  to={roleProfilePath}
                   className="hover:opacity-80 transition-opacity block"
                 >
                   <div className="font-semibold text-lp-text text-[14px] truncate tracking-tight">{profileName}</div>
                   <div className="text-lp-text3 text-[12px] font-mono truncate">@{profileUsername}</div>
                 </Link>
                 
-                {/* Logout Button */}
-                <button 
-                  onClick={() => setShowLogoutConfirm(true)}
-                  className="flex items-center gap-1.5 text-lp-text3 hover:text-lp-red mt-3 text-[11px] font-mono tracking-wider uppercase transition-colors"
-                >
-                  <FaSignOutAlt className="text-[10px]" />
-                  <span>Logout</span>
-                </button>
+                <div className="flex items-center gap-3 mt-3 text-[11px] font-mono tracking-wider uppercase">
+                  <Link
+                    to="/"
+                    className="flex items-center gap-1.5 text-lp-text3 hover:text-lp-atext transition-colors"
+                  >
+                    <FaHome className="text-[10px]" />
+                    <span>Home</span>
+                  </Link>
+                  <button 
+                    onClick={() => setShowLogoutConfirm(true)}
+                    className="flex items-center gap-1.5 text-lp-text3 hover:text-lp-red transition-colors"
+                  >
+                    <FaSignOutAlt className="text-[10px]" />
+                    <span>Logout</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>

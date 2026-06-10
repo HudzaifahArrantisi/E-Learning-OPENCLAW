@@ -468,11 +468,11 @@ const [toast, setToast] = useState(null);
                   <form onSubmit={handleUploadMateri} className="space-y-8">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                       <div>
-                        <label className="block text-[11px] font-mono font-semibold text-lp-text3 mb-3 tracking-widest uppercase">Pertemuan *</label>
+                        <label className="block text-[11px] font-mono font-semibold text-lp-text mb-3 tracking-widest uppercase">Pertemuan *</label>
                         <select
                           value={formData.pertemuan}
                           onChange={(e) => setFormData(prev => ({ ...prev, pertemuan: e.target.value }))}
-                          className={`w-full font-light text-[15px] border border-lp-border rounded-2xl px-5 py-4 focus:outline-none focus:ring-2 focus:ring-lp-accent/5 focus:border-lp-text transition-all duration-500 appearance-none ${selectedPertemuan ? 'bg-lp-surface/50 text-lp-text2 cursor-not-allowed' : 'bg-lp-surface text-lp-text'}`}
+                          className={`w-full font-normal text-[15px] border border-lp-border rounded-2xl px-5 py-4 focus:outline-none focus:ring-2 focus:ring-lp-accent/5 focus:border-lp-text transition-all duration-500 appearance-none ${selectedPertemuan ? 'bg-lp-surface/50 text-lp-text cursor-not-allowed font-medium' : 'bg-lp-surface text-lp-text'}`}
                           required
                           disabled={!!selectedPertemuan}
                         >
@@ -484,12 +484,12 @@ const [toast, setToast] = useState(null);
                       </div>
                       
                       <div>
-                        <label className="block text-[11px] font-mono font-semibold text-lp-text3 mb-3 tracking-widest uppercase">Judul Materi *</label>
+                        <label className="block text-[11px] font-mono font-semibold text-lp-text mb-3 tracking-widest uppercase">Judul Materi *</label>
                         <input
                           type="text"
                           value={formData.title}
                           onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                          className="w-full bg-lp-surface font-light text-[15px] border border-lp-border rounded-2xl px-5 py-4 focus:outline-none focus:ring-2 focus:ring-lp-accent/5 focus:border-lp-text transition-all duration-500"
+                          className="w-full bg-lp-surface font-normal text-[15px] text-lp-text border border-lp-border rounded-2xl px-5 py-4 focus:outline-none focus:ring-2 focus:ring-lp-accent/5 focus:border-lp-text transition-all duration-500 placeholder:text-lp-text3/70"
                           placeholder="Introduction to Calculus..."
                           required
                         />
@@ -497,18 +497,18 @@ const [toast, setToast] = useState(null);
                     </div>
                     
                     <div>
-                      <label className="block text-[11px] font-mono font-semibold text-lp-text3 mb-3 tracking-widest uppercase">Deskripsi</label>
+                      <label className="block text-[11px] font-mono font-semibold text-lp-text mb-3 tracking-widest uppercase">Deskripsi</label>
                       <textarea
                         value={formData.desc}
                         onChange={(e) => setFormData(prev => ({ ...prev, desc: e.target.value }))}
-                        className="w-full bg-lp-surface font-light text-[15px] border border-lp-border rounded-2xl px-5 py-4 focus:outline-none focus:ring-2 focus:ring-lp-accent/5 focus:border-lp-text transition-all duration-500 resize-none whitespace-pre-wrap"
+                        className="w-full bg-lp-surface font-normal text-[15px] text-lp-text border border-lp-border rounded-2xl px-5 py-4 focus:outline-none focus:ring-2 focus:ring-lp-accent/5 focus:border-lp-text transition-all duration-500 resize-none whitespace-pre-wrap placeholder:text-lp-text3/70"
                         rows="3"
                         placeholder="Detail tentang materi yang dibagikan..."
                       />
                     </div>
                     
                     <div>
-                      <label className="block text-[11px] font-mono font-semibold text-lp-text3 mb-3 tracking-widest uppercase">File Materi (Opsional)</label>
+                      <label className="block text-[11px] font-mono font-semibold text-lp-text mb-3 tracking-widest uppercase">File Materi (Opsional)</label>
                       <div className="relative group">
                         <input
                           type="file"
@@ -525,26 +525,26 @@ const [toast, setToast] = useState(null);
                             transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]
                             ${formData.file 
                               ? 'border-lp-text bg-lp-surface' 
-                              : 'border-lp-border bg-lp-surface hover:border-lp-text hover:bg-lp-bg'
+                              : 'border-slate-300 bg-lp-surface hover:border-lp-text hover:bg-lp-bg'
                             }
                           `}
                         >
                            <div className="flex flex-col items-center text-center">
                               <div className={`
                                 w-14 h-14 rounded-2xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-500
-                                ${formData.file ? 'bg-lp-text text-white' : 'bg-white border border-lp-border text-lp-text3'}
+                                ${formData.file ? 'bg-lp-text text-white' : 'bg-white border border-slate-300 text-lp-accent'}
                               `}>
                                 {formData.file ? <FiCheckCircle className="text-2xl" /> : <FiUpload className="text-2xl animate-bounce" />}
                               </div>
                               {formData.file ? (
                                 <>
-                                  <p className="text-[16px] font-normal text-lp-text mb-1 tracking-tight italic">File Siap Diunggah</p>
-                                  <p className="text-[12px] text-lp-text3 font-mono uppercase">{formData.file.name}</p>
+                                  <p className="text-[16px] font-medium text-lp-text mb-1 tracking-tight italic">File Siap Diunggah</p>
+                                  <p className="text-[12px] text-lp-text font-mono uppercase font-semibold">{formData.file.name}</p>
                                 </>
                               ) : (
                                 <>
-                                  <p className="text-[16px] font-normal text-lp-text mb-1 tracking-tight">Tarik file ke sini atau <em className="italic underline">telusuri</em>.</p>
-                                  <p className="text-[10px] text-lp-text3 font-mono font-medium tracking-widest mt-2 uppercase">PDF · PPT · DOC · ZIP</p>
+                                  <p className="text-[16px] font-medium text-lp-text mb-1 tracking-tight">Tarik file ke sini atau <em className="italic underline">telusuri</em>.</p>
+                                  <p className="text-[10px] text-lp-text2 font-mono font-bold tracking-widest mt-2 uppercase">PDF · PPT · DOC · ZIP</p>
                                 </>
                               )}
                            </div>
@@ -597,11 +597,11 @@ const [toast, setToast] = useState(null);
                   <form onSubmit={handleCreateTugas} className="space-y-8">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                       <div>
-                        <label className="block text-[11px] font-mono font-semibold text-lp-text3 mb-3 tracking-widest uppercase">Pertemuan *</label>
+                        <label className="block text-[11px] font-mono font-semibold text-lp-text mb-3 tracking-widest uppercase">Pertemuan *</label>
                         <select
                           value={formData.pertemuan}
                           onChange={(e) => setFormData(prev => ({ ...prev, pertemuan: e.target.value }))}
-                          className={`w-full font-light text-[15px] border border-lp-border rounded-2xl px-5 py-4 focus:outline-none focus:ring-2 focus:ring-lp-accent/5 focus:border-lp-text transition-all duration-500 appearance-none ${selectedPertemuan ? 'bg-lp-surface/50 text-lp-text2 cursor-not-allowed' : 'bg-lp-surface text-lp-text'}`}
+                          className={`w-full font-normal text-[15px] border border-lp-border rounded-2xl px-5 py-4 focus:outline-none focus:ring-2 focus:ring-lp-accent/5 focus:border-lp-text transition-all duration-500 appearance-none ${selectedPertemuan ? 'bg-lp-surface/50 text-lp-text cursor-not-allowed font-medium' : 'bg-lp-surface text-lp-text'}`}
                           required
                           disabled={!!selectedPertemuan}
                         >
@@ -613,12 +613,12 @@ const [toast, setToast] = useState(null);
                       </div>
                       
                       <div>
-                        <label className="block text-[11px] font-mono font-semibold text-lp-text3 mb-3 tracking-widest uppercase">Judul Tugas *</label>
+                        <label className="block text-[11px] font-mono font-semibold text-lp-text mb-3 tracking-widest uppercase">Judul Tugas *</label>
                         <input
                           type="text"
                           value={formData.title}
                           onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                          className="w-full bg-lp-surface font-light text-[15px] border border-lp-border rounded-2xl px-5 py-4 focus:outline-none focus:ring-2 focus:ring-lp-accent/5 focus:border-lp-text transition-all duration-500"
+                          className="w-full bg-lp-surface font-normal text-[15px] text-lp-text border border-lp-border rounded-2xl px-5 py-4 focus:outline-none focus:ring-2 focus:ring-lp-accent/5 focus:border-lp-text transition-all duration-500 placeholder:text-lp-text3/70"
                           placeholder="Project Milestone 1..."
                           required
                         />
@@ -626,11 +626,11 @@ const [toast, setToast] = useState(null);
                     </div>
                     
                     <div>
-                      <label className="block text-[11px] font-mono font-semibold text-lp-text3 mb-3 tracking-widest uppercase">Instruksi Tugas *</label>
+                      <label className="block text-[11px] font-mono font-semibold text-lp-text mb-3 tracking-widest uppercase">Instruksi Tugas *</label>
                       <textarea
                         value={formData.desc}
                         onChange={(e) => setFormData(prev => ({ ...prev, desc: e.target.value }))}
-                        className="w-full bg-lp-surface font-light text-[15px] border border-lp-border rounded-2xl px-5 py-4 focus:outline-none focus:ring-2 focus:ring-lp-accent/5 focus:border-lp-text transition-all duration-500 resize-none whitespace-pre-wrap"
+                        className="w-full bg-lp-surface font-normal text-[15px] text-lp-text border border-lp-border rounded-2xl px-5 py-4 focus:outline-none focus:ring-2 focus:ring-lp-accent/5 focus:border-lp-text transition-all duration-500 resize-none whitespace-pre-wrap placeholder:text-lp-text3/70"
                         rows="4"
                         placeholder="Deskripsikan tantangan bagi mahasiswa..."
                         required
@@ -639,17 +639,17 @@ const [toast, setToast] = useState(null);
                     
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                       <div>
-                        <label className="block text-[11px] font-mono font-semibold text-lp-text3 mb-3 tracking-widest uppercase">Tenggat Waktu Pengumpulan</label>
+                        <label className="block text-[11px] font-mono font-semibold text-lp-text mb-3 tracking-widest uppercase">Tenggat Waktu Pengumpulan</label>
                         <input
                           type="datetime-local"
                           value={formData.due_date}
                           onChange={(e) => setFormData(prev => ({ ...prev, due_date: e.target.value }))}
-                          className="w-full bg-lp-surface font-light text-[15px] border border-lp-border rounded-2xl px-5 py-4 focus:outline-none focus:ring-2 focus:ring-lp-accent/5 focus:border-lp-text transition-all duration-500 appearance-none"
+                          className="w-full bg-lp-surface font-normal text-[15px] text-lp-text border border-lp-border rounded-2xl px-5 py-4 focus:outline-none focus:ring-2 focus:ring-lp-accent/5 focus:border-lp-text transition-all duration-500 appearance-none"
                         />
                       </div>
                       
                       <div>
-                        <label className="block text-[11px] font-mono font-semibold text-lp-text3 mb-3 tracking-widest uppercase">File Referensi <span className="font-sans lowercase opacity-50 font-normal ml-1">(Opsional)</span></label>
+                        <label className="block text-[11px] font-mono font-semibold text-lp-text mb-3 tracking-widest uppercase">File Referensi <span className="font-sans lowercase opacity-50 font-normal ml-1">(Opsional)</span></label>
                         <div className="relative group">
                           <input
                             type="file"
@@ -666,21 +666,21 @@ const [toast, setToast] = useState(null);
                               transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]
                               ${formData.file_tugas 
                                 ? 'border-lp-text bg-lp-surface' 
-                                : 'border-lp-border bg-lp-surface hover:border-lp-text hover:bg-lp-bg'
+                                : 'border-slate-300 bg-lp-surface hover:border-lp-text hover:bg-lp-bg'
                               }
                             `}
                           >
                              <div className="flex flex-col items-center text-center">
                                 <div className={`
                                   w-10 h-10 rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-500
-                                  ${formData.file_tugas ? 'bg-lp-text text-white' : 'bg-white border border-lp-border text-lp-text3'}
+                                  ${formData.file_tugas ? 'bg-lp-text text-white' : 'bg-white border border-slate-300 text-lp-accent'}
                                 `}>
                                   {formData.file_tugas ? <FiCheckCircle /> : <FiUpload />}
                                 </div>
                                 {formData.file_tugas ? (
-                                  <p className="text-[12px] text-lp-text font-mono uppercase truncate max-w-[160px]">{formData.file_tugas.name}</p>
+                                  <p className="text-[12px] text-lp-text font-mono uppercase font-semibold truncate max-w-[160px]">{formData.file_tugas.name}</p>
                                 ) : (
-                                  <p className="text-[12px] text-lp-text3 font-medium uppercase tracking-[0.1em]">Upload Panduan</p>
+                                  <p className="text-[12px] text-lp-text2 font-bold uppercase tracking-[0.1em]">Upload Panduan</p>
                                 )}
                              </div>
                           </label>
@@ -799,9 +799,9 @@ const [toast, setToast] = useState(null);
                               </div>
                             ))
                           ) : (
-                            <div className="py-16 text-center border-2 border-dashed border-lp-border rounded-[2rem]">
-                              <FiFileText className="text-4xl text-lp-text/10 mx-auto mb-4" />
-                              <p className="text-[11px] font-mono font-bold text-lp-text3 uppercase">Belum ada materi</p>
+                            <div className="py-16 text-center border-2 border-dashed border-slate-300 bg-lp-surface/50 rounded-[2rem]">
+                              <FiFileText className="text-4xl text-lp-accent/40 mx-auto mb-4" />
+                              <p className="text-[12px] font-mono font-bold text-lp-text2 uppercase tracking-wide">Belum ada materi</p>
                             </div>
                           )}
                         </div>
@@ -865,9 +865,9 @@ const [toast, setToast] = useState(null);
                               </div>
                             ))
                           ) : (
-                            <div className="py-16 text-center border-2 border-dashed border-lp-border rounded-[2rem]">
-                              <FiCalendar className="text-4xl text-lp-text/10 mx-auto mb-4" />
-                              <p className="text-[11px] font-mono font-bold text-lp-text3 uppercase">Belum ada tugas</p>
+                            <div className="py-16 text-center border-2 border-dashed border-slate-300 bg-lp-surface/50 rounded-[2rem]">
+                              <FiCalendar className="text-4xl text-lp-accent/40 mx-auto mb-4" />
+                              <p className="text-[12px] font-mono font-bold text-lp-text2 uppercase tracking-wide">Belum ada tugas</p>
                             </div>
                           )}
                         </div>

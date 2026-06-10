@@ -15,30 +15,30 @@ const DetailMatkul = () => {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true)
+        // Fetch course info
+        const courseRes = await api.getCourseInfo(courseId)
+        if (courseRes.data && courseRes.data.data) {
+          setCourseName(courseRes.data.data.nama.toUpperCase())
+        }
+
+        // Fetch pertemuan list
+        const response = await api.getPertemuanByMatkul(courseId)
+        setPertemuanList(response.data.data || [])
+      } catch (error) {
+        console.error('Error fetching data:', error)
+        if (error.response?.status === 404) {
+          window.location.href = '/not-found';
+        }
+      } finally {
+        setLoading(false)
+      }
+    }
+
     fetchData()
   }, [courseId])
-
-  const fetchData = async () => {
-    try {
-      setLoading(true)
-      // Fetch course info
-      const courseRes = await api.getCourseInfo(courseId)
-      if (courseRes.data && courseRes.data.data) {
-        setCourseName(courseRes.data.data.nama.toUpperCase())
-      }
-
-      // Fetch pertemuan list
-      const response = await api.getPertemuanByMatkul(courseId)
-      setPertemuanList(response.data.data || [])
-    } catch (error) {
-      console.error('Error fetching data:', error)
-      if (error.response?.status === 404) {
-        window.location.href = '/not-found';
-      }
-    } finally {
-      setLoading(false)
-    }
-  }
 
   if (loading) {
     return (
@@ -94,21 +94,29 @@ const DetailMatkul = () => {
 
             {/* Pertemuan Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
-              {pertemuanList.map((pertemuan, index) => (
-                <div 
-                  key={index} 
-                  className="
-                    bg-white rounded-[24px] p-6 shadow-[0_2px_12px_rgba(0,0,0,0.04)] border border-lp-border
+              {pertemuanList.map((pertemuan, index) => {
+                const hasContent = pertemuan.has_materi || pertemuan.has_tugas
+
+                return (
+                <div
+                  key={index}
+                  className={`
+                    rounded-[24px] p-6 shadow-[0_2px_12px_rgba(0,0,0,0.04)] border
                     hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] hover:-translate-y-1
                     transition-all duration-300 flex flex-col items-center justify-center
-                  "
+                    ${hasContent
+                      ? 'bg-blue-50/80 border-blue-200 ring-1 ring-blue-100'
+                      : 'bg-white border-lp-border'}
+                  `}
                 >
                   <div className="text-center mb-6 w-full">
-                    <div className="
-                      w-[60px] h-[60px] bg-white border-2 border-gray-100 
-                      rounded-full flex items-center justify-center text-lp-text 
+                    <div className={`
+                      w-[60px] h-[60px] border-2 rounded-full flex items-center justify-center
                       font-mono font-bold text-[22px] mx-auto mb-4
-                    ">
+                      ${hasContent
+                        ? 'bg-lp-accent text-white border-blue-300 shadow-[0_8px_20px_rgba(75,115,255,0.25)]'
+                        : 'bg-white border-gray-100 text-lp-text'}
+                    `}>
                       {pertemuan.pertemuan}
                     </div>
                     <h3 className="font-bold text-[17px] text-lp-text tracking-tight w-full">
@@ -137,9 +145,9 @@ const DetailMatkul = () => {
                         to={`/mahasiswa/matkul/${courseId}/pertemuan/${pertemuan.pertemuan}/tugas`}
                         className="
                           flex items-center justify-center space-x-2 
-                          bg-white text-lp-text border border-lp-border h-[42px] rounded-full
+                          bg-white text-lp-atext border border-blue-200 h-[42px] rounded-full
                           font-sans text-[13px] font-semibold tracking-[0.02em]
-                          hover:bg-gray-50 hover:shadow-sm transition-all duration-300 w-full
+                          hover:bg-blue-50 hover:shadow-sm transition-all duration-300 w-full
                         "
                       >
                         <FaTasks className="text-sm" />
@@ -154,7 +162,8 @@ const DetailMatkul = () => {
                     )}
                   </div>
                 </div>
-              ))}
+                )
+              })}
             </div>
 
             {/* Empty State */}

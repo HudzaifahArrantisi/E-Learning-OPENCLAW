@@ -1,6 +1,6 @@
 // src/components/Sidebar.jsx
 import React, { useEffect, useMemo, useState } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import useAuth from '../hooks/useAuth'
 import useChatNotification from '../hooks/useChatNotification'
 import { 
@@ -8,15 +8,14 @@ import {
   FaComment, FaNewspaper, FaChartBar, FaCog, 
   FaTimes, FaGraduationCap, FaTasks, FaUpload,
   FaInstagram, FaBookmark, FaUsers, FaStore,
-  FaSignOutAlt, FaShieldAlt
+  FaShieldAlt
 } from 'react-icons/fa'
 import { IoIosSettings, IoIosPaper } from 'react-icons/io'
 import { MdDashboard, MdClass, MdPayment } from 'react-icons/md'
 
 const Sidebar = ({ role, isOpen, onClose }) => {
   const location = useLocation()
-  const navigate = useNavigate()
-  const { logout, user } = useAuth()
+  const { user } = useAuth()
   const { unreadCount } = useChatNotification()
   const [internalOpen, setInternalOpen] = useState(false)
 
@@ -50,17 +49,13 @@ const Sidebar = ({ role, isOpen, onClose }) => {
     return hiddenPathMatchers.some((matcher) => matcher.test(location.pathname))
   }, [location.pathname])
 
-  const handleLogout = async () => {
-    try {
-      await logout()
-      navigate('/')
-    } catch (error) {
-      console.error('Logout error:', error)
+  const isActive = (path) => {
+    const baseDashboards = ['/mahasiswa', '/dosen', '/admin', '/ortu', '/ukm', '/ormawa']
+    if (baseDashboards.includes(path)) {
+      return location.pathname === path
     }
+    return location.pathname === path || location.pathname.startsWith(path + '/')
   }
-
-
-  const isActive = (path) => location.pathname === path || location.pathname.startsWith(path + '/')
 
   const menuItems = {
     mahasiswa: [
@@ -170,13 +165,13 @@ const Sidebar = ({ role, isOpen, onClose }) => {
               onClick={() => window.innerWidth < 1024 && closeSidebar()}
               className={`
                 flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group
-                ${(isActive(item.path) || location.pathname.startsWith(item.path)) 
+                ${isActive(item.path) 
                   ? 'bg-lp-accentS text-lp-atext font-semibold' 
                   : 'text-lp-text2 hover:bg-lp-surface hover:text-lp-text'
                 }
               `}
             >
-              <div className={`text-base ${(isActive(item.path) || location.pathname.startsWith(item.path)) ? 'text-lp-atext' : 'text-lp-text3 group-hover:text-lp-text2'}`}>
+              <div className={`text-base ${isActive(item.path) ? 'text-lp-atext' : 'text-lp-text3 group-hover:text-lp-text2'}`}>
                 {item.icon}
               </div>
               <span className="text-[13px] font-light">{item.label}</span>
@@ -186,22 +181,23 @@ const Sidebar = ({ role, isOpen, onClose }) => {
                   {unreadCount > 99 ? '99+' : unreadCount}
                 </span>
               )}
-              {!(item.path.includes('/pesan') && unreadCount > 0) && (isActive(item.path) || location.pathname.startsWith(item.path)) && (
+              {!(item.path.includes('/pesan') && unreadCount > 0) && isActive(item.path) && (
                 <div className="ml-auto w-1.5 h-1.5 rounded-full bg-lp-accent animate-pulse" />
               )}
             </Link>
           ))}
 
-          {/* Logout Button */}
-          <button
-            onClick={handleLogout}
+          {/* Landing Page Link */}
+          <Link
+            to="/"
+            onClick={() => window.innerWidth < 1024 && closeSidebar()}
             className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group text-lp-text2 hover:bg-lp-surface hover:text-lp-text w-full mt-4 border-t border-lp-border pt-4"
           >
-            <div className="text-base text-lp-text3 group-hover:text-red-500">
-              <FaSignOutAlt className="text-lg" />
+            <div className="text-base text-lp-text3 group-hover:text-lp-atext">
+              <FaHome className="text-lg" />
             </div>
-            <span className="text-[13px] font-light">Logout</span>
-          </button>
+            <span className="text-[13px] font-light">Home</span>
+          </Link>
         </nav>
 
         {/* Footer Sidebar */}

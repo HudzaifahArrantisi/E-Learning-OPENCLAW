@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import {
   featureCards, howItWorks, benefits, roles, semesters, visiData, platformFeatures,
   stats, footerLinks, programs, institutions, academicCalendar, calendarMonths,
@@ -7,15 +7,70 @@ import {
 } from '../data/landingData'
 import LoginModal from '../components/LoginModal'
 import AnimatedBeamSection from '../components/AnimatedBeamSection'
+import TelegramAnimatedNotifications from '../components/TelegramAnimatedNotifications'
+import { HighlighterDemo } from '../components/tulisan'
+import useAuth from '../hooks/useAuth'
+
+const ROLE_DASHBOARD = {
+  admin: '/admin',
+  dosen: '/dosen',
+  mahasiswa: '/mahasiswa',
+  orangtua: '/ortu',
+  ukm: '/ukm',
+  ormawa: '/ormawa',
+}
 
 export default function LandingPage() {
+  const { user, logout, isAuthenticated } = useAuth()
+  const navigate = useNavigate()
   const openClawRef = useRef(null)
+  const terminalImgRef = useRef(null)
   const openClawAltRef = useRef(null)
   const openClawVisiRef = useRef(null)
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [showProfileMenu, setShowProfileMenu] = useState(false)
+  const profileMenuRef = useRef(null)
   const [showTutorial, setShowTutorial] = useState(false)
   const [activeRoleGuide, setActiveRoleGuide] = useState(0)
+
+  const dashboardHref = ROLE_DASHBOARD[user?.role] || '/'
+
+  const handleCtaClick = () => {
+    if (isAuthenticated) {
+      navigate(dashboardHref)
+    } else {
+      setIsLoginModalOpen(true)
+    }
+  }
+
+  const handleLogout = () => {
+    logout()
+    setShowProfileMenu(false)
+    setIsMobileMenuOpen(false)
+    navigate('/')
+  }
+
+  // Close profile dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(e.target)) {
+        setShowProfileMenu(false)
+      }
+    }
+    if (showProfileMenu) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [showProfileMenu])
+
+  const displayName = user?.name || user?.username || user?.email || user?.role || 'User'
+  const initials = displayName
+    .split(/\s+/)
+    .slice(0, 2)
+    .map(w => w[0])
+    .join('')
+    .toUpperCase()
 
   useEffect(() => {
     const tutorialSeen = sessionStorage.getItem('tutorialSeen')
@@ -121,7 +176,7 @@ export default function LandingPage() {
       const visiPageTop = visiRect ? window.scrollY + visiRect.top : document.documentElement.scrollHeight
       const companionTravel = Math.max(window.innerHeight, document.documentElement.scrollHeight - visiPageTop - window.innerHeight)
       const companionProgress = Math.min(1, Math.max(0, (scrollFocus - visiPageTop) / companionTravel))
-      const isMascotSwitch = previousIndex === 4 && nextIndex === 5
+      const isMascotSwitch = previousIndex === 2 && nextIndex === 3
       const exitProgress = Math.min(1, easedProgress * 2)
       const enterProgress = Math.max(0, easedProgress * 2 - 1)
       const offscreenRightX = window.innerWidth + mascotWidth * 0.35
@@ -138,7 +193,7 @@ export default function LandingPage() {
         openClaw.style.opacity = String(mascotOpacity * Math.min(1, (1 - exitProgress) * 4))
         openClawAlt.style.opacity = String(mascotOpacity * Math.min(1, enterProgress * 4))
       } else {
-        const showAltMascot = previousIndex >= 5 || nextIndex >= 5
+        const showAltMascot = previousIndex >= 3 || nextIndex >= 3
         openClaw.style.transform = defaultTransform
         openClawAlt.style.transform = defaultTransform
         openClaw.style.opacity = String(showAltMascot ? 0 : mascotOpacity)
@@ -228,6 +283,47 @@ export default function LandingPage() {
     }
   }, [])
 
+  /* Scroll-driven wobble for the 3D terminal image in Automation Engine section */
+  useEffect(() => {
+    const img = terminalImgRef.current
+    if (!img) return undefined
+
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
+    if (reducedMotion.matches) return undefined
+
+    let raf = null
+    let prevScrollY = window.scrollY
+
+    const wobble = () => {
+      raf = null
+      const rect = img.getBoundingClientRect()
+      const vh = window.innerHeight
+      // How far the element center is from viewport center (–1 … 1)
+      const centerOffset = (rect.top + rect.height / 2 - vh / 2) / (vh / 2)
+      // Scroll velocity for dynamic tilt
+      const delta = window.scrollY - prevScrollY
+      prevScrollY = window.scrollY
+
+      const rotate = Math.sin(window.scrollY * 0.004) * 2.5   // gentle rotation
+      const translateY = Math.sin(window.scrollY * 0.006) * 5  // subtle bob
+      const velocityTilt = Math.max(-3, Math.min(3, delta * 0.2)) // reactive tilt
+
+      img.style.transform = `translateY(${translateY}px) rotate(${rotate + velocityTilt}deg)`
+    }
+
+    const onScroll = () => {
+      if (raf === null) raf = requestAnimationFrame(wobble)
+    }
+
+    window.addEventListener('scroll', onScroll, { passive: true })
+    wobble() // initialize
+
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      if (raf !== null) cancelAnimationFrame(raf)
+    }
+  }, [])
+
   const [activeProg, setActiveProg] = useState('ti')
   const [activeInst, setActiveInst] = useState('stt-nf')
   const [selectedDate, setSelectedDate] = useState(null)
@@ -282,7 +378,6 @@ export default function LandingPage() {
             <span className="text-[11.5px] font-bold text-lp-text tracking-[0.07em] mr-2.5 sm:mr-4">STUDENT-HUB</span>
             
             <div className="hidden sm:flex items-center gap-0.5">
-              <a href="#features" className="text-lp-text2 text-[12.5px] px-4 py-2 rounded-full transition-all hover:text-lp-text hover:bg-black/5">Features</a>
               <a href="#platform" className="text-lp-text2 text-[12.5px] px-4 py-2 rounded-full transition-all hover:text-lp-text hover:bg-black/5">Platform</a>
               <a href="#kurikulum" className="text-lp-text2 text-[12.5px] px-4 py-2 rounded-full transition-all hover:text-lp-text hover:bg-black/5">Kurikulum</a>
               <a href="#panduan" className="text-lp-text2 text-[12.5px] px-4 py-2 rounded-full transition-all hover:text-lp-text hover:bg-black/5">Panduan</a>
@@ -291,7 +386,55 @@ export default function LandingPage() {
             </div>
 
             <div className="flex items-center gap-1.5 ml-auto pl-2 sm:pl-0">
-              <button onClick={() => setIsLoginModalOpen(true)} className="bg-lp-text text-lp-bg text-[12px] sm:text-[12.5px] font-semibold px-4 sm:px-5 py-2 rounded-full transition-all hover:bg-lp-atext tracking-[0.01em]">Masuk</button>
+              {isAuthenticated ? (
+                <div className="relative hidden sm:block" ref={profileMenuRef}>
+                  <button
+                    onClick={() => setShowProfileMenu(!showProfileMenu)}
+                    className="flex items-center gap-2 pl-2 pr-3 py-1 rounded-full transition-all hover:bg-black/5"
+                  >
+                    <span className="w-7 h-7 rounded-full bg-lp-accent text-white text-[10px] font-bold flex items-center justify-center shrink-0">
+                      {initials}
+                    </span>
+                    <span className="text-[12px] font-semibold text-lp-text truncate max-w-[100px]">
+                      {displayName}
+                    </span>
+                    <svg className={`w-3 h-3 text-lp-text3 transition-transform duration-200 ${showProfileMenu ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                  {showProfileMenu && (
+                    <div className="absolute right-0 top-[calc(100%+8px)] w-48 bg-white/95 backdrop-blur-xl border border-black/10 rounded-2xl shadow-[0_16px_40px_rgba(0,0,0,0.12)] overflow-hidden z-[60]">
+                      <div className="px-4 py-3 border-b border-lp-border">
+                        <p className="text-[12px] font-semibold text-lp-text truncate">{displayName}</p>
+                        <p className="text-[10px] text-lp-text3 capitalize">{user?.role || ''}</p>
+                      </div>
+                      <div className="p-1.5">
+                        <Link
+                          to={dashboardHref}
+                          onClick={() => setShowProfileMenu(false)}
+                          className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[12.5px] font-medium text-lp-text2 hover:text-lp-text hover:bg-black/5 transition-colors"
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                          </svg>
+                          Dashboard
+                        </Link>
+                        <button
+                          onClick={handleLogout}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[12.5px] font-medium text-red-500 hover:bg-red-50 transition-colors"
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                          </svg>
+                          Logout
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <button onClick={() => setIsLoginModalOpen(true)} className="hidden sm:block bg-lp-text text-lp-bg text-[12px] sm:text-[12.5px] font-semibold px-4 sm:px-5 py-2 rounded-full transition-all hover:bg-lp-atext tracking-[0.01em]">Masuk</button>
+              )}
               <button 
                 className="sm:hidden w-8 h-8 flex flex-col justify-center items-center gap-[4px] bg-lp-surface border border-lp-border/50 rounded-full"
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -306,39 +449,49 @@ export default function LandingPage() {
 
           <div className={`sm:hidden absolute top-[calc(100%+8px)] left-0 right-0 bg-white/95 backdrop-blur-xl border border-black/10 rounded-[20px] shadow-[0_24px_48px_rgba(0,0,0,0.1)] transition-all duration-500 ease-in-out origin-top overflow-hidden ${isMobileMenuOpen ? 'max-h-[500px] opacity-100 translate-y-0' : 'max-h-0 opacity-0 -translate-y-4 pointer-events-none'}`}>
             <div className="flex flex-col gap-1 p-2">
-              <a href="#features" onClick={() => setIsMobileMenuOpen(false)} className="px-4 py-3 text-[13.5px] font-medium text-lp-text2 hover:text-lp-text hover:bg-black/5 rounded-xl transition-colors">Features</a>
               <a href="#platform" onClick={() => setIsMobileMenuOpen(false)} className="px-4 py-3 text-[13.5px] font-medium text-lp-text2 hover:text-lp-text hover:bg-black/5 rounded-xl transition-colors">Platform</a>
               <a href="#kurikulum" onClick={() => setIsMobileMenuOpen(false)} className="px-4 py-3 text-[13.5px] font-medium text-lp-text2 hover:text-lp-text hover:bg-black/5 rounded-xl transition-colors">Kurikulum</a>
               <a href="#panduan" onClick={() => setIsMobileMenuOpen(false)} className="px-4 py-3 text-[13.5px] font-medium text-lp-text2 hover:text-lp-text hover:bg-black/5 rounded-xl transition-colors">Panduan</a>
               <a href="#visi-misi" onClick={() => setIsMobileMenuOpen(false)} className="px-4 py-3 text-[13.5px] font-medium text-lp-text2 hover:text-lp-text hover:bg-black/5 rounded-xl transition-colors">Visi Misi</a>
               <a href="#kalender" onClick={() => setIsMobileMenuOpen(false)} className="px-4 py-3 text-[13.5px] font-medium text-lp-text2 hover:text-lp-text hover:bg-black/5 rounded-xl transition-colors">Kalender</a>
+              <div className="h-px bg-black/5 mx-2 my-1" />
+              {isAuthenticated ? (
+                <>
+                  <Link to={dashboardHref} onClick={() => setIsMobileMenuOpen(false)} className="px-4 py-3 text-[13.5px] font-semibold text-lp-accent hover:bg-lp-accent/5 rounded-xl transition-colors">Dashboard</Link>
+                  <button onClick={handleLogout} className="px-4 py-3 text-[13.5px] font-semibold text-red-500 hover:bg-red-50 rounded-xl transition-colors text-left w-full">Logout</button>
+                </>
+              ) : (
+                <button onClick={() => { setIsMobileMenuOpen(false); setIsLoginModalOpen(true) }} className="px-4 py-3 text-[13.5px] font-semibold text-lp-accent hover:bg-lp-accent/5 rounded-xl transition-colors text-left w-full">Masuk</button>
+              )}
             </div>
           </div>
         </div>
       </div>
 
-      <section className="relative min-h-screen flex items-end pb-24 overflow-hidden">
+      <section className="relative min-h-screen flex items-end pb-44 overflow-hidden">
         <div className="absolute left-0 right-0 h-[160px] animate-scanAnim bg-[linear-gradient(180deg,transparent,rgba(75,115,255,0.03)_35%,rgba(75,115,255,0.06)_50%,rgba(75,115,255,0.03)_65%,transparent)] pointer-events-none" />
         <div className="relative z-10 w-full max-w-[1120px] mx-auto px-7">
           <h1 className="font-sans text-[clamp(3.8rem,7.4vw,6.6rem)] font-normal leading-[0.96] tracking-[-0.035em] text-lp-text mb-8 animate-slideUp delay-300 fill-mode-both">
             Student Hub<br />
             <em className="italic text-lp-text/40">Openlcaw Reminder</em>
           </h1>
-          <p className="text-[17px] font-light text-lp-text2 max-w-[560px] leading-relaxed mb-11 animate-slideUp delay-500 fill-mode-both">
-            Student Hub automatically reminds you about classes, assignments, 
+          <p className="text-[17px] font-light text-lp-text2 max-w-[560px] leading-relaxed mb-8 animate-slideUp delay-500 fill-mode-both">
+            Student Hub automatically reminds you about classes, assignments,
             attendance, and deadlines delivered straight to your Telegram.
             Powered by the OpenClaw automation engine.
           </p>
+          <div className="mb-10">
+            <HighlighterDemo />
+          </div>
           <div className="flex items-center gap-4 flex-wrap animate-slideUp delay-[650ms] fill-mode-both">
-            <button onClick={() => setIsLoginModalOpen(true)} className="inline-flex items-center gap-2 bg-lp-text text-lp-bg font-sans text-[13px] font-semibold py-3 px-6 rounded-full transition-all hover:bg-lp-atext hover:-translate-y-px">Start Learning →</button>
-            <a href="#features" className="inline-flex items-center gap-2 text-lp-text2 font-sans text-[13px] hover:text-lp-text group transition-colors">
-              Explore features <span className="transition-transform group-hover:translate-x-1 inline-block">→</span>
+            <button onClick={handleCtaClick} className="inline-flex items-center gap-2 bg-lp-text text-lp-bg font-sans text-[13px] font-semibold py-3 px-6 rounded-full transition-all hover:bg-lp-atext hover:-translate-y-px">{isAuthenticated ? 'Go to Dashboard →' : 'Start Learning →'}</button>
+            <a href="#platform" className="inline-flex items-center gap-2 text-lp-text2 font-sans text-[13px] hover:text-lp-text group transition-colors">
+              Explore platform <span className="transition-transform group-hover:translate-x-1 inline-block">→</span>
             </a>
           </div>
         </div>
       </section>
 
-      {/* 11 - ANIMATED BEAM ECOSYSTEM */}
       <AnimatedBeamSection />
       
             {/* 03 - PANDUAN AKSES (ROLE GUIDES) */}
@@ -422,66 +575,11 @@ export default function LandingPage() {
         </div>
       </section>
 
-
-      {/* 01 - FEATURES */}
-      <section id="features" className="py-24">
-        <div className="max-w-[1120px] mx-auto px-7">
-          <div className={`${rvBase} flex items-center gap-4 text-[10.5px] font-medium tracking-[0.16em] uppercase text-lp-text3 mb-10 after:content-[''] after:flex-1 after:h-px after:bg-lp-border`}>
-            <span className="font-mono">02</span> Core Features
-          </div>
-          <div className={`${rvBase} ${rvDelays[1]} flex flex-col md:flex-row md:justify-between md:items-end gap-6 mb-14`}>
-            <h2 className="font-sans text-[clamp(2.8rem,5.5vw,4.5rem)] leading-[1.06] tracking-tight text-lp-text">Everything you need<br /><em className="italic text-lp-text/40">to stay on track.</em></h2>
-            <p className="text-[14px] font-light text-lp-text2 max-w-[320px] pb-2">
-              Smart reminders, automated tracking, and seamless Telegram integration built for the modern student.
-            </p>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {featureCards.map((f, i) => (
-              <div key={f.title} className={`${rvBase} ${rvDelays[Math.min(i+1, 5)]} border border-lp-border rounded-2xl p-8 relative overflow-hidden transition-all duration-300 hover:border-lp-borderA hover:bg-lp-borderA/5 hover:-translate-y-0.5 group`}>
-                <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-lp-accent/30 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-                {f.icon === '1' && <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-5 text-xl bg-lp-accentS text-lp-atext">{f.icon}</div>}
-                {f.icon === '2' && <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-5 text-xl bg-lp-tg/10 text-lp-tg">{f.icon}</div>}
-                {f.icon === '3' && <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-5 text-xl bg-lp-green/10 text-lp-green">{f.icon}</div>}
-                {f.icon === '4' && <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-5 text-xl bg-lp-amber/10 text-lp-amber">{f.icon}</div>}
-                {f.icon === '5' && <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-5 text-xl bg-purple-500/10 text-purple-400">{f.icon}</div>}
-                {f.icon === '6' && <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-5 text-xl bg-lp-red/10 text-lp-red">{f.icon}</div>}
-                <div className="text-[15px] font-semibold text-lp-text mb-2.5 tracking-tight leading-snug">{f.title}</div>
-                <div className="text-[13.5px] font-light text-lp-text2 leading-relaxed">{f.desc}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* 02 - HOW IT WORKS */}
-      <section className="py-24">
-        <div className="max-w-[1120px] mx-auto px-7">
-          <div className={`${rvBase} flex items-center gap-4 text-[10.5px] font-medium tracking-[0.16em] uppercase text-lp-text3 mb-10 after:content-[''] after:flex-1 after:h-px after:bg-lp-border`}>
-            <span className="font-mono">03</span> How It Works
-          </div>
-          <div className={`${rvBase} ${rvDelays[1]} text-center mb-14`}>
-            <h2 className="font-sans text-[clamp(2.8rem,5.5vw,4.5rem)] leading-[1.06] tracking-tight text-lp-text max-w-[600px] mx-auto">Three steps to<br /><em className="italic text-lp-text/40">academic clarity.</em></h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-0 relative">
-            <div className="hidden md:block absolute top-11 left-[15%] right-[15%] h-px bg-gradient-to-r from-transparent via-lp-borderA to-transparent" />
-            {howItWorks.map((step, i) => (
-              <div key={step.num} className={`${rvBase} ${rvDelays[i+1]} text-center relative px-6`}>
-                <div className="w-14 h-14 rounded-full border border-lp-borderA bg-lp-surface flex items-center justify-center font-mono text-base text-lp-atext mx-auto mb-7 relative z-10">{step.num}</div>
-                <div className="text-base font-semibold text-lp-text mb-2.5 tracking-tight">{step.title}</div>
-                <div className="text-[13.5px] font-light text-lp-text2 leading-relaxed max-w-[260px] mx-auto">{step.desc}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-
-
-      {/* 04 - TERMINAL */}
+      {/* 02 - Platform / Automation Engine */}
       <section id="platform" className="py-24">
         <div className="max-w-[1120px] mx-auto px-7">
           <div className={`${rvBase} flex items-center gap-4 text-[10.5px] font-medium tracking-[0.16em] uppercase text-lp-text3 mb-10 after:content-[''] after:flex-1 after:h-px after:bg-lp-border`}>
-            <span className="font-mono">04</span> Automation Engine
+            <span className="font-mono">02</span> Automation Engine
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-[5fr_7fr] gap-12 lg:gap-24 items-center">
             <div className={`${rvBase} ${rvDelays[1]}`}>
@@ -491,37 +589,26 @@ export default function LandingPage() {
                 assignments, dispatches Telegram reminders, monitors attendance, and
                 generates reports automatically, every session.
               </p>
-              <p className="text-xs font-mono tracking-wider text-lp-text3">RUNS ON GOLANG · REST API · TELEGRAM GATEWAY</p>
             </div>
-            <div className={`${rvBase} ${rvDelays[2]}`}>
-              <div className="bg-lp-surface border border-lp-border rounded-xl overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-3 border-b border-lp-border bg-lp-card">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#FF5F57]" /><span className="w-2.5 h-2.5 rounded-full bg-[#FEBC2E]" /><span className="w-2.5 h-2.5 rounded-full bg-[#28C840]" />
-                  <span className="font-mono text-[11px] text-lp-text3 ml-2.5 tracking-wide">~ / openclaw / automation</span>
-                </div>
-                <div className="p-6 pb-7 font-mono text-[12.5px] font-light leading-loose">
-                  <span className="block"><span className="text-lp-text3">$ </span><span className="text-lp-atext">openclaw run --session morning-sync</span></span>
-                  <span className="block h-2" />
-                  <span className="block"><span className="text-lp-green">✓ </span><span className="text-lp-text2">1000+ students notified via Telegram</span></span>
-                  <span className="block"><span className="text-lp-green">✓ </span><span className="text-lp-text2">12 new assignments synced to feed</span></span>
-                  <span className="block"><span className="text-lp-green">✓ </span><span className="text-lp-text2">Attendance QR codes generated (18 classes)</span></span>
-                  <span className="block"><span className="text-lp-green">✓ </span><span className="text-lp-text2">UKT reminders dispatched (1000+ students)</span></span>
-                  <span className="block"><span className="text-lp-green">✓ </span><span className="text-lp-text2">Daily digest compiled and sent</span></span>
-                  <span className="block h-2" />
-                  <span className="block text-lp-text3 my-1">───────────────────────────────</span>
-                  <span className="block text-lp-text3 text-[11.5px]">completed in 0.84s · 0 errors · next run in 6h</span>
-                </div>
-              </div>
+            <div className={`${rvBase} ${rvDelays[2]} flex items-center justify-center`}>
+              <img
+                ref={terminalImgRef}
+                src="/chat 3d.webp"
+                alt="OpenClaw Automation Terminal"
+                draggable="false"
+                className="w-full max-w-[560px] select-none"
+                style={{ transform: 'translateZ(0)', backfaceVisibility: 'hidden' }}
+              />
             </div>
           </div>
         </div>
       </section>
 
-      {/* 05 - TELEGRAM PREVIEW */}
+      {/* 03 - TELEGRAM PREVIEW */}
       <section className="py-24">
         <div className="max-w-[1120px] mx-auto px-7">
           <div className={`${rvBase} flex items-center gap-4 text-[10.5px] font-medium tracking-[0.16em] uppercase text-lp-text3 mb-10 after:content-[''] after:flex-1 after:h-px after:bg-lp-border`}>
-            <span className="font-mono">05</span> Telegram Integration
+            <span className="font-mono">03</span> Telegram Integration
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-[7fr_5fr] gap-12 lg:gap-24 items-center">
             <div className={`${rvBase} ${rvDelays[1]} order-2 lg:order-1`}>
@@ -534,22 +621,15 @@ export default function LandingPage() {
                     <div className="text-[11px] text-white/70">online</div>
                   </div>
                 </div>
-                <div className="p-4 flex flex-col gap-2 bg-lp-surface min-h-[320px]">
-                  <div className="max-w-[85%] p-3 rounded-2xl text-[12.5px] leading-relaxed bg-lp-accent/10 text-lp-text rounded-bl-sm self-start">
-                    📅 <strong className="font-semibold">Reminder:</strong> "Pemrograman Web" starts in 30 minutes.<br />
-                    📍 Room B-204 · Dosen: Pak Arief
-                    <div className="text-[9px] text-lp-text3 mt-1 text-right font-mono">08:30</div>
+                <TelegramAnimatedNotifications />
+                <div className="flex items-center gap-2 border-t border-lp-border bg-lp-card px-3 py-2.5">
+                  <button type="button" aria-label="Attach file" className="grid size-8 place-items-center rounded-full text-lp-text3 transition-colors hover:bg-lp-surface hover:text-lp-tg">
+                    <span className="text-base leading-none">＋</span>
+                  </button>
+                  <div className="flex h-8 flex-1 items-center rounded-full border border-lp-border bg-lp-surface px-3 text-[10px] text-lp-text3">
+                    Notifications are sent automatically
                   </div>
-                  <div className="max-w-[85%] p-3 rounded-2xl text-[12.5px] leading-relaxed bg-lp-accent/10 text-lp-text rounded-bl-sm self-start">
-                    ⚠️ <strong className="font-semibold">Deadline Alert:</strong> Assignment "REST API Implementation" is due in 6 hours.<br />
-                    📝 Submit via StudentHub portal.
-                    <div className="text-[9px] text-lp-text3 mt-1 text-right font-mono">09:15</div>
-                  </div>
-                  <div className="max-w-[85%] p-3 rounded-2xl text-[12.5px] leading-relaxed bg-lp-accent/10 text-lp-text rounded-bl-sm self-start">
-                    ✅ <strong className="font-semibold">Attendance Confirmed:</strong> "Basis Data" — Session 12/14.<br />
-                    📊 Your attendance rate: 92%
-                    <div className="text-[9px] text-lp-text3 mt-1 text-right font-mono">10:00</div>
-                  </div>
+                  <span className="grid size-8 place-items-center rounded-full bg-lp-tg text-[12px] text-white shadow-[0_4px_12px_rgba(38,165,228,0.28)]">➤</span>
                 </div>
               </div>
             </div>
@@ -560,40 +640,16 @@ export default function LandingPage() {
                 contextual reminders directly to your Telegram  classes, 
                 deadlines, attendance confirmations, and daily digests.
               </p>
-              <p className="text-xs font-mono tracking-wider text-lp-text3 mb-6">TELEGRAM BOT API · END-TO-END ENCRYPTED · INSTANT DELIVERY</p>
-              <a href="#" className="inline-flex items-center gap-2 bg-lp-tg text-white font-sans text-[13px] font-semibold py-3 px-6 rounded-full transition-all hover:bg-[#1e96d3] hover:-translate-y-px">Connect Telegram ✈️</a>
             </div>
           </div>
         </div>
       </section>
 
-      {/* 06 - BENEFITS */}
-      <section className="py-24">
-        <div className="max-w-[1120px] mx-auto px-7">
-          <div className={`${rvBase} flex items-center gap-4 text-[10.5px] font-medium tracking-[0.16em] uppercase text-lp-text3 mb-10 after:content-[''] after:flex-1 after:h-px after:bg-lp-border`}>
-            <span className="font-mono">06</span> Why Students Love It
-          </div>
-          <div className={`${rvBase} ${rvDelays[1]} text-center mb-14`}>
-            <h2 className="font-sans text-[clamp(2.8rem,5.5vw,4.5rem)] leading-[1.06] tracking-tight text-lp-text max-w-[600px] mx-auto">Your unfair<br /><em className="italic text-lp-text/40">academic advantage.</em></h2>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {benefits.map((b, i) => (
-              <div key={b.title} className={`${rvBase} ${rvDelays[i+1]} border border-lp-border rounded-2xl px-7 py-9 transition-all duration-300 hover:border-lp-borderA hover:bg-lp-accent/5`}>
-                <span className="text-[32px] block mb-5">{b.icon}</span>
-                <div className="text-lg font-semibold text-lp-text mb-2.5 tracking-tight">{b.title}</div>
-                <div className="text-[13.5px] font-light text-lp-text2 leading-relaxed">{b.desc}</div>
-                <span className="block font-mono text-[10px] text-lp-atext tracking-wider mt-4">{b.stat}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* 07 - KURIKULUM */}
+      {/* 04 - KURIKULUM */}
       <section id="kurikulum" className="py-24">
         <div className="max-w-[1120px] mx-auto px-7">
           <div className={`${rvBase} flex items-center gap-4 text-[10.5px] font-medium tracking-[0.16em] uppercase text-lp-text3 mb-10 after:content-[''] after:flex-1 after:h-px after:bg-lp-border`}>
-            <span className="font-mono">07</span> Kurikulum
+            <span className="font-mono">04</span> Kurikulum
           </div>
           <div className={`${rvBase} ${rvDelays[1]} mb-10`}>
             <h2 className="font-sans text-[clamp(2.8rem,5.5vw,4.5rem)] leading-[1.06] tracking-tight text-lp-text mb-6">Program Studi</h2>
@@ -623,11 +679,11 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* 08 - VISI & MISI */}
+      {/* 05 - VISI & MISI */}
       <section id="visi-misi" className="py-24 bg-lp-surface/50">
         <div className="max-w-[1120px] mx-auto px-7">
           <div className={`${rvBase} flex items-center gap-4 text-[10.5px] font-medium tracking-[0.16em] uppercase text-lp-text3 mb-10 after:content-[''] after:flex-1 after:h-px after:bg-lp-border`}>
-            <span className="font-mono">08</span> Visi & Misi
+            <span className="font-mono">05</span> Visi & Misi
           </div>
           <div className={`${rvBase} ${rvDelays[1]} mb-14 text-center`}>
             <h2 className="font-sans text-[clamp(2.5rem,5vw,4rem)] leading-[1.06] tracking-tight text-lp-text mb-6">{inst.fullName}</h2>
@@ -667,11 +723,11 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* 09 - KALENDER */}
+      {/* 06 - KALENDER */}
       <section id="kalender" className="py-24">
         <div className="max-w-[1120px] mx-auto px-7">
           <div className={`${rvBase} flex items-center gap-4 text-[10.5px] font-medium tracking-[0.16em] uppercase text-lp-text3 mb-10 after:content-[''] after:flex-1 after:h-px after:bg-lp-border`}>
-            <span className="font-mono">09</span> Kalender Akademik
+            <span className="font-mono">06</span> Kalender Akademik
           </div>
           <div className={`${rvBase} ${rvDelays[1]} mb-10`}>
              <h2 className="font-sans text-[clamp(2.8rem,5.5vw,4.5rem)] leading-[1.06] tracking-tight text-lp-text">Jadwal<br /><em className="italic text-lp-text/40">Kegiatan.</em></h2>
@@ -750,7 +806,7 @@ export default function LandingPage() {
           Join institutions already running on Student Hub. Setup takes minutes, not months.
         </p>
         <div className="flex items-center justify-center gap-4 flex-wrap">
-          <button onClick={() => setIsLoginModalOpen(true)} className="inline-flex items-center gap-2 bg-lp-text text-lp-bg font-sans text-[14px] font-semibold py-[13px] px-7 rounded-full transition-all hover:bg-lp-atext hover:-translate-y-px">Enter Platform →</button>
+          <button onClick={handleCtaClick} className="inline-flex items-center gap-2 bg-lp-text text-lp-bg font-sans text-[14px] font-semibold py-[13px] px-7 rounded-full transition-all hover:bg-lp-atext hover:-translate-y-px">{isAuthenticated ? 'Go to Dashboard →' : 'Enter Platform →'}</button>
         </div>
       </div>
 
