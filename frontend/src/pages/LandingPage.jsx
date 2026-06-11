@@ -348,7 +348,7 @@ export default function LandingPage() {
       {/* Scroll-driven OpenClaw mascot that travels between page sections. */}
       <img
         ref={openClawRef}
-        src="/openclaw1.png"
+        src="/claw1.webp"
         alt=""
         aria-hidden="true"
         draggable="false"
@@ -356,7 +356,7 @@ export default function LandingPage() {
       />
       <img
         ref={openClawAltRef}
-        src="/openclaw.png"
+        src="/claw2.webp"
         alt=""
         aria-hidden="true"
         draggable="false"
@@ -364,7 +364,7 @@ export default function LandingPage() {
       />
       <img
         ref={openClawVisiRef}
-        src="/openclaw1.png"
+        src="/claw1.webp"
         alt=""
         aria-hidden="true"
         draggable="false"
@@ -475,11 +475,7 @@ export default function LandingPage() {
             Student Hub<br />
             <em className="italic text-lp-text/40">Openlcaw Reminder</em>
           </h1>
-          <p className="text-[17px] font-light text-lp-text2 max-w-[560px] leading-relaxed mb-8 animate-slideUp delay-500 fill-mode-both">
-            Student Hub automatically reminds you about classes, assignments,
-            attendance, and deadlines delivered straight to your Telegram.
-            Powered by the OpenClaw automation engine.
-          </p>
+      
           <div className="mb-10">
             <HighlighterDemo />
           </div>

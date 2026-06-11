@@ -3,6 +3,7 @@ package middlewares
 import (
 	"net/http"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -24,8 +25,8 @@ func SecurityHeaders() gin.HandlerFunc {
 // ===== Rate Limiter (In-Memory, per IP) =====
 
 type visitor struct {
-	count    int
-	lastSeen time.Time
+	count       int
+	windowStart time.Time
 }
 
 type rateLimiter struct {
@@ -50,7 +51,7 @@ func (rl *rateLimiter) cleanup() {
 		time.Sleep(rl.window * 2)
 		rl.mu.Lock()
 		for ip, v := range rl.visitors {
-			if time.Since(v.lastSeen) > rl.window {
+			if time.Since(v.windowStart) > rl.window {
 				delete(rl.visitors, ip)
 			}
 		}
@@ -62,20 +63,20 @@ func (rl *rateLimiter) isAllowed(ip string) bool {
 	rl.mu.Lock()
 	defer rl.mu.Unlock()
 
+	now := time.Now()
 	v, exists := rl.visitors[ip]
 	if !exists {
-		rl.visitors[ip] = &visitor{count: 1, lastSeen: time.Now()}
+		rl.visitors[ip] = &visitor{count: 1, windowStart: now}
 		return true
 	}
 
-	if time.Since(v.lastSeen) > rl.window {
+	if now.Sub(v.windowStart) > rl.window {
 		v.count = 1
-		v.lastSeen = time.Now()
+		v.windowStart = now
 		return true
 	}
 
 	v.count++
-	v.lastSeen = time.Now()
 	return v.count <= rl.rate
 }
 
@@ -84,6 +85,16 @@ func RateLimitMiddleware(maxRequests int, window time.Duration) gin.HandlerFunc 
 	limiter := newRateLimiter(maxRequests, window)
 	return func(c *gin.Context) {
 		ip := c.ClientIP()
+
+		// Whitelist localhost and local private network IPs from rate limiting
+		if ip == "127.0.0.1" || ip == "::1" ||
+			strings.HasPrefix(ip, "192.168.") ||
+			strings.HasPrefix(ip, "10.") ||
+			strings.HasPrefix(ip, "172.") {
+			c.Next()
+			return
+		}
+
 		if !limiter.isAllowed(ip) {
 			c.JSON(http.StatusTooManyRequests, gin.H{
 				"success": false,
@@ -98,7 +109,7 @@ func RateLimitMiddleware(maxRequests int, window time.Duration) gin.HandlerFunc 
 
 // LoginRateLimiter — rate limiter khusus untuk login (lebih ketat)
 func LoginRateLimiter() gin.HandlerFunc {
-	return RateLimitMiddleware(10, 1*time.Minute) // Max 10 login attempts per minute
+	return RateLimitMiddleware(30, 1*time.Minute) // Max 30 login attempts per minute (bypassed for local)
 }
 
 // InternalAPIKeyMiddleware melindungi endpoint internal dengan API key

@@ -172,15 +172,13 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB) {
 		// Attendance - FIXED
 		dosen.POST("/absensi/create", controllers.CreateAttendanceSession)
 		dosen.GET("/absensi/active", controllers.GetActiveSessions)
+		dosen.GET("/absensi/summary", controllers.GetAttendanceByPertemuan)
+		dosen.GET("/absensi/riwayat-pertemuan", controllers.GetRiwayatPertemuanDosen)
 		dosen.GET("/absensi/:session_id", controllers.GetAttendanceSessionDetail)
 		dosen.POST("/absensi/refresh-token", controllers.RefreshSessionToken)
 		dosen.POST("/absensi/update-status", controllers.UpdateAttendanceStatus)
 		dosen.POST("/absensi/close", controllers.CloseAttendanceSession)
 		dosen.GET("/absensi/qr/:token", controllers.GetQRCode)
-		dosen.GET("/absensi/summary", controllers.GetAttendanceByPertemuan)
-
-		// ROUTE BARU UNTUK RIWAYAT PERTEMUAN DOSEN
-		dosen.GET("/absensi/riwayat-pertemuan", controllers.GetRiwayatPertemuanDosen)
 
 		// ROUTE BARU UNTUK REALTIME ATTENDANCE
 		dosen.GET("/absensi/realtime/:session_id", controllers.GetRealtimeAttendance)

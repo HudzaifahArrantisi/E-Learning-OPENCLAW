@@ -77,7 +77,7 @@ func CreateAttendanceSession(c *gin.Context) {
 	err = config.DB.QueryRow(`
 		SELECT COUNT(DISTINCT mmk.mahasiswa_id) 
 		FROM mahasiswa_mata_kuliah mmk 
-		WHERE mmk.mata_kuliah_kode = $1
+		WHERE mmk.mata_kuliah_kode = $1::text
 	`, input.CourseID).Scan(&studentCount)
 
 	if err != nil {
@@ -160,7 +160,7 @@ func RefreshSessionToken(c *gin.Context) {
 
 	// Verify dosen
 	var actualDosenID int
-	err = config.DB.QueryRow("SELECT id FROM dosen WHERE user_id = $2", userID).Scan(&actualDosenID)
+	err = config.DB.QueryRow("SELECT id FROM dosen WHERE user_id = $1", userID).Scan(&actualDosenID)
 	if err != nil || dosenID != actualDosenID {
 		utils.ErrorResponse(c, http.StatusForbidden, "Anda tidak memiliki akses ke sesi ini")
 		return
@@ -296,13 +296,17 @@ func GetAttendanceSessionDetail(c *gin.Context) {
 			COALESCE(TO_CHAR(a.created_at, 'HH24:MI'), '') as attendance_time,
 			a.created_at as attendance_created
 		FROM mahasiswa m
-		LEFT JOIN attendance a ON m.id = a.student_id 
-			AND a.session_id = $1
-			AND (a.created_at)::date = CURRENT_DATE
+		LEFT JOIN LATERAL (
+			SELECT status, created_at
+			FROM attendance
+			WHERE student_id = m.id AND session_id = $1
+			ORDER BY created_at DESC
+			LIMIT 1
+		) a ON TRUE
 		WHERE m.id IN (
 			SELECT DISTINCT mmk.mahasiswa_id 
 			FROM mahasiswa_mata_kuliah mmk 
-			WHERE mmk.mata_kuliah_kode = $2
+			WHERE mmk.mata_kuliah_kode = $2::text
 		)
 		ORDER BY m.name
 	`, id, courseID)
@@ -411,6 +415,7 @@ func GetAttendanceSessionDetail(c *gin.Context) {
 		"izin_count":        izinCount,
 		"sakit_count":       sakitCount,
 		"alpa_count":        alpaCount,
+		"attendance_count":  hadirCount + izinCount + sakitCount + alpaCount,
 		"hadir_percent":     hadirPercent,
 		"izin_percent":      izinPercent,
 		"sakit_percent":     sakitPercent,
@@ -451,7 +456,7 @@ func UpdateAttendanceStatus(c *gin.Context) {
 
 	// Verify dosen
 	var actualDosenID int
-	err = config.DB.QueryRow("SELECT id FROM dosen WHERE user_id = $2", userID).Scan(&actualDosenID)
+	err = config.DB.QueryRow("SELECT id FROM dosen WHERE user_id = $1", userID).Scan(&actualDosenID)
 	if err != nil || dosenID != actualDosenID {
 		utils.ErrorResponse(c, http.StatusForbidden, "Anda tidak memiliki akses ke sesi ini")
 		return
@@ -649,7 +654,7 @@ func CloseAttendanceSession(c *gin.Context) {
 
 	// Verify dosen
 	var actualDosenID int
-	err = config.DB.QueryRow("SELECT id FROM dosen WHERE user_id = $2", userID).Scan(&actualDosenID)
+	err = config.DB.QueryRow("SELECT id FROM dosen WHERE user_id = $1", userID).Scan(&actualDosenID)
 	if err != nil || dosenID != actualDosenID {
 		utils.ErrorResponse(c, http.StatusForbidden, "Anda tidak memiliki akses ke sesi ini")
 		return
@@ -658,17 +663,34 @@ func CloseAttendanceSession(c *gin.Context) {
 	// Get session info before closing
 	var courseID, courseName string
 	var pertemuanKe int
-	var attendanceCount int
 	err = config.DB.QueryRow(`
-		SELECT asess.course_id, mk.nama, asess.pertemuan_ke,
-		       COUNT(DISTINCT a.id) as attendance_count
+		SELECT asess.course_id, mk.nama, asess.pertemuan_ke
 		FROM attendance_sessions asess
 		JOIN mata_kuliah mk ON asess.course_id = mk.kode
-		LEFT JOIN attendance a ON asess.id = a.session_id
 		WHERE asess.id = $1
-		GROUP BY asess.id
-	`, input.SessionID).Scan(&courseID, &courseName, &pertemuanKe, &attendanceCount)
+	`, input.SessionID).Scan(&courseID, &courseName, &pertemuanKe)
 
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusNotFound, "Sesi atau mata kuliah tidak ditemukan")
+		return
+	}
+
+	// Auto-fill status 'alpa' for students who have not scanned/registered attendance
+	_, err = config.DB.Exec(`
+		INSERT INTO attendance (student_id, session_id, student_code, status, pertemuan_ke, created_at)
+		SELECT m.id, $1::text, m.nim, 'alpa', $2, NOW()
+		FROM mahasiswa m
+		JOIN mahasiswa_mata_kuliah mmk ON m.id = mmk.mahasiswa_id
+		WHERE mmk.mata_kuliah_kode = $3
+		  AND NOT EXISTS (
+			  SELECT 1 FROM attendance a 
+			  WHERE a.student_id = m.id AND a.session_id::text = $1::text
+		  )
+	`, input.SessionID, pertemuanKe, courseID)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Gagal memproses absensi alpa otomatis: "+err.Error())
+		return
+	}
 	// Close session
 	_, err = config.DB.Exec(`
 		UPDATE attendance_sessions 
@@ -681,12 +703,29 @@ func CloseAttendanceSession(c *gin.Context) {
 		return
 	}
 
+	// Get final attendance stats
+	var finalAttendanceCount, hadirCount, izinCount, sakitCount, alpaCount int
+	config.DB.QueryRow(`
+		SELECT 
+			COUNT(DISTINCT id),
+			COUNT(DISTINCT CASE WHEN status = 'hadir' THEN id END),
+			COUNT(DISTINCT CASE WHEN status = 'izin' THEN id END),
+			COUNT(DISTINCT CASE WHEN status = 'sakit' THEN id END),
+			COUNT(DISTINCT CASE WHEN status = 'alpa' THEN id END)
+		FROM attendance
+		WHERE session_id::text = $1::text
+	`, input.SessionID).Scan(&finalAttendanceCount, &hadirCount, &izinCount, &sakitCount, &alpaCount)
+
 	utils.SuccessResponse(c, gin.H{
 		"session_id":       input.SessionID,
 		"course_id":        courseID,
 		"course_name":      courseName,
 		"pertemuan_ke":     pertemuanKe,
-		"attendance_count": attendanceCount,
+		"attendance_count": finalAttendanceCount,
+		"hadir_count":      hadirCount,
+		"izin_count":       izinCount,
+		"sakit_count":      sakitCount,
+		"alpa_count":       alpaCount,
 		"closed_at":        time.Now().Format("2006-01-02 15:04:05"),
 	}, "Sesi berhasil ditutup untuk pertemuan ke-"+strconv.Itoa(pertemuanKe))
 }
@@ -737,7 +776,7 @@ func GetActiveSessions(c *gin.Context) {
 			) as total_students
 		FROM attendance_sessions asess
 		JOIN mata_kuliah mk ON asess.course_id = mk.kode
-		LEFT JOIN attendance a ON asess.id = a.session_id
+		LEFT JOIN attendance a ON asess.id::text = a.session_id::text
 		WHERE asess.dosen_id = $1 
 			AND asess.status = 'active' 
 			AND asess.expires_at > NOW()
@@ -756,7 +795,7 @@ func GetActiveSessions(c *gin.Context) {
 	}
 
 	query += `
-		GROUP BY asess.id
+		GROUP BY asess.id, mk.nama, mk.hari, mk.jam_mulai, mk.jam_selesai
 		ORDER BY asess.pertemuan_ke, asess.created_at DESC
 	`
 
@@ -856,7 +895,7 @@ func GetAttendanceByPertemuan(c *gin.Context) {
 			asess.created_at as session_time
 		FROM mahasiswa m
 		LEFT JOIN attendance_sessions asess ON asess.course_id = $1 AND asess.dosen_id = $2
-		LEFT JOIN attendance a ON m.id = a.student_id AND a.session_id = asess.id
+		LEFT JOIN attendance a ON m.id = a.student_id AND a.session_id::text = asess.id::text
 		WHERE m.id IN (
 			SELECT DISTINCT mmk.mahasiswa_id 
 			FROM mahasiswa_mata_kuliah mmk 
@@ -927,7 +966,7 @@ func GetRiwayatPertemuanDosen(c *gin.Context) {
 	pertemuanKe := c.Query("pertemuan_ke")
 
 	var dosenID int
-	err := config.DB.QueryRow("SELECT id FROM dosen WHERE user_id = $3", userID).Scan(&dosenID)
+	err := config.DB.QueryRow("SELECT id FROM dosen WHERE user_id = $1", userID).Scan(&dosenID)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusNotFound, "Dosen not found")
 		return
@@ -942,10 +981,19 @@ func GetRiwayatPertemuanDosen(c *gin.Context) {
 			asess.created_at,
 			asess.expires_at,
 			asess.status,
-			COUNT(DISTINCT a.id) as attendance_count
+			COUNT(DISTINCT a.id) as attendance_count,
+			COUNT(DISTINCT CASE WHEN a.status = 'hadir' THEN a.id END) as hadir_count,
+			COUNT(DISTINCT CASE WHEN a.status = 'izin' THEN a.id END) as izin_count,
+			COUNT(DISTINCT CASE WHEN a.status = 'sakit' THEN a.id END) as sakit_count,
+			COUNT(DISTINCT CASE WHEN a.status = 'alpa' THEN a.id END) as alpa_count,
+			(
+				SELECT COUNT(DISTINCT mmk.mahasiswa_id) 
+				FROM mahasiswa_mata_kuliah mmk 
+				WHERE mmk.mata_kuliah_kode = asess.course_id
+			) as total_students
 		FROM attendance_sessions asess
 		JOIN mata_kuliah mk ON asess.course_id = mk.kode
-		LEFT JOIN attendance a ON asess.id = a.session_id
+		LEFT JOIN attendance a ON asess.id::text = a.session_id::text
 		WHERE asess.dosen_id = $1
 	`
 
@@ -962,7 +1010,7 @@ func GetRiwayatPertemuanDosen(c *gin.Context) {
 	}
 
 	query += `
-		GROUP BY asess.id
+		GROUP BY asess.id, mk.nama
 		ORDER BY asess.created_at DESC
 		LIMIT 50
 	`
@@ -976,11 +1024,12 @@ func GetRiwayatPertemuanDosen(c *gin.Context) {
 
 	var history []gin.H
 	for rows.Next() {
-		var id, pertemuan, attendanceCount int
+		var id, pertemuan, attendanceCount, hadirCount, izinCount, sakitCount, alpaCount, totalStudents int
 		var courseID, courseName, status string
 		var createdAt, expiresAt time.Time
 
-		err := rows.Scan(&id, &courseID, &courseName, &pertemuan, &createdAt, &expiresAt, &status, &attendanceCount)
+		err := rows.Scan(&id, &courseID, &courseName, &pertemuan, &createdAt, &expiresAt, &status,
+			&attendanceCount, &hadirCount, &izinCount, &sakitCount, &alpaCount, &totalStudents)
 		if err != nil {
 			continue
 		}
@@ -994,6 +1043,11 @@ func GetRiwayatPertemuanDosen(c *gin.Context) {
 			"expires_at":       expiresAt.Format("2006-01-02 15:04:05"),
 			"status":           status,
 			"attendance_count": attendanceCount,
+			"hadir_count":      hadirCount,
+			"izin_count":       izinCount,
+			"sakit_count":      sakitCount,
+			"alpa_count":       alpaCount,
+			"total_students":   totalStudents,
 			"duration_minutes": int(expiresAt.Sub(createdAt).Minutes()),
 		})
 	}
@@ -1034,7 +1088,7 @@ func GetRealtimeAttendance(c *gin.Context) {
 
 	// Verify dosen
 	var actualDosenID int
-	err = config.DB.QueryRow("SELECT id FROM dosen WHERE user_id = $2", userID).Scan(&actualDosenID)
+	err = config.DB.QueryRow("SELECT id FROM dosen WHERE user_id = $1", userID).Scan(&actualDosenID)
 	if err != nil || dosenID != actualDosenID {
 		utils.ErrorResponse(c, http.StatusForbidden, "Anda tidak memiliki akses ke sesi ini")
 		return
@@ -1048,15 +1102,19 @@ func GetRealtimeAttendance(c *gin.Context) {
 			COALESCE(a.status, 'belum') as status,
 			COALESCE(TO_CHAR(a.created_at, 'HH24:MI:SS'), '') as waktu_absen
 		FROM mahasiswa m
+		LEFT JOIN LATERAL (
+			SELECT status, created_at
+			FROM attendance
+			WHERE student_id = m.id AND session_id = $1
+			ORDER BY created_at DESC
+			LIMIT 1
+		) a ON TRUE
 		WHERE m.id IN (
 			SELECT DISTINCT mmk.mahasiswa_id 
 			FROM mahasiswa_mata_kuliah mmk 
 			JOIN attendance_sessions asess ON mmk.mata_kuliah_kode = asess.course_id
-			WHERE asess.id = $1
+			WHERE asess.id = $2
 		)
-		LEFT JOIN attendance a ON m.id = a.student_id 
-			AND a.session_id = $2
-			AND (a.created_at)::date = CURRENT_DATE
 		ORDER BY a.created_at DESC
 	`, id, id)
 
@@ -1200,7 +1258,7 @@ func GetDosenProfile(c *gin.Context) {
 	}
 
 	query := `
-		SELECT COALESCE(d.id, 0), COALESCE(d.name, 'Dosen'), COALESCE(d.nidn, ''), 
+		SELECT COALESCE(d.id, 0), COALESCE(d.name, 'Dosen'), COALESCE(d.nidn, ''),
 		       u.email, COALESCE(d.phone, ''), COALESCE(d.avatar, ''), u.created_at
 		FROM users u
 		LEFT JOIN dosen d ON u.id = d.user_id
@@ -1219,7 +1277,7 @@ func GetDosenProfile(c *gin.Context) {
 	// Get teaching statistics
 	var courseCount, studentCount, sessionCount int
 	config.DB.QueryRow(`
-		SELECT 
+		SELECT
 			COUNT(DISTINCT mk.kode) as course_count,
 			COUNT(DISTINCT mmk.mahasiswa_id) as student_count,
 			COUNT(DISTINCT asess.id) as session_count
@@ -1330,7 +1388,7 @@ func GetDosenStats(c *gin.Context) {
 		config.DB.QueryRow(`
 			SELECT COUNT(DISTINCT a.id)
 			FROM attendance a
-			JOIN attendance_sessions asess ON a.session_id = asess.id
+			JOIN attendance_sessions asess ON a.session_id::text = asess.id::text
 			WHERE asess.dosen_id = $1 AND (a.created_at)::date = CURRENT_DATE
 		`, dosenID).Scan(&todayAttendance)
 	}
@@ -1364,7 +1422,7 @@ func GetDosenStats(c *gin.Context) {
 			COUNT(DISTINCT a.student_id) as student_count,
 			COUNT(DISTINCT CASE WHEN a.status = 'present' THEN a.student_id END) as present_count
 		FROM attendance a
-		JOIN attendance_sessions asess ON a.session_id = asess.id
+		JOIN attendance_sessions asess ON a.session_id::text = asess.id::text
 		WHERE asess.dosen_id = $1 
 			AND a.created_at >= CURRENT_DATE - INTERVAL '7 days'
 		GROUP BY (a.created_at)::date

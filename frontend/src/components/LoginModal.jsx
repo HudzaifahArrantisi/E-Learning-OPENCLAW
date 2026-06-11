@@ -2,6 +2,15 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import useAuth from '../hooks/useAuth'
 
+const ROLE_DASHBOARD = {
+  admin: '/admin',
+  dosen: '/dosen',
+  mahasiswa: '/mahasiswa',
+  orangtua: '/ortu',
+  ukm: '/ukm',
+  ormawa: '/ormawa',
+}
+
 export default function LoginModal({ isOpen, onClose }) {
   const navigate = useNavigate()
   const { login } = useAuth()
@@ -28,8 +37,17 @@ export default function LoginModal({ isOpen, onClose }) {
     setError('')
     const result = await login(form.identifier, form.password)
     if (result.success) {
-       onClose()
-       navigate(result.redirect || '/')
+      const role = String(result.user?.role || '').trim().toLowerCase()
+      const dashboardPath = ROLE_DASHBOARD[role]
+
+      if (!dashboardPath) {
+        setError('Role akun tidak dikenali. Hubungi administrator.')
+        setLoading(false)
+        return
+      }
+
+      onClose()
+      navigate(dashboardPath, { replace: true })
     } else {
       setError(result.message || 'Login gagal. Periksa kembali email dan password.')
     }

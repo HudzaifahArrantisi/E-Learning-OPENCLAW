@@ -1,1055 +1,1320 @@
 import React, { useState, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { useMutation, useQuery } from "@tanstack/react-query"
 import api from '../../services/api'
 import Sidebar from '../../components/Sidebar'
-import Navbar from '../../components/Navbar'
+import { AnimatePresence, motion } from 'framer-motion'
 
-import { 
-  FaQrcode, 
-  FaUsers, 
-  FaClock, 
-  FaFilter,
+import {
+  FaQrcode,
+  FaUsers,
+  FaClock,
   FaCheckCircle,
   FaTimesCircle,
   FaUserCheck,
   FaUserTimes,
   FaStopCircle,
   FaSync,
-  FaChartBar,
-  FaCalendarAlt,
-  FaKey,
-  FaHourglassHalf,
   FaEdit,
-  FaTrash,
-  FaEye,
   FaHistory,
-  FaCalendarWeek,
-  FaUserCircle
+  FaUserCircle,
+  FaExpand,
+  FaCompress,
+  FaGraduationCap,
+  FaBolt,
+  FaLayerGroup,
+  FaHourglassHalf,
+  FaChevronRight,
+  FaCalendarCheck,
+  FaSearch,
 } from 'react-icons/fa'
 import { QRCodeSVG } from 'qrcode.react'
 
+/* ─────────────────────────────────────
+   Helper tiny components
+───────────────────────────────────── */
+const StatusBadge = ({ status }) => {
+  const map = {
+    hadir:       { label: 'Hadir',      cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+    izin:        { label: 'Izin',       cls: 'bg-amber-50   text-amber-700   border-amber-200'   },
+    sakit:       { label: 'Sakit',      cls: 'bg-sky-50     text-sky-700     border-sky-200'     },
+    alpa:        { label: 'Alpa',       cls: 'bg-rose-50    text-rose-700    border-rose-200'    },
+    belum_absen: { label: 'Belum',      cls: 'bg-slate-50   text-slate-500   border-slate-200'   },
+  }
+  const key = status?.toLowerCase() || 'belum_absen'
+  const { label, cls } = map[key] || map['belum_absen']
+  return (
+    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold border ${cls}`}>
+      {label}
+    </span>
+  )
+}
+
+const StatCard = ({ label, value, color }) => (
+  <div className="flex flex-col items-center justify-center rounded-2xl border border-slate-200/60 bg-white/55 py-3 px-2 shadow-[inset_0_1px_0_rgba(255,255,255,.9),0_12px_30px_rgba(15,23,42,.05)] backdrop-blur-xl">
+    <p className={`text-2xl font-black font-mono tracking-tight ${color}`}>{value}</p>
+    <p className="text-xs font-medium text-slate-500 mt-0.5">{label}</p>
+  </div>
+)
+
+const ConfirmationModal = ({ open, title, description, confirmLabel, pending, onCancel, onConfirm }) => {
+  if (typeof document === 'undefined') return null
+  return createPortal(
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[300] grid place-items-center bg-slate-950/45 p-4 backdrop-blur-md"
+          onClick={(event) => event.target === event.currentTarget && onCancel()}
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.88, y: 18 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.92, y: 12 }}
+            transition={{ type: 'spring', stiffness: 260, damping: 22 }}
+            className="relative w-full max-w-md overflow-hidden rounded-[28px] border border-white/70 bg-white/85 p-6 shadow-[inset_0_1px_0_rgba(255,255,255,.95),0_32px_90px_rgba(15,23,42,.28)] backdrop-blur-2xl"
+          >
+            <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_right,rgba(75,115,255,.18),transparent_48%)]" />
+            <p className="mb-2 font-mono text-[10px] font-bold uppercase tracking-[.24em] text-lp-accent">Konfirmasi Sistem</p>
+            <h3 className="text-xl font-black tracking-tight text-lp-text">{title}</h3>
+            <p className="mt-2 text-sm leading-relaxed text-lp-text2">{description}</p>
+            <div className="mt-6 flex gap-3">
+              <button onClick={onCancel} className="flex-1 rounded-2xl border border-slate-200/70 bg-white/70 px-4 py-3 text-sm font-bold text-lp-text2 transition hover:bg-white active:scale-95">Batal</button>
+              <button onClick={onConfirm} disabled={pending} className="flex-1 rounded-2xl bg-lp-text px-4 py-3 text-sm font-bold text-white shadow-lg shadow-blue-950/15 transition hover:bg-lp-accent disabled:opacity-50 active:scale-95">{pending ? 'Memproses...' : confirmLabel}</button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>,
+    document.body,
+  )
+}
+
+/* ─────────────────────────────────────
+   Main Component
+───────────────────────────────────── */
 const AbsensiDosen = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [courseID, setCourseID] = useState('')
   const [duration, setDuration] = useState(15)
   const [pertemuanKe, setPertemuanKe] = useState(1)
   const [activeSession, setActiveSession] = useState(null)
-  const [filterPertemuan, setFilterPertemuan] = useState('')
-  const [filterCourse, setFilterCourse] = useState('')
   const [qrToken, setQrToken] = useState('')
   const [showManualModal, setShowManualModal] = useState(false)
   const [selectedStudent, setSelectedStudent] = useState(null)
   const [manualStatus, setManualStatus] = useState('hadir')
+  const [autoRefreshActive, setAutoRefreshActive] = useState(false)
+  const [projectorMode, setProjectorMode] = useState(false)
+  const [confirmCloseOpen, setConfirmCloseOpen] = useState(false)
+  const [notice, setNotice] = useState(null)
   const refreshIntervalRef = useRef(null)
 
-  // Query untuk mata kuliah dosen
-  const { data: courses, isLoading: loadingCourses, refetch: refetchCourses } = useQuery({
+  // Real-time animation states
+  const [localStudents, setLocalStudents] = useState([])
+  const [liveNotifications, setLiveNotifications] = useState([])
+  const checkInQueueRef = useRef([])
+
+  // History Detail states
+  const [selectedHistorySession, setSelectedHistorySession] = useState(null)
+  const [historyModalOpen, setHistoryModalOpen] = useState(false)
+  const [historySessionDetails, setHistorySessionDetails] = useState(null)
+  const [loadingHistoryDetails, setLoadingHistoryDetails] = useState(false)
+  const [historySearchQuery, setHistorySearchQuery] = useState('')
+
+  /* ── Queries ── */
+  const { data: courses, isLoading: loadingCourses } = useQuery({
     queryKey: ['dosenCourses'],
     queryFn: () => api.getDosenCourses().then(res => res.data.data),
-    enabled: true
   })
 
-  // Query untuk sesi aktif dengan filter
-  const { data: activeSessions, refetch: refetchSessions, isLoading: loadingSessions } = useQuery({
-    queryKey: ['activeSessions', filterPertemuan, filterCourse],
-    queryFn: () => {
-      const params = {}
-      if (filterPertemuan) params.pertemuan_ke = filterPertemuan
-      if (filterCourse) params.course_id = filterCourse
-      return api.getActiveSessions(params).then(res => res.data.data)
-    },
-    enabled: true,
-    refetchInterval: 10000 // Refresh setiap 10 detik
+  const { data: activeSessions, refetch: refetchSessions } = useQuery({
+    queryKey: ['activeSessions'],
+    queryFn: () => api.getActiveSessions({}).then(res => res.data.data),
+    refetchInterval: 10000,
   })
 
-  // Query untuk riwayat pertemuan
   const { data: pertemuanHistory, refetch: refetchHistory } = useQuery({
     queryKey: ['pertemuanHistory'],
-    queryFn: () => api.getRiwayatPertemuanDosen().then(res => res.data.data),
-    enabled: true
+    queryFn: () => api.getRiwayatPertemuanDosen().then(res => res.data.data?.history || []),
   })
 
-  // Mutation untuk create session dengan pertemuan
-  const createSessionMutation = useMutation({
-    mutationFn: (data) => api.createAttendanceSession(data),
-    onSuccess: (response) => {
-      console.log('Session created:', response.data)
-      const sessionData = response.data.data
-      setActiveSession({
-        session_id: sessionData.session_id,
-        course_name: sessionData.course_name,
-        session_token: sessionData.session_token,
-        expires_at: sessionData.expires_at,
-        pertemuan_ke: sessionData.pertemuan_ke,
-        qr_token: sessionData.qr_token,
-        created_at: sessionData.created_at,
-        course_id: sessionData.course_id
-      })
-      setQrToken(sessionData.session_token)
-      refetchSessions()
-      refetchCourses()
-      // Start auto-refresh setelah session dibuat
-      startAutoRefresh(sessionData.session_id)
-    },
-    onError: (error) => {
-      console.error('Error creating session:', error)
-      const errorMsg = error.response?.data?.message || error.message
-      alert('Gagal membuat sesi: ' + errorMsg)
-    }
-  })
-
-  // Mutation untuk refresh token
-  const refreshTokenMutation = useMutation({
-    mutationFn: (sessionId) => {
-      if (!sessionId) {
-        return Promise.reject(new Error('No session ID'))
-      }
-      return api.refreshSessionToken({ session_id: sessionId })
-    },
-    onSuccess: (response) => {
-      console.log('Token refreshed:', response.data)
-      if (activeSession) {
-        const newToken = response.data.data.session_token
-        setActiveSession(prev => ({
-          ...prev,
-          session_token: newToken,
-          updated_at: response.data.data.updated_at
-        }))
-        setQrToken(newToken)
-      }
-    },
-    onError: (error) => {
-      console.error('Refresh token error:', error)
-      const errorMsg = error.response?.data?.message || error.message
-      // Jika error 400 atau 404, stop auto-refresh
-      if (error.response?.status === 400 || error.response?.status === 404) {
-        stopAutoRefresh()
-        alert('Sesi sudah tidak aktif. Silakan buat sesi baru.')
-        setActiveSession(null)
-      }
-    }
-  })
-
-  // Mutation untuk update status manual
-  const updateStatusMutation = useMutation({
-    mutationFn: (data) => api.updateAttendanceStatus(data),
-    onSuccess: (response) => {
-      console.log('Status updated:', response.data)
-      refetchSessions()
-      // Refresh students list
-      if (activeSession?.session_id) {
-        refetchStudents()
-      }
-      setShowManualModal(false)
-      setSelectedStudent(null)
-      alert(response.data.message || 'Status berhasil diupdate')
-    },
-    onError: (error) => {
-      console.error('Update status error:', error)
-      alert('Gagal update status: ' + (error.response?.data?.message || error.message))
-    }
-  })
-
-  // Mutation untuk menutup sesi
-  const closeSessionMutation = useMutation({
-    mutationFn: (sessionId) => api.closeAttendanceSession({ session_id: sessionId }),
-    onSuccess: (response) => {
-      console.log('Session closed:', response.data)
-      stopAutoRefresh()
-      setActiveSession(null)
-      setQrToken('')
-      refetchSessions()
-      refetchHistory()
-      alert(response.data.message || 'Sesi berhasil ditutup')
-    },
-    onError: (error) => {
-      console.error('Close session error:', error)
-      alert('Gagal menutup sesi: ' + (error.response?.data?.message || error.message))
-    }
-  })
-
-  // Get daftar mahasiswa untuk sesi aktif
   const { data: sessionStudents, refetch: refetchStudents, isLoading: loadingStudents } = useQuery({
     queryKey: ['sessionStudents', activeSession?.session_id],
     queryFn: () => {
       if (!activeSession?.session_id) return Promise.resolve(null)
       return api.getAttendanceSessionDetail(activeSession.session_id)
         .then(res => res.data.data)
-        .catch(err => {
-          console.error('Error fetching students:', err)
-          return { students: [], total_students: 0 }
-        })
+        .catch(() => ({ students: [], total_students: 0 }))
     },
     enabled: !!activeSession?.session_id,
-    refetchInterval: 8000 // Auto-refresh setiap 8 detik
+    refetchInterval: 5000,
   })
 
-  // Fungsi untuk start auto-refresh
-  const startAutoRefresh = (sessionId) => {
-    stopAutoRefresh() // Hentikan interval sebelumnya
-    
+  /* ── Mutations ── */
+  const createSessionMutation = useMutation({
+    mutationFn: (data) => api.createAttendanceSession(data),
+    onSuccess: (response) => {
+      const s = response.data.data
+      setActiveSession({
+        session_id: s.session_id,
+        course_name: s.course_name,
+        session_token: s.session_token,
+        expires_at: s.expires_at,
+        pertemuan_ke: s.pertemuan_ke,
+        qr_token: s.qr_token,
+        created_at: s.created_at,
+        course_id: s.course_id,
+      })
+      setQrToken(s.session_token)
+      refetchSessions()
+      startAutoRefresh()
+    },
+    onError: (err) => setNotice('Gagal membuat sesi: ' + (err.response?.data?.message || err.message)),
+  })
+
+  const refreshTokenMutation = useMutation({
+    mutationFn: (sessionId) => api.refreshSessionToken({ session_id: sessionId }),
+    onSuccess: (response) => {
+      const newToken = response.data.data.session_token
+      setActiveSession(prev => ({ ...prev, session_token: newToken }))
+      setQrToken(newToken)
+    },
+    onError: (err) => {
+      if (err.response?.status === 400 || err.response?.status === 404) {
+        stopAutoRefresh()
+        setNotice('Sesi tidak aktif. Silakan buat sesi baru.')
+        setActiveSession(null)
+      }
+    },
+  })
+
+  const updateStatusMutation = useMutation({
+    mutationFn: (data) => api.updateAttendanceStatus(data),
+    onSuccess: () => {
+      refetchStudents()
+      setShowManualModal(false)
+      setSelectedStudent(null)
+    },
+    onError: (err) => setNotice('Gagal update status: ' + (err.response?.data?.message || err.message)),
+  })
+
+  const closeSessionMutation = useMutation({
+    mutationFn: (sessionId) => api.closeAttendanceSession({ session_id: sessionId }),
+    onSuccess: () => {
+      stopAutoRefresh()
+      setActiveSession(null)
+      setQrToken('')
+      refetchSessions()
+      refetchHistory()
+      setConfirmCloseOpen(false)
+    },
+    onError: (err) => setNotice('Gagal menutup sesi: ' + (err.response?.data?.message || err.message)),
+  })
+
+  /* ── Auto-refresh helpers ── */
+  const startAutoRefresh = () => {
+    stopAutoRefresh()
     refreshIntervalRef.current = setInterval(() => {
-      console.log('Auto-refreshing token for session:', sessionId)
-      refreshTokenMutation.mutate(sessionId)
-    }, 15000) // 15 detik
+      refetchSessions()
+      refetchStudents()
+    }, 7000)
+    setAutoRefreshActive(true)
   }
 
-  // Fungsi untuk stop auto-refresh
   const stopAutoRefresh = () => {
     if (refreshIntervalRef.current) {
       clearInterval(refreshIntervalRef.current)
       refreshIntervalRef.current = null
     }
+    setAutoRefreshActive(false)
   }
 
-  // Cleanup on component unmount
+  useEffect(() => () => stopAutoRefresh(), [])
   useEffect(() => {
-    return () => {
-      stopAutoRefresh()
-    }
-  }, [])
+    if (!notice) return
+    const timeout = setTimeout(() => setNotice(null), 4500)
+    return () => clearTimeout(timeout)
+  }, [notice])
 
+  /* ── Queue / Animation Logic ── */
+  useEffect(() => {
+    if (!sessionStudents?.students) return
+    if (localStudents.length === 0) { setLocalStudents(sessionStudents.students); return }
+
+    const newCheckIns = []
+    sessionStudents.students.forEach(s => {
+      const local = localStudents.find(l => l.id === s.id)
+      const sStatus = s.attendance_status?.toLowerCase()
+      const lStatus = local?.attendance_status?.toLowerCase()
+      if (sStatus && sStatus !== 'belum_absen' && sStatus !== '' &&
+          (!lStatus || lStatus === 'belum_absen' || lStatus === '')) {
+        if (!checkInQueueRef.current.some(q => q.id === s.id)) newCheckIns.push(s)
+      }
+    })
+    if (newCheckIns.length > 0) checkInQueueRef.current = [...checkInQueueRef.current, ...newCheckIns]
+
+    setLocalStudents(prev => prev.map(localS => {
+      const serverS = sessionStudents.students.find(s => s.id === localS.id)
+      if (!serverS) return localS
+      const isPending = checkInQueueRef.current.some(q => q.id === localS.id)
+      return { ...serverS, attendance_status: isPending ? localS.attendance_status : serverS.attendance_status }
+    }))
+  }, [sessionStudents])
+
+  useEffect(() => {
+    if (!activeSession) {
+      setLocalStudents([])
+      setLiveNotifications([])
+      checkInQueueRef.current = []
+    }
+  }, [activeSession])
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (checkInQueueRef.current.length === 0) return
+      const next = checkInQueueRef.current.shift()
+
+      setLocalStudents(prev => {
+        const exists = prev.some(s => s.id === next.id)
+        if (!exists) return [...prev, next]
+        return prev.map(s => s.id === next.id ? {
+          ...s,
+          attendance_status: next.attendance_status,
+          attendance_time: next.attendance_time || new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
+        } : s)
+      })
+
+      const timeStr = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
+      setLiveNotifications(prev => [{
+        id: Math.random().toString(36).substring(2, 9),
+        icon: '🦀',
+        title: 'OpenClaw Attendance Bot',
+        description: `📢 ${next.name} (${next.nim}) berhasil presensi ${next.attendance_status?.toUpperCase()} — Pertemuan ${activeSession?.pertemuan_ke || pertemuanKe}`,
+        time: timeStr,
+      }, ...prev].slice(0, 5))
+    }, 1200)
+    return () => clearInterval(interval)
+  }, [activeSession, pertemuanKe])
+
+  /* ── Sorted students ── */
+  const getSortedStudents = () => {
+    const list = localStudents.length > 0 ? localStudents : (sessionStudents?.students || [])
+    const rank = (s) => {
+      const st = (s.attendance_status || '').toLowerCase()
+      if (st === 'hadir') return 3
+      if (['izin', 'sakit', 'alpa'].includes(st)) return 2
+      return 1
+    }
+    return [...list].sort((a, b) => {
+      const diff = rank(b) - rank(a)
+      if (diff !== 0) return diff
+      if (rank(a) >= 2) return (b.attendance_time || '').localeCompare(a.attendance_time || '')
+      return a.name.localeCompare(b.name)
+    })
+  }
+
+  /* ── Handlers ── */
   const handleCreateSession = (e) => {
     e.preventDefault()
-    if (!courseID) {
-      alert('Pilih mata kuliah terlebih dahulu')
-      return
-    }
-    
-    createSessionMutation.mutate({ 
-      course_id: courseID, 
-      duration: parseInt(duration),
-      pertemuan_ke: parseInt(pertemuanKe)
-    })
+    if (!courseID) return setNotice('Pilih mata kuliah terlebih dahulu')
+    createSessionMutation.mutate({ course_id: courseID, duration: parseInt(duration), pertemuan_ke: parseInt(pertemuanKe) })
   }
 
   const handleStatusUpdate = (studentId, status) => {
-    if (!activeSession || !activeSession.session_id) {
-      alert('Tidak ada sesi aktif')
-      return
-    }
-    
-    updateStatusMutation.mutate({
-      session_id: activeSession.session_id,
-      student_id: studentId,
-      status
-    })
-  }
-
-  const handleManualStatus = (student) => {
-    setSelectedStudent(student)
-    setManualStatus(student.attendance_status || 'hadir')
-    setShowManualModal(true)
+    if (!activeSession?.session_id) return setNotice('Tidak ada sesi aktif')
+    updateStatusMutation.mutate({ session_id: activeSession.session_id, student_id: studentId, status })
   }
 
   const handleCloseSession = () => {
-    if (!activeSession || !activeSession.session_id) return
-    
-    if (window.confirm('Yakin ingin menutup sesi absensi ini?')) {
-      closeSessionMutation.mutate(activeSession.session_id)
-    }
+    if (!activeSession?.session_id) return
+    setConfirmCloseOpen(true)
   }
 
-  const handleManualRefresh = () => {
-    if (!activeSession || !activeSession.session_id) {
-      alert('Tidak ada sesi aktif')
-      return
-    }
-    
-    refreshTokenMutation.mutate(activeSession.session_id)
+  const handleViewHistoryDetail = (item) => {
+    setSelectedHistorySession(item)
+    setHistoryModalOpen(true)
+    setLoadingHistoryDetails(true)
+    setHistorySearchQuery('')
+    api.getAttendanceSessionDetail(item.id)
+      .then(res => {
+        setHistorySessionDetails(res.data.data)
+        setLoadingHistoryDetails(false)
+      })
+      .catch(err => {
+        setNotice('Gagal mengambil detail riwayat: ' + (err.response?.data?.message || err.message))
+        setLoadingHistoryDetails(false)
+        setHistoryModalOpen(false)
+      })
   }
 
-  const getStatusColor = (status) => {
-    switch(status?.toLowerCase()) {
-      case 'hadir': return 'bg-lp-bg text-lp-text'
-      case 'izin': return 'bg-lp-bg text-lp-text'
-      case 'sakit': return 'bg-lp-bg text-lp-text'
-      case 'alpa': return 'bg-lp-bg text-lp-text'
-      default: return 'bg-lp-surface text-lp-text font-semibold tracking-tight'
-    }
-  }
-
-  const getStatusLabel = (status) => {
-    switch(status?.toLowerCase()) {
-      case 'hadir': return 'Hadir'
-      case 'izin': return 'Izin'
-      case 'sakit': return 'Sakit'
-      case 'alpa': return 'Alpa'
-      case 'belum': return 'Belum Absen'
-      default: return status || 'Belum Absen'
-    }
-  }
-
-  const getStatusIcon = (status) => {
-    switch(status?.toLowerCase()) {
-      case 'hadir': return <FaUserCheck className="text-lp-text2" />
-      case 'izin': return <FaEdit className="text-lp-text2" />
-      case 'sakit': return <FaUserCircle className="text-lp-text2" />
-      case 'alpa': return <FaUserTimes className="text-lp-text2" />
-      default: return <FaClock className="text-lp-text3 font-light" />
-    }
-  }
-
-  // Generate array pertemuan 1-16
   const pertemuanList = Array.from({ length: 16 }, (_, i) => i + 1)
 
-  // Status options untuk modal manual
-  const statusOptions = [
-    { value: 'hadir', label: 'Hadir', color: 'text-lp-text2', bg: 'bg-lp-bg' },
-    { value: 'izin', label: 'Izin', color: 'text-lp-text2', bg: 'bg-lp-bg' },
-    { value: 'sakit', label: 'Sakit', color: 'text-lp-text2', bg: 'bg-lp-bg' },
-    { value: 'alpa', label: 'Alpa', color: 'text-lp-text2', bg: 'bg-lp-bg' }
-  ]
+  const getUsedPertemuan = () => {
+    if (!courseID) return []
+    const used = new Set()
+    
+    // Get from history
+    if (pertemuanHistory) {
+      pertemuanHistory.forEach(item => {
+        if (item.course_id === courseID) {
+          used.add(item.pertemuan_ke)
+        }
+      })
+    }
+    
+    // Get from active sessions
+    if (activeSessions?.sessions) {
+      activeSessions.sessions.forEach(item => {
+        if (item.course_id === courseID) {
+          used.add(item.pertemuan_ke)
+        }
+      })
+    }
+    
+    return Array.from(used)
+  }
 
+  // Auto-select first available meeting number when courseID changes
+  useEffect(() => {
+    if (!courseID) return
+    const used = getUsedPertemuan()
+    if (used.includes(pertemuanKe)) {
+      // Find first available meeting
+      const available = pertemuanList.find(p => !used.includes(p))
+      if (available) {
+        setPertemuanKe(available)
+      }
+    }
+  }, [courseID, pertemuanHistory, activeSessions])
+
+  const hadirCount = sessionStudents?.hadir_count || 0
+  const totalCount = sessionStudents?.total_students || 0
+  const belumCount = totalCount - (sessionStudents?.attendance_count || 0)
+  const progressPct = totalCount > 0 ? Math.round((hadirCount / totalCount) * 100) : 0
+
+  /* ═══════════════════════════════════
+     RENDER
+  ═══════════════════════════════════ */
   return (
-    <div className="flex min-h-screen bg-lp-bg">
-      <Sidebar role="dosen" isOpen={sidebarOpen} onClose={() => setSidebarOpen(!sidebarOpen)} />
-      
-      <div className="flex-1 lg:ml-0 transition-all duration-300 min-w-0">
-        <div className="p-4 sm:p-6 lg:p-8">
-          {/* Header */}
-          <div className="flex items-center gap-4 mb-6 lg:mb-8">
-            <button 
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="lg:hidden p-3 rounded-xl bg-lp-surface border border-lp-border shadow-[0_8px_30px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border transition-shadow"
+    <div className="relative flex min-h-screen overflow-hidden bg-lp-bg text-lp-text before:pointer-events-none before:fixed before:inset-0 before:bg-[linear-gradient(rgba(15,23,42,.045)_1px,transparent_1px),linear-gradient(90deg,rgba(15,23,42,.045)_1px,transparent_1px),radial-gradient(circle_at_45%_8%,rgba(75,115,255,.14),transparent_42%)] before:bg-[size:64px_64px,64px_64px,100%_100%] before:[mask-image:linear-gradient(to_bottom,black,transparent_75%)]">
+      <Sidebar role="dosen" isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+
+      {/* Projector / Fullscreen QR Overlay */}
+      <AnimatePresence>
+        {projectorMode && activeSession && qrToken && (
+          <motion.div
+            key="projector"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900"
+          >
+            {/* Header info */}
+            <motion.div
+              initial={{ y: -30, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.1 }}
+              className="text-center mb-8"
             >
-              <span className="text-xl">☰</span>
+              <div className="flex items-center justify-center gap-3 mb-3">
+                <span className="text-3xl">🦀</span>
+                <span className="text-white/60 text-sm font-mono tracking-widest uppercase">OpenClaw Attendance</span>
+              </div>
+              <h1 className="text-3xl md:text-5xl font-black text-white">{activeSession.course_name}</h1>
+              <p className="text-blue-300 text-lg mt-2 font-medium">
+                Pertemuan {activeSession.pertemuan_ke} &nbsp;·&nbsp; Scan QR untuk absen
+              </p>
+            </motion.div>
+
+            {/* QR Code */}
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
+              className="relative"
+            >
+              <div className="absolute -inset-4 rounded-3xl bg-blue-500/20 blur-2xl animate-pulse" />
+              <div className="relative bg-white p-6 md:p-8 rounded-3xl shadow-2xl">
+                <QRCodeSVG
+                  value={JSON.stringify({
+                    session_token: qrToken,
+                    course_id: activeSession.course_id,
+                    pertemuan_ke: activeSession.pertemuan_ke,
+                  })}
+                  size={typeof window !== 'undefined' && window.innerWidth < 768 ? 220 : 300}
+                  level="H"
+                  includeMargin={true}
+                  bgColor="#FFFFFF"
+                  fgColor="#1e3a8a"
+                />
+              </div>
+            </motion.div>
+
+            {/* Stats bar */}
+            <motion.div
+              initial={{ y: 30, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.3 }}
+              className="mt-10 flex gap-6 text-center"
+            >
+              <div>
+                <p className="text-4xl font-black text-emerald-400">{hadirCount}</p>
+                <p className="text-white/50 text-sm">Hadir</p>
+              </div>
+              <div className="w-px bg-white/10" />
+              <div>
+                <p className="text-4xl font-black text-white">{totalCount}</p>
+                <p className="text-white/50 text-sm">Total</p>
+              </div>
+              <div className="w-px bg-white/10" />
+              <div>
+                <p className="text-4xl font-black text-amber-400">{belumCount}</p>
+                <p className="text-white/50 text-sm">Belum Absen</p>
+              </div>
+            </motion.div>
+
+            {/* Close projector */}
+            <button
+              onClick={() => setProjectorMode(false)}
+              className="absolute top-6 right-6 flex items-center gap-2 text-white/50 hover:text-white transition-colors text-sm font-medium bg-white/10 hover:bg-white/20 px-4 py-2 rounded-xl backdrop-blur-sm"
+            >
+              <FaCompress />
+              Keluar Mode Proyektor
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── MAIN CONTENT ── */}
+      <div className="flex-1 min-w-0 transition-all duration-300">
+        <div className="relative p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
+
+          {/* ── TOP HEADER ── */}
+          <div className="flex items-center gap-4 mb-8">
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="lg:hidden p-3 rounded-2xl bg-white border border-slate-200 shadow-sm hover:shadow-md transition-shadow"
+            >
+              <span className="text-xl text-slate-600">☰</span>
             </button>
             <div className="flex-1">
-              <h1 className="text-2xl sm:text-3xl font-bold text-lp-text font-semibold tracking-tight">Manajemen Absensi Dosen</h1>
-              <p className="text-lp-text2 font-light mt-2">Buat dan kelola sesi absensi per pertemuan</p>
+              <div className="flex items-center gap-2 mb-1">
+                <FaGraduationCap className="text-blue-500 text-lg" />
+                <span className="text-xs font-bold text-blue-500 tracking-widest uppercase">Dosen Dashboard</span>
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-black text-slate-800 tracking-tight">Manajemen Absensi</h1>
+              <p className="text-slate-500 text-sm font-medium mt-0.5">Kelola sesi absensi QR Code per pertemuan</p>
             </div>
+
+            {/* Status pill */}
+            {activeSession && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="hidden sm:flex items-center gap-2 bg-emerald-50 text-emerald-700 border border-emerald-200 px-4 py-2 rounded-full text-sm font-semibold"
+              >
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                Sesi Aktif
+              </motion.div>
+            )}
           </div>
 
-          {/* Filter Section */}
-          <div className="bg-lp-surface rounded-2xl border border-lp-border shadow-[0_8px_30px_rgba(0,0,0,0.04)] p-6 mb-6">
-            <div className="flex flex-wrap gap-4 items-center">
-              <div className="flex items-center gap-2">
-                <FaFilter className="text-lp-text3 font-light" />
-                <span className="font-medium text-lp-text2">Filter Sesi Aktif:</span>
-              </div>
-              <select
-                value={filterPertemuan}
-                onChange={(e) => setFilterPertemuan(e.target.value)}
-                className="border border-lp-border rounded-xl px-3 py-2 text-sm"
+          {/* ══════════════════════════════
+              IDLE STATE — No active session
+          ══════════════════════════════ */}
+          <AnimatePresence mode="wait">
+            {!activeSession ? (
+              <motion.div
+                key="idle"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.35 }}
+                className="grid grid-cols-1 lg:grid-cols-5 gap-6"
               >
-                <option value="">Semua Pertemuan</option>
-                {pertemuanList.map(p => (
-                  <option key={p} value={p}>Pertemuan {p}</option>
-                ))}
-              </select>
-              <select
-                value={filterCourse}
-                onChange={(e) => setFilterCourse(e.target.value)}
-                className="border border-lp-border rounded-xl px-3 py-2 text-sm"
-              >
-                <option value="">Semua Mata Kuliah</option>
-                {courses?.map((course) => (
-                  <option key={course.kode} value={course.kode}>
-                    {course.nama} ({course.kode})
-                  </option>
-                ))}
-              </select>
-              <button
-                onClick={() => {
-                  setFilterPertemuan('')
-                  setFilterCourse('')
-                }}
-                className="text-sm text-lp-text2 font-light hover:text-lp-text font-semibold tracking-tight"
-              >
-                Reset Filter
-              </button>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Panel Kiri - Buat Sesi & Mata Kuliah */}
-            <div className="lg:col-span-2 space-y-6">
-              {/* Buat Sesi Baru */}
-              <div className="bg-lp-surface rounded-2xl border border-lp-border shadow-[0_8px_30px_rgba(0,0,0,0.04)] p-6">
-                <h3 className="text-xl font-bold text-lp-text font-semibold tracking-tight mb-4 flex items-center gap-3">
-                  <FaQrcode className="text-lp-text2" />
-                  Buat Sesi Absensi Baru
-                </h3>
-                
-                <form onSubmit={handleCreateSession} className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-semibold text-lp-text2 mb-2">
-                        Mata Kuliah
-                      </label>
-                      <select
-                        value={courseID}
-                        onChange={(e) => setCourseID(e.target.value)}
-                        className="w-full border border-lp-border rounded-xl px-4 py-3 focus:ring-2 focus:ring-lp-text/20 focus:border-transparent"
-                        required
-                        disabled={loadingCourses || createSessionMutation.isPending}
-                      >
-                        <option value="">Pilih Mata Kuliah</option>
-                        {courses?.map((course) => (
-                          <option key={course.kode} value={course.kode}>
-                            {course.nama} ({course.kode}) - {course.hari} {course.jam_mulai}-{course.jam_selesai}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-semibold text-lp-text2 mb-2">
-                        Pertemuan Ke-
-                      </label>
-                      <select
-                        value={pertemuanKe}
-                        onChange={(e) => setPertemuanKe(parseInt(e.target.value))}
-                        className="w-full border border-lp-border rounded-xl px-4 py-3 focus:ring-2 focus:ring-lp-text/20 focus:border-transparent"
-                        required
-                        disabled={createSessionMutation.isPending}
-                      >
-                        {pertemuanList.map(p => (
-                          <option key={p} value={p}>Pertemuan {p}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-semibold text-lp-text2 mb-2">
-                      Durasi Sesi (menit)
-                    </label>
-                    <input
-                      type="range"
-                      value={duration}
-                      onChange={(e) => setDuration(e.target.value)}
-                      min="5"
-                      max="120"
-                      step="5"
-                      className="w-full h-2 bg-gray-200 rounded-xl appearance-none cursor-pointer"
-                    />
-                    <div className="flex justify-between text-sm text-lp-text2 font-light mt-1">
-                      <span>5m</span>
-                      <span className="font-medium">{duration} menit</span>
-                      <span>120m</span>
-                    </div>
-                    <p className="text-sm text-lp-text3 font-light mt-1">QR Code akan auto-refresh setiap 15 detik</p>
-                  </div>
-                  
-                  <button
-                    type="submit"
-                    disabled={createSessionMutation.isPending || !courseID}
-                    className="w-full bg-lp-text text-white border-none py-3 rounded-xl font-semibold hover:bg-lp-atext transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none transition-all duration-300 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl flex items-center justify-center gap-2"
-                  >
-                    {createSessionMutation.isPending ? (
-                      <>
-                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        Membuat Sesi...
-                      </>
-                    ) : (
-                      <>
-                        <FaQrcode />
-                        Buat Sesi Absensi Pertemuan {pertemuanKe}
-                      </>
-                    )}
-                  </button>
-                </form>
-              </div>
-
-              {/* Sesi Aktif */}
-              {activeSession && (
-                <div className="bg-lp-surface rounded-2xl border border-lp-border shadow-[0_8px_30px_rgba(0,0,0,0.04)] p-6">
-                  <div className="flex justify-between items-start mb-6">
-                    <div>
-                      <h3 className="text-xl font-bold text-lp-text font-semibold tracking-tight flex items-center gap-3">
-                        <FaHourglassHalf className="text-lp-text2" />
-                        Sesi Aktif: {activeSession.course_name}
-                      </h3>
-                      <div className="flex flex-wrap items-center gap-3 mt-2">
-                        <span className="bg-lp-bg text-lp-text text-sm font-medium px-3 py-1 rounded-full">
-                          Pertemuan {activeSession.pertemuan_ke}
-                        </span>
-                        <span className="text-lp-text2 font-light">
-                          Berakhir: {new Date(activeSession.expires_at).toLocaleString('id-ID')}
-                        </span>
-                        <span className={`text-sm font-medium px-2 py-1 rounded ${
-                          refreshIntervalRef.current ? 'bg-lp-bg text-lp-text' : 'bg-lp-surface text-lp-text font-semibold tracking-tight'
-                        }`}>
-                          {refreshIntervalRef.current ? '🟢 Auto-refresh aktif' : '⚫ Auto-refresh berhenti'}
-                        </span>
+                {/* ── Buat Sesi Form ── (3 cols) */}
+                <div className="lg:col-span-3">
+                  <div className="bg-white rounded-3xl border border-slate-200 shadow-[0_4px_24px_rgba(0,0,0,0.06)] overflow-hidden">
+                    {/* Card header gradient */}
+                    <div className="bg-gradient-to-r from-blue-600 to-blue-500 px-6 py-5">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-white/20 rounded-2xl flex items-center justify-center">
+                          <FaQrcode className="text-white text-lg" />
+                        </div>
+                        <div>
+                          <h2 className="text-white font-black text-lg">Buat Sesi Absensi Baru</h2>
+                          <p className="text-blue-100 text-xs font-medium">Mahasiswa scan QR Code untuk hadir</p>
+                        </div>
                       </div>
                     </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={handleManualRefresh}
-                        disabled={refreshTokenMutation.isPending}
-                        className="bg-lp-text text-white px-4 py-2 rounded-xl hover:bg-lp-text transition-colors flex items-center gap-2"
-                      >
-                        <FaSync className={refreshTokenMutation.isPending ? "animate-spin" : ""} />
-                        Refresh QR
-                      </button>
-                      <button
-                        onClick={handleCloseSession}
-                        className="bg-lp-text text-white px-4 py-2 rounded-xl hover:bg-lp-atext transition-colors flex items-center gap-2"
-                        disabled={closeSessionMutation.isPending}
-                      >
-                        {closeSessionMutation.isPending ? (
-                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                        ) : (
-                          <FaStopCircle className="mr-2" />
-                        )}
-                        Tutup Sesi
-                      </button>
-                    </div>
-                  </div>
 
-                  {/* QR Code */}
-                  <div className="flex flex-col items-center mb-6">
-                    <div className="bg-lp-surface p-6 rounded-2xl border-4 border-lp-border mb-4 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border">
-                      {qrToken && (
-                        <QRCodeSVG 
-                          value={qrToken}
-                          size={240}
-                          level="H"
-                          includeMargin={true}
-                          bgColor="#FFFFFF"
-                          fgColor="#1e40af"
-                        />
-                      )}
-                    </div>
-                    <div className="text-center space-y-2">
-                      <p className="text-sm text-lp-text2 font-light">
-                        Tampilkan QR Code ini di kelas untuk di-scan mahasiswa
-                      </p>
-                      <div className="flex items-center justify-center gap-2">
-                        <div className={`w-3 h-3 rounded-full ${refreshIntervalRef.current ? 'bg-lp-text animate-pulse' : 'bg-gray-400'}`}></div>
-                        <span className="text-sm text-lp-text2">
-                          {refreshIntervalRef.current ? 'Auto-refresh aktif (15 detik)' : 'Auto-refresh berhenti'}
-                        </span>
+                    <form onSubmit={handleCreateSession} className="p-6 space-y-5">
+                      {/* Mata Kuliah */}
+                      <div>
+                        <label className="block text-sm font-bold text-slate-700 mb-2">
+                          Mata Kuliah
+                        </label>
+                        <select
+                          value={courseID}
+                          onChange={(e) => setCourseID(e.target.value)}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                          required
+                          disabled={loadingCourses || createSessionMutation.isPending}
+                        >
+                          <option value="">— Pilih Mata Kuliah —</option>
+                          {courses?.map((c) => (
+                            <option key={c.kode} value={c.kode}>
+                              {c.nama} ({c.kode}) · {c.hari} {c.jam_mulai}–{c.jam_selesai}
+                            </option>
+                          ))}
+                        </select>
                       </div>
-                      <p className="text-xs text-lp-text3 font-light font-mono bg-lp-surface p-2 rounded mt-2">
-                        Token: {qrToken?.substring(0, 20)}...
-                      </p>
-                    </div>
-                  </div>
 
-                  {/* Session Info */}
-                  <div className="grid grid-cols-2 gap-4 mb-6">
-                    <div className="bg-lp-surface p-4 rounded-xl border border-lp-border">
-                      <p className="text-sm text-lp-text2 font-light flex items-center gap-2">
-                        <FaKey className="text-lp-text2" />
-                        Token Session
-                      </p>
-                      <p className="font-mono text-sm truncate mt-1" title={activeSession.session_token}>
-                        {activeSession.session_token}
-                      </p>
-                    </div>
-                    <div className="bg-lp-surface p-4 rounded-xl border border-lp-border">
-                      <p className="text-sm text-lp-text2 font-light flex items-center gap-2">
-                        <FaUsers className="text-lp-text2" />
-                        Total Mahasiswa
-                      </p>
-                      <p className="text-2xl font-bold mt-1">{sessionStudents?.total_students || 0}</p>
-                    </div>
-                  </div>
+                      {/* Pertemuan ke */}
+                      <div>
+                        <label className="block text-sm font-bold text-slate-700 mb-2">
+                          Pertemuan Ke-
+                        </label>
+                        <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
+                          {pertemuanList.map(p => {
+                            const isUsed = getUsedPertemuan().includes(p)
+                            return (
+                              <button
+                                key={p}
+                                type="button"
+                                disabled={isUsed}
+                                onClick={() => setPertemuanKe(p)}
+                                title={isUsed ? `Pertemuan ${p} sudah digunakan` : `Pilih Pertemuan ${p}`}
+                                className={`h-10 rounded-xl text-sm font-bold transition-all relative ${
+                                  isUsed
+                                    ? 'bg-slate-100 text-slate-300 cursor-not-allowed line-through'
+                                    : pertemuanKe === p
+                                    ? 'bg-blue-600 text-white shadow-[0_4px_12px_rgba(59,130,246,0.4)]'
+                                    : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                                }`}
+                              >
+                                {p}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </div>
 
-                  {/* Status Info */}
-                  {sessionStudents && (
-                    <div className="grid grid-cols-4 gap-2 mb-6">
-                      <div className="bg-lp-bg p-3 rounded-xl text-center">
-                        <p className="text-lg font-bold text-lp-text">{sessionStudents.hadir_count || 0}</p>
-                        <p className="text-xs text-lp-text2">Hadir</p>
-                      </div>
-                      <div className="bg-lp-bg p-3 rounded-xl text-center">
-                        <p className="text-lg font-bold text-lp-text">{sessionStudents.izin_count || 0}</p>
-                        <p className="text-xs text-lp-text2">Izin</p>
-                      </div>
-                      <div className="bg-lp-bg p-3 rounded-xl text-center">
-                        <p className="text-lg font-bold text-lp-text">{sessionStudents.sakit_count || 0}</p>
-                        <p className="text-xs text-lp-text2">Sakit</p>
-                      </div>
-                      <div className="bg-lp-bg p-3 rounded-xl text-center">
-                        <p className="text-lg font-bold text-lp-text">{sessionStudents.alpa_count || 0}</p>
-                        <p className="text-xs text-lp-text2">Alpa</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Daftar Sesi Aktif */}
-              <div className="bg-lp-surface rounded-2xl border border-lp-border shadow-[0_8px_30px_rgba(0,0,0,0.04)] p-6">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-xl font-bold text-lp-text font-semibold tracking-tight flex items-center gap-3">
-                    <FaCalendarAlt className="text-lp-text2" />
-                    Sesi Absensi Aktif
-                  </h3>
-                  <div className="text-sm text-lp-text2 font-light">
-                    Total: {activeSessions?.sessions?.length || 0} sesi
-                  </div>
-                </div>
-                
-                {loadingSessions ? (
-                  <div className="text-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-lp-text mx-auto"></div>
-                    <p className="mt-2 text-lp-text2 font-light">Memuat sesi aktif...</p>
-                  </div>
-                ) : activeSessions?.sessions && activeSessions.sessions.length > 0 ? (
-                  <div className="space-y-4">
-                    {activeSessions.sessions.map((session) => (
-                      <div key={session.id} className="border border-lp-border rounded-xl p-4 hover:border border-lp-border shadow-[0_8px_30px_rgba(0,0,0,0.04)] transition-shadow">
-                        <div className="flex justify-between items-start mb-3">
-                          <div>
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="bg-lp-bg text-lp-text text-xs font-medium px-2 py-1 rounded">
-                                Pertemuan {session.pertemuan_ke}
-                              </span>
-                              <span className={`text-xs font-medium px-2 py-1 rounded ${
-                                session.time_left_minutes > 10 ? 'bg-lp-bg text-lp-text' : 
-                                session.time_left_minutes > 0 ? 'bg-lp-bg text-lp-text' : 
-                                'bg-lp-bg text-lp-text'
-                              }`}>
-                                {session.time_left_minutes > 0 ? `${session.time_left_minutes}m tersisa` : 'Expired'}
-                              </span>
-                            </div>
-                            <h4 className="font-semibold text-lp-text font-semibold tracking-tight">{session.course_name}</h4>
-                            <p className="text-sm text-lp-text2 font-light">
-                              {session.hari} {session.jam_mulai}-{session.jam_selesai}
-                            </p>
-                            <p className="text-xs text-lp-text3 font-light">
-                              Dibuat: {new Date(session.created_at).toLocaleString('id-ID')}
-                            </p>
-                          </div>
-                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                            session.status === 'active' && session.time_left_minutes > 0
-                              ? 'bg-lp-bg text-lp-text' 
-                              : 'bg-lp-surface text-lp-text font-semibold tracking-tight'
-                          }`}>
-                            {session.status === 'active' && session.time_left_minutes > 0 ? 'Aktif' : 'Tidak Aktif'}
+                      {/* Durasi */}
+                      <div>
+                        <div className="flex justify-between items-center mb-2">
+                          <label className="text-sm font-bold text-slate-700">Durasi Sesi</label>
+                          <span className="text-sm font-black text-blue-600 bg-blue-50 px-3 py-0.5 rounded-full">
+                            {duration} menit
                           </span>
                         </div>
-                        <div className="flex gap-2 mt-3">
-                          <button 
-                            onClick={() => {
-                              setActiveSession({
-                                session_id: session.id,
-                                course_name: session.course_name,
-                                course_id: session.course_id,
-                                session_token: session.session_token,
-                                expires_at: session.expires_at,
-                                pertemuan_ke: session.pertemuan_ke,
-                                created_at: session.created_at
-                              })
-                              setQrToken(session.session_token)
-                              startAutoRefresh(session.id)
-                            }}
-                            className="px-4 py-2 bg-lp-bg text-lp-text2 rounded-xl text-sm hover:bg-lp-surface transition-colors flex items-center gap-1"
-                          >
-                            <FaQrcode />
-                            Tampilkan QR
-                          </button>
-                          <button 
-                            onClick={() => {
-                              // Navigate to session detail
-                              window.location.href = `/dosen/absensi/${session.id}`
-                            }}
-                            className="px-4 py-2 bg-lp-surface text-lp-text2 rounded-xl text-sm hover:bg-lp-bg transition-colors flex items-center gap-1"
-                          >
-                            <FaEye />
-                            Detail
-                          </button>
-                          <button 
-                            onClick={() => {
-                              if (window.confirm('Tutup sesi ini?')) {
-                                closeSessionMutation.mutate(session.id)
-                              }
-                            }}
-                            className="px-4 py-2 bg-lp-bg text-lp-text2 rounded-xl text-sm hover:bg-lp-surface transition-colors flex items-center gap-1"
-                          >
-                            <FaStopCircle />
-                            Tutup
-                          </button>
+                        <input
+                          type="range"
+                          value={duration}
+                          onChange={(e) => setDuration(e.target.value)}
+                          min="5" max="120" step="5"
+                          className="w-full h-2 bg-slate-200 rounded-full appearance-none cursor-pointer accent-blue-600"
+                        />
+                        <div className="flex justify-between text-xs text-slate-400 font-medium mt-1">
+                          <span>5m</span>
+                          <span>120m</span>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <div className="text-4xl mb-4 text-lp-text3">📋</div>
-                    <h4 className="font-semibold text-lp-text2 mb-2">Tidak ada sesi aktif</h4>
-                    <p className="text-lp-text3 font-light text-sm">
-                      Buat sesi absensi baru untuk memulai
-                    </p>
-                  </div>
-                )}
-              </div>
 
-              {/* Riwayat Pertemuan */}
-              <div className="bg-lp-surface rounded-2xl border border-lp-border shadow-[0_8px_30px_rgba(0,0,0,0.04)] p-6">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-xl font-bold text-lp-text font-semibold tracking-tight flex items-center gap-3">
-                    <FaHistory className="text-lp-text2" />
-                    Riwayat Pertemuan
-                  </h3>
-                  <button 
-                    onClick={() => refetchHistory()}
-                    className="text-sm text-lp-text2 font-light hover:text-lp-text font-semibold tracking-tight"
-                  >
-                    Refresh
-                  </button>
-                </div>
-                
-                <div className="space-y-3">
-                  {pertemuanHistory && pertemuanHistory.length > 0 ? (
-                    pertemuanHistory.slice(0, 5).map((item, index) => (
-                      <div key={index} className="border border-lp-border rounded-xl p-3">
-                        <div className="flex justify-between items-center">
-                          <div>
-                            <p className="font-medium text-lp-text font-semibold tracking-tight">{item.course_name}</p>
-                            <p className="text-sm text-lp-text2 font-light">Pertemuan {item.pertemuan_ke} • {item.date}</p>
-                          </div>
-                          <div className="flex gap-2">
-                            <span className={`px-2 py-1 rounded text-xs ${getStatusColor(item.status)}`}>
-                              {getStatusLabel(item.status)}
-                            </span>
-                            <span className="text-xs text-lp-text3 font-light">{item.time}</span>
-                          </div>
+                      {/* Submit */}
+                      <button
+                        type="submit"
+                        disabled={createSessionMutation.isPending || !courseID}
+                        className="w-full bg-gradient-to-r from-blue-600 to-blue-500 text-white py-4 rounded-2xl font-black text-base hover:from-blue-700 hover:to-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 shadow-[0_4px_16px_rgba(59,130,246,0.4)] hover:shadow-[0_6px_20px_rgba(59,130,246,0.5)] hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-3"
+                      >
+                        {createSessionMutation.isPending ? (
+                          <>
+                            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            Membuat Sesi...
+                          </>
+                        ) : (
+                          <>
+                            <FaBolt />
+                            Buat Sesi — Pertemuan {pertemuanKe}
+                          </>
+                        )}
+                      </button>
+
+                      {createSessionMutation.isError && (
+                        <div className="flex items-center gap-3 p-4 bg-rose-50 border border-rose-200 rounded-2xl text-rose-700 text-sm font-medium">
+                          <FaTimesCircle className="text-rose-500 shrink-0" />
+                          {createSessionMutation.error?.response?.data?.message || 'Gagal membuat sesi'}
                         </div>
+                      )}
+                    </form>
+                  </div>
+                </div>
+
+                {/* ── Sidebar right: Riwayat & Sesi aktif tersisa ── (2 cols) */}
+                <div className="lg:col-span-2 space-y-5">
+
+                  {/* Sesi aktif (dari server, bukan state lokal) */}
+                  {activeSessions?.sessions?.length > 0 && (
+                    <div className="bg-white rounded-3xl border border-slate-200 shadow-[0_4px_24px_rgba(0,0,0,0.06)] p-5">
+                      <h3 className="font-black text-slate-800 text-base mb-4 flex items-center gap-2">
+                        <FaLayerGroup className="text-blue-500" />
+                        Sesi Berjalan
+                      </h3>
+                      <div className="space-y-3">
+                        {activeSessions.sessions.slice(0, 3).map(session => (
+                          <div key={session.id} className="border border-slate-100 rounded-2xl p-4 hover:border-blue-200 hover:bg-blue-50/30 transition-all">
+                            <div className="flex items-start justify-between mb-2">
+                              <div className="flex-1 min-w-0">
+                                <p className="font-bold text-slate-800 text-sm truncate">{session.course_name}</p>
+                                <p className="text-slate-400 text-xs font-medium mt-0.5">Pertemuan {session.pertemuan_ke}</p>
+                              </div>
+                              <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-bold shrink-0 ${
+                                session.time_left_minutes > 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'
+                              }`}>
+                                {session.time_left_minutes > 0 ? `${session.time_left_minutes}m` : 'Habis'}
+                              </span>
+                            </div>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => {
+                                  setActiveSession({
+                                    session_id: session.id,
+                                    course_name: session.course_name,
+                                    course_id: session.course_id,
+                                    session_token: session.session_token,
+                                    expires_at: session.expires_at,
+                                    pertemuan_ke: session.pertemuan_ke,
+                                    created_at: session.created_at,
+                                  })
+                                  setQrToken(session.session_token)
+                                  startAutoRefresh()
+                                }}
+                                className="flex-1 flex items-center justify-center gap-1.5 text-xs font-bold py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                              >
+                                <FaQrcode />
+                                Monitor
+                              </button>
+                              <button
+                                onClick={() => { if (window.confirm('Tutup sesi ini?')) closeSessionMutation.mutate(session.id) }}
+                                className="flex items-center justify-center w-9 h-9 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors"
+                              >
+                                <FaStopCircle />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                    ))
-                  ) : (
-                    <div className="text-center py-4 text-lp-text3 font-light">
-                      <p>Belum ada riwayat pertemuan</p>
                     </div>
                   )}
-                </div>
-              </div>
-            </div>
 
-            {/* Panel Kanan - Daftar Mahasiswa & Statistik */}
-            <div className="space-y-6">
-              {/* Statistik Pertemuan */}
-              <div className="bg-lp-surface rounded-2xl border border-lp-border shadow-[0_8px_30px_rgba(0,0,0,0.04)] p-6">
-                <h3 className="text-xl font-bold text-lp-text font-semibold tracking-tight mb-4 flex items-center gap-3">
-                  <FaChartBar className="text-lp-text2" />
-                  Statistik Pertemuan
-                </h3>
-                <div className="space-y-3">
-                  {pertemuanList.slice(0, 6).map(pertemuan => {
-                    const sessionCount = activeSessions?.sessions?.filter(s => s.pertemuan_ke === pertemuan).length || 0
-                    return (
-                      <div key={pertemuan} className="flex items-center justify-between p-3 border border-lp-border rounded-xl hover:bg-lp-bg">
-                        <div>
-                          <span className="font-medium text-lp-text font-semibold tracking-tight">Pertemuan {pertemuan}</span>
-                          <p className="text-sm text-lp-text2 font-light">{sessionCount} sesi aktif</p>
+                  {/* Riwayat Pertemuan */}
+                  <div className="bg-white rounded-3xl border border-slate-200 shadow-[0_4px_24px_rgba(0,0,0,0.06)] p-5">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="font-black text-slate-800 text-base flex items-center gap-2">
+                        <FaHistory className="text-blue-500" />
+                        Riwayat Pertemuan
+                      </h3>
+                      <button onClick={() => refetchHistory()} className="text-slate-400 hover:text-slate-600 transition-colors">
+                        <FaSync className="text-sm" />
+                      </button>
+                    </div>
+                    {pertemuanHistory?.length > 0 ? (
+                      <div className="space-y-2">
+                        {pertemuanHistory.slice(0, 5).map((item, i) => (
+                          <div
+                            key={i}
+                            onClick={() => handleViewHistoryDetail(item)}
+                            className="flex items-center gap-3 p-3 rounded-2xl hover:bg-slate-50 border border-slate-100 hover:border-slate-200 transition-all cursor-pointer"
+                          >
+                            <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
+                              <FaCalendarCheck className="text-blue-500 text-xs" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-bold text-slate-800 text-xs truncate">{item.course_name}</p>
+                              <p className="text-slate-400 text-[10px] font-medium">
+                                Pertemuan {item.pertemuan_ke} · {item.created_at ? new Date(item.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: '2-digit' }) : ''}
+                              </p>
+                              <div className="flex flex-wrap items-center gap-1 mt-1">
+                                <span className="text-[9px] font-bold px-1.5 py-0.5 bg-emerald-50 text-emerald-700 rounded-md">
+                                  {item.hadir_count || 0} Hadir
+                                </span>
+                                <span className="text-[9px] font-bold px-1.5 py-0.5 bg-rose-50 text-rose-700 rounded-md">
+                                  {item.alpa_count || 0} Alpa
+                                </span>
+                                {(item.izin_count > 0 || item.sakit_count > 0) && (
+                                  <span className="text-[9px] font-bold px-1.5 py-0.5 bg-amber-50 text-amber-700 rounded-md">
+                                    {(item.izin_count || 0) + (item.sakit_count || 0)} Izin/Sakit
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <FaChevronRight className="text-slate-300 text-xs shrink-0" />
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-6 text-slate-400">
+                        <FaHistory className="text-3xl mx-auto mb-2 text-slate-200" />
+                        <p className="text-sm font-medium">Belum ada riwayat</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            ) : (
+              /* ══════════════════════════════
+                 ACTIVE SESSION DASHBOARD
+              ══════════════════════════════ */
+              <motion.div
+                key="active"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.35 }}
+              >
+                {/* ── Session top bar ── */}
+                <div className="bg-white rounded-3xl border border-slate-200 shadow-[0_4px_24px_rgba(0,0,0,0.06)] p-4 sm:p-5 mb-6 flex flex-wrap items-center gap-3">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="w-10 h-10 bg-emerald-50 rounded-2xl flex items-center justify-center shrink-0">
+                      <FaHourglassHalf className="text-emerald-600" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-black text-slate-800 text-base truncate">{activeSession.course_name}</p>
+                      <div className="flex flex-wrap items-center gap-2 mt-0.5">
+                        <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+                          Pertemuan {activeSession.pertemuan_ke}
+                        </span>
+                        <span className="text-xs text-slate-400 font-medium">
+                          Berakhir: {new Date(activeSession.expires_at).toLocaleString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                        <span className={`flex items-center gap-1 text-xs font-medium ${autoRefreshActive ? 'text-emerald-600' : 'text-slate-400'}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${autoRefreshActive ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'}`} />
+                          {autoRefreshActive ? 'Live' : 'Paused'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      onClick={() => setProjectorMode(true)}
+                      className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-blue-50 text-blue-700 font-bold text-sm hover:bg-blue-100 transition-colors"
+                    >
+                      <FaExpand className="text-xs" />
+                      <span className="hidden sm:inline">Proyektor</span>
+                    </button>
+                    <button
+                      onClick={() => refreshTokenMutation.mutate(activeSession.session_id)}
+                      disabled={refreshTokenMutation.isPending}
+                      className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-100 text-slate-700 font-bold text-sm hover:bg-slate-200 transition-colors disabled:opacity-50"
+                    >
+                      <FaSync className={`text-xs ${refreshTokenMutation.isPending ? 'animate-spin' : ''}`} />
+                      <span className="hidden sm:inline">Refresh QR</span>
+                    </button>
+                    <button
+                      onClick={handleCloseSession}
+                      disabled={closeSessionMutation.isPending}
+                      className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-rose-50 text-rose-700 font-bold text-sm hover:bg-rose-100 transition-colors disabled:opacity-50"
+                    >
+                      {closeSessionMutation.isPending
+                        ? <div className="w-4 h-4 border-2 border-rose-500 border-t-transparent rounded-full animate-spin" />
+                        : <FaStopCircle className="text-xs" />
+                      }
+                      <span className="hidden sm:inline">Tutup Sesi</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* ── Main Dashboard Grid ── */}
+                <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
+
+                  {/* LEFT: QR + Stats (xl:2 cols) */}
+                  <div className="xl:col-span-2 space-y-5">
+
+                    {/* QR Card */}
+                    <div className="bg-white rounded-3xl border border-slate-200 shadow-[0_4px_24px_rgba(0,0,0,0.06)] p-6 flex flex-col items-center">
+                      <p className="text-xs font-bold text-slate-400 tracking-widest uppercase mb-4">QR Code Absensi</p>
+
+                      {/* QR Frame */}
+                      <div className="relative mb-5">
+                        <div className="absolute -inset-3 rounded-3xl bg-blue-100/50 blur-xl animate-pulse" />
+                        <div className="relative bg-white rounded-3xl p-4 border-2 border-blue-100 shadow-lg">
+                          {qrToken && (
+                            <QRCodeSVG
+                              value={JSON.stringify({
+                                session_token: qrToken,
+                                course_id: activeSession.course_id,
+                                pertemuan_ke: activeSession.pertemuan_ke,
+                              })}
+                              size={200}
+                              level="H"
+                              includeMargin={true}
+                              bgColor="#FFFFFF"
+                              fgColor="#1e40af"
+                            />
+                          )}
+                        </div>
+                      </div>
+
+                      <p className="text-slate-500 text-sm font-medium text-center">
+                        Tampilkan di layar kelas agar mahasiswa dapat scan
+                      </p>
+                      <button
+                        onClick={() => setProjectorMode(true)}
+                        className="mt-3 flex items-center gap-2 text-blue-600 text-sm font-bold hover:text-blue-700 transition-colors"
+                      >
+                        <FaExpand className="text-xs" />
+                        Tampilkan Fullscreen
+                      </button>
+                    </div>
+
+                    {/* Stats Cards */}
+                    <div className="bg-white rounded-3xl border border-slate-200 shadow-[0_4px_24px_rgba(0,0,0,0.06)] p-5">
+                      <p className="text-xs font-bold text-slate-400 tracking-widest uppercase mb-4">Statistik Kehadiran</p>
+
+                      {/* Progress bar */}
+                      <div className="mb-4">
+                        <div className="flex justify-between text-xs font-bold mb-1.5">
+                          <span className="text-slate-600">Tingkat Kehadiran</span>
+                          <span className="text-emerald-600">{progressPct}%</span>
+                        </div>
+                        <div className="h-3 bg-slate-100 rounded-full overflow-hidden">
+                          <motion.div
+                            className="h-full bg-gradient-to-r from-emerald-400 to-emerald-500 rounded-full"
+                            animate={{ width: `${progressPct}%` }}
+                            transition={{ duration: 0.8, ease: 'easeInOut' }}
+                          />
+                        </div>
+                        <p className="text-xs text-slate-400 font-medium mt-1.5">
+                          {hadirCount} dari {totalCount} mahasiswa hadir
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <StatCard label="Hadir"        value={sessionStudents?.hadir_count || 0} color="text-emerald-600" />
+                        <StatCard label="Belum Absen"  value={belumCount}                         color="text-amber-600"   />
+                        <StatCard label="Izin"         value={sessionStudents?.izin_count || 0}  color="text-sky-600"     />
+                        <StatCard label="Alpa"         value={sessionStudents?.alpa_count || 0}  color="text-rose-600"    />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* RIGHT: Student list (xl:3 cols) */}
+                  <div className="xl:col-span-3">
+                    <div className="bg-white rounded-3xl border border-slate-200 shadow-[0_4px_24px_rgba(0,0,0,0.06)] h-full flex flex-col">
+                      {/* List header */}
+                      <div className="flex items-center justify-between p-5 border-b border-slate-100">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 bg-blue-50 rounded-2xl flex items-center justify-center">
+                            <FaUsers className="text-blue-600 text-sm" />
+                          </div>
+                          <div>
+                            <h3 className="font-black text-slate-800 text-base leading-tight">Daftar Mahasiswa</h3>
+                            <p className="text-xs text-slate-400 font-medium">Pertemuan {activeSession.pertemuan_ke}</p>
+                          </div>
                         </div>
                         <button
-                          onClick={() => {
-                            setFilterPertemuan(pertemuan.toString())
-                            setPertemuanKe(pertemuan)
-                          }}
-                          className={`px-3 py-1 rounded-xl text-sm transition-colors ${
-                            filterPertemuan === pertemuan.toString() 
-                              ? 'bg-lp-bg text-lp-text2' 
-                              : 'bg-lp-surface text-lp-text2 hover:bg-lp-bg'
-                          }`}
+                          onClick={() => refetchStudents()}
+                          disabled={loadingStudents}
+                          className="w-9 h-9 rounded-2xl bg-slate-50 hover:bg-slate-100 transition-colors flex items-center justify-center text-slate-500"
                         >
-                          Filter
+                          <FaSync className={`text-sm ${loadingStudents ? 'animate-spin' : ''}`} />
                         </button>
                       </div>
-                    )
-                  })}
+
+                      {/* List body */}
+                      <div className="flex-1 overflow-y-auto p-4 space-y-2" style={{ maxHeight: '60vh' }}>
+                        {loadingStudents && localStudents.length === 0 ? (
+                          <div className="flex flex-col items-center justify-center py-16">
+                            <div className="w-10 h-10 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4" />
+                            <p className="text-slate-400 text-sm font-medium">Memuat data mahasiswa...</p>
+                          </div>
+                        ) : getSortedStudents().length > 0 ? (
+                          <AnimatePresence>
+                            {getSortedStudents().map((student) => {
+                              const isHadir = student.attendance_status === 'hadir'
+                              const isAlpa  = student.attendance_status === 'alpa'
+                              return (
+                                <motion.div
+                                  key={student.id}
+                                  layout
+                                  initial={{ opacity: 0, x: -20 }}
+                                  animate={{ opacity: 1, x: 0 }}
+                                  transition={{ duration: 0.3 }}
+                                  className={`flex items-center gap-3 p-3.5 rounded-2xl border transition-all ${
+                                    isHadir
+                                      ? 'border-emerald-200 bg-emerald-50/50'
+                                      : isAlpa
+                                      ? 'border-rose-200 bg-rose-50/30'
+                                      : student.attendance_status === 'izin' || student.attendance_status === 'sakit'
+                                      ? 'border-amber-200 bg-amber-50/30'
+                                      : 'border-slate-100 bg-white hover:border-slate-200'
+                                  }`}
+                                >
+                                  {/* Avatar */}
+                                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-xs font-black shrink-0 ${
+                                    isHadir ? 'bg-emerald-100 text-emerald-700' :
+                                    isAlpa  ? 'bg-rose-100 text-rose-700' :
+                                    'bg-slate-100 text-slate-500'
+                                  }`}>
+                                    {student.name?.charAt(0)?.toUpperCase() || '?'}
+                                  </div>
+
+                                  {/* Info */}
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2">
+                                      <p className="font-bold text-slate-800 text-sm truncate">{student.name}</p>
+                                      <StatusBadge status={student.attendance_status} />
+                                    </div>
+                                    <div className="flex items-center gap-2 mt-0.5">
+                                      <span className="text-xs text-slate-400 font-mono">{student.nim}</span>
+                                      {student.attendance_time && (
+                                        <span className="text-xs text-slate-400 flex items-center gap-1">
+                                          <FaClock className="text-[9px]" />
+                                          {student.attendance_time}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  {/* Action Buttons */}
+                                  <div className="flex items-center gap-0.5 shrink-0 rounded-2xl border border-slate-200/70 bg-slate-100/75 p-1 shadow-[inset_0_1px_3px_rgba(15,23,42,.08)] backdrop-blur-md">
+                                    {[
+                                      { key: 'hadir', label: 'H', cls: 'bg-emerald-500 text-white shadow-emerald-500/20', base: 'text-slate-500 hover:text-emerald-600' },
+                                      { key: 'izin',  label: 'I', cls: 'bg-amber-400 text-white shadow-amber-500/20', base: 'text-slate-500 hover:text-amber-600' },
+                                      { key: 'sakit', label: 'S', cls: 'bg-sky-500 text-white shadow-sky-500/20', base: 'text-slate-500 hover:text-sky-600' },
+                                      { key: 'alpa',  label: 'A', cls: 'bg-rose-500 text-white shadow-rose-500/20', base: 'text-slate-500 hover:text-rose-600' },
+                                    ].map(btn => (
+                                      <button
+                                        key={btn.key}
+                                        onClick={() => handleStatusUpdate(student.id, btn.key)}
+                                        title={btn.key.charAt(0).toUpperCase() + btn.key.slice(1)}
+                                        className={`w-8 h-8 rounded-xl text-xs font-black font-mono transition-all duration-300 active:scale-90 ${
+                                          student.attendance_status === btn.key ? btn.cls : btn.base
+                                        }`}
+                                      >
+                                        {btn.label}
+                                      </button>
+                                    ))}
+                                    <button
+                                      onClick={() => { setSelectedStudent(student); setManualStatus(student.attendance_status || 'hadir'); setShowManualModal(true) }}
+                                      className="w-8 h-8 rounded-xl text-slate-500 hover:bg-white hover:text-lp-accent transition-all active:scale-90 flex items-center justify-center"
+                                      title="Edit Manual"
+                                    >
+                                      <FaEdit className="text-xs" />
+                                    </button>
+                                  </div>
+                                </motion.div>
+                              )
+                            })}
+                          </AnimatePresence>
+                        ) : (
+                          <div className="flex flex-col items-center justify-center py-16">
+                            <FaUserCircle className="text-5xl text-slate-200 mb-3" />
+                            <p className="text-slate-400 text-sm font-medium">Belum ada mahasiswa terdaftar</p>
+                            <p className="text-slate-300 text-xs mt-1">Mahasiswa akan muncul setelah scan QR</p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Footer summary */}
+                      {sessionStudents && getSortedStudents().length > 0 && (
+                        <div className="border-t border-slate-100 p-4 flex items-center justify-between">
+                          <span className="text-xs text-slate-400 font-medium">
+                            {hadirCount} hadir · {belumCount} belum absen · {totalCount} total
+                          </span>
+                          <span className="text-xs font-black text-emerald-600">{progressPct}%</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                <button 
-                  onClick={() => window.location.href = '/dosen/absensi/riwayat'}
-                  className="w-full mt-4 text-center text-lp-text2 hover:text-lp-text text-sm font-medium"
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </div>
+
+      {/* ── Manual Status Modal ── */}
+      <AnimatePresence>
+        {showManualModal && selectedStudent && (
+          <motion.div
+            key="manual-modal"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[150] p-4"
+            onClick={(e) => { if (e.target === e.currentTarget) { setShowManualModal(false); setSelectedStudent(null) } }}
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl border border-slate-100"
+            >
+              <div className="flex items-center justify-between mb-5">
+                <div>
+                  <h3 className="font-black text-slate-800 text-lg">Ubah Status</h3>
+                  <p className="text-sm text-slate-500 font-medium mt-0.5">
+                    {selectedStudent.name} · <span className="font-mono text-xs">{selectedStudent.nim}</span>
+                  </p>
+                </div>
+                <button
+                  onClick={() => { setShowManualModal(false); setSelectedStudent(null) }}
+                  className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center font-bold transition-colors"
                 >
-                  Lihat semua statistik →
+                  ✕
                 </button>
               </div>
 
-              {/* Daftar Mahasiswa untuk Sesi Aktif */}
-              {activeSession && (
-                <div className="bg-lp-surface rounded-2xl border border-lp-border shadow-[0_8px_30px_rgba(0,0,0,0.04)] p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-xl font-bold text-lp-text font-semibold tracking-tight flex items-center gap-3">
-                      <FaUsers className="text-lp-text2" />
-                      Daftar Mahasiswa
-                    </h3>
-                    <div className="flex items-center gap-2">
-                      <span className="bg-lp-bg text-lp-text text-xs font-medium px-2 py-1 rounded">
-                        Pertemuan {activeSession.pertemuan_ke}
-                      </span>
-                      <button 
-                        onClick={() => refetchStudents()}
-                        className="text-lp-text3 font-light hover:text-lp-text2"
-                        disabled={loadingStudents}
-                      >
-                        <FaSync className={loadingStudents ? "animate-spin" : ""} />
-                      </button>
-                    </div>
+              <div className="grid grid-cols-2 gap-3 mb-5">
+                {[
+                  { value: 'hadir', label: 'Hadir', emoji: '✅', cls: 'border-emerald-400 bg-emerald-50 text-emerald-700', inactive: 'border-slate-200 hover:border-emerald-300' },
+                  { value: 'izin',  label: 'Izin',  emoji: '📋', cls: 'border-amber-400  bg-amber-50  text-amber-700',  inactive: 'border-slate-200 hover:border-amber-300'   },
+                  { value: 'sakit', label: 'Sakit', emoji: '🏥', cls: 'border-sky-400    bg-sky-50    text-sky-700',    inactive: 'border-slate-200 hover:border-sky-300'     },
+                  { value: 'alpa',  label: 'Alpa',  emoji: '❌', cls: 'border-rose-400   bg-rose-50   text-rose-700',   inactive: 'border-slate-200 hover:border-rose-300'    },
+                ].map(opt => (
+                  <button
+                    key={opt.value}
+                    onClick={() => setManualStatus(opt.value)}
+                    className={`flex flex-col items-center gap-1.5 p-4 rounded-2xl border-2 font-bold transition-all ${
+                      manualStatus === opt.value ? opt.cls : `border-slate-200 bg-white text-slate-500 ${opt.inactive}`
+                    }`}
+                  >
+                    <span className="text-2xl">{opt.emoji}</span>
+                    <span className="text-sm">{opt.label}</span>
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => { setShowManualModal(false); setSelectedStudent(null) }}
+                  className="flex-1 py-3 rounded-2xl bg-slate-100 text-slate-600 font-bold hover:bg-slate-200 transition-colors"
+                >
+                  Batal
+                </button>
+                <button
+                  onClick={() => handleStatusUpdate(selectedStudent.id, manualStatus)}
+                  disabled={updateStatusMutation.isPending}
+                  className="flex-1 py-3 rounded-2xl bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {updateStatusMutation.isPending
+                    ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    : <FaCheckCircle />
+                  }
+                  Simpan
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Detail Riwayat Pertemuan Modal ── */}
+      <AnimatePresence>
+        {historyModalOpen && selectedHistorySession && (
+          <motion.div
+            key="history-detail-modal"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[150] p-4"
+            onClick={(e) => { if (e.target === e.currentTarget) { setHistoryModalOpen(false); setSelectedHistorySession(null) } }}
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className="bg-white rounded-3xl p-6 w-full max-w-2xl shadow-2xl border border-slate-100 flex flex-col max-h-[85vh]"
+            >
+              {/* Header */}
+              <div className="flex items-start justify-between mb-4 border-b border-slate-100 pb-4">
+                <div>
+                  <span className="text-xs font-bold text-blue-500 tracking-wider uppercase">Detail Riwayat Pertemuan</span>
+                  <h3 className="font-black text-slate-800 text-xl mt-0.5">{selectedHistorySession.course_name}</h3>
+                  <p className="text-sm text-slate-500 font-medium mt-1">
+                    Pertemuan ke-{selectedHistorySession.pertemuan_ke} &nbsp;·&nbsp; {selectedHistorySession.created_at ? new Date(selectedHistorySession.created_at).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : ''}
+                  </p>
+                </div>
+                <button
+                  onClick={() => { setHistoryModalOpen(false); setSelectedHistorySession(null) }}
+                  className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center font-bold transition-colors"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {loadingHistoryDetails ? (
+                <div className="flex flex-col items-center justify-center py-20 flex-1">
+                  <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4" />
+                  <p className="text-slate-400 text-sm font-medium">Memuat data rekap absensi...</p>
+                </div>
+              ) : (
+                <div className="flex-1 overflow-hidden flex flex-col min-h-0">
+                  {/* Statistics widgets */}
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-5">
+                    {[
+                      { label: "Total Siswa", value: historySessionDetails?.total_students || selectedHistorySession.total_students || 0, color: "text-slate-700", bg: "bg-slate-50 border-slate-100" },
+                      { label: "Hadir", value: historySessionDetails?.hadir_count || selectedHistorySession.hadir_count || 0, color: "text-emerald-600", bg: "bg-emerald-50/30 border-emerald-100" },
+                      { label: "Izin", value: historySessionDetails?.izin_count || selectedHistorySession.izin_count || 0, color: "text-amber-600", bg: "bg-amber-50/30 border-amber-100" },
+                      { label: "Sakit", value: historySessionDetails?.sakit_count || selectedHistorySession.sakit_count || 0, color: "text-sky-600", bg: "bg-sky-50/30 border-sky-100" },
+                      { label: "Alpa", value: historySessionDetails?.alpa_count || selectedHistorySession.alpa_count || 0, color: "text-rose-600", bg: "bg-rose-50/30 border-rose-100" },
+                    ].map((stat, idx) => (
+                      <div key={idx} className={`flex flex-col items-center justify-center rounded-2xl border py-3 px-2 shadow-sm ${stat.bg}`}>
+                        <p className={`text-2xl font-black ${stat.color}`}>{stat.value}</p>
+                        <p className="text-[10px] font-bold text-slate-500 mt-0.5 text-center leading-tight">{stat.label}</p>
+                      </div>
+                    ))}
                   </div>
-                  
-                  {loadingStudents ? (
-                    <div className="text-center py-8">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-lp-text mx-auto"></div>
-                      <p className="mt-2 text-lp-text2 font-light">Memuat data mahasiswa...</p>
-                    </div>
-                  ) : sessionStudents?.students && sessionStudents.students.length > 0 ? (
-                    <>
-                      <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
-                        {sessionStudents.students.map((student, index) => (
-                          <div key={student.id} className="border border-lp-border rounded-xl p-3 hover:bg-lp-bg transition-colors">
-                            <div className="flex justify-between items-center">
+
+                  {/* Search bar */}
+                  <div className="relative mb-4">
+                    <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                      <FaSearch className="text-slate-400 text-sm" />
+                    </span>
+                    <input
+                      type="text"
+                      placeholder="Cari mahasiswa berdasarkan nama atau NIM..."
+                      value={historySearchQuery}
+                      onChange={(e) => setHistorySearchQuery(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-10 pr-4 py-3 text-sm font-medium placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    />
+                  </div>
+
+                  {/* Student list */}
+                  <div className="flex-1 overflow-y-auto space-y-2 pr-1 select-none">
+                    {historySessionDetails?.students && historySessionDetails.students.filter(student => 
+                      student.name?.toLowerCase().includes(historySearchQuery.toLowerCase()) ||
+                      student.nim?.includes(historySearchQuery)
+                    ).length > 0 ? (
+                      historySessionDetails.students
+                        .filter(student => 
+                          student.name?.toLowerCase().includes(historySearchQuery.toLowerCase()) ||
+                          student.nim?.includes(historySearchQuery)
+                        )
+                        .map((student) => {
+                          const isHadir = student.attendance_status === 'hadir'
+                          const isAlpa  = student.attendance_status === 'alpa'
+                          const isIzin  = student.attendance_status === 'izin'
+                          const isSakit = student.attendance_status === 'sakit'
+                          return (
+                            <div
+                              key={student.id}
+                              className={`flex items-center gap-3 p-3 rounded-2xl border transition-all ${
+                                isHadir
+                                  ? 'border-emerald-100 bg-emerald-50/20'
+                                  : isAlpa
+                                  ? 'border-rose-100 bg-rose-50/20'
+                                  : isIzin || isSakit
+                                  ? 'border-amber-100 bg-amber-50/20'
+                                  : 'border-slate-100 bg-white'
+                              }`}
+                            >
+                              <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-black shrink-0 ${
+                                isHadir ? 'bg-emerald-100 text-emerald-700' :
+                                isAlpa  ? 'bg-rose-100 text-rose-700' :
+                                isIzin || isSakit ? 'bg-amber-100 text-amber-700' :
+                                'bg-slate-100 text-slate-500'
+                              }`}>
+                                {student.name?.charAt(0)?.toUpperCase() || '?'}
+                              </div>
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2">
-                                  <p className="font-medium text-sm text-lp-text font-semibold tracking-tight truncate">{student.name}</p>
-                                  <span className="text-xs text-lp-text3 font-light bg-lp-surface px-2 py-0.5 rounded">
-                                    {student.nim}
-                                  </span>
+                                  <p className="font-bold text-slate-800 text-sm truncate">{student.name}</p>
+                                  <StatusBadge status={student.attendance_status} />
                                 </div>
-                                <div className="flex items-center gap-2 mt-1">
-                                  <span className={`px-2 py-0.5 rounded text-xs ${getStatusColor(student.attendance_status)} flex items-center gap-1`}>
-                                    {getStatusIcon(student.attendance_status)}
-                                    {getStatusLabel(student.attendance_status)}
-                                  </span>
+                                <div className="flex items-center gap-2 mt-0.5">
+                                  <span className="text-[10px] text-slate-400 font-mono">{student.nim}</span>
                                   {student.attendance_time && (
-                                    <span className="text-xs text-lp-text3 font-light">
+                                    <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                                      <FaClock className="text-[8px]" />
                                       {student.attendance_time}
                                     </span>
                                   )}
                                 </div>
                               </div>
-                            <div className="flex gap-1 ml-2">
-                              <button
-                                onClick={() => handleStatusUpdate(student.id, 'hadir')}
-                                className={`w-8 h-8 rounded-xl flex items-center justify-center transition-colors ${
-                                  student.attendance_status === 'hadir' 
-                                    ? 'bg-lp-bg text-lp-text2 border border-lp-border' 
-                                    : 'bg-lp-bg text-lp-text2 hover:bg-lp-surface'
-                                }`}
-                                title="Hadir"
-                              >
-                                H
-                              </button>
-                              <button
-                                onClick={() => handleStatusUpdate(student.id, 'izin')}
-                                className={`w-8 h-8 rounded-xl flex items-center justify-center transition-colors ${
-                                  student.attendance_status === 'izin' 
-                                    ? 'bg-lp-bg text-lp-text2 border border-lp-border' 
-                                    : 'bg-lp-bg text-lp-text2 hover:bg-lp-surface'
-                                }`}
-                                title="Izin"
-                              >
-                                I
-                              </button>
-                              <button
-                                onClick={() => handleStatusUpdate(student.id, 'sakit')}
-                                className={`w-8 h-8 rounded-xl flex items-center justify-center transition-colors ${
-                                  student.attendance_status === 'sakit' 
-                                    ? 'bg-lp-bg text-lp-text2 border border-lp-border' 
-                                    : 'bg-lp-bg text-lp-text2 hover:bg-lp-surface'
-                                }`}
-                                title="Sakit"
-                              >
-                                S
-                              </button>
-                              <button
-                                onClick={() => handleStatusUpdate(student.id, 'alpa')}
-                                className={`w-8 h-8 rounded-xl flex items-center justify-center transition-colors ${
-                                  student.attendance_status === 'alpa' 
-                                    ? 'bg-lp-bg text-lp-text2 border border-lp-border' 
-                                    : 'bg-lp-bg text-lp-text2 hover:bg-lp-surface'
-                                }`}
-                                title="Alpa"
-                              >
-                                A
-                              </button>
-                              <button
-                                onClick={() => handleManualStatus(student)}
-                                className="w-8 h-8 rounded-xl flex items-center justify-center bg-lp-surface text-lp-text2 font-light hover:bg-lp-bg transition-colors"
-                                title="Edit Manual"
-                              >
-                                <FaEdit className="text-xs" />
-                              </button>
                             </div>
-                            </div>
-                          </div>
-                        ))}
+                          )
+                        })
+                    ) : (
+                      <div className="flex flex-col items-center justify-center py-10">
+                        <p className="text-slate-400 text-sm font-medium">Mahasiswa tidak ditemukan</p>
                       </div>
-                      
-                      {/* Summary */}
-                      {sessionStudents && (
-                        <div className="mt-4 pt-4 border-t border-lp-border border">
-                          <div className="grid grid-cols-2 gap-2">
-                            <div className="text-center">
-                              <p className="text-lg font-bold text-lp-text2">{sessionStudents.hadir_count || 0}</p>
-                              <p className="text-xs text-lp-text2 font-light">Hadir</p>
-                            </div>
-                            <div className="text-center">
-                              <p className="text-lg font-bold text-lp-text2">
-                                {sessionStudents.total_students - sessionStudents.attendance_count || 0}
-                              </p>
-                              <p className="text-xs text-lp-text2 font-light">Belum Absen</p>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <div className="text-center py-8">
-                      <div className="text-4xl text-lp-text3 mb-4">👥</div>
-                      <p className="text-lp-text3 font-light">Tidak ada mahasiswa terdaftar</p>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               )}
 
-              {/* Instruksi */}
-              <div className="bg-lp-surface border border-lp-border rounded-2xl p-4">
-                <h4 className="font-bold text-lp-text mb-2 flex items-center gap-2">
-                  <FaClock className="text-lp-text2" />
-                  Cara Kerja Absensi:
-                </h4>
-                <ol className="text-sm text-lp-text2 space-y-2 list-decimal pl-4">
-                  <li>Pilih mata kuliah dan pertemuan</li>
-                  <li>Buat sesi absensi dengan QR Code</li>
-                  <li>Tampilkan QR Code di kelas</li>
-                  <li>Mahasiswa scan QR untuk absen otomatis</li>
-                  <li>Klik tombol H/I/S/A untuk absen manual</li>
-                  <li>Status langsung tersimpan di database</li>
-                </ol>
-                <div className="mt-3 text-xs text-lp-text2 space-y-1">
-                  <p>⚡ QR Code auto-refresh setiap 15 detik</p>
-                  <p>🔒 Token berbeda untuk setiap sesi</p>
-                  <p>📊 Data realtime di mahasiswa & dosen</p>
-                </div>
+              <div className="mt-4 border-t border-slate-100 pt-4 flex justify-end">
+                <button
+                  onClick={() => { setHistoryModalOpen(false); setSelectedHistorySession(null) }}
+                  className="px-6 py-2.5 rounded-2xl bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors"
+                >
+                  Tutup
+                </button>
               </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-              {/* Legend Status */}
-              <div className="bg-lp-bg border border-lp-border rounded-2xl p-4">
-                <h4 className="font-bold text-lp-text font-semibold tracking-tight mb-3">Legenda Status:</h4>
-                <div className="space-y-2">
-                  {statusOptions.map((status) => (
-                    <div key={status.value} className="flex items-center gap-2">
-                      <div className={`w-6 h-6 rounded flex items-center justify-center font-bold ${status.bg} ${status.color}`}>
-                        {status.value === 'hadir' ? 'H' : 
-                         status.value === 'izin' ? 'I' : 
-                         status.value === 'sakit' ? 'S' : 'A'}
-                      </div>
-                      <span className="text-sm text-lp-text2">{status.label}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
+      <ConfirmationModal
+        open={confirmCloseOpen}
+        title="Tutup sesi absensi?"
+        description="Sesi akan dikunci dan mahasiswa tidak dapat mengirim presensi lagi. Riwayat pertemuan tetap tersimpan."
+        confirmLabel="Tutup Sesi"
+        pending={closeSessionMutation.isPending}
+        onCancel={() => setConfirmCloseOpen(false)}
+        onConfirm={() => closeSessionMutation.mutate(activeSession?.session_id)}
+      />
 
-              {/* Status Messages */}
-              {createSessionMutation.isSuccess && (
-                <div className="p-4 bg-lp-bg border border-lp-border rounded-xl text-lp-text flex items-center space-x-2">
-                  <FaCheckCircle className="text-lp-text2 text-lg" />
-                  <span>Sesi absensi berhasil dibuat!</span>
-                </div>
-              )}
-              
-              {createSessionMutation.isError && (
-                <div className="p-4 bg-lp-bg border border-lp-border rounded-xl text-lp-text flex items-center space-x-2">
-                  <FaTimesCircle className="text-lp-text2 text-lg" />
-                  <span>Error: {createSessionMutation.error.response?.data?.message || 'Failed to create session'}</span>
-                </div>
-              )}
-
-              {refreshTokenMutation.isError && (
-                <div className="p-4 bg-lp-bg border border-lp-border rounded-xl text-lp-text flex items-center space-x-2">
-                  <FaTimesCircle className="text-lp-text2 text-lg" />
-                  <span>Refresh gagal: {refreshTokenMutation.error.response?.data?.message || 'Token refresh failed'}</span>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Modal Absensi Manual */}
-      {showManualModal && selectedStudent && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[90] p-4">
-          <div className="bg-lp-surface rounded-2xl p-6 max-w-md w-full">
-            <div className="flex justify-between items-center mb-6">
-              <div>
-                <h3 className="text-xl font-bold text-lp-text font-semibold tracking-tight">Absensi Manual</h3>
-                <p className="text-sm text-lp-text2 font-light">
-                  {selectedStudent.name} ({selectedStudent.nim})
-                </p>
-              </div>
-              <button
-                onClick={() => {
-                  setShowManualModal(false)
-                  setSelectedStudent(null)
-                }}
-                className="text-lp-text3 font-light hover:text-lp-text2"
-              >
-                ✕
-              </button>
-            </div>
-            
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-lp-text2 mb-3">
-                Pilih Status Kehadiran:
-              </label>
-              <div className="grid grid-cols-2 gap-3">
-                {statusOptions.map((status) => (
-                  <button
-                    key={status.value}
-                    type="button"
-                    onClick={() => setManualStatus(status.value)}
-                    className={`p-4 rounded-xl border-2 transition-all ${
-                      manualStatus === status.value 
-                        ? `${status.bg} border-lp-text` 
-                        : 'border-lp-border border hover:border-lp-border border'
-                    }`}
-                  >
-                    <div className="text-center">
-                      <div className={`text-2xl font-bold mb-1 ${status.color}`}>
-                        {status.value === 'hadir' ? 'H' : 
-                         status.value === 'izin' ? 'I' : 
-                         status.value === 'sakit' ? 'S' : 'A'}
-                      </div>
-                      <p className={`text-sm font-medium ${status.color}`}>
-                        {status.label}
-                      </p>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-            
-            <div className="flex gap-3">
-              <button
-                onClick={() => {
-                  setShowManualModal(false)
-                  setSelectedStudent(null)
-                }}
-                className="flex-1 bg-lp-surface text-lp-text2 py-3 rounded-xl font-medium hover:bg-lp-bg transition-colors"
-              >
-                Batal
-              </button>
-              <button
-                onClick={() => handleStatusUpdate(selectedStudent.id, manualStatus)}
-                disabled={updateStatusMutation.isPending}
-                className="flex-1 bg-lp-text text-white py-3 rounded-xl font-medium hover:bg-lp-atext transition-colors flex items-center justify-center gap-2"
-              >
-                {updateStatusMutation.isPending ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    Memproses...
-                  </>
-                ) : (
-                  <>
-                    <FaCheckCircle />
-                    Simpan Status
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
+      {typeof document !== 'undefined' && createPortal(
+        <AnimatePresence>
+          {notice && (
+            <motion.div
+              initial={{ opacity: 0, y: -18, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -12, scale: 0.97 }}
+              transition={{ type: 'spring', stiffness: 260, damping: 22 }}
+              className="fixed left-1/2 top-5 z-[350] w-[min(92vw,520px)] -translate-x-1/2 rounded-2xl border border-blue-500/10 bg-slate-950/90 px-4 py-3 text-sm font-semibold text-white shadow-2xl backdrop-blur-xl"
+            >
+              <span className="mr-2 font-mono text-lp-accent">SYS/</span>{notice}
+            </motion.div>
+          )}
+        </AnimatePresence>,
+        document.body,
       )}
+
+      {/* ── Live Telegram-style Notifications ── */}
+      <div className="fixed bottom-6 right-6 z-[100] flex flex-col gap-2.5 max-w-sm w-full pointer-events-none">
+        <AnimatePresence>
+          {liveNotifications.map(n => (
+            <motion.div
+              key={n.id}
+              layout
+              initial={{ opacity: 0, x: 140, scale: 0.96, filter: 'blur(6px)' }}
+              animate={{ opacity: 1, x: 0, scale: 1 }}
+              exit={{ opacity: 0, x: 80, scale: 0.96, filter: 'blur(4px)', transition: { duration: 0.28, ease: [0.4, 0, 1, 1] } }}
+              transition={{ layout: { type: 'spring', stiffness: 150, damping: 18 }, duration: 0.48, ease: [0.16, 1, 0.3, 1] }}
+              className="pointer-events-auto relative overflow-hidden rounded-2xl rounded-br-[5px] border border-white/70 bg-white/80 px-4 py-3 pl-5 shadow-[inset_0_1px_0_rgba(255,255,255,.9),0_18px_50px_rgba(15,23,42,.16)] backdrop-blur-xl flex gap-3"
+            >
+              <span className="absolute inset-y-0 left-0 w-1.5 bg-[#26A5E4] rounded-l-2xl" />
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-slate-100 bg-slate-50 text-base shadow-sm">
+                {n.icon}
+              </span>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-2">
+                  <h4 className="text-xs font-black text-slate-800">{n.title}</h4>
+                  <time className="text-[9px] font-mono text-slate-400 shrink-0">{n.time}</time>
+                </div>
+                <p className="text-xs text-slate-500 font-medium mt-0.5 leading-snug">{n.description}</p>
+              </div>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </div>
     </div>
   )
 }

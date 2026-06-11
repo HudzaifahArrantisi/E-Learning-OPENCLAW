@@ -308,6 +308,7 @@ func GetMahasiswaCoursesByDay(c *gin.Context) {
 		"date":            time.Now().Format("2006-01-02"),
 	}, "Courses retrieved successfully for "+hari)
 }
+
 // GetMahasiswaCourses - Ambil semua mata kuliah yang diambil mahasiswa
 func GetMahasiswaCourses(c *gin.Context) {
 	userID, exists := c.Get("user_id")
@@ -315,8 +316,6 @@ func GetMahasiswaCourses(c *gin.Context) {
 		utils.ErrorResponse(c, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
-
-
 
 	// Get mahasiswa ID
 	var mahasiswaID int
@@ -327,12 +326,9 @@ func GetMahasiswaCourses(c *gin.Context) {
 		return
 	}
 
-
-
 	// Debug: Hitung total mata kuliah yang diambil
 	var totalCourses int
 	config.DB.QueryRow("SELECT COUNT(*) FROM mahasiswa_mata_kuliah WHERE mahasiswa_id = $1", mahasiswaID).Scan(&totalCourses)
-
 
 	rows, err := config.DB.Query(`
 		SELECT mk.kode, mk.nama, d.name as dosen, mk.sks, mk.hari, mk.jam_mulai, mk.jam_selesai
@@ -342,7 +338,7 @@ func GetMahasiswaCourses(c *gin.Context) {
 		WHERE mmk.mahasiswa_id = $1 AND mk.deleted_at IS NULL
 		ORDER BY mk.nama
 	`, mahasiswaID)
-	
+
 	if err != nil {
 
 		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to fetch courses: "+err.Error())
@@ -371,12 +367,9 @@ func GetMahasiswaCourses(c *gin.Context) {
 		courseCount++
 	}
 
-
-
 	// Jika tidak ada kursus, tampilkan semua mata kuliah sebagai fallback (untuk testing)
 	if len(courses) == 0 {
 
-		
 		allRows, err := config.DB.Query(`
 			SELECT mk.kode, mk.nama, d.name as dosen, mk.sks, mk.hari, mk.jam_mulai, mk.jam_selesai
 			FROM mata_kuliah mk
@@ -385,7 +378,7 @@ func GetMahasiswaCourses(c *gin.Context) {
 			ORDER BY mk.nama
 			LIMIT 8
 		`)
-		
+
 		if err == nil {
 			defer allRows.Close()
 			for allRows.Next() {
@@ -409,11 +402,12 @@ func GetMahasiswaCourses(c *gin.Context) {
 	utils.SuccessResponse(c, gin.H{
 		"data": courses,
 		"meta": gin.H{
-			"total": len(courses),
+			"total":        len(courses),
 			"mahasiswa_id": mahasiswaID,
 		},
 	}, "Courses retrieved")
 }
+
 // GetMahasiswaJadwalHariIni - DIPERBAIKI untuk menampilkan hanya mata kuliah hari ini
 func GetMahasiswaJadwalHariIni(c *gin.Context) {
 	userID, exists := c.Get("user_id")
@@ -501,26 +495,12 @@ func GetMahasiswaJadwalHariIni(c *gin.Context) {
 			continue
 		}
 
-		// Check if course can be scanned (belum absen dan sesuai waktu)
+		// Check if course can be scanned (belum absen dan sesuai waktu) - DIPERBAIKI agar selalu bisa scan jika sesi aktif ada
 		canScan := false
 		isActiveSession := false
 		if statusAbsen == "belum_absen" && sessionCode != "" {
-			// Check if current time is within course time
-			currentTime := time.Now()
-			courseTimeStart, _ := time.Parse("15:04", jamMulai)
-			courseTimeEnd, _ := time.Parse("15:04", jamSelesai)
-
-			// Create today's datetime
-			startTime := time.Date(currentTime.Year(), currentTime.Month(), currentTime.Day(),
-				courseTimeStart.Hour(), courseTimeStart.Minute(), 0, 0, currentTime.Location())
-			endTime := time.Date(currentTime.Year(), currentTime.Month(), currentTime.Day(),
-				courseTimeEnd.Hour(), courseTimeEnd.Minute(), 0, 0, currentTime.Location())
-
-			// Allow scan 15 minutes before and 60 minutes after start time
-			if currentTime.After(startTime.Add(-15*time.Minute)) && currentTime.Before(endTime.Add(60*time.Minute)) {
-				canScan = true
-				isActiveSession = true
-			}
+			canScan = true
+			isActiveSession = true
 		}
 
 		jadwal = append(jadwal, gin.H{
@@ -581,6 +561,7 @@ func ScanAttendance(c *gin.Context) {
 	var session struct {
 		ID          int
 		CourseID    string
+		SessionCode string
 		DosenID     int
 		PertemuanKe int
 		ExpiresAt   time.Time
@@ -591,7 +572,7 @@ func ScanAttendance(c *gin.Context) {
 	}
 
 	err = config.DB.QueryRow(`
-		SELECT asess.id, asess.course_id, asess.dosen_id, asess.pertemuan_ke, 
+		SELECT asess.id, asess.course_id, asess.session_code, asess.dosen_id, asess.pertemuan_ke,
 		       asess.expires_at, mk.hari, mk.jam_mulai, mk.jam_selesai, asess.status
 		FROM attendance_sessions asess
 		JOIN mata_kuliah mk ON asess.course_id = mk.kode
@@ -600,7 +581,7 @@ func ScanAttendance(c *gin.Context) {
 			AND asess.expires_at > NOW()
 			AND asess.course_id = $2
 	`, input.SessionToken, input.CourseID).Scan(
-		&session.ID, &session.CourseID, &session.DosenID, &session.PertemuanKe,
+		&session.ID, &session.CourseID, &session.SessionCode, &session.DosenID, &session.PertemuanKe,
 		&session.ExpiresAt, &session.CourseDay, &session.CourseStart, &session.CourseEnd, &session.Status)
 
 	if err != nil {
@@ -628,7 +609,8 @@ func ScanAttendance(c *gin.Context) {
 		return
 	}
 
-	// Cek hari sesuai jadwal
+	// Cek hari sesuai jadwal - DINONAKTIFKAN agar bisa scan kapan saja
+	/*
 	today := time.Now().Weekday()
 	dayMap := map[string]time.Weekday{
 		"Senin":  time.Monday,
@@ -646,8 +628,10 @@ func ScanAttendance(c *gin.Context) {
 			"Hari ini bukan jadwal mata kuliah ini. Jadwal: "+session.CourseDay)
 		return
 	}
+	*/
 
-	// Cek waktu absensi (15 menit sebelum - 60 menit setelah jam mulai)
+	// Cek waktu absensi (15 menit sebelum - 60 menit setelah jam mulai) - DINONAKTIFKAN agar bisa scan kapan saja
+	/*
 	currentTime := time.Now()
 	courseStart, _ := time.Parse("15:04", session.CourseStart)
 	courseEnd, _ := time.Parse("15:04", session.CourseEnd)
@@ -673,33 +657,25 @@ func ScanAttendance(c *gin.Context) {
 			"Waktu absen sudah berakhir. Maksimal 60 menit setelah kelas selesai.")
 		return
 	}
+	*/
 
 	// Cek apakah sudah absen untuk pertemuan ini
-	var alreadyAttended bool
 	var existingStatus string
 	err = config.DB.QueryRow(`
-		SELECT EXISTS(
-			SELECT 1 FROM attendance a
-			JOIN attendance_sessions asess ON a.session_id::text = asess.id::text
-			WHERE a.student_id = $1 
-				AND asess.course_id = $2 
-				AND asess.pertemuan_ke = $3
-				AND (a.created_at)::date = CURRENT_DATE
-		), COALESCE(a.status, '')
+		SELECT a.status
 		FROM attendance a
-		JOIN attendance_sessions asess ON a.session_id::text = asess.id::text
-		WHERE a.student_id = $4 
-			AND asess.course_id = $5 
-			AND asess.pertemuan_ke = $6
-			AND (a.created_at)::date = CURRENT_DATE
+		WHERE a.student_id = $1 AND a.session_id = $2
 		LIMIT 1
-	`, mahasiswaID, session.CourseID, session.PertemuanKe,
-		mahasiswaID, session.CourseID, session.PertemuanKe).Scan(&alreadyAttended, &existingStatus)
+	`, mahasiswaID, session.ID).Scan(&existingStatus)
 
-	if alreadyAttended {
+	if err == nil {
 		utils.ErrorResponse(c, http.StatusBadRequest,
 			"Anda sudah melakukan absensi untuk pertemuan ke-"+strconv.Itoa(session.PertemuanKe)+
 				" dengan status: "+existingStatus)
+		return
+	}
+	if err != sql.ErrNoRows {
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Gagal memeriksa status absensi")
 		return
 	}
 
@@ -756,7 +732,7 @@ func ScanAttendance(c *gin.Context) {
 		"time":         time.Now().Format("15:04"),
 		"date":         time.Now().Format("2006-01-02"),
 		"status":       "hadir",
-		"session_code": fmt.Sprintf("ABS-%s-P%d", session.CourseID, session.PertemuanKe),
+		"session_code": session.SessionCode,
 	}, "Absensi berhasil! Pertemuan ke-"+strconv.Itoa(session.PertemuanKe)+" - Status: Hadir")
 }
 
@@ -859,7 +835,7 @@ func GetAttendanceHistoryByCourse(c *gin.Context) {
 		FROM mata_kuliah 
 		WHERE kode = $1
 	`, courseID).Scan(&courseName, &hari, &jamMulai, &jamSelesai)
-	
+
 	if err != nil {
 		courseName, hari, jamMulai, jamSelesai = "", "", "", ""
 	}
@@ -886,7 +862,6 @@ func GetAttendanceHistoryByCourse(c *gin.Context) {
 		},
 	}, "Attendance history retrieved successfully")
 }
-
 
 // GetAttendanceHistory - Get riwayat absensi mahasiswa dengan filter opsional
 func GetAttendanceHistory(c *gin.Context) {
@@ -933,7 +908,7 @@ func GetAttendanceHistory(c *gin.Context) {
 	`
 
 	args := []interface{}{mahasiswaID}
-	
+
 	if status != "all" {
 		query += " AND a.status = $2"
 		args = append(args, status)
@@ -987,7 +962,7 @@ func GetAttendanceHistory(c *gin.Context) {
 		FROM attendance a
 		WHERE a.student_id = $1
 	`
-	
+
 	if status != "all" {
 		summaryQuery += " AND a.status = $2"
 		err = config.DB.QueryRow(summaryQuery, mahasiswaID, status).Scan(&totalSessions, &hadirCount, &izinCount, &sakitCount, &alpaCount)
@@ -1003,11 +978,11 @@ func GetAttendanceHistory(c *gin.Context) {
 	utils.SuccessResponse(c, gin.H{
 		"history": history,
 		"summary": gin.H{
-			"total":              totalSessions,
-			"hadir":              hadirCount,
-			"izin":               izinCount,
-			"sakit":              sakitCount,
-			"alpa":               alpaCount,
+			"total": totalSessions,
+			"hadir": hadirCount,
+			"izin":  izinCount,
+			"sakit": sakitCount,
+			"alpa":  alpaCount,
 			"kehadiran_percent": func() float64 {
 				if totalSessions > 0 {
 					return float64(hadirCount) / float64(totalSessions) * 100
@@ -1020,7 +995,6 @@ func GetAttendanceHistory(c *gin.Context) {
 		},
 	}, "Attendance history retrieved successfully")
 }
-
 
 // GetAttendanceSummary - Get summary absensi mahasiswa per course
 func GetAttendanceSummary(c *gin.Context) {
@@ -1061,7 +1035,6 @@ func GetAttendanceSummary(c *gin.Context) {
     GROUP BY mk.kode, mk.nama, d.name
     ORDER BY mk.nama
 `, mahasiswaID, mahasiswaID)
-
 
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to fetch attendance summary")
@@ -1836,14 +1809,14 @@ func GetMahasiswaTranskripNilai(c *gin.Context) {
 	}
 
 	type CourseGrade struct {
-		CourseID   string      `json:"course_id"`
-		CourseName string      `json:"course_name"`
-		SKS        int         `json:"sks"`
-		DosenName  string      `json:"dosen_name"`
-		Grades     []GradeItem `json:"grades"`
-		Average    float64     `json:"average"`
-		TotalGraded int       `json:"total_graded"`
-		LetterGrade string    `json:"letter_grade"`
+		CourseID    string      `json:"course_id"`
+		CourseName  string      `json:"course_name"`
+		SKS         int         `json:"sks"`
+		DosenName   string      `json:"dosen_name"`
+		Grades      []GradeItem `json:"grades"`
+		Average     float64     `json:"average"`
+		TotalGraded int         `json:"total_graded"`
+		LetterGrade string      `json:"letter_grade"`
 	}
 
 	courseMap := make(map[string]*CourseGrade)

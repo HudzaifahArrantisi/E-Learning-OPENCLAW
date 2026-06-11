@@ -20,9 +20,16 @@ export default function DashboardIdleRedirect() {
   useEffect(() => {
     if (!isAuthenticated || !isDashboardPath(location.pathname)) return undefined
 
+    // Refresh activity timestamp on mount if it's missing or expired 
+    // to prevent immediate redirect from stale previous sessions.
+    const lastActivity = Number(localStorage.getItem(LAST_ACTIVITY_KEY))
+    if (!lastActivity || Date.now() - lastActivity >= IDLE_TIMEOUT_MS) {
+      localStorage.setItem(LAST_ACTIVITY_KEY, String(Date.now()))
+    }
+
     const redirectIfIdle = () => {
-      const lastActivity = Number(localStorage.getItem(LAST_ACTIVITY_KEY))
-      if (lastActivity && Date.now() - lastActivity >= IDLE_TIMEOUT_MS) {
+      const currentLastActivity = Number(localStorage.getItem(LAST_ACTIVITY_KEY))
+      if (currentLastActivity && Date.now() - currentLastActivity >= IDLE_TIMEOUT_MS) {
         navigate('/', { replace: true })
         return true
       }

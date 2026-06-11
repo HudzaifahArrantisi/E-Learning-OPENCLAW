@@ -140,7 +140,7 @@ const HubIcons = {
   /* Center: Student Hub logo mark */
   studentHub: () => (
     <img
-      src="/openclaw1.png"
+      src="/claw1.webp"
       alt="OpenClaw Student Hub"
       className="h-full w-full object-contain"
       draggable="false"

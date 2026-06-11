@@ -35,12 +35,10 @@ const getCurrentIndonesianDay = () => {
 const ScanAbsensi = () => {
   const { user } = useAuth()
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [manualInput, setManualInput] = useState({ session_token: '', course_id: '' })
   const [selectedCourse, setSelectedCourse] = useState(null)
   const [showQRScanner, setShowQRScanner] = useState(false)
   const [scanResult, setScanResult] = useState(null)
   const [showHistoryModal, setShowHistoryModal] = useState(false)
-  const [showActionsModal, setShowActionsModal] = useState(false)
   const [selectedDay, setSelectedDay] = useState(getCurrentIndonesianDay())
   const [qrScanner, setQrScanner] = useState(null)
   const videoRef = useRef(null)
@@ -79,7 +77,7 @@ const ScanAbsensi = () => {
           courses: [],
           total_courses: 0
         }
-        })
+      })
     },
     enabled: !!selectedDay,
     refetchInterval: 30000, // Refresh setiap 30 detik
@@ -95,13 +93,12 @@ const ScanAbsensi = () => {
     enabled: !!selectedCourse?.kode && showHistoryModal,
   })
 
-  // Mutation untuk scan QR - DIPERBAIKI
+  // Mutation untuk scan QR
   const scanAttendanceMutation = useMutation({
     mutationFn: (data) => api.scanAttendance(data),
     onSuccess: (response) => {
       const data = response.data.data
       alert(response.data.message || 'Absensi berhasil!')
-      setManualInput({ session_token: '', course_id: '' })
       setSelectedCourse(null)
       setScanResult({
         success: true,
@@ -119,7 +116,6 @@ const ScanAbsensi = () => {
       // Refresh data setelah sukses
       setTimeout(() => {
         refetchCoursesByDay()
-        setShowActionsModal(false)
       }, 1000)
     },
     onError: (error) => {
@@ -133,48 +129,10 @@ const ScanAbsensi = () => {
     }
   })
 
-  const handleScanSubmit = (e) => {
-    e.preventDefault()
-    if (!manualInput.session_token.trim() || !manualInput.course_id) {
-      alert('Masukkan session token dan pilih mata kuliah')
-      return
-    }
-    
-    scanAttendanceMutation.mutate({ 
-      session_token: manualInput.session_token,
-      course_id: manualInput.course_id 
-    })
-  }
+  React.useEffect(() => {
+    let activeScanner = null
 
-  const handleCourseSelect = (course) => {
-    setSelectedCourse(course)
-    setShowActionsModal(true)
-  }
-
-  const handleOpenScanner = () => {
-    if (!selectedCourse) {
-      alert('Pilih mata kuliah terlebih dahulu')
-      return
-    }
-    
-    if (!selectedCourse.can_scan) {
-      if (selectedCourse.status_absen !== 'belum_absen' && selectedCourse.status_absen !== '') {
-        alert(`Anda sudah absen untuk ${selectedCourse.nama} pada pukul ${selectedCourse.waktu_absen}`)
-      } else {
-        alert(`Belum waktunya absen untuk ${selectedCourse.nama}. Waktu: ${selectedCourse.jam_mulai} - ${selectedCourse.jam_selesai}`)
-      }
-      return
-    }
-    
-    setShowQRScanner(true)
-    startScanning()
-    setShowActionsModal(false)
-  }
-
-  const startScanning = async () => {
-    try {
-      if (!videoRef.current) return
-      
+    if (showQRScanner && videoRef.current) {
       const scanner = new QrScanner(
         videoRef.current,
         result => handleScanResult(result),
@@ -184,23 +142,31 @@ const ScanAbsensi = () => {
           highlightCodeOutline: true,
         }
       )
-      
-      await scanner.start()
-      setQrScanner(scanner)
-      setIsScanning(true)
-    } catch (error) {
-      console.error('Error starting scanner:', error)
-      alert('Tidak dapat mengakses kamera. Pastikan izin kamera diberikan.')
+
+      scanner.start()
+        .then(() => {
+          setQrScanner(scanner)
+          setIsScanning(true)
+        })
+        .catch(err => {
+          console.error('Error starting scanner:', err)
+          alert('Tidak dapat mengakses kamera. Pastikan izin kamera diberikan.')
+        })
+
+      activeScanner = scanner
     }
-  }
+
+    return () => {
+      if (activeScanner) {
+        activeScanner.stop()
+        activeScanner.destroy()
+      }
+      setQrScanner(null)
+      setIsScanning(false)
+    }
+  }, [showQRScanner])
 
   const stopScanning = () => {
-    if (qrScanner) {
-      qrScanner.stop()
-      qrScanner.destroy()
-      setQrScanner(null)
-    }
-    setIsScanning(false)
     setShowQRScanner(false)
   }
 
@@ -279,47 +245,20 @@ const ScanAbsensi = () => {
     })
   }
 
-  const handleManualToken = (token) => {
-    if (!selectedCourse) {
-      alert('Pilih mata kuliah terlebih dahulu')
-      return
-    }
-
-    const normalizedToken = token?.trim()
-    if (!normalizedToken) {
-      alert('Masukkan token QR Code')
-      return
-    }
-
-    if (isProcessingScanRef.current || scanAttendanceMutation.isPending) {
-      return
-    }
-
-    isProcessingScanRef.current = true
-    scanAttendanceMutation.mutate({ 
-      session_token: normalizedToken,
-      course_id: selectedCourse.kode 
-    }, {
-      onSettled: () => {
-        isProcessingScanRef.current = false
-      }
-    })
-  }
-
   // Render status badge
   const renderStatusBadge = (status) => {
     const statusConfig = {
-      'hadir': { color: 'bg-green-100 text-green-800', label: 'Hadir', icon: '✓' },
-      'izin': { color: 'bg-yellow-100 text-yellow-800', label: 'Izin', icon: 'i' },
-      'sakit': { color: 'bg-blue-100 text-blue-800', label: 'Sakit', icon: '⚕' },
-      'alpa': { color: 'bg-red-100 text-red-800', label: 'Alpa', icon: '✗' },
-      'belum_absen': { color: 'bg-gray-100 text-lp-text font-semibold tracking-tight', label: 'Belum Absen', icon: '...' }
+      'hadir': { color: 'bg-green-100 text-green-800 border border-green-200/50', label: 'Hadir', icon: '✓' },
+      'izin': { color: 'bg-yellow-100 text-yellow-800 border border-yellow-200/50', label: 'Izin', icon: 'i' },
+      'sakit': { color: 'bg-blue-100 text-blue-800 border border-blue-200/50', label: 'Sakit', icon: '⚕' },
+      'alpa': { color: 'bg-red-100 text-red-800 border border-red-200/50', label: 'Alpa', icon: '✗' },
+      'belum_absen': { color: 'bg-slate-100 text-slate-700 border border-slate-200/50 font-semibold tracking-tight', label: 'Belum Absen', icon: '...' }
     }
     
     const config = statusConfig[status] || statusConfig['belum_absen']
     return (
-      <span className={`px-3 py-1 rounded-full text-xs font-medium ${config.color} flex items-center gap-1`}>
-        <span>{config.icon}</span>
+      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${config.color} flex items-center gap-1.5`}>
+        <span className="text-[10px]">{config.icon}</span>
         <span>{config.label}</span>
       </span>
     )
@@ -337,11 +276,26 @@ const ScanAbsensi = () => {
     const sixtyAfter = new Date(endTime.getTime() + 60 * 60000)
     
     if (now < fifteenBefore) {
-      return <span className="text-xs text-lp-text3 font-light flex items-center gap-1"><FaClock /> Buka 15 menit sebelum kelas</span>
+      return (
+        <span className="inline-flex items-center gap-1.5 text-xs text-lp-text3 font-medium bg-slate-50 border border-slate-200/50 px-2.5 py-1 rounded-lg">
+          <FaClock className="text-lp-text3 shrink-0" />
+          <span>Buka 15m sebelum kelas</span>
+        </span>
+      )
     } else if (now > sixtyAfter) {
-      return <span className="text-xs text-red-500 flex items-center gap-1"><FaStopCircle /> Waktu absen habis</span>
+      return (
+        <span className="inline-flex items-center gap-1.5 text-xs text-red-600 font-medium bg-red-50 border border-red-100 px-2.5 py-1 rounded-lg">
+          <FaStopCircle className="text-red-500 shrink-0" />
+          <span>Waktu absen habis</span>
+        </span>
+      )
     } else if (course.can_scan) {
-      return <span className="text-xs text-lp-green flex items-center gap-1"><FaCheckCircle /> Bisa absen sekarang</span>
+      return (
+        <span className="inline-flex items-center gap-1.5 text-xs text-green-700 font-semibold bg-green-50 border border-green-200/50 px-2.5 py-1 rounded-lg animate-pulse">
+          <FaCheckCircle className="text-green-500 shrink-0" />
+          <span>Bisa absen sekarang</span>
+        </span>
+      )
     }
     return null
   }
@@ -355,75 +309,112 @@ const ScanAbsensi = () => {
         
         <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
           <div className="max-w-7xl mx-auto">
+            {/* Header Section */}
             <div className="mb-8">
-              <h1 className="text-2xl md:text-3xl font-bold text-lp-text font-semibold tracking-tight mb-2">Scan Absensi</h1>
-              <p className="text-lp-text2 font-light">Lakukan absensi sesuai jadwal kuliah Anda</p>
+              <h1 className="text-2xl md:text-3xl font-bold text-lp-text tracking-tight mb-2">Scan Absensi</h1>
+              <p className="text-lp-text2 font-light text-sm md:text-base">Lakukan absensi perkuliahan secara cepat dan efisien</p>
+            </div>
+
+            {/* Quick Scan Card */}
+            <div className="bg-gradient-to-br from-lp-accent to-indigo-600 shadow-[0_12px_30px_rgba(75,115,255,0.15)] hover:shadow-[0_16px_40px_rgba(75,115,255,0.25)] transition-all duration-300 rounded-3xl p-6 md:p-8 text-white mb-8 flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
+              <div className="relative z-10 space-y-1">
+                <h2 className="text-xl md:text-2xl font-bold">Presensi Cepat via QR</h2>
+                <p className="text-white/80 font-light text-xs md:text-sm max-w-xl">
+                  Dosen sudah menampilkan QR Code absensi? Klik tombol ini untuk langsung memindai QR Code kelas Anda secara instan tanpa memilih mata kuliah terlebih dahulu.
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setSelectedCourse(null) // Reset selection to allow auto-detect from QR
+                  setShowQRScanner(true)
+                }}
+                className="bg-white text-lp-atext hover:bg-slate-50 font-bold px-6 py-3.5 rounded-2xl transition-all duration-300 shadow-lg hover:scale-[1.02] flex items-center gap-2.5 border-none cursor-pointer select-none shrink-0 w-full md:w-auto justify-center"
+              >
+                <FaCamera className="text-base" />
+                <span>Mulai Scan QR</span>
+              </button>
             </div>
 
             {/* Filter Hari */}
-            <div className="bg-lp-surface rounded-2xl p-4 mb-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border border border-lp-border border">
-              <div className="flex items-center gap-2 mb-4">
-                <FaFilter className="text-lp-atext" />
-                <h3 className="text-lg font-semibold text-lp-text font-semibold tracking-tight">Filter Hari</h3>
+            <div className="bg-white border border-slate-100 rounded-3xl p-5 md:p-6 mb-8 shadow-[0_4px_24px_rgba(0,0,0,0.02)]">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-8 h-8 rounded-lg bg-lp-accentS flex items-center justify-center">
+                  <FaFilter className="text-lp-atext text-sm" />
+                </div>
+                <h3 className="text-base md:text-lg font-bold text-lp-text tracking-tight">Filter Hari</h3>
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex overflow-x-auto gap-2 pb-2 -mx-5 px-5 md:mx-0 md:px-0 md:pb-0 scrollbar-hide md:flex-wrap">
                 {days.map((day) => (
                   <button
                     key={day}
                     onClick={() => setSelectedDay(day)}
-                    className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                    className={`px-5 py-2.5 rounded-xl text-xs md:text-sm font-semibold transition-all duration-200 whitespace-nowrap cursor-pointer border select-none ${
                       selectedDay === day 
-                        ? 'bg-lp-accent text-white shadow-sm border border-lp-border' 
-                        : 'bg-gray-100 text-lp-text2 hover:bg-gray-200'
+                        ? 'bg-lp-accent text-white border-lp-accent shadow-md shadow-lp-accent/20' 
+                        : 'bg-slate-50 text-lp-text2 hover:bg-slate-100 border-slate-200/60'
                     }`}
                   >
                     {day}
                   </button>
                 ))}
               </div>
-              <p className="text-sm text-lp-text3 font-light mt-3">
-                Menampilkan mata kuliah untuk hari: <span className="font-semibold">{selectedDay}</span>
+              <p className="text-xs text-lp-text3 font-medium mt-3">
+                Menampilkan mata kuliah untuk hari: <span className="text-lp-atext font-semibold">{selectedDay}</span>
               </p>
             </div>
 
-            {/* Scan Result */}
+            {/* Scan Result Notification */}
             {scanResult && (
-              <div className={`mb-6 p-4 rounded-xl ${scanResult.success ? 'bg-green-100 border border-green-200' : 'bg-red-100 border border-red-200'}`}>
-                <div className="flex items-center">
+              <div className={`mb-8 p-5 rounded-2xl border ${
+                scanResult.success 
+                  ? 'bg-green-50 border-green-200/60 text-green-900' 
+                  : 'bg-red-50 border-red-200/60 text-red-900'
+              } flex items-start gap-4 animate-fadeIn`}>
+                <div className="mt-0.5">
                   {scanResult.success ? (
-                    <FaCheckCircle className="text-lp-green text-xl mr-3" />
+                    <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
+                      <FaCheckCircle className="text-green-600 text-lg" />
+                    </div>
                   ) : (
-                    <FaTimesCircle className="text-red-600 text-xl mr-3" />
+                    <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center">
+                      <FaTimesCircle className="text-red-600 text-lg" />
+                    </div>
                   )}
-                  <div>
-                    <p className={`font-medium ${scanResult.success ? 'text-green-800' : 'text-red-800'}`}>
-                      {scanResult.success ? 'Absensi Berhasil!' : 'Absensi Gagal'}
-                    </p>
-                    {scanResult.success && (
-                      <div className="text-sm text-green-700">
-                        <p><strong>{scanResult.course}</strong> - {scanResult.dosen}</p>
-                        <p>Pertemuan ke-{scanResult.pertemuan_ke} • Status: {scanResult.status}</p>
-                        <p>Waktu: {scanResult.time} • Tanggal: {scanResult.date}</p>
-                      </div>
-                    )}
-                    {!scanResult.success && (
-                      <p className="text-sm text-red-700">{scanResult.message}</p>
-                    )}
-                  </div>
                 </div>
+                <div className="flex-1 space-y-1">
+                  <h4 className="font-bold text-sm md:text-base">
+                    {scanResult.success ? 'Absensi Berhasil Tercatat' : 'Absensi Gagal'}
+                  </h4>
+                  {scanResult.success ? (
+                    <div className="text-xs md:text-sm text-green-800 space-y-0.5 font-light">
+                      <p className="font-semibold text-green-950">{scanResult.course}</p>
+                      <p>Dosen: {scanResult.dosen}</p>
+                      <p>Pertemuan ke-{scanResult.pertemuan_ke} • Status Kehadiran: <span className="font-semibold capitalize">{scanResult.status}</span></p>
+                      <p className="text-[10px] text-green-600 mt-1">Dicatat pada pukul {scanResult.time} • {scanResult.date}</p>
+                    </div>
+                  ) : (
+                    <p className="text-xs md:text-sm text-red-800 font-light">{scanResult.message}</p>
+                  )}
+                </div>
+                <button 
+                  onClick={() => setScanResult(null)}
+                  className="text-slate-400 hover:text-slate-600 bg-transparent border-none cursor-pointer text-sm font-semibold"
+                >
+                  ✕
+                </button>
               </div>
             )}
 
-            {/* Mata Kuliah List */}
-            <div className="bg-lp-surface rounded-2xl p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border border border-lp-border border mb-8">
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
-                    <FaCalendarWeek className="text-lp-atext text-lg" />
+            {/* Mata Kuliah List Container */}
+            <div className="bg-white border border-slate-100 rounded-3xl p-6 md:p-8 mb-8 shadow-[0_4px_24px_rgba(0,0,0,0.02)]">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                <div className="flex items-center space-x-4">
+                  <div className="w-12 h-12 bg-lp-accentS rounded-2xl flex items-center justify-center">
+                    <FaCalendarWeek className="text-lp-atext text-xl" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-lp-text font-semibold tracking-tight">Mata Kuliah {selectedDay}</h3>
-                    <p className="text-sm text-lp-text2 font-light">
+                    <h3 className="text-lg md:text-xl font-bold text-lp-text tracking-tight">Daftar Jadwal Kuliah</h3>
+                    <p className="text-xs md:text-sm text-lp-text3 font-medium">
                       {coursesByDay?.hari || selectedDay}, {coursesByDay?.date ? 
                         new Date(coursesByDay.date).toLocaleDateString('id-ID', { 
                           day: 'numeric', 
@@ -439,296 +430,173 @@ const ScanAbsensi = () => {
                 </div>
                 <button
                   onClick={() => refetchCoursesByDay()}
-                  className="text-lp-atext hover:text-blue-800 p-2 rounded-lg hover:bg-blue-50"
+                  className="self-end sm:self-center text-lp-atext hover:text-blue-800 p-2.5 rounded-xl bg-lp-accentS hover:bg-blue-100/70 border-none transition-all flex items-center gap-1.5 cursor-pointer text-xs md:text-sm font-semibold"
                 >
-                  <FaClock className="text-lg" />
+                  <FaClock className="text-xs md:text-sm shrink-0" />
+                  <span>Perbarui Jadwal</span>
                 </button>
               </div>
 
               {loadingCoursesByDay ? (
-                <div className="text-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                  <p className="mt-2 text-lp-text2 font-light">Memuat jadwal...</p>
+                <div className="text-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-lp-accent mx-auto"></div>
+                  <p className="mt-3 text-xs md:text-sm text-lp-text2 font-light">Memuat jadwal kuliah...</p>
                 </div>
               ) : coursesByDay?.courses && coursesByDay.courses.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                   {coursesByDay.courses.map((course, index) => (
-                    <div key={index} className={`border border-lp-border border rounded-xl p-4 hover:shadow-sm border border-lp-border transition-shadow ${
-                      selectedCourse?.kode === course.kode ? 'ring-2 ring-blue-500 bg-blue-50' : ''
-                    }`}>
-                      <div className="flex justify-between items-start mb-3">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h4 className="font-bold text-lp-text font-semibold tracking-tight">{course.nama}</h4>
-                            {course.active_session && (
-                              <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
-                                Sesi Aktif
+                    <div 
+                      key={index} 
+                      className={`bg-white rounded-2xl p-5 border transition-all duration-300 flex flex-col justify-between h-full ${
+                        course.active_session 
+                          ? 'border-blue-200 shadow-[0_8px_30px_rgba(75,115,255,0.06)] hover:shadow-[0_12px_40px_rgba(75,115,255,0.12)]' 
+                          : 'border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)] hover:shadow-[0_12px_30px_rgba(0,0,0,0.06)] hover:-translate-y-0.5'
+                      }`}
+                    >
+                      <div>
+                        {/* Card Header: SKS & Status Badge */}
+                        <div className="flex justify-between items-start mb-3 gap-2">
+                          <span className="bg-slate-100 text-lp-text2 text-xs font-semibold px-2.5 py-1 rounded-lg">
+                            {course.sks} SKS
+                          </span>
+                          <div className="flex flex-col items-end gap-1">
+                            {renderStatusBadge(course.status_absen)}
+                            {course.waktu_absen && (
+                              <span className="text-[10px] text-lp-text3 font-medium">
+                                Absen: {course.waktu_absen}
                               </span>
                             )}
                           </div>
-                          <p className="text-sm text-lp-text2 font-light">{course.dosen} • {course.sks} SKS</p>
-                          <div className="flex items-center mt-2 text-sm text-lp-text3 font-light">
-                            <FaClock className="mr-2" />
+                        </div>
+
+                        {/* Course Title & Lecturer */}
+                        <h4 className="font-bold text-base md:text-lg text-lp-text tracking-tight leading-snug mb-1">
+                          {course.nama}
+                        </h4>
+                        <p className="text-xs md:text-sm text-lp-text2 font-light flex items-center gap-1.5 mb-3">
+                          <FaUserGraduate className="text-lp-accent/70 shrink-0" />
+                          <span className="truncate">{course.dosen}</span>
+                        </p>
+
+                        {/* Time info and state */}
+                        <div className="bg-lp-surface/50 border border-slate-100/80 rounded-xl p-3 mb-4 space-y-1.5">
+                          <div className="flex items-center text-xs text-lp-text2 font-medium">
+                            <FaClock className="mr-2 text-lp-text3 shrink-0" />
                             <span>{course.jam_mulai} - {course.jam_selesai}</span>
                           </div>
-                          <div className="mt-2">
+                          <div className="flex items-center">
                             {renderTimeStatus(course)}
                           </div>
                         </div>
-                        <div className="ml-4 flex flex-col items-end">
-                          {renderStatusBadge(course.status_absen)}
-                          {course.waktu_absen && (
-                            <p className="text-xs text-lp-text3 font-light mt-1">
-                              {course.waktu_absen}
-                            </p>
-                          )}
-                        </div>
                       </div>
-                      
-                      {/* Tombol Pilih */}
-                      <button
-                        onClick={() => handleCourseSelect(course)}
-                        className={`w-full py-2 px-4 rounded-lg font-medium transition-colors ${
-                          selectedCourse?.kode === course.kode 
-                            ? 'bg-lp-accent text-white' 
-                            : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
-                        }`}
-                      >
-                        {selectedCourse?.kode === course.kode ? '✓ Terpilih' : 'Pilih Mata Kuliah'}
-                      </button>
+
+                      {/* Action Buttons directly on Card */}
+                      <div className="flex items-center gap-2 mt-auto pt-3 border-t border-slate-100">
+                        {course.can_scan ? (
+                          <button
+                            onClick={() => {
+                              setSelectedCourse(course)
+                              setShowQRScanner(true)
+                            }}
+                            className="flex-1 bg-lp-accent hover:bg-lp-atext text-white text-xs md:text-sm font-semibold py-2.5 px-3 rounded-xl shadow-md shadow-lp-accent/10 transition-all flex items-center justify-center gap-2 border-none cursor-pointer"
+                          >
+                            <FaCamera className="text-xs" />
+                            <span>Scan QR</span>
+                          </button>
+                        ) : (
+                          <button
+                            disabled
+                            className="flex-1 bg-slate-100 text-lp-text3 text-xs md:text-sm font-medium py-2.5 px-3 rounded-xl border-none cursor-not-allowed flex items-center justify-center gap-1"
+                          >
+                            {course.status_absen !== 'belum_absen' && course.status_absen !== '' ? (
+                              <>
+                                <FaCheckCircle className="text-lp-green text-xs" />
+                                <span>Sudah Absen</span>
+                              </>
+                            ) : (
+                              <span>Belum Mulai</span>
+                            )}
+                          </button>
+                        )}
+                        
+                        <button
+                          onClick={() => {
+                            setSelectedCourse(course)
+                            setShowHistoryModal(true)
+                          }}
+                          title="Riwayat Absen"
+                          className="bg-lp-accentS hover:bg-lp-accent hover:text-white text-lp-atext p-2.5 rounded-xl transition-all border-none cursor-pointer flex items-center justify-center"
+                        >
+                          <FaHistory className="text-sm" />
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-8">
-                  <div className="text-4xl text-gray-300 mb-4">📚</div>
-                  <h4 className="font-bold text-lp-text2 mb-2">Tidak ada mata kuliah {selectedDay}</h4>
-                  <p className="text-lp-text3 font-light">Pilih hari lain untuk melihat jadwal kuliah</p>
+                <div className="text-center py-12">
+                  <div className="text-4xl text-slate-300 mb-3">📚</div>
+                  <h4 className="font-bold text-base text-lp-text2 mb-1">Tidak Ada Mata Kuliah Hari Ini</h4>
+                  <p className="text-xs text-lp-text3 font-light">Pilih filter hari lain untuk melihat jadwal kuliah yang tersedia.</p>
                 </div>
               )}
-            </div>
-
-            {/* Manual Input Section */}
-            <div className="bg-lp-surface rounded-2xl p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border border border-lp-border border">
-              <div className="flex items-center space-x-3 mb-6">
-                <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
-                  <FaQrcode className="text-lp-green text-lg" />
-                </div>
-                <h3 className="text-xl font-bold text-lp-text font-semibold tracking-tight">Input Manual Token</h3>
-              </div>
-
-              <form onSubmit={handleScanSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-lp-text2 mb-2">
-                      Mata Kuliah
-                    </label>
-                    <select
-                      value={manualInput.course_id}
-                      onChange={(e) => setManualInput({...manualInput, course_id: e.target.value})}
-                      className="w-full px-4 py-3 border border-lp-border border rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-300 bg-lp-bg focus:bg-lp-surface"
-                      required
-                      disabled={scanAttendanceMutation.isPending}
-                    >
-                      <option value="">Pilih Mata Kuliah</option>
-                      {coursesByDay?.courses?.map((course) => (
-                        <option key={course.kode} value={course.kode}>
-                          {course.nama} ({course.jam_mulai}-{course.jam_selesai})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-lp-text2 mb-2">
-                      Token dari QR Code
-                    </label>
-                    <input
-                      type="text"
-                      value={manualInput.session_token}
-                      onChange={(e) => setManualInput({...manualInput, session_token: e.target.value})}
-                      className="w-full px-4 py-3 border border-lp-border border rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-300 bg-lp-bg focus:bg-lp-surface"
-                      placeholder="Masukkan token dari QR code dosen"
-                      required
-                      disabled={scanAttendanceMutation.isPending}
-                    />
-                  </div>
-                </div>
-                
-                <button
-                  type="submit"
-                  disabled={scanAttendanceMutation.isPending || !manualInput.course_id}
-                  className="w-full bg-lp-accent text-white border-none py-3 px-6 rounded-xl font-semibold hover:from-green-600 hover:to-green-700 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none transition-all duration-300 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border hover:shadow-xl flex items-center justify-center space-x-2"
-                >
-                  {scanAttendanceMutation.isPending ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      <span>Memproses...</span>
-                    </>
-                  ) : (
-                    <>
-                      <FaQrcode />
-                      <span>Absen dengan Token Manual</span>
-                    </>
-                  )}
-                </button>
-              </form>
-              
-              <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-                <p className="text-sm text-blue-800">
-                  <strong>Info:</strong> Token QR Code didapatkan dari QR Code yang ditampilkan dosen di kelas. 
-                  Pastikan mata kuliah yang dipilih sesuai dengan QR Code.
-                </p>
-              </div>
             </div>
           </div>
         </main>
       </div>
 
-      {/* Modal Actions untuk Mata Kuliah Terpilih */}
-      {showActionsModal && selectedCourse && (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-[90] p-4">
-          <div className="bg-lp-surface rounded-2xl p-6 max-w-md w-full">
-            <div className="flex justify-between items-center mb-6">
-              <div>
-                <h3 className="text-xl font-bold text-lp-text font-semibold tracking-tight">Aksi untuk Mata Kuliah</h3>
-                <p className="text-sm text-lp-text2 font-light">
-                  {selectedCourse.nama} ({selectedCourse.dosen})
-                </p>
-              </div>
-              <button
-                onClick={() => {
-                  setShowActionsModal(false)
-                  setSelectedCourse(null)
-                }}
-                className="text-lp-text3 font-light hover:text-lp-text2 text-2xl"
-              >
-                ✕
-              </button>
-            </div>
-            
-            <div className="space-y-3">
-              <button
-                onClick={handleOpenScanner}
-                disabled={!selectedCourse.can_scan || isScanning}
-                className={`w-full py-3 px-6 rounded-xl font-semibold transition-all flex items-center justify-center gap-3 ${
-                  selectedCourse.can_scan && !isScanning
-                    ? 'bg-lp-accent text-white border-none hover:from-green-600 hover:to-green-700'
-                    : 'bg-gray-300 text-lp-text2 font-light cursor-not-allowed'
-                }`}
-              >
-                {isScanning ? (
-                  <>
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                    <span>Sedang Scan...</span>
-                  </>
-                ) : (
-                  <>
-                    <FaCamera />
-                    <span>Scan QR Absen</span>
-                  </>
-                )}
-              </button>
-              
-              <button
-                onClick={() => {
-                  setShowHistoryModal(true)
-                  setShowActionsModal(false)
-                }}
-                className="w-full bg-lp-accent text-white border-none py-3 px-6 rounded-xl font-semibold hover:from-blue-600 hover:to-blue-700 transition-all flex items-center justify-center gap-3"
-              >
-                <FaHistory />
-                <span>Lihat Riwayat Absen</span>
-              </button>
-              
-              <button
-                onClick={() => {
-                  setShowActionsModal(false)
-                  setSelectedCourse(null)
-                }}
-                className="w-full bg-gray-100 text-lp-text2 py-3 px-6 rounded-xl font-semibold hover:bg-gray-200 transition-all flex items-center justify-center gap-3"
-              >
-                <FaTimesCircle />
-                <span>Batal</span>
-              </button>
-            </div>
-            
-            <div className="mt-6 pt-4 border-t border-lp-border border">
-              <p className="text-sm text-lp-text2 font-light">
-                <strong>Status:</strong> {renderStatusBadge(selectedCourse.status_absen)}
-              </p>
-              {selectedCourse.waktu_absen && (
-                <p className="text-sm text-lp-text2 font-light mt-1">
-                  <strong>Waktu Absen:</strong> {selectedCourse.waktu_absen}
-                </p>
-              )}
-              <p className="text-sm text-lp-text2 font-light mt-1">
-                <strong>Waktu Kelas:</strong> {selectedCourse.jam_mulai} - {selectedCourse.jam_selesai}
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* QR Scanner Modal */}
       {showQRScanner && (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-[90] p-4">
-          <div className="bg-lp-surface rounded-2xl p-6 max-w-2xl w-full">
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center z-[90] p-4 animate-fadeIn">
+          <div className="bg-white rounded-3xl p-6 md:p-8 max-w-md w-full shadow-2xl relative overflow-hidden border border-slate-100 animate-scaleIn">
             <div className="flex justify-between items-center mb-6">
               <div>
-                <h3 className="text-xl font-bold text-lp-text font-semibold tracking-tight">Scan QR Code</h3>
-                <p className="text-sm text-lp-text2 font-light">
-                  Mata Kuliah: {selectedCourse?.nama} ({selectedCourse?.jam_mulai}-{selectedCourse?.jam_selesai})
+                <h3 className="text-lg md:text-xl font-bold text-lp-text tracking-tight">Pindai QR Code</h3>
+                <p className="text-xs text-lp-text2 font-light mt-0.5">
+                  {selectedCourse ? `${selectedCourse.nama}` : 'Pindai Cepat (Deteksi Otomatis)'}
                 </p>
               </div>
               <button
                 onClick={stopScanning}
-                className="text-lp-text3 font-light hover:text-lp-text2 text-2xl"
+                className="text-lp-text3 hover:text-lp-text bg-slate-100 hover:bg-slate-200 w-8 h-8 rounded-full flex items-center justify-center transition-all border-none cursor-pointer"
               >
                 ✕
               </button>
             </div>
             
-            <div className="relative mb-6">
-              <div className="aspect-video bg-black rounded-xl overflow-hidden">
-                <video 
-                  ref={videoRef} 
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className="absolute inset-0 border-2 border-green-500 rounded-xl pointer-events-none">
-                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 border-2 border-white rounded-lg"></div>
+            <div className="relative aspect-square bg-slate-950 rounded-2xl overflow-hidden mb-6 shadow-inner border border-slate-800">
+              <video 
+                ref={videoRef} 
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div className="w-56 h-56 border-2 border-dashed border-white/40 rounded-2xl relative flex items-center justify-center">
+                  {/* Scanner line animation */}
+                  <div className="absolute left-0 right-0 h-0.5 bg-lp-green/70 shadow-[0_0_10px_rgba(22,163,74,0.8)] animate-pulse" style={{ top: '50%' }}></div>
+                  <div className="absolute -top-1 -left-1 w-6 h-6 border-t-4 border-l-4 border-lp-accent rounded-tl-lg"></div>
+                  <div className="absolute -top-1 -right-1 w-6 h-6 border-t-4 border-r-4 border-lp-accent rounded-tr-lg"></div>
+                  <div className="absolute -bottom-1 -left-1 w-6 h-6 border-b-4 border-l-4 border-lp-accent rounded-bl-lg"></div>
+                  <div className="absolute -bottom-1 -right-1 w-6 h-6 border-b-4 border-r-4 border-lp-accent rounded-br-lg"></div>
+                </div>
               </div>
             </div>
             
             <div className="text-center space-y-4">
-              <p className="text-sm text-lp-text2 font-light">
-                Arahkan kamera ke QR Code dosen. Scanner akan otomatis mendeteksi.
+              <p className="text-xs text-lp-text2 font-light">
+                Arahkan kamera ke QR Code absensi yang ditampilkan oleh Dosen Anda di depan kelas.
               </p>
               
-              <div className="flex gap-3 justify-center">
-                <button
-                  onClick={() => {
-                    const token = prompt("Masukkan token QR Code secara manual:")
-                    if (token) handleManualToken(token)
-                  }}
-                  className="px-6 py-3 border-2 border-blue-600 text-lp-atext rounded-lg font-semibold hover:bg-blue-50 transition-colors"
-                >
-                  Input Manual
-                </button>
-                
-                <button
-                  onClick={stopScanning}
-                  className="px-6 py-3 bg-red-500 text-white rounded-lg font-semibold hover:bg-red-600 transition-colors flex items-center gap-2"
-                >
-                  <FaStopCircle />
-                  Stop Scan
-                </button>
-              </div>
+              <button
+                onClick={stopScanning}
+                className="w-full py-3 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl font-bold transition-all flex items-center justify-center gap-2 border-none cursor-pointer text-xs md:text-sm"
+              >
+                <FaStopCircle />
+                <span>Hentikan Pemindaian</span>
+              </button>
               
-              <div className="flex items-center justify-center gap-2 text-sm text-lp-text3 font-light">
-                <div className={`w-3 h-3 rounded-full ${isScanning ? 'bg-lp-green animate-pulse' : 'bg-red-500'}`}></div>
-                <span>{isScanning ? 'Scanning aktif' : 'Scanning berhenti'}</span>
+              <div className="flex items-center justify-center gap-2 text-xs text-lp-text3 font-medium">
+                <div className={`w-2 h-2 rounded-full ${isScanning ? 'bg-lp-green animate-pulse' : 'bg-red-500'}`}></div>
+                <span>{isScanning ? 'Kamera Aktif & Memindai' : 'Kamera Nonaktif'}</span>
               </div>
             </div>
           </div>
@@ -737,68 +605,69 @@ const ScanAbsensi = () => {
 
       {/* History Modal */}
       {showHistoryModal && selectedCourse && (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-[90] p-4">
-          <div className="bg-lp-surface rounded-2xl p-6 max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-            <div className="flex justify-between items-center mb-6">
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center z-[90] p-4 animate-fadeIn">
+          <div className="bg-white rounded-3xl p-6 md:p-8 max-w-2xl w-full max-h-[85vh] shadow-2xl relative overflow-hidden border border-slate-100 flex flex-col animate-scaleIn">
+            <div className="flex justify-between items-start mb-6">
               <div>
-                <h3 className="text-xl font-bold text-lp-text font-semibold tracking-tight">Riwayat Absensi</h3>
-                <p className="text-sm text-lp-text2 font-light">
+                <h3 className="text-lg md:text-xl font-bold text-lp-text tracking-tight">Riwayat Absensi</h3>
+                <p className="text-xs md:text-sm text-lp-text2 font-light mt-0.5">
                   {selectedCourse.nama} • {selectedCourse.dosen}
                 </p>
               </div>
               <button
                 onClick={() => setShowHistoryModal(false)}
-                className="text-lp-text3 font-light hover:text-lp-text2 text-2xl"
+                className="text-lp-text3 hover:text-lp-text bg-slate-100 hover:bg-slate-200 w-8 h-8 rounded-full flex items-center justify-center transition-all border-none cursor-pointer"
               >
                 ✕
               </button>
             </div>
             
-            <div className="flex-1 overflow-y-auto pr-2">
+            <div className="flex-1 overflow-y-auto pr-1 custom-scrollbar">
               {loadingHistory ? (
-                <div className="text-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                  <p className="mt-2 text-lp-text2 font-light">Memuat riwayat...</p>
+                <div className="text-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-lp-accent mx-auto"></div>
+                  <p className="mt-3 text-xs md:text-sm text-lp-text2 font-light">Memuat riwayat kehadiran...</p>
                 </div>
               ) : courseHistory ? (
-                <>
+                <div className="space-y-6">
                   {/* Summary */}
                   {courseHistory.summary && (
-                    <div className="mb-6 p-4 bg-blue-50 rounded-xl">
-                      <h4 className="font-bold text-blue-800 mb-3">Statistik Kehadiran</h4>
-                      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                        <div className="text-center p-3 bg-green-100 rounded-lg">
-                          <p className="text-2xl font-bold text-green-800">{courseHistory.summary.hadir || 0}</p>
-                          <p className="text-sm text-lp-green">Hadir</p>
+                    <div className="p-5 bg-lp-accentS border border-lp-accent/10 rounded-2xl">
+                      <h4 className="font-bold text-lp-atext text-xs md:text-sm mb-3">Ringkasan Kehadiran</h4>
+                      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                        <div className="text-center p-3 bg-white rounded-xl border border-slate-100">
+                          <p className="text-xl font-bold text-lp-green">{courseHistory.summary.hadir || 0}</p>
+                          <p className="text-[10px] text-lp-green font-medium uppercase mt-0.5">Hadir</p>
                         </div>
-                        <div className="text-center p-3 bg-yellow-100 rounded-lg">
-                          <p className="text-2xl font-bold text-yellow-800">{courseHistory.summary.izin || 0}</p>
-                          <p className="text-sm text-yellow-600">Izin</p>
+                        <div className="text-center p-3 bg-white rounded-xl border border-slate-100">
+                          <p className="text-xl font-bold text-lp-amber">{courseHistory.summary.izin || 0}</p>
+                          <p className="text-[10px] text-lp-amber font-medium uppercase mt-0.5">Izin</p>
                         </div>
-                        <div className="text-center p-3 bg-blue-100 rounded-lg">
-                          <p className="text-2xl font-bold text-blue-800">{courseHistory.summary.sakit || 0}</p>
-                          <p className="text-sm text-lp-atext">Sakit</p>
+                        <div className="text-center p-3 bg-white rounded-xl border border-slate-100">
+                          <p className="text-xl font-bold text-lp-accent">{courseHistory.summary.sakit || 0}</p>
+                          <p className="text-[10px] text-lp-atext font-medium uppercase mt-0.5">Sakit</p>
                         </div>
-                        <div className="text-center p-3 bg-red-100 rounded-lg">
-                          <p className="text-2xl font-bold text-red-800">{courseHistory.summary.alpa || 0}</p>
-                          <p className="text-sm text-red-600">Alpa</p>
+                        <div className="text-center p-3 bg-white rounded-xl border border-slate-100">
+                          <p className="text-xl font-bold text-lp-red">{courseHistory.summary.alpa || 0}</p>
+                          <p className="text-[10px] text-lp-red font-medium uppercase mt-0.5">Alpa</p>
                         </div>
-                        <div className="text-center p-3 bg-purple-100 rounded-lg">
-                          <p className="text-2xl font-bold text-purple-800">{courseHistory.summary.total || 0}</p>
-                          <p className="text-sm text-purple-600">Total</p>
+                        <div className="text-center p-3 bg-white rounded-xl border border-slate-100 col-span-2 sm:col-span-1">
+                          <p className="text-xl font-bold text-lp-text">{courseHistory.summary.total || 0}</p>
+                          <p className="text-[10px] text-lp-text3 font-medium uppercase mt-0.5">Total Sesi</p>
                         </div>
                       </div>
                       {courseHistory.summary.total > 0 && (
-                        <div className="mt-3">
-                          <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div className="mt-4">
+                          <div className="flex justify-between items-center text-xs text-lp-text2 font-semibold mb-1">
+                            <span>Persentase Kehadiran</span>
+                            <span className="text-lp-atext">{courseHistory.summary.kehadiran_percent?.toFixed(1) || 0}%</span>
+                          </div>
+                          <div className="w-full bg-slate-200/60 rounded-full h-2">
                             <div 
-                              className="bg-lp-green h-2 rounded-full" 
+                              className="bg-lp-accent h-2 rounded-full transition-all duration-500" 
                               style={{ width: `${courseHistory.summary.kehadiran_percent || 0}%` }}
                             ></div>
                           </div>
-                          <p className="text-xs text-lp-text2 font-light mt-1 text-center">
-                            Kehadiran: {courseHistory.summary.kehadiran_percent?.toFixed(1) || 0}%
-                          </p>
                         </div>
                       )}
                     </div>
@@ -806,45 +675,50 @@ const ScanAbsensi = () => {
                   
                   {/* History List */}
                   <div className="space-y-3">
-                    <h4 className="font-bold text-lp-text font-semibold tracking-tight mb-3">Riwayat Detail</h4>
+                    <h4 className="font-bold text-lp-text text-sm md:text-base mb-3">Detail Kehadiran Per Pertemuan</h4>
                     {courseHistory.history && courseHistory.history.length > 0 ? (
-                      courseHistory.history.map((record, index) => (
-                        <div key={index} className="border border-lp-border border rounded-lg p-4 hover:bg-lp-bg">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <p className="font-medium text-lp-text font-semibold tracking-tight">Pertemuan {record.pertemuan_ke}</p>
-                              <p className="text-sm text-lp-text2 font-light">
-                                {record.tanggal} • {record.jam}
-                              </p>
-                              <p className="text-xs text-lp-text3 font-light mt-1">
-                                {record.session_code}
-                              </p>
-                            </div>
-                            <div>
-                              {renderStatusBadge(record.status)}
+                      <div className="space-y-2.5">
+                        {courseHistory.history.map((record, index) => (
+                          <div key={index} className="border border-slate-100 rounded-xl p-4 bg-slate-50/50 hover:bg-slate-50 transition-all duration-200">
+                            <div className="flex justify-between items-start gap-4">
+                              <div className="space-y-0.5">
+                                <p className="font-bold text-sm text-lp-text">Pertemuan {record.pertemuan_ke}</p>
+                                <p className="text-xs text-lp-text2 font-light flex items-center gap-1.5">
+                                  <FaCalendarAlt className="text-lp-text3 shrink-0" />
+                                  <span>{record.tanggal} • {record.jam}</span>
+                                </p>
+                                {record.session_code && (
+                                  <p className="text-[10px] font-mono text-lp-text3 bg-white px-2 py-0.5 rounded border border-slate-100 inline-block mt-1">
+                                    Code: {record.session_code}
+                                  </p>
+                                )}
+                              </div>
+                              <div>
+                                {renderStatusBadge(record.status)}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))
+                        ))}
+                      </div>
                     ) : (
-                      <div className="text-center py-8 text-lp-text3 font-light">
-                        <div className="text-4xl mb-4">📝</div>
-                        <p>Belum ada riwayat absensi untuk mata kuliah ini</p>
+                      <div className="text-center py-12 border border-dashed border-slate-200 rounded-2xl">
+                        <div className="text-3xl mb-2">📝</div>
+                        <p className="text-xs text-lp-text3 font-light">Belum ada riwayat absensi untuk mata kuliah ini</p>
                       </div>
                     )}
                   </div>
-                </>
+                </div>
               ) : (
-                <div className="text-center py-8 text-lp-text3 font-light">
-                  <p>Tidak ada data riwayat</p>
+                <div className="text-center py-12">
+                  <p className="text-xs text-lp-text3 font-light">Tidak ada data riwayat kehadiran.</p>
                 </div>
               )}
             </div>
             
-            <div className="mt-6 pt-4 border-t border-lp-border border">
+            <div className="mt-6 pt-4 border-t border-slate-100">
               <button
                 onClick={() => setShowHistoryModal(false)}
-                className="w-full bg-gray-100 text-lp-text2 py-3 rounded-lg font-semibold hover:bg-gray-200 transition-colors"
+                className="w-full bg-slate-100 hover:bg-slate-200 text-lp-text border-none py-3 rounded-xl font-bold transition-all cursor-pointer text-xs md:text-sm"
               >
                 Tutup
               </button>

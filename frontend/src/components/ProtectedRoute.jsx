@@ -4,6 +4,8 @@ import useAuth from '../hooks/useAuth'
 
 const ProtectedRoute = ({ allowedRoles, children }) => {
   const { user, loading } = useAuth()
+  const userRole = String(user?.role || '').trim().toLowerCase()
+  const normalizedAllowedRoles = allowedRoles.map(role => role.toLowerCase())
 
   if (loading) {
     return <div className="loading"></div>
@@ -13,7 +15,7 @@ const ProtectedRoute = ({ allowedRoles, children }) => {
     return <Navigate to="/" replace />
   }
 
-  if (!allowedRoles.includes(user.role)) {
+  if (!normalizedAllowedRoles.includes(userRole)) {
     return <Navigate to="/" replace />
   }
 

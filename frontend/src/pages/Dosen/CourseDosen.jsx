@@ -254,67 +254,6 @@ const CourseDosen = () => {
             </div>
           </div>
 
-          {/* Control Panel */}
-          <div className="bg-lp-surface/80 backdrop-blur-sm rounded-2xl p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-lp-border-lp-border border mb-8">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div>
-                <label className="block text-sm font-semibold text-lp-text2 mb-2">Cari Mata Kuliah</label>
-                <div className="relative">
-                  <FiSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-lp-text3" />
-                  <input
-                    type="text"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-12 pr-4 py-3 border border-lp-border rounded-xl focus:ring-2 focus:ring-lp-text/20 focus:border-transparent bg-lp-surface/50 backdrop-blur-sm"
-                    placeholder="Nama atau kode matkul..."
-                  />
-                </div>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-semibold text-lp-text2 mb-2">Urutkan Berdasarkan</label>
-                <div className="relative">
-                  <FiTrendingUp className="absolute left-4 top-1/2 transform -translate-y-1/2 text-lp-text3" />
-                  <select
-                    value={sortBy}
-                    onChange={(e) => {
-                      setSortBy(e.target.value)
-                      fetchDosenCourses()
-                    }}
-                    className="w-full pl-12 pr-4 py-3 border border-lp-border rounded-xl focus:ring-2 focus:ring-lp-text/20 focus:border-transparent bg-lp-surface/50 backdrop-blur-sm"
-                  >
-                    <option value="name">Nama Mata Kuliah</option>
-                    <option value="code">Kode Mata Kuliah</option>
-                    <option value="students">Jumlah Mahasiswa</option>
-                  </select>
-                </div>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-semibold text-lp-text2 mb-2">Tampilan</label>
-                <div className="flex items-center gap-2">
-                  <div className="bg-white rounded-xl p-1 flex items-center">
-                    <button
-                      onClick={() => setViewMode('grid')}
-                      className={`p-2 rounded-xl transition-all ${viewMode === 'grid' ? 'bg-lp-surface text-lp-text2 shadow-sm' : 'text-lp-text3 font-light hover:text-lp-text2'}`}
-                    >
-                      <FiGrid className="text-lg" />
-                    </button>
-                    <button
-                      onClick={() => setViewMode('list')}
-                      className={`p-2 rounded-xl transition-all ${viewMode === 'list' ? 'bg-lp-surface text-lp-text2 shadow-sm' : 'text-lp-text3 font-light hover:text-lp-text2'}`}
-                    >
-                      <FiList className="text-lg" />
-                    </button>
-                  </div>
-                  <div className="flex-1 text-right text-sm text-lp-text3 font-light">
-                    {filteredCourses.length} dari {courses.length} matkul
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
           {/* Courses Grid/List */}
           {filteredCourses.length > 0 ? (
             viewMode === 'grid' ? (

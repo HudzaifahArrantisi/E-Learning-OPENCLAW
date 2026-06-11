@@ -28,15 +28,20 @@ export function HighlighterDemo() {
   return (
     <div className="animate-slideUp delay-[580ms] fill-mode-both">
       <p className="max-w-[680px] text-[18px] sm:text-[22px] leading-relaxed text-lp-text/80">
-        Manage academic activities with{" "}
         <Highlighter action="underline" color="#FF9800">
-          Student Hub
+          Manage academic
         </Highlighter>{" "}
+        activities with Student Hub{" "}
         and receive automated reminders via{" "}
         <Highlighter action="highlight" color="#87CEFA">
           OpenClaw Reminder
         </Highlighter>{" "}
-        in real-time.
+        <span>
+          in
+        </span>    
+        <Highlighter action="highlight" color="#fa8787ff">
+        real-time.
+        </Highlighter>{" "}
       </p>
     </div>
   )

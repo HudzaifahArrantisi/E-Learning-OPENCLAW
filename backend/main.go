@@ -85,6 +85,10 @@ func main() {
 				strings.HasPrefix(origin, "http://172.") {
 				return true
 			}
+			// Allow Cloudflare Tunnels
+			if strings.HasSuffix(origin, ".trycloudflare.com") {
+				return true
+			}
 			// Allow extra origins from ALLOWED_ORIGINS env var
 			for _, allowed := range extraOrigins {
 				if origin == allowed {

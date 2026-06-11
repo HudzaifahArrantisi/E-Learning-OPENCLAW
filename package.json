@@ -16,5 +16,8 @@
   },
   "scripts": {
     "test": "echo \"No tests yet\""
+  },
+  "devDependencies": {
+    "@vitejs/plugin-basic-ssl": "^2.3.0"
   }
 }

@@ -6,6 +6,13 @@ import queryClient from '../lib/queryClient'
 
 const AuthContext = createContext(null)
 
+const normalizeRole = (role) => String(role || '').trim().toLowerCase()
+
+const normalizeUser = (user, fallbackRole = '') => ({
+  ...(user || {}),
+  role: normalizeRole(user?.role || fallbackRole),
+})
+
 // Provider: wrap this around your app (inside App.jsx)
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
@@ -30,7 +37,9 @@ export function AuthProvider({ children }) {
       const response = await api.get('/api/auth/verify')
       
       if (response.data.success) {
-        setUser(response.data.data.user || response.data.data) // Handle both structures
+        const data = response.data.data || {}
+        const verifiedUser = data.user || data
+        setUser(normalizeUser(verifiedUser, data.role || localStorage.getItem('role')))
         setError(null)
       } else {
         throw new Error(response.data.message || 'Token verification failed')
@@ -64,12 +73,16 @@ export function AuthProvider({ children }) {
       if (response.data.success) {
         const { token, user, role, redirect } = response.data.data
 
+        const userData = normalizeUser(user || { email: identifier }, role)
+        if (!userData.role) {
+          throw new Error('Role akun tidak ditemukan pada respons login')
+        }
+
         localStorage.setItem('token', token)
-        localStorage.setItem('role', role)
+        localStorage.setItem('role', userData.role)
+        localStorage.setItem('dashboardLastActivityAt', String(Date.now()))
         api.defaults.headers.common['Authorization'] = `Bearer ${token}`
         
-        // Set user dengan data yang konsisten
-        const userData = user || { role, email: identifier } // Fallback jika user tidak ada
         setUser(userData)
 
         return { success: true, redirect, user: userData }
@@ -90,6 +103,7 @@ export function AuthProvider({ children }) {
     // 1. Clear localStorage auth data
     localStorage.removeItem('token')
     localStorage.removeItem('role')
+    localStorage.removeItem('dashboardLastActivityAt')
     // 2. Remove Authorization header
     delete api.defaults.headers.common['Authorization']
     // 3. Clear ALL React Query cache — prevents stale profile/feed data
