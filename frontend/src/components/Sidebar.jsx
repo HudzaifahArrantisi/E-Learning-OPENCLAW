@@ -113,8 +113,9 @@ const Sidebar = ({ role, isOpen, onClose }) => {
       {/* Overlay untuk mobile */}
       {sidebarOpen && (
         <div 
-          className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[70] lg:hidden animate-fadeIn"
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[70] lg:hidden animate-fadeIn"
           onClick={closeSidebar}
+          aria-hidden="true"
         />
       )}
       

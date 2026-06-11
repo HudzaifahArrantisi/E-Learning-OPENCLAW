@@ -400,7 +400,7 @@ const ProfilePublic = () => {
 
     setIsCommenting(true)
     const tempComment = {
-      id: Date.now(), // temporary ID
+      id: `temp-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`, // temporary ID
       content: commentText.trim(),
       author_name: user?.name || 'Anda',
       user_role: user?.role || 'mahasiswa',
@@ -425,7 +425,7 @@ const ProfilePublic = () => {
     } catch (error) {
       console.error('Gagal menambah komentar:', error)
       // Remove optimistic update on error
-      setLocalComments(prev => prev.filter(comment => comment.id !== tempComment?.id))
+      setLocalComments(prev => prev.filter(comment => String(comment.id) !== String(tempComment?.id)))
       alert('Gagal menambah komentar')
     } finally {
       setIsCommenting(false)

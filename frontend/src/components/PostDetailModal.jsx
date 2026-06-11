@@ -152,7 +152,7 @@ const PostDetailModal = ({ post, onClose, getRelativeTime }) => {
     e.preventDefault()
     if (!commentText.trim() || isCommenting) return
     const tempComment = {
-      id: Date.now(),
+      id: `temp-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
       content: commentText.trim(),
       author_name: 'Anda',
       user_role: 'current_user',

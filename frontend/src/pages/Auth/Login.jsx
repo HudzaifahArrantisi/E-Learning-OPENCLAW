@@ -1,9 +1,8 @@
 import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import useAuth from '../../hooks/useAuth'
 
 export default function Login() {
-  const navigate    = useNavigate()
   const { login }   = useAuth()
 
   const [form, setForm]         = useState({ identifier: '', password: '' })
@@ -24,13 +23,18 @@ export default function Login() {
     }
     setLoading(true)
     setError('')
-    const result = await login(form.identifier, form.password)
-    if (result.success) {
-      navigate(result.redirect || '/')
-    } else {
-      setError(result.message || 'Login gagal. Periksa kembali email dan password.')
+    try {
+      const result = await login(form.identifier, form.password)
+      if (result.success) {
+        window.location.href = result.redirect || `/${result.user?.role || ''}` || '/'
+      } else {
+        setError(result.message || 'Login gagal. Periksa kembali email dan password.')
+      }
+    } catch (err) {
+      setError(err.message || 'Terjadi kesalahan saat login.')
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   return (

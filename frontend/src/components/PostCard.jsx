@@ -283,7 +283,7 @@ const PostCard = memo(({ post, getRelativeTime }) => {
     const parentId = replyingTo ? replyingTo.id : null
 
     const tempComment = {
-      id: Date.now(),
+      id: `temp-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
       content: commentText.trim(),
       author_name: 'Anda',
       user_role: 'current_user',
@@ -329,7 +329,7 @@ const PostCard = memo(({ post, getRelativeTime }) => {
             if (comment.id === parentId) {
               return {
                 ...comment,
-                replies: (comment.replies || []).filter(reply => reply.id !== tempComment.id)
+                replies: (comment.replies || []).filter(reply => String(reply.id) !== String(tempComment.id))
               }
             }
             if (comment.replies && comment.replies.length > 0) {
@@ -343,7 +343,7 @@ const PostCard = memo(({ post, getRelativeTime }) => {
         }
         setLocalComments(prev => removeReplyFromLocal(prev))
       } else {
-        setLocalComments(prev => prev.filter(comment => comment.id !== tempComment.id))
+        setLocalComments(prev => prev.filter(comment => String(comment.id) !== String(tempComment.id)))
       }
     }
   }

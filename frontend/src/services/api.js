@@ -160,9 +160,20 @@ class WebSocketService {
       
       // Attempt reconnection only if not intentionally disconnected
       if (!this.intentionalDisconnect) {
+        if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+          console.error(`WebSocket reconnection stopped after ${this.maxReconnectAttempts} attempts. Please refresh or try again later.`)
+          return
+        }
+
         this.reconnectAttempts++
-        const delay = Math.min(this.reconnectDelay * this.reconnectAttempts, 30000)
-        console.log(`Attempting to reconnect in ${delay}ms...`)
+        const jitter = Math.random() * 1000
+        const delay = Math.min(
+          this.reconnectDelay * (2 ** (this.reconnectAttempts - 1)) + jitter,
+          30000
+        )
+        console.log(
+          `WebSocket reconnect attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts} in ${Math.round(delay)}ms...`
+        )
         
         setTimeout(() => {
           this.connect()

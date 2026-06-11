@@ -27,7 +27,7 @@ func CreateAttendanceSession(c *gin.Context) {
 
 	var input struct {
 		CourseID    string `json:"course_id" binding:"required"`
-		Duration    int    `json:"duration" binding:"required,min=5,max=120"`
+		Duration    int    `json:"duration"`
 		PertemuanKe int    `json:"pertemuan_ke" binding:"required,min=1,max=16"`
 	}
 
@@ -63,7 +63,7 @@ func CreateAttendanceSession(c *gin.Context) {
 		SELECT COUNT(*) 
 		FROM attendance_sessions 
 		WHERE dosen_id = $1 AND course_id = $2 AND pertemuan_ke = $3 
-			AND status = 'active' AND expires_at > NOW()
+			AND status = 'active'
 			AND (created_at)::date = CURRENT_DATE
 	`, dosenID, input.CourseID, input.PertemuanKe).Scan(&existingSession)
 
@@ -89,7 +89,8 @@ func CreateAttendanceSession(c *gin.Context) {
 	sessionCode := fmt.Sprintf("ABS-%s-P%d-%s", input.CourseID, input.PertemuanKe,
 		time.Now().Format("020106150405"))
 	qrToken := utils.GenerateRandomString(32)
-	expiresAt := time.Now().Add(time.Duration(input.Duration) * time.Minute)
+	// Sesi tetap aktif sampai dosen menutupnya secara manual.
+	expiresAt := time.Now().AddDate(100, 0, 0)
 
 	// Insert ke attendance_sessions
 	query := `
@@ -795,7 +796,9 @@ func GetActiveSessions(c *gin.Context) {
 	}
 
 	query += `
-		GROUP BY asess.id, mk.nama, mk.hari, mk.jam_mulai, mk.jam_selesai
+		GROUP BY asess.id, asess.course_id, asess.session_token, asess.session_code,
+		         asess.expires_at, asess.created_at, asess.status, asess.pertemuan_ke,
+		         mk.nama, mk.hari, mk.jam_mulai, mk.jam_selesai
 		ORDER BY asess.pertemuan_ke, asess.created_at DESC
 	`
 

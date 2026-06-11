@@ -5,6 +5,7 @@ import api from '../../services/api'
 import Navbar from '../../components/Navbar'
 import Sidebar from '../../components/Sidebar'
 import useAuth from '../../hooks/useAuth'
+import { motion, AnimatePresence } from 'framer-motion'
 import { 
   FaQrcode, 
   FaCheckCircle, 
@@ -12,19 +13,18 @@ import {
   FaCalendarAlt,
   FaClock,
   FaUserGraduate,
-  FaBook,
-  FaCalendarDay,
-  FaRegCalendarCheck,
   FaCamera,
   FaHistory,
   FaFilter,
   FaCalendarWeek,
-  FaVideo,
-  FaStopCircle,
-  FaList,
-  FaEye,
-  FaPlayCircle
+  FaStopCircle
 } from 'react-icons/fa'
+import {
+  FiChevronRight,
+  FiXCircle,
+  FiClock,
+  FiRefreshCw
+} from 'react-icons/fi'
 import QrScanner from 'qr-scanner';
 
 const getCurrentIndonesianDay = () => {
@@ -32,7 +32,35 @@ const getCurrentIndonesianDay = () => {
   return dayMap[new Date().getDay()]
 }
 
-const ScanAbsensi = () => {
+class ScannerErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props)
+    this.state = { hasError: false }
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true }
+  }
+
+  componentDidCatch(error) {
+    console.error('QR scanner crashed:', error)
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen bg-lp-bg flex items-center justify-center p-6">
+          <div className="max-w-md rounded-2xl border border-red-200 bg-red-50 p-6 text-center text-red-800">
+            Scanner mengalami masalah. Tutup halaman ini lalu buka kembali untuk mencoba lagi.
+          </div>
+        </div>
+      )
+    }
+    return this.props.children
+  }
+}
+
+const ScanAbsensiContent = () => {
   const { user } = useAuth()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [selectedCourse, setSelectedCourse] = useState(null)
@@ -44,6 +72,7 @@ const ScanAbsensi = () => {
   const videoRef = useRef(null)
   const isProcessingScanRef = useRef(false)
   const [isScanning, setIsScanning] = useState(false)
+  const [scannerMessage, setScannerMessage] = useState(null)
 
   // Hari-hari untuk filter
   const days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu']
@@ -98,7 +127,6 @@ const ScanAbsensi = () => {
     mutationFn: (data) => api.scanAttendance(data),
     onSuccess: (response) => {
       const data = response.data.data
-      alert(response.data.message || 'Absensi berhasil!')
       setSelectedCourse(null)
       setScanResult({
         success: true,
@@ -120,12 +148,19 @@ const ScanAbsensi = () => {
     },
     onError: (error) => {
       console.error('Scan error:', error)
+      const message = error.response?.data?.message || error.response?.data?.error || 'Gagal melakukan absensi'
+      const alreadyPresent = /sudah.*absen|sudah.*hadir|already.*attend/i.test(message)
+
       setScanResult({
-        success: false,
-        message: error.response?.data?.message || 'Gagal melakukan absensi'
+        success: alreadyPresent,
+        course: selectedCourse?.nama || 'Mata kuliah',
+        status: alreadyPresent ? 'hadir' : undefined,
+        message: alreadyPresent ? 'Kehadiran Anda sudah tercatat sebelumnya.' : message
       })
-      alert(error.response?.data?.message || 'Gagal melakukan absensi')
       stopScanning()
+      if (alreadyPresent) {
+        refetchCoursesByDay()
+      }
     }
   })
 
@@ -150,7 +185,14 @@ const ScanAbsensi = () => {
         })
         .catch(err => {
           console.error('Error starting scanner:', err)
-          alert('Tidak dapat mengakses kamera. Pastikan izin kamera diberikan.')
+          setScannerMessage({
+            type: 'error',
+            text: err.name === 'NotAllowedError'
+              ? 'Izinkan akses kamera untuk scan QR Code'
+              : `Gagal membuka kamera: ${err.message || 'Kamera tidak tersedia'}`
+          })
+          scanner.stop()
+          scanner.destroy()
         })
 
       activeScanner = scanner
@@ -161,6 +203,10 @@ const ScanAbsensi = () => {
         activeScanner.stop()
         activeScanner.destroy()
       }
+      if (videoRef.current?.srcObject) {
+        videoRef.current.srcObject.getTracks().forEach(track => track.stop())
+        videoRef.current.srcObject = null
+      }
       setQrScanner(null)
       setIsScanning(false)
     }
@@ -168,6 +214,7 @@ const ScanAbsensi = () => {
 
   const stopScanning = () => {
     setShowQRScanner(false)
+    setScannerMessage(null)
   }
 
   const handleScanResult = (result) => {
@@ -179,7 +226,7 @@ const ScanAbsensi = () => {
 
     const rawData = typeof result?.data === 'string' ? result.data.trim() : ''
     if (!rawData) {
-      alert('QR Code tidak valid')
+      setScannerMessage({ type: 'error', text: 'QR Code tidak dapat dibaca. Coba arahkan kamera kembali.' })
       return
     }
 
@@ -205,7 +252,7 @@ const ScanAbsensi = () => {
     }
 
     if (!sessionToken) {
-      alert('QR Code tidak valid')
+      setScannerMessage({ type: 'error', text: 'QR Code tidak valid. Gunakan QR dari sesi dosen yang aktif.' })
       return
     }
 
@@ -214,7 +261,7 @@ const ScanAbsensi = () => {
 
     if (qrCourseId) {
       if (resolvedCourseId && resolvedCourseId !== qrCourseId) {
-        alert('QR Code tidak sesuai dengan mata kuliah yang dipilih')
+        setScannerMessage({ type: 'error', text: 'QR Code ini berasal dari mata kuliah yang berbeda.' })
         return
       }
 
@@ -230,11 +277,14 @@ const ScanAbsensi = () => {
     }
 
     if (!resolvedCourseId) {
-      alert('Pilih mata kuliah terlebih dahulu sebelum scan')
+      setScannerMessage({ type: 'error', text: 'Mata kuliah tidak terdeteksi. Pilih mata kuliah lalu scan kembali.' })
       return
     }
 
     isProcessingScanRef.current = true
+    setScannerMessage({ type: 'loading', text: 'QR terbaca. Sedang mencatat kehadiran...' })
+    qrScanner?.stop()
+    setIsScanning(false)
     scanAttendanceMutation.mutate({ 
       session_token: sessionToken,
       course_id: resolvedCourseId 
@@ -248,257 +298,268 @@ const ScanAbsensi = () => {
   // Render status badge
   const renderStatusBadge = (status) => {
     const statusConfig = {
-      'hadir': { color: 'bg-green-100 text-green-800 border border-green-200/50', label: 'Hadir', icon: '✓' },
-      'izin': { color: 'bg-yellow-100 text-yellow-800 border border-yellow-200/50', label: 'Izin', icon: 'i' },
-      'sakit': { color: 'bg-blue-100 text-blue-800 border border-blue-200/50', label: 'Sakit', icon: '⚕' },
-      'alpa': { color: 'bg-red-100 text-red-800 border border-red-200/50', label: 'Alpa', icon: '✗' },
-      'belum_absen': { color: 'bg-slate-100 text-slate-700 border border-slate-200/50 font-semibold tracking-tight', label: 'Belum Absen', icon: '...' }
+      'hadir': { color: 'bg-lp-green/10 text-lp-green ring-1 ring-lp-green/20', label: 'Hadir', icon: '✓' },
+      'izin': { color: 'bg-lp-amber/10 text-lp-amber ring-1 ring-lp-amber/20', label: 'Izin', icon: 'i' },
+      'sakit': { color: 'bg-lp-accent/10 text-lp-atext ring-1 ring-lp-accent/20', label: 'Sakit', icon: '⚕' },
+      'alpa': { color: 'bg-lp-red/10 text-lp-red ring-1 ring-lp-red/20', label: 'Alpa', icon: '✗' },
+      'belum_absen': { color: 'bg-lp-surface text-lp-text3 ring-1 ring-lp-border', label: 'Belum Absen', icon: '...' }
     }
     
     const config = statusConfig[status] || statusConfig['belum_absen']
     return (
-      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${config.color} flex items-center gap-1.5`}>
+      <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${config.color} flex items-center gap-1.5`}>
         <span className="text-[10px]">{config.icon}</span>
         <span>{config.label}</span>
       </span>
     )
   }
 
-  const renderTimeStatus = (course) => {
-    const now = new Date()
-    const [startHour, startMinute] = course.jam_mulai.split(':').map(Number)
-    const [endHour, endMinute] = course.jam_selesai.split(':').map(Number)
-    
-    const startTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), startHour, startMinute)
-    const endTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), endHour, endMinute)
-    
-    const fifteenBefore = new Date(startTime.getTime() - 15 * 60000)
-    const sixtyAfter = new Date(endTime.getTime() + 60 * 60000)
-    
-    if (now < fifteenBefore) {
+  const renderSessionStatus = (course) => {
+    if (course.active_session) {
       return (
-        <span className="inline-flex items-center gap-1.5 text-xs text-lp-text3 font-medium bg-slate-50 border border-slate-200/50 px-2.5 py-1 rounded-lg">
-          <FaClock className="text-lp-text3 shrink-0" />
-          <span>Buka 15m sebelum kelas</span>
-        </span>
-      )
-    } else if (now > sixtyAfter) {
-      return (
-        <span className="inline-flex items-center gap-1.5 text-xs text-red-600 font-medium bg-red-50 border border-red-100 px-2.5 py-1 rounded-lg">
-          <FaStopCircle className="text-red-500 shrink-0" />
-          <span>Waktu absen habis</span>
-        </span>
-      )
-    } else if (course.can_scan) {
-      return (
-        <span className="inline-flex items-center gap-1.5 text-xs text-green-700 font-semibold bg-green-50 border border-green-200/50 px-2.5 py-1 rounded-lg animate-pulse">
-          <FaCheckCircle className="text-green-500 shrink-0" />
-          <span>Bisa absen sekarang</span>
+        <span className="inline-flex items-center gap-1.5 text-xs text-lp-green font-semibold">
+          <FaCheckCircle className="text-lp-green shrink-0" />
+          <span>Sesi absensi dibuka</span>
         </span>
       )
     }
-    return null
+    return <span className="text-xs text-lp-text3 font-medium">Menunggu dosen membuka sesi</span>
   }
 
   return (
-    <div className="flex h-screen bg-lp-bg">
+    <div className="flex min-h-screen bg-lp-bg">
+      {/* Background Decorative Layer */}
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+        <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[60%] bg-lp-text/5 blur-[120px] rounded-full" />
+        <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-lp-text/5 blur-[120px] rounded-full" />
+      </div>
+
       <Sidebar role="mahasiswa" isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0 relative z-10">
         <Navbar user={user} onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
         
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
-          <div className="max-w-7xl mx-auto">
+        <main className="flex-1 overflow-y-auto">
+          <div className="p-6 lg:p-10 max-w-7xl mx-auto">
+
             {/* Header Section */}
-            <div className="mb-8">
-              <h1 className="text-2xl md:text-3xl font-bold text-lp-text tracking-tight mb-2">Scan Absensi</h1>
-              <p className="text-lp-text2 font-light text-sm md:text-base">Lakukan absensi perkuliahan secara cepat dan efisien</p>
-            </div>
-
-            {/* Quick Scan Card */}
-            <div className="bg-gradient-to-br from-lp-accent to-indigo-600 shadow-[0_12px_30px_rgba(75,115,255,0.15)] hover:shadow-[0_16px_40px_rgba(75,115,255,0.25)] transition-all duration-300 rounded-3xl p-6 md:p-8 text-white mb-8 flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
-              <div className="relative z-10 space-y-1">
-                <h2 className="text-xl md:text-2xl font-bold">Presensi Cepat via QR</h2>
-                <p className="text-white/80 font-light text-xs md:text-sm max-w-xl">
-                  Dosen sudah menampilkan QR Code absensi? Klik tombol ini untuk langsung memindai QR Code kelas Anda secara instan tanpa memilih mata kuliah terlebih dahulu.
-                </p>
-              </div>
-              <button
-                onClick={() => {
-                  setSelectedCourse(null) // Reset selection to allow auto-detect from QR
-                  setShowQRScanner(true)
-                }}
-                className="bg-white text-lp-atext hover:bg-slate-50 font-bold px-6 py-3.5 rounded-2xl transition-all duration-300 shadow-lg hover:scale-[1.02] flex items-center gap-2.5 border-none cursor-pointer select-none shrink-0 w-full md:w-auto justify-center"
-              >
-                <FaCamera className="text-base" />
-                <span>Mulai Scan QR</span>
-              </button>
-            </div>
-
-            {/* Filter Hari */}
-            <div className="bg-white border border-slate-100 rounded-3xl p-5 md:p-6 mb-8 shadow-[0_4px_24px_rgba(0,0,0,0.02)]">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-8 h-8 rounded-lg bg-lp-accentS flex items-center justify-center">
-                  <FaFilter className="text-lp-atext text-sm" />
+            <motion.div 
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8 mb-12"
+            >
+              <div>
+                <div className="flex items-center gap-3 mb-4">
+                  <button 
+                    onClick={() => setSidebarOpen(!sidebarOpen)}
+                    className="lg:hidden p-3 rounded-xl bg-white border border-lp-border hover:bg-lp-surface transition-all"
+                  >
+                    <FiChevronRight className="text-lp-text" />
+                  </button>
+                  <span className="text-[11px] font-mono font-medium tracking-[0.2em] uppercase text-lp-text3">
+                    ATTENDANCE SCANNER
+                  </span>
                 </div>
-                <h3 className="text-base md:text-lg font-bold text-lp-text tracking-tight">Filter Hari</h3>
+                
+                <h1 className="text-4xl md:text-5xl font-light text-lp-text tracking-tight mb-3">
+                  Scan Absensi
+                  <span className="text-lp-text3 block text-lg font-normal mt-2">
+                    Catat kehadiran perkuliahan secara cepat dan efisien
+                  </span>
+                </h1>
               </div>
-              <div className="flex overflow-x-auto gap-2 pb-2 -mx-5 px-5 md:mx-0 md:px-0 md:pb-0 scrollbar-hide md:flex-wrap">
+              
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => {
+                    setSelectedCourse(null)
+                    setShowQRScanner(true)
+                  }}
+                  className="group px-8 py-4 bg-lp-text text-lp-bg rounded-full text-[13px] font-bold hover:bg-lp-atext hover:-translate-y-1 transition-all duration-500 uppercase tracking-widest flex items-center gap-3 shadow-[0_12px_24px_rgba(0,0,0,0.1)]"
+                >
+                  <FaCamera className="text-lg" />
+                  <span>Mulai Scan QR</span>
+                </button>
+              </div>
+            </motion.div>
+
+            {/* Scan Result Notification */}
+            <AnimatePresence>
+              {scanResult && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -6 }}
+                  className={`mb-8 p-6 rounded-[2rem] border ${
+                    scanResult.success 
+                      ? 'bg-lp-green/5 border-lp-green/20 text-lp-text' 
+                      : 'bg-lp-red/5 border-lp-red/20 text-lp-text'
+                  } flex items-start gap-4`}
+                >
+                  <div className="mt-0.5">
+                    {scanResult.success ? (
+                      <div className="w-10 h-10 rounded-2xl bg-lp-green/10 flex items-center justify-center">
+                        <FaCheckCircle className="text-lp-green text-lg" />
+                      </div>
+                    ) : (
+                      <div className="w-10 h-10 rounded-2xl bg-lp-red/10 flex items-center justify-center">
+                        <FaTimesCircle className="text-lp-red text-lg" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1 space-y-1">
+                    <h4 className="font-bold text-base">
+                      {scanResult.success ? 'Absensi Berhasil Tercatat' : 'Absensi Gagal'}
+                    </h4>
+                    {scanResult.success ? (
+                      <div className="text-sm text-lp-text2 space-y-0.5 font-light">
+                        <p className="font-semibold text-lp-text">{scanResult.course}</p>
+                        {scanResult.message && <p>{scanResult.message}</p>}
+                        {scanResult.dosen && <p>Dosen: {scanResult.dosen}</p>}
+                        {scanResult.pertemuan_ke && <p>Pertemuan ke-{scanResult.pertemuan_ke} • Status: <span className="font-semibold capitalize">{scanResult.status}</span></p>}
+                        {scanResult.time && <p className="text-[11px] text-lp-text3 mt-1 font-mono">Dicatat pukul {scanResult.time} • {scanResult.date}</p>}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-lp-text2 font-light">{scanResult.message}</p>
+                    )}
+                  </div>
+                  <button 
+                    onClick={() => setScanResult(null)}
+                    className="w-8 h-8 rounded-full bg-lp-surface border border-lp-border flex items-center justify-center text-lp-text3 hover:text-lp-text hover:bg-lp-text hover:text-white transition-all duration-300 text-sm shrink-0"
+                  >
+                    ✕
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Filter Hari Section */}
+            <div className="flex items-center gap-4 mb-8">
+              <div className="flex items-center gap-3">
+                <span className="text-[11px] font-mono font-bold tracking-[0.2em] uppercase text-lp-text3">01</span>
+                <h2 className="text-2xl font-light text-lp-text tracking-tight">Jadwal Hari Ini</h2>
+                <div className="h-px w-16 bg-lp-border hidden sm:block" />
+              </div>
+            </div>
+
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="bg-white border border-lp-border rounded-[2.5rem] p-6 md:p-8 mb-8 shadow-sm"
+            >
+              <div className="flex items-center gap-3 mb-5">
+                <div className="p-3 bg-lp-surface rounded-xl">
+                  <FaFilter className="text-lp-text2 text-sm" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-lp-text tracking-tight">Filter Hari</h3>
+                  <p className="text-[11px] text-lp-text3 font-light mt-0.5">
+                    Menampilkan jadwal untuk: <span className="text-lp-atext font-semibold">{selectedDay}</span>
+                  </p>
+                </div>
+              </div>
+              <div className="flex overflow-x-auto gap-2 pb-2 -mx-6 px-6 md:mx-0 md:px-0 md:pb-0 scrollbar-hide md:flex-wrap">
                 {days.map((day) => (
                   <button
                     key={day}
                     onClick={() => setSelectedDay(day)}
-                    className={`px-5 py-2.5 rounded-xl text-xs md:text-sm font-semibold transition-all duration-200 whitespace-nowrap cursor-pointer border select-none ${
+                    className={`px-5 py-2.5 rounded-full text-xs font-bold transition-all duration-300 whitespace-nowrap cursor-pointer border select-none tracking-wide ${
                       selectedDay === day 
-                        ? 'bg-lp-accent text-white border-lp-accent shadow-md shadow-lp-accent/20' 
-                        : 'bg-slate-50 text-lp-text2 hover:bg-slate-100 border-slate-200/60'
+                        ? 'bg-lp-text text-white border-lp-text shadow-md' 
+                        : 'bg-white text-lp-text2 hover:bg-lp-surface border-lp-border'
                     }`}
                   >
                     {day}
                   </button>
                 ))}
               </div>
-              <p className="text-xs text-lp-text3 font-medium mt-3">
-                Menampilkan mata kuliah untuk hari: <span className="text-lp-atext font-semibold">{selectedDay}</span>
-              </p>
+            </motion.div>
+
+            {/* Mata Kuliah Section */}
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center gap-3">
+                <span className="text-[11px] font-mono font-bold tracking-[0.2em] uppercase text-lp-text3">02</span>
+                <h2 className="text-2xl font-light text-lp-text tracking-tight">Daftar Jadwal</h2>
+                <div className="h-px w-16 bg-lp-border hidden sm:block" />
+              </div>
+              <button
+                onClick={() => refetchCoursesByDay()}
+                className="p-3.5 bg-white border border-lp-border rounded-full text-lp-text3 hover:text-lp-text hover:rotate-180 transition-all duration-700 shadow-sm"
+              >
+                <FiRefreshCw className="text-sm" />
+              </button>
             </div>
 
-            {/* Scan Result Notification */}
-            {scanResult && (
-              <div className={`mb-8 p-5 rounded-2xl border ${
-                scanResult.success 
-                  ? 'bg-green-50 border-green-200/60 text-green-900' 
-                  : 'bg-red-50 border-red-200/60 text-red-900'
-              } flex items-start gap-4 animate-fadeIn`}>
-                <div className="mt-0.5">
-                  {scanResult.success ? (
-                    <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
-                      <FaCheckCircle className="text-green-600 text-lg" />
-                    </div>
-                  ) : (
-                    <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center">
-                      <FaTimesCircle className="text-red-600 text-lg" />
-                    </div>
-                  )}
-                </div>
-                <div className="flex-1 space-y-1">
-                  <h4 className="font-bold text-sm md:text-base">
-                    {scanResult.success ? 'Absensi Berhasil Tercatat' : 'Absensi Gagal'}
-                  </h4>
-                  {scanResult.success ? (
-                    <div className="text-xs md:text-sm text-green-800 space-y-0.5 font-light">
-                      <p className="font-semibold text-green-950">{scanResult.course}</p>
-                      <p>Dosen: {scanResult.dosen}</p>
-                      <p>Pertemuan ke-{scanResult.pertemuan_ke} • Status Kehadiran: <span className="font-semibold capitalize">{scanResult.status}</span></p>
-                      <p className="text-[10px] text-green-600 mt-1">Dicatat pada pukul {scanResult.time} • {scanResult.date}</p>
-                    </div>
-                  ) : (
-                    <p className="text-xs md:text-sm text-red-800 font-light">{scanResult.message}</p>
-                  )}
-                </div>
-                <button 
-                  onClick={() => setScanResult(null)}
-                  className="text-slate-400 hover:text-slate-600 bg-transparent border-none cursor-pointer text-sm font-semibold"
-                >
-                  ✕
-                </button>
+            {loadingCoursesByDay ? (
+              <div className="flex flex-col items-center justify-center py-20">
+                <div className="w-12 h-12 border-2 border-lp-text/10 border-t-lp-text rounded-full animate-spin mb-6" />
+                <p className="text-[11px] font-mono font-bold tracking-widest text-lp-text3 uppercase">Memuat Jadwal...</p>
               </div>
-            )}
+            ) : coursesByDay?.courses && coursesByDay.courses.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+                {coursesByDay.courses.map((course, index) => (
+                  <motion.div 
+                    key={index}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    className={`group relative bg-white border ${
+                      course.active_session
+                        ? 'border-lp-text shadow-[0_12px_32px_rgba(0,0,0,0.06)]'
+                        : 'border-lp-border'
+                    } rounded-[2.5rem] p-7 hover:shadow-[0_32px_64px_rgba(0,0,0,0.08)] transition-all duration-700 hover:-translate-y-1 overflow-hidden`}
+                  >
+                    {/* Visual Accent */}
+                    {course.active_session && (
+                      <div className="absolute top-0 right-0 w-32 h-32 blur-[40px] opacity-20 bg-lp-accent" />
+                    )}
 
-            {/* Mata Kuliah List Container */}
-            <div className="bg-white border border-slate-100 rounded-3xl p-6 md:p-8 mb-8 shadow-[0_4px_24px_rgba(0,0,0,0.02)]">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-                <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 bg-lp-accentS rounded-2xl flex items-center justify-center">
-                    <FaCalendarWeek className="text-lp-atext text-xl" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg md:text-xl font-bold text-lp-text tracking-tight">Daftar Jadwal Kuliah</h3>
-                    <p className="text-xs md:text-sm text-lp-text3 font-medium">
-                      {coursesByDay?.hari || selectedDay}, {coursesByDay?.date ? 
-                        new Date(coursesByDay.date).toLocaleDateString('id-ID', { 
-                          day: 'numeric', 
-                          month: 'long', 
-                          year: 'numeric' 
-                        }) : new Date().toLocaleDateString('id-ID', { 
-                          day: 'numeric', 
-                          month: 'long', 
-                          year: 'numeric' 
-                        })}
-                    </p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => refetchCoursesByDay()}
-                  className="self-end sm:self-center text-lp-atext hover:text-blue-800 p-2.5 rounded-xl bg-lp-accentS hover:bg-blue-100/70 border-none transition-all flex items-center gap-1.5 cursor-pointer text-xs md:text-sm font-semibold"
-                >
-                  <FaClock className="text-xs md:text-sm shrink-0" />
-                  <span>Perbarui Jadwal</span>
-                </button>
-              </div>
-
-              {loadingCoursesByDay ? (
-                <div className="text-center py-12">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-lp-accent mx-auto"></div>
-                  <p className="mt-3 text-xs md:text-sm text-lp-text2 font-light">Memuat jadwal kuliah...</p>
-                </div>
-              ) : coursesByDay?.courses && coursesByDay.courses.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                  {coursesByDay.courses.map((course, index) => (
-                    <div 
-                      key={index} 
-                      className={`bg-white rounded-2xl p-5 border transition-all duration-300 flex flex-col justify-between h-full ${
-                        course.active_session 
-                          ? 'border-blue-200 shadow-[0_8px_30px_rgba(75,115,255,0.06)] hover:shadow-[0_12px_40px_rgba(75,115,255,0.12)]' 
-                          : 'border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)] hover:shadow-[0_12px_30px_rgba(0,0,0,0.06)] hover:-translate-y-0.5'
-                      }`}
-                    >
-                      <div>
-                        {/* Card Header: SKS & Status Badge */}
-                        <div className="flex justify-between items-start mb-3 gap-2">
-                          <span className="bg-slate-100 text-lp-text2 text-xs font-semibold px-2.5 py-1 rounded-lg">
-                            {course.sks} SKS
-                          </span>
-                          <div className="flex flex-col items-end gap-1">
-                            {renderStatusBadge(course.status_absen)}
-                            {course.waktu_absen && (
-                              <span className="text-[10px] text-lp-text3 font-medium">
-                                Absen: {course.waktu_absen}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Course Title & Lecturer */}
-                        <h4 className="font-bold text-base md:text-lg text-lp-text tracking-tight leading-snug mb-1">
-                          {course.nama}
-                        </h4>
-                        <p className="text-xs md:text-sm text-lp-text2 font-light flex items-center gap-1.5 mb-3">
-                          <FaUserGraduate className="text-lp-accent/70 shrink-0" />
-                          <span className="truncate">{course.dosen}</span>
-                        </p>
-
-                        {/* Time info and state */}
-                        <div className="bg-lp-surface/50 border border-slate-100/80 rounded-xl p-3 mb-4 space-y-1.5">
-                          <div className="flex items-center text-xs text-lp-text2 font-medium">
-                            <FaClock className="mr-2 text-lp-text3 shrink-0" />
-                            <span>{course.jam_mulai} - {course.jam_selesai}</span>
-                          </div>
-                          <div className="flex items-center">
-                            {renderTimeStatus(course)}
-                          </div>
+                    <div className="relative z-10">
+                      {/* Card Header: SKS & Status */}
+                      <div className="flex justify-between items-start mb-4 gap-2">
+                        <span className="text-[10px] font-mono font-bold tracking-[0.2em] uppercase text-lp-text3 bg-lp-surface px-3 py-1.5 rounded-full">
+                          {course.sks} SKS
+                        </span>
+                        <div className="flex flex-col items-end gap-1">
+                          {renderStatusBadge(course.status_absen)}
+                          {course.waktu_absen && (
+                            <span className="text-[10px] text-lp-text3 font-mono">
+                              {course.waktu_absen}
+                            </span>
+                          )}
                         </div>
                       </div>
 
-                      {/* Action Buttons directly on Card */}
-                      <div className="flex items-center gap-2 mt-auto pt-3 border-t border-slate-100">
+                      {/* Course Title & Lecturer */}
+                      <h4 className="font-bold text-lg text-lp-text tracking-tight leading-snug mb-1">
+                        {course.nama}
+                      </h4>
+                      <p className="text-sm text-lp-text2 font-light flex items-center gap-1.5 mb-4">
+                        <FaUserGraduate className="text-lp-text3 shrink-0" />
+                        <span className="truncate">{course.dosen}</span>
+                      </p>
+
+                      {/* Time & Session Status */}
+                      <div className="bg-lp-surface/50 border border-lp-border rounded-2xl p-3.5 mb-5 space-y-2">
+                        <div className="flex items-center text-xs text-lp-text2 font-medium">
+                          <FiClock className="mr-2 text-lp-text3 shrink-0" />
+                          <span>{course.jam_mulai} - {course.jam_selesai}</span>
+                        </div>
+                        <div className="flex items-center">
+                          {renderSessionStatus(course)}
+                        </div>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex items-center gap-2.5">
                         {course.can_scan ? (
                           <button
                             onClick={() => {
                               setSelectedCourse(course)
                               setShowQRScanner(true)
                             }}
-                            className="flex-1 bg-lp-accent hover:bg-lp-atext text-white text-xs md:text-sm font-semibold py-2.5 px-3 rounded-xl shadow-md shadow-lp-accent/10 transition-all flex items-center justify-center gap-2 border-none cursor-pointer"
+                            className="flex-1 bg-lp-text hover:bg-lp-atext text-white text-[12px] font-bold py-3.5 px-4 rounded-full shadow-[0_8px_20px_rgba(0,0,0,0.1)] transition-all duration-500 flex items-center justify-center gap-2 border-none cursor-pointer uppercase tracking-widest hover:-translate-y-0.5"
                           >
                             <FaCamera className="text-xs" />
                             <span>Scan QR</span>
@@ -506,7 +567,7 @@ const ScanAbsensi = () => {
                         ) : (
                           <button
                             disabled
-                            className="flex-1 bg-slate-100 text-lp-text3 text-xs md:text-sm font-medium py-2.5 px-3 rounded-xl border-none cursor-not-allowed flex items-center justify-center gap-1"
+                            className="flex-1 bg-lp-surface text-lp-text3 text-[12px] font-bold py-3.5 px-4 rounded-full border border-lp-border cursor-not-allowed flex items-center justify-center gap-1 uppercase tracking-wider"
                           >
                             {course.status_absen !== 'belum_absen' && course.status_absen !== '' ? (
                               <>
@@ -525,209 +586,265 @@ const ScanAbsensi = () => {
                             setShowHistoryModal(true)
                           }}
                           title="Riwayat Absen"
-                          className="bg-lp-accentS hover:bg-lp-accent hover:text-white text-lp-atext p-2.5 rounded-xl transition-all border-none cursor-pointer flex items-center justify-center"
+                          className="w-12 h-12 bg-white border border-lp-border hover:border-lp-text rounded-full transition-all duration-500 flex items-center justify-center cursor-pointer text-lp-text3 hover:text-lp-text hover:bg-lp-surface"
                         >
                           <FaHistory className="text-sm" />
                         </button>
                       </div>
                     </div>
-                  ))}
+                  </motion.div>
+                ))}
+              </div>
+            ) : (
+              <div className="bg-white border border-lp-border rounded-[2.5rem] p-12 mb-12">
+                <div className="flex flex-col items-center justify-center text-center">
+                  <div className="w-14 h-14 rounded-2xl bg-lp-surface flex items-center justify-center mb-5">
+                    <FaCalendarWeek className="text-xl text-lp-text3" />
+                  </div>
+                  <h4 className="font-bold text-lg text-lp-text2 mb-2">Tidak Ada Jadwal</h4>
+                  <p className="text-sm text-lp-text3 font-light max-w-xs">
+                    Tidak ada mata kuliah yang dijadwalkan pada hari <span className="font-semibold text-lp-text2">{selectedDay}</span>. Pilih hari lain untuk melihat jadwal.
+                  </p>
                 </div>
-              ) : (
-                <div className="text-center py-12">
-                  <div className="text-4xl text-slate-300 mb-3">📚</div>
-                  <h4 className="font-bold text-base text-lp-text2 mb-1">Tidak Ada Mata Kuliah Hari Ini</h4>
-                  <p className="text-xs text-lp-text3 font-light">Pilih filter hari lain untuk melihat jadwal kuliah yang tersedia.</p>
-                </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </main>
       </div>
 
       {/* QR Scanner Modal */}
-      {showQRScanner && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center z-[90] p-4 animate-fadeIn">
-          <div className="bg-white rounded-3xl p-6 md:p-8 max-w-md w-full shadow-2xl relative overflow-hidden border border-slate-100 animate-scaleIn">
-            <div className="flex justify-between items-center mb-6">
-              <div>
-                <h3 className="text-lg md:text-xl font-bold text-lp-text tracking-tight">Pindai QR Code</h3>
-                <p className="text-xs text-lp-text2 font-light mt-0.5">
-                  {selectedCourse ? `${selectedCourse.nama}` : 'Pindai Cepat (Deteksi Otomatis)'}
-                </p>
-              </div>
-              <button
-                onClick={stopScanning}
-                className="text-lp-text3 hover:text-lp-text bg-slate-100 hover:bg-slate-200 w-8 h-8 rounded-full flex items-center justify-center transition-all border-none cursor-pointer"
-              >
-                ✕
-              </button>
-            </div>
-            
-            <div className="relative aspect-square bg-slate-950 rounded-2xl overflow-hidden mb-6 shadow-inner border border-slate-800">
-              <video 
-                ref={videoRef} 
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <div className="w-56 h-56 border-2 border-dashed border-white/40 rounded-2xl relative flex items-center justify-center">
-                  {/* Scanner line animation */}
-                  <div className="absolute left-0 right-0 h-0.5 bg-lp-green/70 shadow-[0_0_10px_rgba(22,163,74,0.8)] animate-pulse" style={{ top: '50%' }}></div>
-                  <div className="absolute -top-1 -left-1 w-6 h-6 border-t-4 border-l-4 border-lp-accent rounded-tl-lg"></div>
-                  <div className="absolute -top-1 -right-1 w-6 h-6 border-t-4 border-r-4 border-lp-accent rounded-tr-lg"></div>
-                  <div className="absolute -bottom-1 -left-1 w-6 h-6 border-b-4 border-l-4 border-lp-accent rounded-bl-lg"></div>
-                  <div className="absolute -bottom-1 -right-1 w-6 h-6 border-b-4 border-r-4 border-lp-accent rounded-br-lg"></div>
+      <AnimatePresence>
+        {showQRScanner && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-lp-text/30 backdrop-blur-md flex items-center justify-center z-[90] p-4"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="bg-white border border-lp-border rounded-[2.5rem] p-6 md:p-8 max-w-md w-full shadow-[0_32px_64px_rgba(0,0,0,0.12)] relative overflow-hidden"
+            >
+              {/* Decorative */}
+              <div className="absolute top-0 right-0 w-40 h-40 bg-lp-accent/5 blur-[60px] rounded-full" />
+
+              <div className="relative z-10">
+                <div className="flex justify-between items-start mb-6">
+                  <div>
+                    <span className="text-[11px] font-mono font-medium tracking-[0.2em] uppercase text-lp-text3 mb-2 block">QR SCANNER</span>
+                    <h3 className="text-xl font-bold text-lp-text tracking-tight">Pindai QR Code</h3>
+                    <p className="text-xs text-lp-text2 font-light mt-0.5">
+                      {selectedCourse ? `${selectedCourse.nama}` : 'Pindai Cepat (Deteksi Otomatis)'}
+                    </p>
+                  </div>
+                  <button
+                    onClick={stopScanning}
+                    className="w-10 h-10 rounded-full bg-lp-surface border border-lp-border flex items-center justify-center text-lp-text hover:bg-lp-text hover:text-white transition-all duration-300"
+                  >
+                    ✕
+                  </button>
+                </div>
+                
+                <div className="relative aspect-square bg-lp-text rounded-[2rem] overflow-hidden mb-6 border border-lp-border">
+                  <video
+                    ref={videoRef}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="w-56 h-56 border-2 border-dashed border-white/50 rounded-2xl" />
+                  </div>
+                </div>
+                
+                <div className="text-center space-y-4">
+                  <p className="text-xs text-lp-text2 font-light">
+                    Arahkan kamera ke QR Code absensi yang ditampilkan oleh Dosen Anda di depan kelas.
+                  </p>
+                  
+                  <button
+                    onClick={stopScanning}
+                    className="w-full py-3.5 bg-lp-red/5 hover:bg-lp-red/10 text-lp-red border border-lp-red/20 rounded-full font-bold transition-all flex items-center justify-center gap-2 cursor-pointer text-[12px] uppercase tracking-widest"
+                  >
+                    <FaStopCircle />
+                    <span>Hentikan Pemindaian</span>
+                  </button>
+                  
+                  <div className="flex items-center justify-center gap-2 text-xs text-lp-text3 font-medium">
+                    <div className={`w-2 h-2 rounded-full ${isScanning ? 'bg-lp-green animate-pulse' : 'bg-lp-red'}`}></div>
+                    <span>{isScanning ? 'Kamera Aktif & Memindai' : 'Kamera Nonaktif'}</span>
+                  </div>
+                  {scannerMessage && (
+                    <div className={`rounded-2xl border px-4 py-3 text-left text-xs font-medium ${
+                      scannerMessage.type === 'error'
+                        ? 'bg-lp-red/5 border-lp-red/20 text-lp-red'
+                        : 'bg-lp-accent/5 border-lp-accent/20 text-lp-atext'
+                    }`}>
+                      {scannerMessage.text}
+                    </div>
+                  )}
                 </div>
               </div>
-            </div>
-            
-            <div className="text-center space-y-4">
-              <p className="text-xs text-lp-text2 font-light">
-                Arahkan kamera ke QR Code absensi yang ditampilkan oleh Dosen Anda di depan kelas.
-              </p>
-              
-              <button
-                onClick={stopScanning}
-                className="w-full py-3 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl font-bold transition-all flex items-center justify-center gap-2 border-none cursor-pointer text-xs md:text-sm"
-              >
-                <FaStopCircle />
-                <span>Hentikan Pemindaian</span>
-              </button>
-              
-              <div className="flex items-center justify-center gap-2 text-xs text-lp-text3 font-medium">
-                <div className={`w-2 h-2 rounded-full ${isScanning ? 'bg-lp-green animate-pulse' : 'bg-red-500'}`}></div>
-                <span>{isScanning ? 'Kamera Aktif & Memindai' : 'Kamera Nonaktif'}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* History Modal */}
-      {showHistoryModal && selectedCourse && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center z-[90] p-4 animate-fadeIn">
-          <div className="bg-white rounded-3xl p-6 md:p-8 max-w-2xl w-full max-h-[85vh] shadow-2xl relative overflow-hidden border border-slate-100 flex flex-col animate-scaleIn">
-            <div className="flex justify-between items-start mb-6">
-              <div>
-                <h3 className="text-lg md:text-xl font-bold text-lp-text tracking-tight">Riwayat Absensi</h3>
-                <p className="text-xs md:text-sm text-lp-text2 font-light mt-0.5">
-                  {selectedCourse.nama} • {selectedCourse.dosen}
-                </p>
-              </div>
-              <button
-                onClick={() => setShowHistoryModal(false)}
-                className="text-lp-text3 hover:text-lp-text bg-slate-100 hover:bg-slate-200 w-8 h-8 rounded-full flex items-center justify-center transition-all border-none cursor-pointer"
-              >
-                ✕
-              </button>
-            </div>
-            
-            <div className="flex-1 overflow-y-auto pr-1 custom-scrollbar">
-              {loadingHistory ? (
-                <div className="text-center py-12">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-lp-accent mx-auto"></div>
-                  <p className="mt-3 text-xs md:text-sm text-lp-text2 font-light">Memuat riwayat kehadiran...</p>
+      <AnimatePresence>
+        {showHistoryModal && selectedCourse && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-lp-text/30 backdrop-blur-md flex items-center justify-center z-[90] p-4"
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 50 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 50 }}
+              className="bg-lp-bg border border-lp-border rounded-[2.5rem] p-6 md:p-10 max-w-2xl w-full max-h-[85vh] shadow-[0_64px_128px_rgba(0,0,0,0.15)] relative overflow-hidden flex flex-col"
+            >
+              {/* Decorative */}
+              <div className="absolute top-0 right-0 w-64 h-64 bg-lp-text/5 blur-[80px] rounded-full translate-x-1/2 -translate-y-1/2" />
+
+              <div className="flex justify-between items-start mb-8 relative z-10 shrink-0">
+                <div>
+                  <span className="text-[11px] font-mono font-bold tracking-[0.2em] text-lp-text3 uppercase mb-3 block">RIWAYAT KEHADIRAN</span>
+                  <h3 className="text-2xl md:text-3xl font-light text-lp-text tracking-tight mb-1">
+                    {selectedCourse.nama}
+                  </h3>
+                  <p className="text-sm text-lp-text2 font-light flex items-center gap-1.5">
+                    <FaUserGraduate className="text-lp-text3" />
+                    <span>{selectedCourse.dosen}</span>
+                  </p>
                 </div>
-              ) : courseHistory ? (
-                <div className="space-y-6">
-                  {/* Summary */}
-                  {courseHistory.summary && (
-                    <div className="p-5 bg-lp-accentS border border-lp-accent/10 rounded-2xl">
-                      <h4 className="font-bold text-lp-atext text-xs md:text-sm mb-3">Ringkasan Kehadiran</h4>
-                      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-                        <div className="text-center p-3 bg-white rounded-xl border border-slate-100">
-                          <p className="text-xl font-bold text-lp-green">{courseHistory.summary.hadir || 0}</p>
-                          <p className="text-[10px] text-lp-green font-medium uppercase mt-0.5">Hadir</p>
+                <button
+                  onClick={() => setShowHistoryModal(false)}
+                  className="w-12 h-12 rounded-full bg-white border border-lp-border flex items-center justify-center text-lp-text hover:bg-lp-text hover:text-white transition-all duration-500 shadow-sm shrink-0"
+                >
+                  <FiXCircle className="text-xl" />
+                </button>
+              </div>
+              
+              <div className="flex-1 overflow-y-auto pr-1 custom-scrollbar relative z-10">
+                {loadingHistory ? (
+                  <div className="flex flex-col items-center justify-center py-20">
+                    <div className="w-12 h-12 border-2 border-lp-text/10 border-t-lp-text rounded-full animate-spin mb-6" />
+                    <p className="text-[11px] font-mono font-bold tracking-widest text-lp-text3 uppercase">Memuat Riwayat...</p>
+                  </div>
+                ) : courseHistory ? (
+                  <div className="space-y-8">
+                    {/* Summary */}
+                    {courseHistory.summary && (
+                      <div className="p-6 bg-lp-accentS/50 border border-lp-accent/10 rounded-[2rem]">
+                        <h4 className="text-[11px] font-mono font-bold tracking-[0.2em] text-lp-atext uppercase mb-4">Ringkasan</h4>
+                        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                          <div className="text-center p-3 bg-white rounded-2xl border border-lp-border">
+                            <p className="text-xl font-bold text-lp-green">{courseHistory.summary.hadir || 0}</p>
+                            <p className="text-[10px] text-lp-green font-mono font-bold uppercase mt-1 tracking-wider">Hadir</p>
+                          </div>
+                          <div className="text-center p-3 bg-white rounded-2xl border border-lp-border">
+                            <p className="text-xl font-bold text-lp-amber">{courseHistory.summary.izin || 0}</p>
+                            <p className="text-[10px] text-lp-amber font-mono font-bold uppercase mt-1 tracking-wider">Izin</p>
+                          </div>
+                          <div className="text-center p-3 bg-white rounded-2xl border border-lp-border">
+                            <p className="text-xl font-bold text-lp-accent">{courseHistory.summary.sakit || 0}</p>
+                            <p className="text-[10px] text-lp-atext font-mono font-bold uppercase mt-1 tracking-wider">Sakit</p>
+                          </div>
+                          <div className="text-center p-3 bg-white rounded-2xl border border-lp-border">
+                            <p className="text-xl font-bold text-lp-red">{courseHistory.summary.alpa || 0}</p>
+                            <p className="text-[10px] text-lp-red font-mono font-bold uppercase mt-1 tracking-wider">Alpa</p>
+                          </div>
+                          <div className="text-center p-3 bg-white rounded-2xl border border-lp-border col-span-2 sm:col-span-1">
+                            <p className="text-xl font-bold text-lp-text">{courseHistory.summary.total || 0}</p>
+                            <p className="text-[10px] text-lp-text3 font-mono font-bold uppercase mt-1 tracking-wider">Total</p>
+                          </div>
                         </div>
-                        <div className="text-center p-3 bg-white rounded-xl border border-slate-100">
-                          <p className="text-xl font-bold text-lp-amber">{courseHistory.summary.izin || 0}</p>
-                          <p className="text-[10px] text-lp-amber font-medium uppercase mt-0.5">Izin</p>
-                        </div>
-                        <div className="text-center p-3 bg-white rounded-xl border border-slate-100">
-                          <p className="text-xl font-bold text-lp-accent">{courseHistory.summary.sakit || 0}</p>
-                          <p className="text-[10px] text-lp-atext font-medium uppercase mt-0.5">Sakit</p>
-                        </div>
-                        <div className="text-center p-3 bg-white rounded-xl border border-slate-100">
-                          <p className="text-xl font-bold text-lp-red">{courseHistory.summary.alpa || 0}</p>
-                          <p className="text-[10px] text-lp-red font-medium uppercase mt-0.5">Alpa</p>
-                        </div>
-                        <div className="text-center p-3 bg-white rounded-xl border border-slate-100 col-span-2 sm:col-span-1">
-                          <p className="text-xl font-bold text-lp-text">{courseHistory.summary.total || 0}</p>
-                          <p className="text-[10px] text-lp-text3 font-medium uppercase mt-0.5">Total Sesi</p>
-                        </div>
+                        {courseHistory.summary.total > 0 && (
+                          <div className="mt-5">
+                            <div className="flex justify-between items-center text-xs font-semibold mb-1.5">
+                              <span className="text-lp-text2">Persentase Kehadiran</span>
+                              <span className="text-lp-atext font-mono">{courseHistory.summary.kehadiran_percent?.toFixed(1) || 0}%</span>
+                            </div>
+                            <div className="w-full bg-lp-surface rounded-full h-2">
+                              <div 
+                                className="bg-lp-accent h-2 rounded-full transition-all duration-500" 
+                                style={{ width: `${courseHistory.summary.kehadiran_percent || 0}%` }}
+                              ></div>
+                            </div>
+                          </div>
+                        )}
                       </div>
-                      {courseHistory.summary.total > 0 && (
-                        <div className="mt-4">
-                          <div className="flex justify-between items-center text-xs text-lp-text2 font-semibold mb-1">
-                            <span>Persentase Kehadiran</span>
-                            <span className="text-lp-atext">{courseHistory.summary.kehadiran_percent?.toFixed(1) || 0}%</span>
+                    )}
+                    
+                    {/* History List */}
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3 mb-4">
+                        <h4 className="text-[11px] font-mono font-bold tracking-[0.2em] uppercase text-lp-text3">Detail Per Pertemuan</h4>
+                        <div className="h-px flex-1 bg-lp-border" />
+                      </div>
+                      {courseHistory.history && courseHistory.history.length > 0 ? (
+                        <div className="space-y-3">
+                          {courseHistory.history.map((record, index) => (
+                            <div key={index} className="border border-lp-border rounded-2xl p-4 bg-white hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] hover:-translate-y-0.5 transition-all duration-500">
+                              <div className="flex justify-between items-start gap-4">
+                                <div className="space-y-0.5">
+                                  <p className="font-bold text-sm text-lp-text">Pertemuan {record.pertemuan_ke}</p>
+                                  <p className="text-xs text-lp-text2 font-light flex items-center gap-1.5">
+                                    <FaCalendarAlt className="text-lp-text3 shrink-0" />
+                                    <span>{record.tanggal} • {record.jam}</span>
+                                  </p>
+                                  {record.session_code && (
+                                    <p className="text-[10px] font-mono text-lp-text3 bg-lp-surface px-2.5 py-0.5 rounded-full border border-lp-border inline-block mt-1">
+                                      Code: {record.session_code}
+                                    </p>
+                                  )}
+                                </div>
+                                <div>
+                                  {renderStatusBadge(record.status)}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-12 border border-dashed border-lp-border rounded-[2rem]">
+                          <div className="w-12 h-12 rounded-2xl bg-lp-surface flex items-center justify-center mx-auto mb-3">
+                            <FaHistory className="text-lg text-lp-text3" />
                           </div>
-                          <div className="w-full bg-slate-200/60 rounded-full h-2">
-                            <div 
-                              className="bg-lp-accent h-2 rounded-full transition-all duration-500" 
-                              style={{ width: `${courseHistory.summary.kehadiran_percent || 0}%` }}
-                            ></div>
-                          </div>
+                          <p className="text-xs text-lp-text3 font-light">Belum ada riwayat absensi untuk mata kuliah ini</p>
                         </div>
                       )}
                     </div>
-                  )}
-                  
-                  {/* History List */}
-                  <div className="space-y-3">
-                    <h4 className="font-bold text-lp-text text-sm md:text-base mb-3">Detail Kehadiran Per Pertemuan</h4>
-                    {courseHistory.history && courseHistory.history.length > 0 ? (
-                      <div className="space-y-2.5">
-                        {courseHistory.history.map((record, index) => (
-                          <div key={index} className="border border-slate-100 rounded-xl p-4 bg-slate-50/50 hover:bg-slate-50 transition-all duration-200">
-                            <div className="flex justify-between items-start gap-4">
-                              <div className="space-y-0.5">
-                                <p className="font-bold text-sm text-lp-text">Pertemuan {record.pertemuan_ke}</p>
-                                <p className="text-xs text-lp-text2 font-light flex items-center gap-1.5">
-                                  <FaCalendarAlt className="text-lp-text3 shrink-0" />
-                                  <span>{record.tanggal} • {record.jam}</span>
-                                </p>
-                                {record.session_code && (
-                                  <p className="text-[10px] font-mono text-lp-text3 bg-white px-2 py-0.5 rounded border border-slate-100 inline-block mt-1">
-                                    Code: {record.session_code}
-                                  </p>
-                                )}
-                              </div>
-                              <div>
-                                {renderStatusBadge(record.status)}
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-12 border border-dashed border-slate-200 rounded-2xl">
-                        <div className="text-3xl mb-2">📝</div>
-                        <p className="text-xs text-lp-text3 font-light">Belum ada riwayat absensi untuk mata kuliah ini</p>
-                      </div>
-                    )}
                   </div>
-                </div>
-              ) : (
-                <div className="text-center py-12">
-                  <p className="text-xs text-lp-text3 font-light">Tidak ada data riwayat kehadiran.</p>
-                </div>
-              )}
-            </div>
-            
-            <div className="mt-6 pt-4 border-t border-slate-100">
-              <button
-                onClick={() => setShowHistoryModal(false)}
-                className="w-full bg-slate-100 hover:bg-slate-200 text-lp-text border-none py-3 rounded-xl font-bold transition-all cursor-pointer text-xs md:text-sm"
-              >
-                Tutup
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+                ) : (
+                  <div className="text-center py-12">
+                    <p className="text-xs text-lp-text3 font-light">Tidak ada data riwayat kehadiran.</p>
+                  </div>
+                )}
+              </div>
+              
+              <div className="mt-6 pt-4 border-t border-lp-border relative z-10 shrink-0">
+                <button
+                  onClick={() => setShowHistoryModal(false)}
+                  className="w-full py-3.5 bg-lp-surface hover:bg-lp-text hover:text-white text-lp-text border border-lp-border rounded-full font-bold transition-all duration-500 cursor-pointer text-[12px] uppercase tracking-widest"
+                >
+                  Tutup
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
+
+const ScanAbsensi = () => (
+  <ScannerErrorBoundary>
+    <ScanAbsensiContent />
+  </ScannerErrorBoundary>
+)
 
 export default ScanAbsensi

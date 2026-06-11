@@ -18,8 +18,9 @@ const CariInvoice = () => {
   const [filter, setFilter] = useState('all')
   
   const { data: invoices, isLoading, error } = useQuery({
-    queryKey: ['riwayatPembayaran', 'all'],
-    queryFn: () => api.getRiwayatPembayaran('all').then(res => res.data.data),
+    queryKey: ['riwayatPembayaran', filter],
+    queryFn: () => api.getRiwayatPembayaran(filter).then(res => res.data.data),
+    staleTime: 30 * 1000,
   })
 
   const filteredInvoices = invoices?.filter(invoice => {
@@ -27,9 +28,7 @@ const CariInvoice = () => {
                          invoice.nominal?.toString().includes(searchTerm) ||
                          invoice.metode?.toLowerCase().includes(searchTerm.toLowerCase())
     
-    const matchesFilter = filter === 'all' || invoice.status === filter
-    
-    return matchesSearch && matchesFilter
+    return matchesSearch
   })
 
   const getStatusIcon = (status) => {

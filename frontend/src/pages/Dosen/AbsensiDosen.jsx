@@ -2,58 +2,45 @@ import React, { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { useMutation, useQuery } from "@tanstack/react-query"
 import api from '../../services/api'
+import Navbar from '../../components/Navbar'
 import Sidebar from '../../components/Sidebar'
+import useAuth from '../../hooks/useAuth'
 import { AnimatePresence, motion } from 'framer-motion'
-
 import {
-  FaQrcode,
-  FaUsers,
-  FaClock,
-  FaCheckCircle,
-  FaTimesCircle,
+  FaQrcode, FaUsers, FaClock, FaCheckCircle, FaTimesCircle,
+  FaStopCircle, FaSync, FaEdit, FaHistory, FaUserCircle,
+  FaExpand, FaCompress, FaBolt, FaLayerGroup,
+  FaHourglassHalf, FaChevronRight, FaCalendarCheck, FaSearch,
   FaUserCheck,
-  FaUserTimes,
-  FaStopCircle,
-  FaSync,
-  FaEdit,
-  FaHistory,
-  FaUserCircle,
-  FaExpand,
-  FaCompress,
-  FaGraduationCap,
-  FaBolt,
-  FaLayerGroup,
-  FaHourglassHalf,
-  FaChevronRight,
-  FaCalendarCheck,
-  FaSearch,
 } from 'react-icons/fa'
+import {
+  FiChevronRight,
+  FiXCircle,
+  FiRefreshCw,
+} from 'react-icons/fi'
 import { QRCodeSVG } from 'qrcode.react'
 
-/* ─────────────────────────────────────
-   Helper tiny components
-───────────────────────────────────── */
+// ─── Tiny components ────────────────────────────────────────────────
 const StatusBadge = ({ status }) => {
   const map = {
-    hadir:       { label: 'Hadir',      cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-    izin:        { label: 'Izin',       cls: 'bg-amber-50   text-amber-700   border-amber-200'   },
-    sakit:       { label: 'Sakit',      cls: 'bg-sky-50     text-sky-700     border-sky-200'     },
-    alpa:        { label: 'Alpa',       cls: 'bg-rose-50    text-rose-700    border-rose-200'    },
-    belum_absen: { label: 'Belum',      cls: 'bg-slate-50   text-slate-500   border-slate-200'   },
+    hadir:       { label: 'Hadir',  cls: 'bg-lp-green/10 text-lp-green ring-1 ring-lp-green/20' },
+    izin:        { label: 'Izin',   cls: 'bg-lp-amber/10 text-lp-amber ring-1 ring-lp-amber/20' },
+    sakit:       { label: 'Sakit',  cls: 'bg-lp-accent/10 text-lp-atext ring-1 ring-lp-accent/20' },
+    alpa:        { label: 'Alpa',   cls: 'bg-lp-red/10 text-lp-red ring-1 ring-lp-red/20' },
+    belum_absen: { label: 'Belum',  cls: 'bg-lp-surface text-lp-text3 ring-1 ring-lp-border' },
   }
-  const key = status?.toLowerCase() || 'belum_absen'
-  const { label, cls } = map[key] || map['belum_absen']
+  const { label, cls } = map[status?.toLowerCase()] || map.belum_absen
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold border ${cls}`}>
+    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold ${cls}`}>
       {label}
     </span>
   )
 }
 
 const StatCard = ({ label, value, color }) => (
-  <div className="flex flex-col items-center justify-center rounded-2xl border border-slate-200/60 bg-white/55 py-3 px-2 shadow-[inset_0_1px_0_rgba(255,255,255,.9),0_12px_30px_rgba(15,23,42,.05)] backdrop-blur-xl">
-    <p className={`text-2xl font-black font-mono tracking-tight ${color}`}>{value}</p>
-    <p className="text-xs font-medium text-slate-500 mt-0.5">{label}</p>
+  <div className="flex flex-col items-center justify-center p-3 rounded-2xl bg-white border border-lp-border">
+    <p className={`text-xl font-bold tabular-nums ${color}`}>{value}</p>
+    <p className="text-[10px] text-lp-text3 mt-0.5 font-mono font-bold uppercase tracking-wider">{label}</p>
   </div>
 )
 
@@ -66,23 +53,32 @@ const ConfirmationModal = ({ open, title, description, confirmLabel, pending, on
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[300] grid place-items-center bg-slate-950/45 p-4 backdrop-blur-md"
-          onClick={(event) => event.target === event.currentTarget && onCancel()}
+          className="fixed inset-0 z-[300] flex items-center justify-center bg-lp-text/30 backdrop-blur-md p-4"
+          onClick={(e) => e.target === e.currentTarget && onCancel()}
         >
           <motion.div
-            initial={{ opacity: 0, scale: 0.88, y: 18 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.92, y: 12 }}
-            transition={{ type: 'spring', stiffness: 260, damping: 22 }}
-            className="relative w-full max-w-md overflow-hidden rounded-[28px] border border-white/70 bg-white/85 p-6 shadow-[inset_0_1px_0_rgba(255,255,255,.95),0_32px_90px_rgba(15,23,42,.28)] backdrop-blur-2xl"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 8 }}
+            transition={{ duration: 0.2 }}
+            className="bg-white border border-lp-border rounded-[2rem] p-8 w-full max-w-sm shadow-[0_32px_64px_rgba(0,0,0,0.12)]"
           >
-            <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_right,rgba(75,115,255,.18),transparent_48%)]" />
-            <p className="mb-2 font-mono text-[10px] font-bold uppercase tracking-[.24em] text-lp-accent">Konfirmasi Sistem</p>
-            <h3 className="text-xl font-black tracking-tight text-lp-text">{title}</h3>
-            <p className="mt-2 text-sm leading-relaxed text-lp-text2">{description}</p>
+            <h3 className="text-lg font-bold text-lp-text tracking-tight">{title}</h3>
+            <p className="mt-2 text-sm text-lp-text2 leading-relaxed font-light">{description}</p>
             <div className="mt-6 flex gap-3">
-              <button onClick={onCancel} className="flex-1 rounded-2xl border border-slate-200/70 bg-white/70 px-4 py-3 text-sm font-bold text-lp-text2 transition hover:bg-white active:scale-95">Batal</button>
-              <button onClick={onConfirm} disabled={pending} className="flex-1 rounded-2xl bg-lp-text px-4 py-3 text-sm font-bold text-white shadow-lg shadow-blue-950/15 transition hover:bg-lp-accent disabled:opacity-50 active:scale-95">{pending ? 'Memproses...' : confirmLabel}</button>
+              <button
+                onClick={onCancel}
+                className="flex-1 py-3 rounded-full border border-lp-border text-[12px] font-bold text-lp-text2 hover:bg-lp-surface transition-all uppercase tracking-widest"
+              >
+                Batal
+              </button>
+              <button
+                onClick={onConfirm}
+                disabled={pending}
+                className="flex-1 py-3 rounded-full bg-lp-red text-white text-[12px] font-bold hover:bg-lp-red/90 disabled:opacity-50 transition-all uppercase tracking-widest"
+              >
+                {pending ? 'Memproses...' : confirmLabel}
+              </button>
             </div>
           </motion.div>
         </motion.div>
@@ -92,10 +88,9 @@ const ConfirmationModal = ({ open, title, description, confirmLabel, pending, on
   )
 }
 
-/* ─────────────────────────────────────
-   Main Component
-───────────────────────────────────── */
+// ─── Main Component ─────────────────────────────────────────────────
 const AbsensiDosen = () => {
+  const { user } = useAuth()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [courseID, setCourseID] = useState('')
   const [duration, setDuration] = useState(15)
@@ -110,13 +105,9 @@ const AbsensiDosen = () => {
   const [confirmCloseOpen, setConfirmCloseOpen] = useState(false)
   const [notice, setNotice] = useState(null)
   const refreshIntervalRef = useRef(null)
-
-  // Real-time animation states
   const [localStudents, setLocalStudents] = useState([])
   const [liveNotifications, setLiveNotifications] = useState([])
   const checkInQueueRef = useRef([])
-
-  // History Detail states
   const [selectedHistorySession, setSelectedHistorySession] = useState(null)
   const [historyModalOpen, setHistoryModalOpen] = useState(false)
   const [historySessionDetails, setHistorySessionDetails] = useState(null)
@@ -234,15 +225,14 @@ const AbsensiDosen = () => {
   useEffect(() => () => stopAutoRefresh(), [])
   useEffect(() => {
     if (!notice) return
-    const timeout = setTimeout(() => setNotice(null), 4500)
-    return () => clearTimeout(timeout)
+    const t = setTimeout(() => setNotice(null), 4500)
+    return () => clearTimeout(t)
   }, [notice])
 
   /* ── Queue / Animation Logic ── */
   useEffect(() => {
     if (!sessionStudents?.students) return
     if (localStudents.length === 0) { setLocalStudents(sessionStudents.students); return }
-
     const newCheckIns = []
     sessionStudents.students.forEach(s => {
       const local = localStudents.find(l => l.id === s.id)
@@ -254,7 +244,6 @@ const AbsensiDosen = () => {
       }
     })
     if (newCheckIns.length > 0) checkInQueueRef.current = [...checkInQueueRef.current, ...newCheckIns]
-
     setLocalStudents(prev => prev.map(localS => {
       const serverS = sessionStudents.students.find(s => s.id === localS.id)
       if (!serverS) return localS
@@ -275,7 +264,6 @@ const AbsensiDosen = () => {
     const interval = setInterval(() => {
       if (checkInQueueRef.current.length === 0) return
       const next = checkInQueueRef.current.shift()
-
       setLocalStudents(prev => {
         const exists = prev.some(s => s.id === next.id)
         if (!exists) return [...prev, next]
@@ -285,13 +273,11 @@ const AbsensiDosen = () => {
           attendance_time: next.attendance_time || new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
         } : s)
       })
-
       const timeStr = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
       setLiveNotifications(prev => [{
         id: Math.random().toString(36).substring(2, 9),
-        icon: '🦀',
-        title: 'OpenClaw Attendance Bot',
-        description: `📢 ${next.name} (${next.nim}) berhasil presensi ${next.attendance_status?.toUpperCase()} — Pertemuan ${activeSession?.pertemuan_ke || pertemuanKe}`,
+        title: 'Presensi Masuk',
+        description: `${next.name} (${next.nim}) presensi ${next.attendance_status?.toUpperCase()} — Pertemuan ${activeSession?.pertemuan_ke || pertemuanKe}`,
         time: timeStr,
       }, ...prev].slice(0, 5))
     }, 1200)
@@ -338,12 +324,9 @@ const AbsensiDosen = () => {
     setLoadingHistoryDetails(true)
     setHistorySearchQuery('')
     api.getAttendanceSessionDetail(item.id)
-      .then(res => {
-        setHistorySessionDetails(res.data.data)
-        setLoadingHistoryDetails(false)
-      })
+      .then(res => { setHistorySessionDetails(res.data.data); setLoadingHistoryDetails(false) })
       .catch(err => {
-        setNotice('Gagal mengambil detail riwayat: ' + (err.response?.data?.message || err.message))
+        setNotice('Gagal mengambil detail: ' + (err.response?.data?.message || err.message))
         setLoadingHistoryDetails(false)
         setHistoryModalOpen(false)
       })
@@ -354,54 +337,39 @@ const AbsensiDosen = () => {
   const getUsedPertemuan = () => {
     if (!courseID) return []
     const used = new Set()
-    
-    // Get from history
-    if (pertemuanHistory) {
-      pertemuanHistory.forEach(item => {
-        if (item.course_id === courseID) {
-          used.add(item.pertemuan_ke)
-        }
-      })
-    }
-    
-    // Get from active sessions
-    if (activeSessions?.sessions) {
-      activeSessions.sessions.forEach(item => {
-        if (item.course_id === courseID) {
-          used.add(item.pertemuan_ke)
-        }
-      })
-    }
-    
+    pertemuanHistory?.forEach(item => { if (item.course_id === courseID) used.add(item.pertemuan_ke) })
+    activeSessions?.sessions?.forEach(item => { if (item.course_id === courseID) used.add(item.pertemuan_ke) })
     return Array.from(used)
   }
 
-  // Auto-select first available meeting number when courseID changes
   useEffect(() => {
     if (!courseID) return
     const used = getUsedPertemuan()
     if (used.includes(pertemuanKe)) {
-      // Find first available meeting
       const available = pertemuanList.find(p => !used.includes(p))
-      if (available) {
-        setPertemuanKe(available)
-      }
+      if (available) setPertemuanKe(available)
     }
   }, [courseID, pertemuanHistory, activeSessions])
 
-  const hadirCount = sessionStudents?.hadir_count || 0
-  const totalCount = sessionStudents?.total_students || 0
-  const belumCount = totalCount - (sessionStudents?.attendance_count || 0)
+  const hadirCount  = sessionStudents?.hadir_count || 0
+  const totalCount  = sessionStudents?.total_students || 0
+  const belumCount  = totalCount - (sessionStudents?.attendance_count || 0)
   const progressPct = totalCount > 0 ? Math.round((hadirCount / totalCount) * 100) : 0
 
-  /* ═══════════════════════════════════
+  /* ══════════════════════════════════════════════════════════
      RENDER
-  ═══════════════════════════════════ */
+  ══════════════════════════════════════════════════════════ */
   return (
-    <div className="relative flex min-h-screen overflow-hidden bg-lp-bg text-lp-text before:pointer-events-none before:fixed before:inset-0 before:bg-[linear-gradient(rgba(15,23,42,.045)_1px,transparent_1px),linear-gradient(90deg,rgba(15,23,42,.045)_1px,transparent_1px),radial-gradient(circle_at_45%_8%,rgba(75,115,255,.14),transparent_42%)] before:bg-[size:64px_64px,64px_64px,100%_100%] before:[mask-image:linear-gradient(to_bottom,black,transparent_75%)]">
+    <div className="flex min-h-screen bg-lp-bg overflow-hidden">
+      {/* Background Decorative Layer */}
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+        <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[60%] bg-lp-text/5 blur-[120px] rounded-full" />
+        <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-lp-text/5 blur-[120px] rounded-full" />
+      </div>
+
       <Sidebar role="dosen" isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-      {/* Projector / Fullscreen QR Overlay */}
+      {/* ── Projector / Fullscreen QR ── */}
       <AnimatePresence>
         {projectorMode && activeSession && qrToken && (
           <motion.div
@@ -409,437 +377,407 @@ const AbsensiDosen = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900"
+            className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-lp-text"
           >
-            {/* Header info */}
-            <motion.div
-              initial={{ y: -30, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.1 }}
-              className="text-center mb-8"
-            >
-              <div className="flex items-center justify-center gap-3 mb-3">
-                <span className="text-3xl">🦀</span>
-                <span className="text-white/60 text-sm font-mono tracking-widest uppercase">OpenClaw Attendance</span>
-              </div>
-              <h1 className="text-3xl md:text-5xl font-black text-white">{activeSession.course_name}</h1>
-              <p className="text-blue-300 text-lg mt-2 font-medium">
-                Pertemuan {activeSession.pertemuan_ke} &nbsp;·&nbsp; Scan QR untuk absen
-              </p>
-            </motion.div>
+            <div className="text-center mb-10">
+              <p className="text-lp-text3 text-[11px] font-mono font-bold tracking-[0.2em] uppercase mb-4">Presensi Kelas</p>
+              <h1 className="text-4xl md:text-5xl font-light text-white tracking-tight">{activeSession.course_name}</h1>
+              <p className="text-lp-text3 text-lg mt-3 font-light">Pertemuan {activeSession.pertemuan_ke} · Scan QR untuk absen</p>
+            </div>
 
-            {/* QR Code */}
-            <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-              className="relative"
-            >
-              <div className="absolute -inset-4 rounded-3xl bg-blue-500/20 blur-2xl animate-pulse" />
-              <div className="relative bg-white p-6 md:p-8 rounded-3xl shadow-2xl">
-                <QRCodeSVG
-                  value={JSON.stringify({
-                    session_token: qrToken,
-                    course_id: activeSession.course_id,
-                    pertemuan_ke: activeSession.pertemuan_ke,
-                  })}
-                  size={typeof window !== 'undefined' && window.innerWidth < 768 ? 220 : 300}
-                  level="H"
-                  includeMargin={true}
-                  bgColor="#FFFFFF"
-                  fgColor="#1e3a8a"
-                />
-              </div>
-            </motion.div>
+            <div className="bg-white p-6 rounded-[2rem] shadow-2xl">
+              <QRCodeSVG
+                value={JSON.stringify({
+                  session_token: qrToken,
+                  course_id: activeSession.course_id,
+                  pertemuan_ke: activeSession.pertemuan_ke,
+                })}
+                size={typeof window !== 'undefined' && window.innerWidth < 768 ? 220 : 300}
+                level="H"
+                includeMargin
+              />
+            </div>
 
-            {/* Stats bar */}
-            <motion.div
-              initial={{ y: 30, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.3 }}
-              className="mt-10 flex gap-6 text-center"
-            >
+            <div className="mt-10 flex gap-12 text-center">
               <div>
-                <p className="text-4xl font-black text-emerald-400">{hadirCount}</p>
-                <p className="text-white/50 text-sm">Hadir</p>
+                <p className="text-4xl font-bold text-lp-green">{hadirCount}</p>
+                <p className="text-lp-text3 text-sm mt-1 font-mono uppercase tracking-wider">Hadir</p>
               </div>
-              <div className="w-px bg-white/10" />
               <div>
-                <p className="text-4xl font-black text-white">{totalCount}</p>
-                <p className="text-white/50 text-sm">Total</p>
+                <p className="text-4xl font-bold text-white">{totalCount}</p>
+                <p className="text-lp-text3 text-sm mt-1 font-mono uppercase tracking-wider">Total</p>
               </div>
-              <div className="w-px bg-white/10" />
               <div>
-                <p className="text-4xl font-black text-amber-400">{belumCount}</p>
-                <p className="text-white/50 text-sm">Belum Absen</p>
+                <p className="text-4xl font-bold text-lp-amber">{belumCount}</p>
+                <p className="text-lp-text3 text-sm mt-1 font-mono uppercase tracking-wider">Belum</p>
               </div>
-            </motion.div>
+            </div>
 
-            {/* Close projector */}
             <button
               onClick={() => setProjectorMode(false)}
-              className="absolute top-6 right-6 flex items-center gap-2 text-white/50 hover:text-white transition-colors text-sm font-medium bg-white/10 hover:bg-white/20 px-4 py-2 rounded-xl backdrop-blur-sm"
+              className="absolute top-5 right-5 flex items-center gap-2 text-lp-text3 hover:text-white text-[12px] font-bold bg-white/10 hover:bg-white/20 px-5 py-2.5 rounded-full transition-all uppercase tracking-widest"
             >
               <FaCompress />
-              Keluar Mode Proyektor
+              Keluar
             </button>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* ── MAIN CONTENT ── */}
-      <div className="flex-1 min-w-0 transition-all duration-300">
-        <div className="relative p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
+      {/* ── Main ── */}
+      <div className="flex-1 flex flex-col min-w-0 relative z-10">
 
-          {/* ── TOP HEADER ── */}
-          <div className="flex items-center gap-4 mb-8">
-            <button
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="lg:hidden p-3 rounded-2xl bg-white border border-slate-200 shadow-sm hover:shadow-md transition-shadow"
+        {/* Navbar */}
+        <Navbar user={user} onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
+
+        {/* Content */}
+        <main className="flex-1 overflow-y-auto">
+          <div className="p-6 lg:p-10 max-w-7xl mx-auto">
+
+            {/* Header */}
+            <motion.div 
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8 mb-12"
             >
-              <span className="text-xl text-slate-600">☰</span>
-            </button>
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-1">
-                <FaGraduationCap className="text-blue-500 text-lg" />
-                <span className="text-xs font-bold text-blue-500 tracking-widest uppercase">Dosen Dashboard</span>
+              <div>
+                <div className="flex items-center gap-3 mb-4">
+                  <button 
+                    onClick={() => setSidebarOpen(!sidebarOpen)}
+                    className="lg:hidden p-3 rounded-xl bg-white border border-lp-border hover:bg-lp-surface transition-all"
+                  >
+                    <FiChevronRight className="text-lp-text" />
+                  </button>
+                  <span className="text-[11px] font-mono font-medium tracking-[0.2em] uppercase text-lp-text3">
+                    ATTENDANCE MANAGEMENT
+                  </span>
+                </div>
+                <h1 className="text-4xl md:text-5xl font-light text-lp-text tracking-tight mb-3">
+                  Manajemen Absensi
+                  <span className="text-lp-text3 block text-lg font-normal mt-2">
+                    Kelola sesi absensi QR Code per pertemuan
+                  </span>
+                </h1>
               </div>
-              <h1 className="text-2xl sm:text-3xl font-black text-slate-800 tracking-tight">Manajemen Absensi</h1>
-              <p className="text-slate-500 text-sm font-medium mt-0.5">Kelola sesi absensi QR Code per pertemuan</p>
-            </div>
+              {activeSession && (
+                <div className="flex items-center gap-2 text-lp-green bg-lp-green/10 border border-lp-green/20 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest">
+                  <span className="w-1.5 h-1.5 rounded-full bg-lp-green animate-pulse" />
+                  Sesi Aktif
+                </div>
+              )}
+            </motion.div>
 
-            {/* Status pill */}
-            {activeSession && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="hidden sm:flex items-center gap-2 bg-emerald-50 text-emerald-700 border border-emerald-200 px-4 py-2 rounded-full text-sm font-semibold"
-              >
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                Sesi Aktif
-              </motion.div>
-            )}
-          </div>
+            <AnimatePresence mode="wait">
 
-          {/* ══════════════════════════════
-              IDLE STATE — No active session
-          ══════════════════════════════ */}
-          <AnimatePresence mode="wait">
-            {!activeSession ? (
-              <motion.div
-                key="idle"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.35 }}
-                className="grid grid-cols-1 lg:grid-cols-5 gap-6"
-              >
-                {/* ── Buat Sesi Form ── (3 cols) */}
-                <div className="lg:col-span-3">
-                  <div className="bg-white rounded-3xl border border-slate-200 shadow-[0_4px_24px_rgba(0,0,0,0.06)] overflow-hidden">
-                    {/* Card header gradient */}
-                    <div className="bg-gradient-to-r from-blue-600 to-blue-500 px-6 py-5">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-white/20 rounded-2xl flex items-center justify-center">
-                          <FaQrcode className="text-white text-lg" />
+              {/* ══════════════════════════════
+                  IDLE STATE — No active session
+              ══════════════════════════════ */}
+              {!activeSession ? (
+                <motion.div
+                  key="idle"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -6 }}
+                  transition={{ duration: 0.22 }}
+                  className="grid grid-cols-1 lg:grid-cols-5 gap-6"
+                >
+                  {/* ── Create Session Form (3 cols) ── */}
+                  <div className="lg:col-span-3">
+                    <div className="bg-white rounded-[2.5rem] border border-lp-border shadow-sm overflow-hidden">
+                      <div className="px-8 py-6 border-b border-lp-border flex items-center gap-3">
+                        <div className="p-3 bg-lp-accentS rounded-xl shrink-0">
+                          <FaQrcode className="text-lp-atext text-sm" />
                         </div>
                         <div>
-                          <h2 className="text-white font-black text-lg">Buat Sesi Absensi Baru</h2>
-                          <p className="text-blue-100 text-xs font-medium">Mahasiswa scan QR Code untuk hadir</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <form onSubmit={handleCreateSession} className="p-6 space-y-5">
-                      {/* Mata Kuliah */}
-                      <div>
-                        <label className="block text-sm font-bold text-slate-700 mb-2">
-                          Mata Kuliah
-                        </label>
-                        <select
-                          value={courseID}
-                          onChange={(e) => setCourseID(e.target.value)}
-                          className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                          required
-                          disabled={loadingCourses || createSessionMutation.isPending}
-                        >
-                          <option value="">— Pilih Mata Kuliah —</option>
-                          {courses?.map((c) => (
-                            <option key={c.kode} value={c.kode}>
-                              {c.nama} ({c.kode}) · {c.hari} {c.jam_mulai}–{c.jam_selesai}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      {/* Pertemuan ke */}
-                      <div>
-                        <label className="block text-sm font-bold text-slate-700 mb-2">
-                          Pertemuan Ke-
-                        </label>
-                        <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
-                          {pertemuanList.map(p => {
-                            const isUsed = getUsedPertemuan().includes(p)
-                            return (
-                              <button
-                                key={p}
-                                type="button"
-                                disabled={isUsed}
-                                onClick={() => setPertemuanKe(p)}
-                                title={isUsed ? `Pertemuan ${p} sudah digunakan` : `Pilih Pertemuan ${p}`}
-                                className={`h-10 rounded-xl text-sm font-bold transition-all relative ${
-                                  isUsed
-                                    ? 'bg-slate-100 text-slate-300 cursor-not-allowed line-through'
-                                    : pertemuanKe === p
-                                    ? 'bg-blue-600 text-white shadow-[0_4px_12px_rgba(59,130,246,0.4)]'
-                                    : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
-                                }`}
-                              >
-                                {p}
-                              </button>
-                            )
-                          })}
+                          <h2 className="text-sm font-bold text-lp-text tracking-tight">Buat Sesi Absensi Baru</h2>
+                          <p className="text-[11px] text-lp-text3 font-light mt-0.5">Mahasiswa scan QR Code untuk mencatat kehadiran</p>
                         </div>
                       </div>
 
-                      {/* Durasi */}
-                      <div>
-                        <div className="flex justify-between items-center mb-2">
-                          <label className="text-sm font-bold text-slate-700">Durasi Sesi</label>
-                          <span className="text-sm font-black text-blue-600 bg-blue-50 px-3 py-0.5 rounded-full">
-                            {duration} menit
-                          </span>
-                        </div>
-                        <input
-                          type="range"
-                          value={duration}
-                          onChange={(e) => setDuration(e.target.value)}
-                          min="5" max="120" step="5"
-                          className="w-full h-2 bg-slate-200 rounded-full appearance-none cursor-pointer accent-blue-600"
-                        />
-                        <div className="flex justify-between text-xs text-slate-400 font-medium mt-1">
-                          <span>5m</span>
-                          <span>120m</span>
-                        </div>
-                      </div>
-
-                      {/* Submit */}
-                      <button
-                        type="submit"
-                        disabled={createSessionMutation.isPending || !courseID}
-                        className="w-full bg-gradient-to-r from-blue-600 to-blue-500 text-white py-4 rounded-2xl font-black text-base hover:from-blue-700 hover:to-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 shadow-[0_4px_16px_rgba(59,130,246,0.4)] hover:shadow-[0_6px_20px_rgba(59,130,246,0.5)] hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-3"
-                      >
-                        {createSessionMutation.isPending ? (
-                          <>
-                            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                            Membuat Sesi...
-                          </>
-                        ) : (
-                          <>
-                            <FaBolt />
-                            Buat Sesi — Pertemuan {pertemuanKe}
-                          </>
-                        )}
-                      </button>
-
-                      {createSessionMutation.isError && (
-                        <div className="flex items-center gap-3 p-4 bg-rose-50 border border-rose-200 rounded-2xl text-rose-700 text-sm font-medium">
-                          <FaTimesCircle className="text-rose-500 shrink-0" />
-                          {createSessionMutation.error?.response?.data?.message || 'Gagal membuat sesi'}
-                        </div>
-                      )}
-                    </form>
-                  </div>
-                </div>
-
-                {/* ── Sidebar right: Riwayat & Sesi aktif tersisa ── (2 cols) */}
-                <div className="lg:col-span-2 space-y-5">
-
-                  {/* Sesi aktif (dari server, bukan state lokal) */}
-                  {activeSessions?.sessions?.length > 0 && (
-                    <div className="bg-white rounded-3xl border border-slate-200 shadow-[0_4px_24px_rgba(0,0,0,0.06)] p-5">
-                      <h3 className="font-black text-slate-800 text-base mb-4 flex items-center gap-2">
-                        <FaLayerGroup className="text-blue-500" />
-                        Sesi Berjalan
-                      </h3>
-                      <div className="space-y-3">
-                        {activeSessions.sessions.slice(0, 3).map(session => (
-                          <div key={session.id} className="border border-slate-100 rounded-2xl p-4 hover:border-blue-200 hover:bg-blue-50/30 transition-all">
-                            <div className="flex items-start justify-between mb-2">
-                              <div className="flex-1 min-w-0">
-                                <p className="font-bold text-slate-800 text-sm truncate">{session.course_name}</p>
-                                <p className="text-slate-400 text-xs font-medium mt-0.5">Pertemuan {session.pertemuan_ke}</p>
-                              </div>
-                              <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-bold shrink-0 ${
-                                session.time_left_minutes > 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'
-                              }`}>
-                                {session.time_left_minutes > 0 ? `${session.time_left_minutes}m` : 'Habis'}
-                              </span>
-                            </div>
-                            <div className="flex gap-2">
-                              <button
-                                onClick={() => {
-                                  setActiveSession({
-                                    session_id: session.id,
-                                    course_name: session.course_name,
-                                    course_id: session.course_id,
-                                    session_token: session.session_token,
-                                    expires_at: session.expires_at,
-                                    pertemuan_ke: session.pertemuan_ke,
-                                    created_at: session.created_at,
-                                  })
-                                  setQrToken(session.session_token)
-                                  startAutoRefresh()
-                                }}
-                                className="flex-1 flex items-center justify-center gap-1.5 text-xs font-bold py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition-colors"
-                              >
-                                <FaQrcode />
-                                Monitor
-                              </button>
-                              <button
-                                onClick={() => { if (window.confirm('Tutup sesi ini?')) closeSessionMutation.mutate(session.id) }}
-                                className="flex items-center justify-center w-9 h-9 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors"
-                              >
-                                <FaStopCircle />
-                              </button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Riwayat Pertemuan */}
-                  <div className="bg-white rounded-3xl border border-slate-200 shadow-[0_4px_24px_rgba(0,0,0,0.06)] p-5">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="font-black text-slate-800 text-base flex items-center gap-2">
-                        <FaHistory className="text-blue-500" />
-                        Riwayat Pertemuan
-                      </h3>
-                      <button onClick={() => refetchHistory()} className="text-slate-400 hover:text-slate-600 transition-colors">
-                        <FaSync className="text-sm" />
-                      </button>
-                    </div>
-                    {pertemuanHistory?.length > 0 ? (
-                      <div className="space-y-2">
-                        {pertemuanHistory.slice(0, 5).map((item, i) => (
-                          <div
-                            key={i}
-                            onClick={() => handleViewHistoryDetail(item)}
-                            className="flex items-center gap-3 p-3 rounded-2xl hover:bg-slate-50 border border-slate-100 hover:border-slate-200 transition-all cursor-pointer"
+                      <form onSubmit={handleCreateSession} className="p-8 space-y-8">
+                        {/* Mata Kuliah */}
+                        <div>
+                          <label className="block text-[11px] font-mono font-semibold text-lp-text mb-3 tracking-widest uppercase">
+                            Mata Kuliah *
+                          </label>
+                          <select
+                            value={courseID}
+                            onChange={(e) => setCourseID(e.target.value)}
+                            className="w-full bg-lp-surface font-normal text-[15px] text-lp-text border border-lp-border rounded-2xl px-5 py-4 focus:outline-none focus:ring-2 focus:ring-lp-accent/10 focus:border-lp-text transition-all duration-500 appearance-none"
+                            required
+                            disabled={loadingCourses || createSessionMutation.isPending}
                           >
-                            <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
-                              <FaCalendarCheck className="text-blue-500 text-xs" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="font-bold text-slate-800 text-xs truncate">{item.course_name}</p>
-                              <p className="text-slate-400 text-[10px] font-medium">
-                                Pertemuan {item.pertemuan_ke} · {item.created_at ? new Date(item.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: '2-digit' }) : ''}
-                              </p>
-                              <div className="flex flex-wrap items-center gap-1 mt-1">
-                                <span className="text-[9px] font-bold px-1.5 py-0.5 bg-emerald-50 text-emerald-700 rounded-md">
-                                  {item.hadir_count || 0} Hadir
+                            <option value="">— Pilih Mata Kuliah —</option>
+                            {courses?.map((c) => (
+                              <option key={c.kode} value={c.kode}>
+                                {c.nama} ({c.kode}) · {c.hari} {c.jam_mulai}–{c.jam_selesai}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* Pertemuan ke */}
+                        <div>
+                          <label className="block text-[11px] font-mono font-semibold text-lp-text mb-3 tracking-widest uppercase">
+                            Pertemuan Ke-
+                          </label>
+                          <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
+                            {pertemuanList.map(p => {
+                              const isUsed = getUsedPertemuan().includes(p)
+                              return (
+                                <button
+                                  key={p}
+                                  type="button"
+                                  disabled={isUsed}
+                                  onClick={() => setPertemuanKe(p)}
+                                  title={isUsed ? `Pertemuan ${p} sudah digunakan` : undefined}
+                                  className={`h-10 rounded-xl text-sm font-bold transition-all duration-300 ${
+                                    isUsed
+                                      ? 'bg-lp-surface text-lp-text3/40 cursor-not-allowed line-through'
+                                      : pertemuanKe === p
+                                      ? 'bg-lp-text text-white shadow-md'
+                                      : 'bg-white text-lp-text2 hover:bg-lp-surface border border-lp-border'
+                                  }`}
+                                >
+                                  {p}
+                                </button>
+                              )
+                            })}
+                          </div>
+                        </div>
+
+                        {/* Durasi */}
+                        <div>
+                          <div className="flex justify-between items-center mb-3">
+                            <label className="text-[11px] font-mono font-semibold text-lp-text tracking-widest uppercase">Durasi Sesi</label>
+                            <span className="text-sm font-bold text-lp-atext font-mono">{duration} menit</span>
+                          </div>
+                          <input
+                            type="range"
+                            value={duration}
+                            onChange={(e) => setDuration(e.target.value)}
+                            min="5" max="120" step="5"
+                            className="w-full h-1.5 bg-lp-surface rounded-full appearance-none cursor-pointer accent-lp-text"
+                          />
+                          <div className="flex justify-between text-[10px] text-lp-text3 mt-2 font-mono tracking-wider">
+                            <span>5 min</span>
+                            <span>120 min</span>
+                          </div>
+                        </div>
+
+                        {/* Submit */}
+                        <button
+                          type="submit"
+                          disabled={createSessionMutation.isPending || !courseID}
+                          className="w-full flex items-center justify-center gap-3 bg-lp-text hover:bg-lp-atext text-white py-4 rounded-full text-[13px] font-bold disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-500 uppercase tracking-widest shadow-[0_12px_24px_rgba(0,0,0,0.1)] hover:-translate-y-0.5"
+                        >
+                          {createSessionMutation.isPending ? (
+                            <>
+                              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                              Membuat Sesi...
+                            </>
+                          ) : (
+                            <>
+                              <FaBolt />
+                              Buat Sesi — Pertemuan {pertemuanKe}
+                            </>
+                          )}
+                        </button>
+
+                        {createSessionMutation.isError && (
+                          <div className="flex items-center gap-2.5 p-4 bg-lp-red/5 border border-lp-red/20 rounded-2xl text-lp-red text-sm">
+                            <FaTimesCircle className="shrink-0" />
+                            {createSessionMutation.error?.response?.data?.message || 'Gagal membuat sesi'}
+                          </div>
+                        )}
+                      </form>
+                    </div>
+                  </div>
+
+                  {/* ── Right: Active sessions + History (2 cols) ── */}
+                  <div className="lg:col-span-2 space-y-5">
+
+                    {/* Running sessions */}
+                    {activeSessions?.sessions?.length > 0 && (
+                      <div className="bg-white rounded-[2rem] border border-lp-border shadow-sm p-6">
+                        <div className="flex items-center gap-2 mb-5">
+                          <span className="text-[11px] font-mono font-bold text-lp-text3 uppercase tracking-[0.2em]">Sesi Berjalan</span>
+                          <div className="h-px flex-1 bg-lp-border" />
+                        </div>
+                        <div className="space-y-3">
+                          {activeSessions.sessions.slice(0, 3).map(session => (
+                            <div key={session.id} className="p-4 border border-lp-border rounded-2xl hover:border-lp-text/20 hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] transition-all duration-500">
+                              <div className="flex items-start justify-between mb-3">
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-bold text-lp-text text-sm truncate tracking-tight">{session.course_name}</p>
+                                  <p className="text-[11px] text-lp-text3 mt-0.5 font-mono">Pertemuan {session.pertemuan_ke}</p>
+                                </div>
+                                <span className={`ml-2 shrink-0 px-2.5 py-0.5 rounded-full text-[11px] font-bold font-mono ${
+                                  session.time_left_minutes > 0
+                                    ? 'bg-lp-green/10 text-lp-green'
+                                    : 'bg-lp-surface text-lp-text3'
+                                }`}>
+                                  {session.time_left_minutes > 0 ? `${session.time_left_minutes}m` : 'Habis'}
                                 </span>
-                                <span className="text-[9px] font-bold px-1.5 py-0.5 bg-rose-50 text-rose-700 rounded-md">
-                                  {item.alpa_count || 0} Alpa
-                                </span>
-                                {(item.izin_count > 0 || item.sakit_count > 0) && (
-                                  <span className="text-[9px] font-bold px-1.5 py-0.5 bg-amber-50 text-amber-700 rounded-md">
-                                    {(item.izin_count || 0) + (item.sakit_count || 0)} Izin/Sakit
-                                  </span>
-                                )}
+                              </div>
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => {
+                                    setActiveSession({
+                                      session_id: session.id,
+                                      course_name: session.course_name,
+                                      course_id: session.course_id,
+                                      session_token: session.session_token,
+                                      expires_at: session.expires_at,
+                                      pertemuan_ke: session.pertemuan_ke,
+                                      created_at: session.created_at,
+                                    })
+                                    setQrToken(session.session_token)
+                                    startAutoRefresh()
+                                  }}
+                                  className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-full bg-lp-text text-white text-[11px] font-bold hover:bg-lp-atext transition-all uppercase tracking-widest"
+                                >
+                                  <FaQrcode className="text-xs" /> Monitor
+                                </button>
+                                <button
+                                  onClick={() => { if (window.confirm('Tutup sesi ini?')) closeSessionMutation.mutate(session.id) }}
+                                  className="w-10 h-10 rounded-full bg-lp-red/5 text-lp-red hover:bg-lp-red/10 border border-lp-red/20 transition-all flex items-center justify-center"
+                                >
+                                  <FaStopCircle className="text-xs" />
+                                </button>
                               </div>
                             </div>
-                            <FaChevronRight className="text-slate-300 text-xs shrink-0" />
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-6 text-slate-400">
-                        <FaHistory className="text-3xl mx-auto mb-2 text-slate-200" />
-                        <p className="text-sm font-medium">Belum ada riwayat</p>
+                          ))}
+                        </div>
                       </div>
                     )}
-                  </div>
-                </div>
-              </motion.div>
-            ) : (
-              /* ══════════════════════════════
-                 ACTIVE SESSION DASHBOARD
-              ══════════════════════════════ */
-              <motion.div
-                key="active"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.35 }}
-              >
-                {/* ── Session top bar ── */}
-                <div className="bg-white rounded-3xl border border-slate-200 shadow-[0_4px_24px_rgba(0,0,0,0.06)] p-4 sm:p-5 mb-6 flex flex-wrap items-center gap-3">
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <div className="w-10 h-10 bg-emerald-50 rounded-2xl flex items-center justify-center shrink-0">
-                      <FaHourglassHalf className="text-emerald-600" />
+
+                    {/* History */}
+                    <div className="bg-white rounded-[2rem] border border-lp-border shadow-sm p-6">
+                      <div className="flex items-center justify-between mb-5">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[11px] font-mono font-bold text-lp-text3 uppercase tracking-[0.2em]">Riwayat</span>
+                          <div className="h-px w-8 bg-lp-border" />
+                        </div>
+                        <button
+                          onClick={() => refetchHistory()}
+                          className="p-2 rounded-full bg-lp-surface border border-lp-border text-lp-text3 hover:text-lp-text hover:rotate-180 transition-all duration-700"
+                        >
+                          <FiRefreshCw className="text-xs" />
+                        </button>
+                      </div>
+
+                      {pertemuanHistory?.length > 0 ? (
+                        <div className="space-y-1">
+                          {pertemuanHistory.slice(0, 5).map((item, i) => (
+                            <button
+                              key={i}
+                              onClick={() => handleViewHistoryDetail(item)}
+                              className="w-full flex items-center gap-3 p-3.5 rounded-2xl hover:bg-lp-surface border border-transparent hover:border-lp-border transition-all text-left"
+                            >
+                              <div className="w-9 h-9 bg-lp-accentS rounded-xl flex items-center justify-center shrink-0">
+                                <FaCalendarCheck className="text-lp-atext text-xs" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-bold text-lp-text truncate tracking-tight">{item.course_name}</p>
+                                <p className="text-[11px] text-lp-text3 mt-0.5 font-mono">
+                                  P{item.pertemuan_ke} · {item.created_at ? new Date(item.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }) : ''}
+                                </p>
+                                <div className="flex gap-1.5 mt-1">
+                                  <span className="text-[10px] font-bold px-2 py-0.5 bg-lp-green/10 text-lp-green rounded-full font-mono">
+                                    {item.hadir_count || 0} H
+                                  </span>
+                                  <span className="text-[10px] font-bold px-2 py-0.5 bg-lp-red/10 text-lp-red rounded-full font-mono">
+                                    {item.alpa_count || 0} A
+                                  </span>
+                                </div>
+                              </div>
+                              <FaChevronRight className="text-lp-text3/50 text-xs shrink-0" />
+                            </button>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-10">
+                          <div className="w-12 h-12 rounded-2xl bg-lp-surface flex items-center justify-center mx-auto mb-3">
+                            <FaHistory className="text-xl text-lp-text3" />
+                          </div>
+                          <p className="text-sm text-lp-text3 font-light">Belum ada riwayat</p>
+                        </div>
+                      )}
                     </div>
-                    <div className="min-w-0">
-                      <p className="font-black text-slate-800 text-base truncate">{activeSession.course_name}</p>
-                      <div className="flex flex-wrap items-center gap-2 mt-0.5">
-                        <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
-                          Pertemuan {activeSession.pertemuan_ke}
+                  </div>
+                </motion.div>
+
+              ) : (
+                /* ══════════════════════════════
+                   ACTIVE SESSION DASHBOARD
+                ══════════════════════════════ */
+                <motion.div
+                  key="active"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -6 }}
+                  transition={{ duration: 0.22 }}
+                >
+                  {/* Session bar */}
+                  <div className="bg-white rounded-[2rem] border border-lp-border shadow-sm p-5 mb-6 flex flex-wrap items-center gap-4">
+                    <div className="p-3 bg-lp-green/10 rounded-xl shrink-0">
+                      <FaHourglassHalf className="text-lp-green text-sm" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-lp-text text-sm truncate tracking-tight">{activeSession.course_name}</p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-[11px] font-bold text-lp-green bg-lp-green/10 px-2.5 py-0.5 rounded-full font-mono">
+                          P{activeSession.pertemuan_ke}
                         </span>
-                        <span className="text-xs text-slate-400 font-medium">
-                          Berakhir: {new Date(activeSession.expires_at).toLocaleString('id-ID', { hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                        <span className={`flex items-center gap-1 text-xs font-medium ${autoRefreshActive ? 'text-emerald-600' : 'text-slate-400'}`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${autoRefreshActive ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'}`} />
-                          {autoRefreshActive ? 'Live' : 'Paused'}
-                        </span>
+                        {autoRefreshActive && (
+                          <span className="text-[11px] text-lp-green font-bold flex items-center gap-1 font-mono uppercase tracking-wider">
+                            <span className="w-1.5 h-1.5 rounded-full bg-lp-green animate-pulse" />
+                            Live
+                          </span>
+                        )}
                       </div>
                     </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        onClick={() => setProjectorMode(true)}
+                        className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-lp-surface border border-lp-border text-lp-text2 hover:border-lp-text hover:text-lp-text text-[11px] font-bold transition-all uppercase tracking-widest"
+                      >
+                        <FaExpand className="text-xs" />
+                        <span className="hidden sm:inline">Proyektor</span>
+                      </button>
+                      <button
+                        onClick={() => refreshTokenMutation.mutate(activeSession.session_id)}
+                        disabled={refreshTokenMutation.isPending}
+                        className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-lp-surface border border-lp-border text-lp-text2 hover:border-lp-text hover:text-lp-text text-[11px] font-bold transition-all uppercase tracking-widest disabled:opacity-50"
+                      >
+                        <FaSync className={`text-xs ${refreshTokenMutation.isPending ? 'animate-spin' : ''}`} />
+                        <span className="hidden sm:inline">Refresh QR</span>
+                      </button>
+                      <button
+                        onClick={handleCloseSession}
+                        disabled={closeSessionMutation.isPending}
+                        className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-lp-red/5 border border-lp-red/20 text-lp-red hover:bg-lp-red/10 text-[11px] font-bold transition-all uppercase tracking-widest disabled:opacity-50"
+                      >
+                        {closeSessionMutation.isPending
+                          ? <div className="w-3.5 h-3.5 border-2 border-lp-red/50 border-t-lp-red rounded-full animate-spin" />
+                          : <FaStopCircle className="text-xs" />
+                        }
+                        <span className="hidden sm:inline">Tutup Sesi</span>
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button
-                      onClick={() => setProjectorMode(true)}
-                      className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-blue-50 text-blue-700 font-bold text-sm hover:bg-blue-100 transition-colors"
-                    >
-                      <FaExpand className="text-xs" />
-                      <span className="hidden sm:inline">Proyektor</span>
-                    </button>
-                    <button
-                      onClick={() => refreshTokenMutation.mutate(activeSession.session_id)}
-                      disabled={refreshTokenMutation.isPending}
-                      className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-100 text-slate-700 font-bold text-sm hover:bg-slate-200 transition-colors disabled:opacity-50"
-                    >
-                      <FaSync className={`text-xs ${refreshTokenMutation.isPending ? 'animate-spin' : ''}`} />
-                      <span className="hidden sm:inline">Refresh QR</span>
-                    </button>
-                    <button
-                      onClick={handleCloseSession}
-                      disabled={closeSessionMutation.isPending}
-                      className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-rose-50 text-rose-700 font-bold text-sm hover:bg-rose-100 transition-colors disabled:opacity-50"
-                    >
-                      {closeSessionMutation.isPending
-                        ? <div className="w-4 h-4 border-2 border-rose-500 border-t-transparent rounded-full animate-spin" />
-                        : <FaStopCircle className="text-xs" />
-                      }
-                      <span className="hidden sm:inline">Tutup Sesi</span>
-                    </button>
-                  </div>
-                </div>
 
-                {/* ── Main Dashboard Grid ── */}
-                <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
+                  {/* Dashboard grid */}
+                  <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
 
-                  {/* LEFT: QR + Stats (xl:2 cols) */}
-                  <div className="xl:col-span-2 space-y-5">
+                    {/* Left: QR + Stats */}
+                    <div className="xl:col-span-2 space-y-5">
 
-                    {/* QR Card */}
-                    <div className="bg-white rounded-3xl border border-slate-200 shadow-[0_4px_24px_rgba(0,0,0,0.06)] p-6 flex flex-col items-center">
-                      <p className="text-xs font-bold text-slate-400 tracking-widest uppercase mb-4">QR Code Absensi</p>
-
-                      {/* QR Frame */}
-                      <div className="relative mb-5">
-                        <div className="absolute -inset-3 rounded-3xl bg-blue-100/50 blur-xl animate-pulse" />
-                        <div className="relative bg-white rounded-3xl p-4 border-2 border-blue-100 shadow-lg">
+                      {/* QR Card */}
+                      <div className="bg-white rounded-[2.5rem] border border-lp-border shadow-sm p-8 flex flex-col items-center">
+                        <p className="text-[11px] font-mono font-bold text-lp-text3 uppercase tracking-[0.2em] mb-6">QR Code Absensi</p>
+                        <div className="p-4 border-2 border-lp-border rounded-[2rem] bg-white mb-6">
                           {qrToken && (
                             <QRCodeSVG
                               value={JSON.stringify({
@@ -847,130 +785,114 @@ const AbsensiDosen = () => {
                                 course_id: activeSession.course_id,
                                 pertemuan_ke: activeSession.pertemuan_ke,
                               })}
-                              size={200}
+                              size={192}
                               level="H"
-                              includeMargin={true}
-                              bgColor="#FFFFFF"
-                              fgColor="#1e40af"
+                              includeMargin={false}
                             />
                           )}
                         </div>
-                      </div>
-
-                      <p className="text-slate-500 text-sm font-medium text-center">
-                        Tampilkan di layar kelas agar mahasiswa dapat scan
-                      </p>
-                      <button
-                        onClick={() => setProjectorMode(true)}
-                        className="mt-3 flex items-center gap-2 text-blue-600 text-sm font-bold hover:text-blue-700 transition-colors"
-                      >
-                        <FaExpand className="text-xs" />
-                        Tampilkan Fullscreen
-                      </button>
-                    </div>
-
-                    {/* Stats Cards */}
-                    <div className="bg-white rounded-3xl border border-slate-200 shadow-[0_4px_24px_rgba(0,0,0,0.06)] p-5">
-                      <p className="text-xs font-bold text-slate-400 tracking-widest uppercase mb-4">Statistik Kehadiran</p>
-
-                      {/* Progress bar */}
-                      <div className="mb-4">
-                        <div className="flex justify-between text-xs font-bold mb-1.5">
-                          <span className="text-slate-600">Tingkat Kehadiran</span>
-                          <span className="text-emerald-600">{progressPct}%</span>
-                        </div>
-                        <div className="h-3 bg-slate-100 rounded-full overflow-hidden">
-                          <motion.div
-                            className="h-full bg-gradient-to-r from-emerald-400 to-emerald-500 rounded-full"
-                            animate={{ width: `${progressPct}%` }}
-                            transition={{ duration: 0.8, ease: 'easeInOut' }}
-                          />
-                        </div>
-                        <p className="text-xs text-slate-400 font-medium mt-1.5">
-                          {hadirCount} dari {totalCount} mahasiswa hadir
+                        <p className="text-xs text-lp-text3 text-center mb-4 leading-relaxed font-light">
+                          Tampilkan di layar kelas agar mahasiswa dapat scan
                         </p>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-3">
-                        <StatCard label="Hadir"        value={sessionStudents?.hadir_count || 0} color="text-emerald-600" />
-                        <StatCard label="Belum Absen"  value={belumCount}                         color="text-amber-600"   />
-                        <StatCard label="Izin"         value={sessionStudents?.izin_count || 0}  color="text-sky-600"     />
-                        <StatCard label="Alpa"         value={sessionStudents?.alpa_count || 0}  color="text-rose-600"    />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* RIGHT: Student list (xl:3 cols) */}
-                  <div className="xl:col-span-3">
-                    <div className="bg-white rounded-3xl border border-slate-200 shadow-[0_4px_24px_rgba(0,0,0,0.06)] h-full flex flex-col">
-                      {/* List header */}
-                      <div className="flex items-center justify-between p-5 border-b border-slate-100">
-                        <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 bg-blue-50 rounded-2xl flex items-center justify-center">
-                            <FaUsers className="text-blue-600 text-sm" />
-                          </div>
-                          <div>
-                            <h3 className="font-black text-slate-800 text-base leading-tight">Daftar Mahasiswa</h3>
-                            <p className="text-xs text-slate-400 font-medium">Pertemuan {activeSession.pertemuan_ke}</p>
-                          </div>
-                        </div>
                         <button
-                          onClick={() => refetchStudents()}
-                          disabled={loadingStudents}
-                          className="w-9 h-9 rounded-2xl bg-slate-50 hover:bg-slate-100 transition-colors flex items-center justify-center text-slate-500"
+                          onClick={() => setProjectorMode(true)}
+                          className="flex items-center gap-1.5 text-lp-atext text-sm font-bold hover:text-lp-text transition-colors"
                         >
-                          <FaSync className={`text-sm ${loadingStudents ? 'animate-spin' : ''}`} />
+                          <FaExpand className="text-xs" />
+                          Tampilkan Fullscreen
                         </button>
                       </div>
 
-                      {/* List body */}
-                      <div className="flex-1 overflow-y-auto p-4 space-y-2" style={{ maxHeight: '60vh' }}>
-                        {loadingStudents && localStudents.length === 0 ? (
-                          <div className="flex flex-col items-center justify-center py-16">
-                            <div className="w-10 h-10 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4" />
-                            <p className="text-slate-400 text-sm font-medium">Memuat data mahasiswa...</p>
+                      {/* Stats */}
+                      <div className="bg-white rounded-[2.5rem] border border-lp-border shadow-sm p-6">
+                        <p className="text-[11px] font-mono font-bold text-lp-text3 uppercase tracking-[0.2em] mb-5">Statistik Kehadiran</p>
+                        <div className="mb-5">
+                          <div className="flex justify-between text-xs font-bold mb-2">
+                            <span className="text-lp-text2">Tingkat Kehadiran</span>
+                            <span className="text-lp-green font-mono">{progressPct}%</span>
                           </div>
-                        ) : getSortedStudents().length > 0 ? (
-                          <AnimatePresence>
-                            {getSortedStudents().map((student) => {
-                              const isHadir = student.attendance_status === 'hadir'
-                              const isAlpa  = student.attendance_status === 'alpa'
-                              return (
+                          <div className="h-2 bg-lp-surface rounded-full overflow-hidden">
+                            <motion.div
+                              className="h-full bg-lp-green rounded-full"
+                              animate={{ width: `${progressPct}%` }}
+                              transition={{ duration: 0.6, ease: 'easeOut' }}
+                            />
+                          </div>
+                          <p className="text-[11px] text-lp-text3 mt-2 font-mono">{hadirCount} dari {totalCount} mahasiswa hadir</p>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <StatCard label="Hadir"       value={hadirCount}                       color="text-lp-green" />
+                          <StatCard label="Belum"       value={belumCount}                       color="text-lp-amber" />
+                          <StatCard label="Izin"        value={sessionStudents?.izin_count || 0} color="text-lp-accent" />
+                          <StatCard label="Alpa"        value={sessionStudents?.alpa_count || 0} color="text-lp-red" />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Right: Student list */}
+                    <div className="xl:col-span-3">
+                      <div className="bg-white rounded-[2.5rem] border border-lp-border shadow-sm flex flex-col h-full overflow-hidden">
+                        <div className="flex items-center justify-between px-7 py-5 border-b border-lp-border shrink-0">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2.5 bg-lp-accentS rounded-xl">
+                              <FaUsers className="text-lp-atext text-sm" />
+                            </div>
+                            <div>
+                              <h3 className="font-bold text-lp-text text-sm tracking-tight">Daftar Mahasiswa</h3>
+                              <p className="text-[11px] text-lp-text3 font-mono">Pertemuan {activeSession.pertemuan_ke}</p>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => refetchStudents()}
+                            disabled={loadingStudents}
+                            className="p-2.5 rounded-full bg-lp-surface border border-lp-border text-lp-text3 hover:text-lp-text hover:rotate-180 transition-all duration-700"
+                          >
+                            <FaSync className={`text-xs ${loadingStudents ? 'animate-spin' : ''}`} />
+                          </button>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto p-5 space-y-2" style={{ maxHeight: '56vh' }}>
+                          {loadingStudents && localStudents.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center py-16">
+                              <div className="w-8 h-8 border-2 border-lp-text/10 border-t-lp-text rounded-full animate-spin mb-4" />
+                              <p className="text-sm text-lp-text3 font-light">Memuat mahasiswa...</p>
+                            </div>
+                          ) : getSortedStudents().length > 0 ? (
+                            <AnimatePresence>
+                              {getSortedStudents().map((student) => (
                                 <motion.div
                                   key={student.id}
-                                  layout
-                                  initial={{ opacity: 0, x: -20 }}
-                                  animate={{ opacity: 1, x: 0 }}
-                                  transition={{ duration: 0.3 }}
-                                  className={`flex items-center gap-3 p-3.5 rounded-2xl border transition-all ${
-                                    isHadir
-                                      ? 'border-emerald-200 bg-emerald-50/50'
-                                      : isAlpa
-                                      ? 'border-rose-200 bg-rose-50/30'
-                                      : student.attendance_status === 'izin' || student.attendance_status === 'sakit'
-                                      ? 'border-amber-200 bg-amber-50/30'
-                                      : 'border-slate-100 bg-white hover:border-slate-200'
+                                  initial={{ opacity: 0 }}
+                                  animate={{ opacity: 1 }}
+                                  transition={{ duration: 0.18 }}
+                                  className={`flex items-center gap-3 p-3.5 rounded-2xl border transition-all duration-300 ${
+                                    student.attendance_status === 'hadir'
+                                      ? 'border-lp-green/20 bg-lp-green/5'
+                                      : student.attendance_status === 'alpa'
+                                      ? 'border-lp-red/20 bg-lp-red/5'
+                                      : ['izin', 'sakit'].includes(student.attendance_status)
+                                      ? 'border-lp-amber/20 bg-lp-amber/5'
+                                      : 'border-lp-border hover:border-lp-text/10 bg-white'
                                   }`}
                                 >
-                                  {/* Avatar */}
-                                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-xs font-black shrink-0 ${
-                                    isHadir ? 'bg-emerald-100 text-emerald-700' :
-                                    isAlpa  ? 'bg-rose-100 text-rose-700' :
-                                    'bg-slate-100 text-slate-500'
+                                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold shrink-0 ${
+                                    student.attendance_status === 'hadir' ? 'bg-lp-green/10 text-lp-green' :
+                                    student.attendance_status === 'alpa'  ? 'bg-lp-red/10 text-lp-red' :
+                                    ['izin','sakit'].includes(student.attendance_status) ? 'bg-lp-amber/10 text-lp-amber' :
+                                    'bg-lp-surface text-lp-text3'
                                   }`}>
                                     {student.name?.charAt(0)?.toUpperCase() || '?'}
                                   </div>
 
-                                  {/* Info */}
                                   <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2">
-                                      <p className="font-bold text-slate-800 text-sm truncate">{student.name}</p>
+                                      <p className="font-bold text-lp-text text-sm truncate tracking-tight">{student.name}</p>
                                       <StatusBadge status={student.attendance_status} />
                                     </div>
                                     <div className="flex items-center gap-2 mt-0.5">
-                                      <span className="text-xs text-slate-400 font-mono">{student.nim}</span>
+                                      <span className="text-[11px] text-lp-text3 font-mono">{student.nim}</span>
                                       {student.attendance_time && (
-                                        <span className="text-xs text-slate-400 flex items-center gap-1">
+                                        <span className="text-[11px] text-lp-text3 flex items-center gap-1 font-mono">
                                           <FaClock className="text-[9px]" />
                                           {student.attendance_time}
                                         </span>
@@ -978,20 +900,19 @@ const AbsensiDosen = () => {
                                     </div>
                                   </div>
 
-                                  {/* Action Buttons */}
-                                  <div className="flex items-center gap-0.5 shrink-0 rounded-2xl border border-slate-200/70 bg-slate-100/75 p-1 shadow-[inset_0_1px_3px_rgba(15,23,42,.08)] backdrop-blur-md">
+                                  <div className="flex items-center gap-0.5 shrink-0 bg-lp-surface p-1 rounded-xl border border-lp-border">
                                     {[
-                                      { key: 'hadir', label: 'H', cls: 'bg-emerald-500 text-white shadow-emerald-500/20', base: 'text-slate-500 hover:text-emerald-600' },
-                                      { key: 'izin',  label: 'I', cls: 'bg-amber-400 text-white shadow-amber-500/20', base: 'text-slate-500 hover:text-amber-600' },
-                                      { key: 'sakit', label: 'S', cls: 'bg-sky-500 text-white shadow-sky-500/20', base: 'text-slate-500 hover:text-sky-600' },
-                                      { key: 'alpa',  label: 'A', cls: 'bg-rose-500 text-white shadow-rose-500/20', base: 'text-slate-500 hover:text-rose-600' },
+                                      { key: 'hadir', label: 'H', active: 'bg-lp-green text-white', base: 'text-lp-text3 hover:text-lp-green hover:bg-white' },
+                                      { key: 'izin',  label: 'I', active: 'bg-lp-amber text-white', base: 'text-lp-text3 hover:text-lp-amber hover:bg-white' },
+                                      { key: 'sakit', label: 'S', active: 'bg-lp-accent text-white', base: 'text-lp-text3 hover:text-lp-atext hover:bg-white' },
+                                      { key: 'alpa',  label: 'A', active: 'bg-lp-red text-white', base: 'text-lp-text3 hover:text-lp-red hover:bg-white' },
                                     ].map(btn => (
                                       <button
                                         key={btn.key}
                                         onClick={() => handleStatusUpdate(student.id, btn.key)}
-                                        title={btn.key.charAt(0).toUpperCase() + btn.key.slice(1)}
-                                        className={`w-8 h-8 rounded-xl text-xs font-black font-mono transition-all duration-300 active:scale-90 ${
-                                          student.attendance_status === btn.key ? btn.cls : btn.base
+                                        title={btn.key}
+                                        className={`w-7 h-7 rounded-lg text-xs font-bold transition-all ${
+                                          student.attendance_status === btn.key ? btn.active : btn.base
                                         }`}
                                       >
                                         {btn.label}
@@ -999,41 +920,41 @@ const AbsensiDosen = () => {
                                     ))}
                                     <button
                                       onClick={() => { setSelectedStudent(student); setManualStatus(student.attendance_status || 'hadir'); setShowManualModal(true) }}
-                                      className="w-8 h-8 rounded-xl text-slate-500 hover:bg-white hover:text-lp-accent transition-all active:scale-90 flex items-center justify-center"
-                                      title="Edit Manual"
+                                      className="w-7 h-7 rounded-lg text-lp-text3 hover:text-lp-atext hover:bg-white transition-all flex items-center justify-center"
                                     >
-                                      <FaEdit className="text-xs" />
+                                      <FaEdit className="text-[10px]" />
                                     </button>
                                   </div>
                                 </motion.div>
-                              )
-                            })}
-                          </AnimatePresence>
-                        ) : (
-                          <div className="flex flex-col items-center justify-center py-16">
-                            <FaUserCircle className="text-5xl text-slate-200 mb-3" />
-                            <p className="text-slate-400 text-sm font-medium">Belum ada mahasiswa terdaftar</p>
-                            <p className="text-slate-300 text-xs mt-1">Mahasiswa akan muncul setelah scan QR</p>
+                              ))}
+                            </AnimatePresence>
+                          ) : (
+                            <div className="flex flex-col items-center justify-center py-16">
+                              <div className="w-14 h-14 rounded-2xl bg-lp-surface flex items-center justify-center mb-4">
+                                <FaUserCircle className="text-2xl text-lp-text3" />
+                              </div>
+                              <p className="text-sm text-lp-text2 font-bold tracking-tight">Belum ada mahasiswa</p>
+                              <p className="text-xs text-lp-text3 mt-0.5 font-light">Mahasiswa akan muncul setelah scan QR</p>
+                            </div>
+                          )}
+                        </div>
+
+                        {sessionStudents && getSortedStudents().length > 0 && (
+                          <div className="border-t border-lp-border px-7 py-3.5 flex items-center justify-between shrink-0">
+                            <span className="text-[11px] text-lp-text3 font-mono">
+                              {hadirCount} hadir · {belumCount} belum · {totalCount} total
+                            </span>
+                            <span className="text-[11px] font-bold text-lp-green font-mono">{progressPct}%</span>
                           </div>
                         )}
                       </div>
-
-                      {/* Footer summary */}
-                      {sessionStudents && getSortedStudents().length > 0 && (
-                        <div className="border-t border-slate-100 p-4 flex items-center justify-between">
-                          <span className="text-xs text-slate-400 font-medium">
-                            {hadirCount} hadir · {belumCount} belum absen · {totalCount} total
-                          </span>
-                          <span className="text-xs font-black text-emerald-600">{progressPct}%</span>
-                        </div>
-                      )}
                     </div>
                   </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </main>
       </div>
 
       {/* ── Manual Status Modal ── */}
@@ -1044,45 +965,51 @@ const AbsensiDosen = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[150] p-4"
+            className="fixed inset-0 bg-lp-text/30 backdrop-blur-md flex items-center justify-center z-[150] p-4"
             onClick={(e) => { if (e.target === e.currentTarget) { setShowManualModal(false); setSelectedStudent(null) } }}
           >
             <motion.div
-              initial={{ scale: 0.9, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.9, y: 20 }}
-              className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl border border-slate-100"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 6 }}
+              transition={{ duration: 0.18 }}
+              className="bg-white border border-lp-border rounded-[2rem] p-8 w-full max-w-sm shadow-[0_32px_64px_rgba(0,0,0,0.12)]"
             >
-              <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h3 className="font-black text-slate-800 text-lg">Ubah Status</h3>
-                  <p className="text-sm text-slate-500 font-medium mt-0.5">
-                    {selectedStudent.name} · <span className="font-mono text-xs">{selectedStudent.nim}</span>
-                  </p>
+                  <span className="text-[11px] font-mono font-medium tracking-[0.2em] uppercase text-lp-text3 mb-1 block">UPDATE STATUS</span>
+                  <h3 className="font-bold text-lp-text text-lg tracking-tight">{selectedStudent.name}</h3>
+                  <p className="text-sm text-lp-text3 mt-0.5 font-mono">{selectedStudent.nim}</p>
                 </div>
                 <button
                   onClick={() => { setShowManualModal(false); setSelectedStudent(null) }}
-                  className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center font-bold transition-colors"
+                  className="w-10 h-10 rounded-full bg-lp-surface border border-lp-border text-lp-text3 flex items-center justify-center hover:bg-lp-text hover:text-white transition-all duration-300"
                 >
                   ✕
                 </button>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 mb-5">
+              <div className="grid grid-cols-2 gap-3 mb-6">
                 {[
-                  { value: 'hadir', label: 'Hadir', emoji: '✅', cls: 'border-emerald-400 bg-emerald-50 text-emerald-700', inactive: 'border-slate-200 hover:border-emerald-300' },
-                  { value: 'izin',  label: 'Izin',  emoji: '📋', cls: 'border-amber-400  bg-amber-50  text-amber-700',  inactive: 'border-slate-200 hover:border-amber-300'   },
-                  { value: 'sakit', label: 'Sakit', emoji: '🏥', cls: 'border-sky-400    bg-sky-50    text-sky-700',    inactive: 'border-slate-200 hover:border-sky-300'     },
-                  { value: 'alpa',  label: 'Alpa',  emoji: '❌', cls: 'border-rose-400   bg-rose-50   text-rose-700',   inactive: 'border-slate-200 hover:border-rose-300'    },
+                  { value: 'hadir', label: 'Hadir', letter: 'H', active: 'border-lp-green bg-lp-green/5 text-lp-green', chip: 'bg-lp-green/10 text-lp-green' },
+                  { value: 'izin',  label: 'Izin',  letter: 'I', active: 'border-lp-amber bg-lp-amber/5 text-lp-amber', chip: 'bg-lp-amber/10 text-lp-amber' },
+                  { value: 'sakit', label: 'Sakit', letter: 'S', active: 'border-lp-accent bg-lp-accent/5 text-lp-atext', chip: 'bg-lp-accent/10 text-lp-atext' },
+                  { value: 'alpa',  label: 'Alpa',  letter: 'A', active: 'border-lp-red bg-lp-red/5 text-lp-red', chip: 'bg-lp-red/10 text-lp-red' },
                 ].map(opt => (
                   <button
                     key={opt.value}
                     onClick={() => setManualStatus(opt.value)}
-                    className={`flex flex-col items-center gap-1.5 p-4 rounded-2xl border-2 font-bold transition-all ${
-                      manualStatus === opt.value ? opt.cls : `border-slate-200 bg-white text-slate-500 ${opt.inactive}`
+                    className={`flex flex-col items-center gap-2 p-4 rounded-2xl border-2 font-bold transition-all duration-300 ${
+                      manualStatus === opt.value
+                        ? opt.active
+                        : 'border-lp-border bg-white text-lp-text3 hover:border-lp-text/20'
                     }`}
                   >
-                    <span className="text-2xl">{opt.emoji}</span>
+                    <span className={`w-9 h-9 rounded-xl flex items-center justify-center text-sm font-bold ${
+                      manualStatus === opt.value ? opt.chip : 'bg-lp-surface text-lp-text3'
+                    }`}>
+                      {opt.letter}
+                    </span>
                     <span className="text-sm">{opt.label}</span>
                   </button>
                 ))}
@@ -1091,18 +1018,18 @@ const AbsensiDosen = () => {
               <div className="flex gap-3">
                 <button
                   onClick={() => { setShowManualModal(false); setSelectedStudent(null) }}
-                  className="flex-1 py-3 rounded-2xl bg-slate-100 text-slate-600 font-bold hover:bg-slate-200 transition-colors"
+                  className="flex-1 py-3 rounded-full border border-lp-border text-lp-text2 text-[12px] font-bold hover:bg-lp-surface transition-all uppercase tracking-widest"
                 >
                   Batal
                 </button>
                 <button
                   onClick={() => handleStatusUpdate(selectedStudent.id, manualStatus)}
                   disabled={updateStatusMutation.isPending}
-                  className="flex-1 py-3 rounded-2xl bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="flex-1 py-3 rounded-full bg-lp-text text-white text-[12px] font-bold hover:bg-lp-atext disabled:opacity-50 flex items-center justify-center gap-2 transition-all uppercase tracking-widest shadow-[0_8px_20px_rgba(0,0,0,0.1)]"
                 >
                   {updateStatusMutation.isPending
-                    ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    : <FaCheckCircle />
+                    ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    : <FaCheckCircle className="text-sm" />
                   }
                   Simpan
                 </button>
@@ -1112,145 +1039,133 @@ const AbsensiDosen = () => {
         )}
       </AnimatePresence>
 
-      {/* ── Detail Riwayat Pertemuan Modal ── */}
+      {/* ── History Detail Modal ── */}
       <AnimatePresence>
         {historyModalOpen && selectedHistorySession && (
           <motion.div
-            key="history-detail-modal"
+            key="history-modal"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[150] p-4"
+            className="fixed inset-0 bg-lp-text/30 backdrop-blur-md flex items-center justify-center z-[150] p-4"
             onClick={(e) => { if (e.target === e.currentTarget) { setHistoryModalOpen(false); setSelectedHistorySession(null) } }}
           >
             <motion.div
-              initial={{ scale: 0.9, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.9, y: 20 }}
-              className="bg-white rounded-3xl p-6 w-full max-w-2xl shadow-2xl border border-slate-100 flex flex-col max-h-[85vh]"
+              initial={{ opacity: 0, y: 50 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 50 }}
+              transition={{ duration: 0.18 }}
+              className="bg-lp-bg border border-lp-border rounded-[2.5rem] w-full max-w-2xl shadow-[0_64px_128px_rgba(0,0,0,0.15)] flex flex-col max-h-[85vh] overflow-hidden relative"
             >
-              {/* Header */}
-              <div className="flex items-start justify-between mb-4 border-b border-slate-100 pb-4">
+              {/* Decorative */}
+              <div className="absolute top-0 right-0 w-64 h-64 bg-lp-text/5 blur-[80px] rounded-full translate-x-1/2 -translate-y-1/2" />
+
+              <div className="flex items-start justify-between px-8 py-6 border-b border-lp-border shrink-0 relative z-10">
                 <div>
-                  <span className="text-xs font-bold text-blue-500 tracking-wider uppercase">Detail Riwayat Pertemuan</span>
-                  <h3 className="font-black text-slate-800 text-xl mt-0.5">{selectedHistorySession.course_name}</h3>
-                  <p className="text-sm text-slate-500 font-medium mt-1">
-                    Pertemuan ke-{selectedHistorySession.pertemuan_ke} &nbsp;·&nbsp; {selectedHistorySession.created_at ? new Date(selectedHistorySession.created_at).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : ''}
+                  <span className="text-[11px] font-mono font-bold text-lp-atext uppercase tracking-[0.2em] mb-2 block">Riwayat Pertemuan</span>
+                  <h3 className="font-bold text-lp-text text-xl leading-tight tracking-tight">{selectedHistorySession.course_name}</h3>
+                  <p className="text-sm text-lp-text3 mt-1 font-light">
+                    Pertemuan ke-{selectedHistorySession.pertemuan_ke} · {selectedHistorySession.created_at
+                      ? new Date(selectedHistorySession.created_at).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+                      : ''}
                   </p>
                 </div>
                 <button
                   onClick={() => { setHistoryModalOpen(false); setSelectedHistorySession(null) }}
-                  className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center font-bold transition-colors"
+                  className="w-10 h-10 rounded-full bg-white border border-lp-border text-lp-text3 flex items-center justify-center hover:bg-lp-text hover:text-white transition-all duration-300 ml-4 shrink-0"
                 >
                   ✕
                 </button>
               </div>
 
               {loadingHistoryDetails ? (
-                <div className="flex flex-col items-center justify-center py-20 flex-1">
-                  <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4" />
-                  <p className="text-slate-400 text-sm font-medium">Memuat data rekap absensi...</p>
+                <div className="flex flex-col items-center justify-center py-20">
+                  <div className="w-8 h-8 border-2 border-lp-text/10 border-t-lp-text rounded-full animate-spin mb-4" />
+                  <p className="text-sm text-lp-text3 font-light">Memuat rekap absensi...</p>
                 </div>
               ) : (
-                <div className="flex-1 overflow-hidden flex flex-col min-h-0">
-                  {/* Statistics widgets */}
-                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-5">
+                <div className="flex-1 overflow-hidden flex flex-col min-h-0 p-8 gap-5 relative z-10">
+                  {/* Stats */}
+                  <div className="grid grid-cols-5 gap-2 shrink-0">
                     {[
-                      { label: "Total Siswa", value: historySessionDetails?.total_students || selectedHistorySession.total_students || 0, color: "text-slate-700", bg: "bg-slate-50 border-slate-100" },
-                      { label: "Hadir", value: historySessionDetails?.hadir_count || selectedHistorySession.hadir_count || 0, color: "text-emerald-600", bg: "bg-emerald-50/30 border-emerald-100" },
-                      { label: "Izin", value: historySessionDetails?.izin_count || selectedHistorySession.izin_count || 0, color: "text-amber-600", bg: "bg-amber-50/30 border-amber-100" },
-                      { label: "Sakit", value: historySessionDetails?.sakit_count || selectedHistorySession.sakit_count || 0, color: "text-sky-600", bg: "bg-sky-50/30 border-sky-100" },
-                      { label: "Alpa", value: historySessionDetails?.alpa_count || selectedHistorySession.alpa_count || 0, color: "text-rose-600", bg: "bg-rose-50/30 border-rose-100" },
-                    ].map((stat, idx) => (
-                      <div key={idx} className={`flex flex-col items-center justify-center rounded-2xl border py-3 px-2 shadow-sm ${stat.bg}`}>
-                        <p className={`text-2xl font-black ${stat.color}`}>{stat.value}</p>
-                        <p className="text-[10px] font-bold text-slate-500 mt-0.5 text-center leading-tight">{stat.label}</p>
+                      { label: 'Total',  value: historySessionDetails?.total_students || selectedHistorySession.total_students || 0, color: 'text-lp-text' },
+                      { label: 'Hadir',  value: historySessionDetails?.hadir_count    || selectedHistorySession.hadir_count    || 0, color: 'text-lp-green' },
+                      { label: 'Izin',   value: historySessionDetails?.izin_count     || selectedHistorySession.izin_count     || 0, color: 'text-lp-amber' },
+                      { label: 'Sakit',  value: historySessionDetails?.sakit_count    || selectedHistorySession.sakit_count    || 0, color: 'text-lp-accent' },
+                      { label: 'Alpa',   value: historySessionDetails?.alpa_count     || selectedHistorySession.alpa_count     || 0, color: 'text-lp-red' },
+                    ].map((stat, i) => (
+                      <div key={i} className="flex flex-col items-center p-3 rounded-2xl bg-white border border-lp-border">
+                        <p className={`text-xl font-bold ${stat.color}`}>{stat.value}</p>
+                        <p className="text-[10px] text-lp-text3 font-mono font-bold mt-0.5 uppercase tracking-wider">{stat.label}</p>
                       </div>
                     ))}
                   </div>
 
-                  {/* Search bar */}
-                  <div className="relative mb-4">
-                    <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                      <FaSearch className="text-slate-400 text-sm" />
-                    </span>
+                  {/* Search */}
+                  <div className="relative shrink-0">
+                    <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-lp-text3 text-xs" />
                     <input
                       type="text"
-                      placeholder="Cari mahasiswa berdasarkan nama atau NIM..."
+                      placeholder="Cari nama atau NIM..."
                       value={historySearchQuery}
                       onChange={(e) => setHistorySearchQuery(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-10 pr-4 py-3 text-sm font-medium placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                      className="w-full bg-lp-surface border border-lp-border rounded-2xl pl-10 pr-4 py-3 text-sm text-lp-text placeholder-lp-text3 focus:outline-none focus:ring-2 focus:ring-lp-accent/10 focus:border-lp-text transition-all"
                     />
                   </div>
 
                   {/* Student list */}
-                  <div className="flex-1 overflow-y-auto space-y-2 pr-1 select-none">
-                    {historySessionDetails?.students && historySessionDetails.students.filter(student => 
-                      student.name?.toLowerCase().includes(historySearchQuery.toLowerCase()) ||
-                      student.nim?.includes(historySearchQuery)
-                    ).length > 0 ? (
-                      historySessionDetails.students
-                        .filter(student => 
-                          student.name?.toLowerCase().includes(historySearchQuery.toLowerCase()) ||
-                          student.nim?.includes(historySearchQuery)
-                        )
-                        .map((student) => {
-                          const isHadir = student.attendance_status === 'hadir'
-                          const isAlpa  = student.attendance_status === 'alpa'
-                          const isIzin  = student.attendance_status === 'izin'
-                          const isSakit = student.attendance_status === 'sakit'
-                          return (
-                            <div
-                              key={student.id}
-                              className={`flex items-center gap-3 p-3 rounded-2xl border transition-all ${
-                                isHadir
-                                  ? 'border-emerald-100 bg-emerald-50/20'
-                                  : isAlpa
-                                  ? 'border-rose-100 bg-rose-50/20'
-                                  : isIzin || isSakit
-                                  ? 'border-amber-100 bg-amber-50/20'
-                                  : 'border-slate-100 bg-white'
-                              }`}
-                            >
-                              <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-black shrink-0 ${
-                                isHadir ? 'bg-emerald-100 text-emerald-700' :
-                                isAlpa  ? 'bg-rose-100 text-rose-700' :
-                                isIzin || isSakit ? 'bg-amber-100 text-amber-700' :
-                                'bg-slate-100 text-slate-500'
-                              }`}>
-                                {student.name?.charAt(0)?.toUpperCase() || '?'}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2">
-                                  <p className="font-bold text-slate-800 text-sm truncate">{student.name}</p>
-                                  <StatusBadge status={student.attendance_status} />
-                                </div>
-                                <div className="flex items-center gap-2 mt-0.5">
-                                  <span className="text-[10px] text-slate-400 font-mono">{student.nim}</span>
-                                  {student.attendance_time && (
-                                    <span className="text-[10px] text-slate-400 flex items-center gap-1">
-                                      <FaClock className="text-[8px]" />
-                                      {student.attendance_time}
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
+                  <div className="flex-1 overflow-y-auto space-y-2">
+                    {historySessionDetails?.students
+                      ?.filter(s =>
+                        s.name?.toLowerCase().includes(historySearchQuery.toLowerCase()) ||
+                        s.nim?.includes(historySearchQuery)
+                      )
+                      .map((student) => (
+                        <div
+                          key={student.id}
+                          className={`flex items-center gap-3 p-3.5 rounded-2xl border transition-all ${
+                            student.attendance_status === 'hadir' ? 'border-lp-green/20 bg-lp-green/5' :
+                            student.attendance_status === 'alpa'  ? 'border-lp-red/20 bg-lp-red/5' :
+                            ['izin','sakit'].includes(student.attendance_status) ? 'border-lp-amber/20 bg-lp-amber/5' :
+                            'border-lp-border bg-white'
+                          }`}
+                        >
+                          <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold shrink-0 ${
+                            student.attendance_status === 'hadir' ? 'bg-lp-green/10 text-lp-green' :
+                            student.attendance_status === 'alpa'  ? 'bg-lp-red/10 text-lp-red' :
+                            ['izin','sakit'].includes(student.attendance_status) ? 'bg-lp-amber/10 text-lp-amber' :
+                            'bg-lp-surface text-lp-text3'
+                          }`}>
+                            {student.name?.charAt(0)?.toUpperCase() || '?'}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <p className="font-bold text-lp-text text-sm truncate tracking-tight">{student.name}</p>
+                              <StatusBadge status={student.attendance_status} />
                             </div>
-                          )
-                        })
-                    ) : (
-                      <div className="flex flex-col items-center justify-center py-10">
-                        <p className="text-slate-400 text-sm font-medium">Mahasiswa tidak ditemukan</p>
-                      </div>
-                    )}
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <span className="text-[11px] text-lp-text3 font-mono">{student.nim}</span>
+                              {student.attendance_time && (
+                                <span className="text-[11px] text-lp-text3 flex items-center gap-1 font-mono">
+                                  <FaClock className="text-[9px]" />
+                                  {student.attendance_time}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )) ?? (
+                        <div className="text-center py-10 text-sm text-lp-text3 font-light">Tidak ada data</div>
+                      )
+                    }
                   </div>
                 </div>
               )}
 
-              <div className="mt-4 border-t border-slate-100 pt-4 flex justify-end">
+              <div className="px-8 pb-6 pt-4 border-t border-lp-border shrink-0 relative z-10">
                 <button
                   onClick={() => { setHistoryModalOpen(false); setSelectedHistorySession(null) }}
-                  className="px-6 py-2.5 rounded-2xl bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors"
+                  className="w-full py-3.5 rounded-full bg-lp-surface hover:bg-lp-text hover:text-white border border-lp-border text-lp-text text-[12px] font-bold transition-all duration-500 uppercase tracking-widest"
                 >
                   Tutup
                 </button>
@@ -1260,6 +1175,7 @@ const AbsensiDosen = () => {
         )}
       </AnimatePresence>
 
+      {/* ── Confirmation Modal ── */}
       <ConfirmationModal
         open={confirmCloseOpen}
         title="Tutup sesi absensi?"
@@ -1270,47 +1186,44 @@ const AbsensiDosen = () => {
         onConfirm={() => closeSessionMutation.mutate(activeSession?.session_id)}
       />
 
+      {/* ── Toast notification ── */}
       {typeof document !== 'undefined' && createPortal(
         <AnimatePresence>
           {notice && (
             <motion.div
-              initial={{ opacity: 0, y: -18, scale: 0.96 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -12, scale: 0.97 }}
-              transition={{ type: 'spring', stiffness: 260, damping: 22 }}
-              className="fixed left-1/2 top-5 z-[350] w-[min(92vw,520px)] -translate-x-1/2 rounded-2xl border border-blue-500/10 bg-slate-950/90 px-4 py-3 text-sm font-semibold text-white shadow-2xl backdrop-blur-xl"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.18 }}
+              className="fixed left-1/2 top-5 z-[350] -translate-x-1/2 max-w-sm w-[90vw] bg-lp-text text-white text-sm font-medium px-5 py-3.5 rounded-full shadow-[0_12px_24px_rgba(0,0,0,0.15)]"
             >
-              <span className="mr-2 font-mono text-lp-accent">SYS/</span>{notice}
+              {notice}
             </motion.div>
           )}
         </AnimatePresence>,
         document.body,
       )}
 
-      {/* ── Live Telegram-style Notifications ── */}
-      <div className="fixed bottom-6 right-6 z-[100] flex flex-col gap-2.5 max-w-sm w-full pointer-events-none">
+      {/* ── Live notifications ── */}
+      <div className="fixed bottom-5 right-5 z-[100] flex flex-col gap-2.5 max-w-xs w-full pointer-events-none">
         <AnimatePresence>
           {liveNotifications.map(n => (
             <motion.div
               key={n.id}
-              layout
-              initial={{ opacity: 0, x: 140, scale: 0.96, filter: 'blur(6px)' }}
-              animate={{ opacity: 1, x: 0, scale: 1 }}
-              exit={{ opacity: 0, x: 80, scale: 0.96, filter: 'blur(4px)', transition: { duration: 0.28, ease: [0.4, 0, 1, 1] } }}
-              transition={{ layout: { type: 'spring', stiffness: 150, damping: 18 }, duration: 0.48, ease: [0.16, 1, 0.3, 1] }}
-              className="pointer-events-auto relative overflow-hidden rounded-2xl rounded-br-[5px] border border-white/70 bg-white/80 px-4 py-3 pl-5 shadow-[inset_0_1px_0_rgba(255,255,255,.9),0_18px_50px_rgba(15,23,42,.16)] backdrop-blur-xl flex gap-3"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="pointer-events-auto bg-white border border-lp-border rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.06)] px-4 py-3.5 flex gap-3 items-start"
             >
-              <span className="absolute inset-y-0 left-0 w-1.5 bg-[#26A5E4] rounded-l-2xl" />
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-slate-100 bg-slate-50 text-base shadow-sm">
-                {n.icon}
+              <span className="w-8 h-8 rounded-xl bg-lp-green/10 text-lp-green flex items-center justify-center shrink-0">
+                <FaUserCheck className="text-xs" />
               </span>
               <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between gap-2">
-                  <h4 className="text-xs font-black text-slate-800">{n.title}</h4>
-                  <time className="text-[9px] font-mono text-slate-400 shrink-0">{n.time}</time>
-                </div>
-                <p className="text-xs text-slate-500 font-medium mt-0.5 leading-snug">{n.description}</p>
+                <p className="text-xs font-bold text-lp-text tracking-tight">{n.title}</p>
+                <p className="text-[11px] text-lp-text3 mt-0.5 leading-snug font-light">{n.description}</p>
               </div>
+              <time className="text-[10px] text-lp-text3 shrink-0 font-mono mt-0.5">{n.time}</time>
             </motion.div>
           ))}
         </AnimatePresence>

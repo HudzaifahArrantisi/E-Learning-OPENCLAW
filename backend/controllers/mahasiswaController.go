@@ -578,14 +578,13 @@ func ScanAttendance(c *gin.Context) {
 		JOIN mata_kuliah mk ON asess.course_id = mk.kode
 		WHERE asess.session_token = $1 
 			AND asess.status = 'active' 
-			AND asess.expires_at > NOW()
 			AND asess.course_id = $2
 	`, input.SessionToken, input.CourseID).Scan(
 		&session.ID, &session.CourseID, &session.SessionCode, &session.DosenID, &session.PertemuanKe,
 		&session.ExpiresAt, &session.CourseDay, &session.CourseStart, &session.CourseEnd, &session.Status)
 
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, "QR Code tidak valid: Sesi sudah kadaluarsa atau tidak aktif")
+		utils.ErrorResponse(c, http.StatusBadRequest, "QR Code tidak valid atau sesi belum dibuka dosen")
 		return
 	}
 
@@ -608,57 +607,6 @@ func ScanAttendance(c *gin.Context) {
 		utils.ErrorResponse(c, http.StatusForbidden, "Anda tidak terdaftar pada mata kuliah ini")
 		return
 	}
-
-	// Cek hari sesuai jadwal - DINONAKTIFKAN agar bisa scan kapan saja
-	/*
-	today := time.Now().Weekday()
-	dayMap := map[string]time.Weekday{
-		"Senin":  time.Monday,
-		"Selasa": time.Tuesday,
-		"Rabu":   time.Wednesday,
-		"Kamis":  time.Thursday,
-		"Jumat":  time.Friday,
-		"Sabtu":  time.Saturday,
-		"Minggu": time.Sunday,
-	}
-
-	courseDay, ok := dayMap[session.CourseDay]
-	if !ok || courseDay != today {
-		utils.ErrorResponse(c, http.StatusBadRequest,
-			"Hari ini bukan jadwal mata kuliah ini. Jadwal: "+session.CourseDay)
-		return
-	}
-	*/
-
-	// Cek waktu absensi (15 menit sebelum - 60 menit setelah jam mulai) - DINONAKTIFKAN agar bisa scan kapan saja
-	/*
-	currentTime := time.Now()
-	courseStart, _ := time.Parse("15:04", session.CourseStart)
-	courseEnd, _ := time.Parse("15:04", session.CourseEnd)
-
-	// Create today's datetime for course times
-	startTime := time.Date(currentTime.Year(), currentTime.Month(), currentTime.Day(),
-		courseStart.Hour(), courseStart.Minute(), 0, 0, currentTime.Location())
-	endTime := time.Date(currentTime.Year(), currentTime.Month(), currentTime.Day(),
-		courseEnd.Hour(), courseEnd.Minute(), 0, 0, currentTime.Location())
-
-	// Validasi waktu
-	scanStart := startTime.Add(-15 * time.Minute)
-	scanEnd := endTime.Add(60 * time.Minute)
-
-	if currentTime.Before(scanStart) {
-		utils.ErrorResponse(c, http.StatusBadRequest,
-			"Belum waktunya absen. Bisa scan 15 menit sebelum kelas dimulai.")
-		return
-	}
-
-	if currentTime.After(scanEnd) {
-		utils.ErrorResponse(c, http.StatusBadRequest,
-			"Waktu absen sudah berakhir. Maksimal 60 menit setelah kelas selesai.")
-		return
-	}
-	*/
-
 	// Cek apakah sudah absen untuk pertemuan ini
 	var existingStatus string
 	err = config.DB.QueryRow(`

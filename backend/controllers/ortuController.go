@@ -107,7 +107,7 @@ func GetChildAttendance(c *gin.Context) {
 			mk.jam_mulai,
 			mk.jam_selesai
 		FROM attendance a
-		JOIN attendance_sessions ases ON a.session_id = ases.id
+		JOIN attendance_sessions ases ON a.session_id::text = ases.id::text
 		JOIN mata_kuliah mk ON ases.course_id = mk.kode
 		JOIN dosen d ON mk.dosen_id = d.id
 		WHERE a.student_id = $1
@@ -242,7 +242,7 @@ func GetChildAttendanceToday(c *gin.Context) {
 		LEFT JOIN (
 			SELECT a.student_id, ases.course_id, a.status, a.created_at
 			FROM attendance a
-			JOIN attendance_sessions ases ON a.session_id = ases.id
+			JOIN attendance_sessions ases ON a.session_id::text = ases.id::text
 			WHERE (a.created_at)::date = CURRENT_DATE
 		) a ON mk.kode = a.course_id AND mmk.mahasiswa_id = a.student_id
 		WHERE mmk.mahasiswa_id = $1 AND mk.hari = $2
