@@ -37,7 +37,9 @@ export default function LandingPage() {
   // PWA & APK install states
   const [deferredPrompt, setDeferredPrompt] = useState(null)
   const [showInstallBtn, setShowInstallBtn] = useState(true)
-  const [showIosPrompt, setShowIosPrompt] = useState(false)
+  const [isPreparingInstall, setIsPreparingInstall] = useState(false)
+  const installRequestedRef = useRef(false)
+  const installTimeoutRef = useRef(null)
 
   const dashboardHref = ROLE_DASHBOARD[user?.role] || '/'
 
@@ -91,13 +93,47 @@ export default function LandingPage() {
 
   // PWA Event Listener
   useEffect(() => {
-    const handleBeforeInstallPrompt = (e) => {
-      e.preventDefault()
-      setDeferredPrompt(e)
+    // Check if the event was already captured globally
+    if (window.deferredInstallPrompt) {
+      setDeferredPrompt(window.deferredInstallPrompt)
       setShowInstallBtn(true)
     }
 
+    const handleBeforeInstallPrompt = (e) => {
+      e.preventDefault()
+      setDeferredPrompt(e)
+      window.deferredInstallPrompt = e
+      setShowInstallBtn(true)
+
+      if (installRequestedRef.current) {
+        installRequestedRef.current = false
+        setIsPreparingInstall(false)
+        if (installTimeoutRef.current) clearTimeout(installTimeoutRef.current)
+        e.prompt()
+        e.userChoice.finally(() => {
+          window.deferredInstallPrompt = null
+          setDeferredPrompt(null)
+        })
+      }
+    }
+
+    const handleGlobalPromptReady = () => {
+      if (window.deferredInstallPrompt) {
+        setDeferredPrompt(window.deferredInstallPrompt)
+        setShowInstallBtn(true)
+      }
+    }
+
+    const handleAppInstalled = () => {
+      setIsPreparingInstall(false)
+      window.deferredInstallPrompt = null
+      setDeferredPrompt(null)
+      setShowInstallBtn(false)
+    }
+
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+    window.addEventListener('pwa-prompt-ready', handleGlobalPromptReady)
+    window.addEventListener('appinstalled', handleAppInstalled)
 
     // Deteksi iOS Safari
     const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream
@@ -114,29 +150,36 @@ export default function LandingPage() {
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+      window.removeEventListener('pwa-prompt-ready', handleGlobalPromptReady)
+      window.removeEventListener('appinstalled', handleAppInstalled)
+      if (installTimeoutRef.current) clearTimeout(installTimeoutRef.current)
     }
   }, [])
 
-  const handleInstallClick = async () => {
-    if (deferredPrompt) {
-      deferredPrompt.prompt()
-      const { outcome } = await deferredPrompt.userChoice
+  const handleInstallClick = async (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+
+    const installPrompt = deferredPrompt || window.deferredInstallPrompt
+
+    if (installPrompt) {
+      // Trigger native browser install dialog (PWA beforeinstallprompt)
+      await installPrompt.prompt()
+      const { outcome } = await installPrompt.userChoice
       console.log(`User response to PWA prompt: ${outcome}`)
+      window.deferredInstallPrompt = null
       setDeferredPrompt(null)
-      setShowInstallBtn(false)
-    } else {
-      const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream
-      if (isIos) {
-        setShowIosPrompt(true)
-      } else {
-        // Fallback untuk Android/Desktop lain: unduh file APK langsung
-        const link = document.createElement('a')
-        link.href = '/student-hub.apk'
-        link.download = 'student-hub.apk'
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
+      if (outcome === 'accepted') {
+        setShowInstallBtn(false)
       }
+    } else {
+      installRequestedRef.current = true
+      setIsPreparingInstall(true)
+      if (installTimeoutRef.current) clearTimeout(installTimeoutRef.current)
+      installTimeoutRef.current = setTimeout(() => {
+        installRequestedRef.current = false
+        setIsPreparingInstall(false)
+      }, 15000)
     }
   }
   useEffect(() => {
@@ -540,6 +583,7 @@ export default function LandingPage() {
             
             {showInstallBtn && (
               <button 
+                type="button"
                 onClick={handleInstallClick} 
                 className="inline-flex items-center gap-2 bg-lp-accent text-white font-sans text-[13px] font-semibold py-3 px-6 rounded-full transition-all hover:bg-lp-accent/90 hover:-translate-y-px shadow-sm"
               >
@@ -968,58 +1012,15 @@ export default function LandingPage() {
         </div>
       )}
 
-      {/* iOS PWA PROMPT MODAL */}
-      {showIosPrompt && (
+      {isPreparingInstall && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-lp-surface/60 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-white border border-lp-border rounded-[24px] max-w-[400px] w-full shadow-[0_24px_60px_rgba(0,0,0,0.1)] relative transform transition-all animate-slideUp">
-            
-            <button 
-              onClick={() => setShowIosPrompt(false)}
-              className="absolute top-4 right-4 text-lp-text3 hover:text-lp-text transition-all p-1"
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-            
+          <div className="bg-white border border-lp-border rounded-[24px] max-w-[360px] w-full shadow-[0_24px_60px_rgba(0,0,0,0.1)] transform transition-all animate-slideUp">
             <div className="p-6 sm:p-8 text-center">
-              <div className="mb-6">
-                <div className="w-16 h-16 rounded-full bg-lp-accent/10 text-lp-accent flex items-center justify-center text-3xl mx-auto mb-4">
-                  
-                </div>
-                <h3 className="text-[18px] font-bold text-lp-text mb-2 tracking-tight">Instal di iOS (Safari)</h3>
-                <p className="text-[12.5px] text-lp-text2 font-light leading-relaxed">
-                  Ikuti langkah mudah ini untuk menginstal **Student Hub** di iPhone atau iPad Anda:
-                </p>
-              </div>
-              
-              <div className="space-y-4 mb-7 text-left">
-                <div className="flex gap-4 items-start">
-                  <div className="w-7 h-7 rounded-full bg-lp-surface border border-lp-border flex items-center justify-center text-[12px] font-bold text-lp-text2 shrink-0">1</div>
-                  <p className="text-[13px] text-lp-text2 font-light pt-0.5">
-                    Ketuk tombol **Share** di Safari (ikon kotak dengan panah ke atas di bagian bawah layar).
-                  </p>
-                </div>
-                <div className="flex gap-4 items-start">
-                  <div className="w-7 h-7 rounded-full bg-lp-surface border border-lp-border flex items-center justify-center text-[12px] font-bold text-lp-text2 shrink-0">2</div>
-                  <p className="text-[13px] text-lp-text2 font-light pt-0.5">
-                    Gulir ke bawah dan ketuk pilihan **Add to Home Screen** (Tambahkan ke Layar Utama).
-                  </p>
-                </div>
-                <div className="flex gap-4 items-start">
-                  <div className="w-7 h-7 rounded-full bg-lp-surface border border-lp-border flex items-center justify-center text-[12px] font-bold text-lp-text2 shrink-0">3</div>
-                  <p className="text-[13px] text-lp-text2 font-light pt-0.5">
-                    Ketuk **Add** (Tambah) di pojok kanan atas untuk konfirmasi.
-                  </p>
-                </div>
-              </div>
-              
-              <button 
-                onClick={() => setShowIosPrompt(false)}
-                className="w-full bg-lp-text text-lp-bg text-[13px] font-bold py-3 rounded-xl hover:bg-lp-atext transition-all flex items-center justify-center"
-              >
-                Tutup
-              </button>
+              <div className="w-14 h-14 rounded-full border-4 border-lp-accent/20 border-t-lp-accent animate-spin mx-auto mb-5" />
+              <h3 className="text-[18px] font-bold text-lp-text mb-2 tracking-tight">Menyiapkan Instalasi</h3>
+              <p className="text-[12.5px] text-lp-text2 font-light leading-relaxed">
+                Tunggu sebentar. Popup instalasi aplikasi akan terbuka otomatis saat siap.
+              </p>
             </div>
           </div>
         </div>

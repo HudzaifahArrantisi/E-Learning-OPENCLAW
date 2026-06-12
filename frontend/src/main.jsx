@@ -3,6 +3,10 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App'
 import './styles/global.css'
+import { registerSW } from 'virtual:pwa-register'
+
+// Register PWA service worker
+registerSW({ immediate: true })
 
 // Menonaktifkan console.log dan kawan-kawan di mode production
 if (import.meta.env.PROD) {
