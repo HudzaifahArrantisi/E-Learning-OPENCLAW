@@ -13,6 +13,7 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
+	"nf-student-hub-backend/models"
 )
 
 // DB keeps the original *sql.DB for existing code that uses Query/Exec
@@ -82,6 +83,10 @@ func InitDB() {
 		// Assign package-level singletons
 		GormDB = gdb
 		DB = sqlDB
+
+		if err := gdb.AutoMigrate(&models.Follow{}, &models.SocialNotification{}); err != nil {
+			log.Printf("WARNING: social feature migration failed: %v", err)
+		}
 
 		log.Println("Database connected successfully (PostgreSQL/Supabase — Transaction Pooler)")
 	})

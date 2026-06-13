@@ -1206,6 +1206,7 @@ func (cc *ChatController) SearchUsers(c *gin.Context) {
 			Preload("Dosen").
 			Preload("Ukm").
 			Preload("Ormawa").
+			Limit(100).
 			Find(&users).Error
 	} else {
 		// If searching or viewing all, set a reasonable limit (100)

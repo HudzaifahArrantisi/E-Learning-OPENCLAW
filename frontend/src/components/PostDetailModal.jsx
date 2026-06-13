@@ -1,6 +1,7 @@
 // components/PostDetailModal.jsx
 // Shared Instagram-style post detail modal used by both PostCard and ProfilePublic
 import React, { useState, useEffect, useRef, memo } from 'react'
+import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import { usePostInteractions } from '../hooks/usePostInteractions'
 import api from '../services/api'
@@ -44,6 +45,17 @@ const PostDetailModal = ({ post, onClose, getRelativeTime }) => {
   const commentInputRef = useRef(null)
   const touchStartX = useRef(null)
   const touchEndX = useRef(null)
+
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('nf-post-modal-state', { detail: { open: true } }))
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+
+    return () => {
+      window.dispatchEvent(new CustomEvent('nf-post-modal-state', { detail: { open: false } }))
+      document.body.style.overflow = previousOverflow
+    }
+  }, [])
 
   const username = cleanUsername(post.author_username || post.author_name?.toLowerCase().replace(/\s+/g, '_'))
 
@@ -460,7 +472,7 @@ const PostDetailModal = ({ post, onClose, getRelativeTime }) => {
 
   // Mobile Drawer
   return (
-    <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 animate-fadeIn" onClick={onClose}>
+    createPortal(<div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[9999] animate-fadeIn" onClick={onClose}>
       <div className="absolute bottom-0 left-0 right-0 bg-white border-t border-lp-border rounded-t-2xl max-h-[85vh] overflow-hidden animate-slideUp" onClick={e => e.stopPropagation()}>
         <div className="flex justify-center py-3">
           <div className="w-10 h-1 bg-lp-border rounded-full" />
@@ -573,7 +585,7 @@ const PostDetailModal = ({ post, onClose, getRelativeTime }) => {
           </form>
         </div>
       </div>
-    </div>
+    </div>, document.body)
   )
 }
 

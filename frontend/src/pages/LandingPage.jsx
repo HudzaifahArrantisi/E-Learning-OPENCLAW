@@ -1,15 +1,17 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
-  featureCards, howItWorks, benefits, roles, semesters, visiData, platformFeatures,
+  featureCards, howItWorks, benefits, roles, semesters,
   stats, footerLinks, programs, institutions, academicCalendar, calendarMonths,
-  EVENT_COLORS, EVENT_LABELS, getEventsForDate, fmtDate, dashboardFeed, roleGuides
+  EVENT_COLORS, EVENT_LABELS, fmtDate, roleGuides
 } from '../data/landingData'
 import LoginModal from '../components/LoginModal'
 import AnimatedBeamSection from '../components/AnimatedBeamSection'
 import TelegramAnimatedNotifications from '../components/TelegramAnimatedNotifications'
 import { HighlighterDemo } from '../components/tulisan'
 import useAuth from '../hooks/useAuth'
+import useProfile from '../hooks/useProfile'
+import { resolveBackendAssetUrl } from '../utils/assetUrl'
 
 const ROLE_DASHBOARD = {
   admin: '/admin',
@@ -33,6 +35,10 @@ export default function LandingPage() {
   const profileMenuRef = useRef(null)
   const [showTutorial, setShowTutorial] = useState(false)
   const [activeRoleGuide, setActiveRoleGuide] = useState(0)
+
+  // Fetch profile if user is logged in
+  const { data: profile } = useProfile()
+  const profilePhoto = profile?.profile_picture || profile?.photo || user?.profile_picture || user?.photo || ''
 
   // PWA & APK install states
   const [deferredPrompt, setDeferredPrompt] = useState(null)
@@ -78,6 +84,18 @@ export default function LandingPage() {
     .map(w => w[0])
     .join('')
     .toUpperCase()
+
+  // Open login modal if query parameter 'login=true' is present and user is not authenticated
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('login') === 'true' && !isAuthenticated) {
+      setTimeout(() => {
+        setIsLoginModalOpen(true)
+      }, 0)
+      // Clean up parameter to not annoy user on refresh
+      window.history.replaceState({}, document.title, window.location.pathname)
+    }
+  }, [isAuthenticated])
 
   useEffect(() => {
     const tutorialSeen = sessionStorage.getItem('tutorialSeen')
@@ -395,10 +413,6 @@ export default function LandingPage() {
 
     const wobble = () => {
       raf = null
-      const rect = img.getBoundingClientRect()
-      const vh = window.innerHeight
-      // How far the element center is from viewport center (–1 … 1)
-      const centerOffset = (rect.top + rect.height / 2 - vh / 2) / (vh / 2)
       // Scroll velocity for dynamic tilt
       const delta = window.scrollY - prevScrollY
       prevScrollY = window.scrollY
@@ -425,7 +439,6 @@ export default function LandingPage() {
 
   const [activeProg, setActiveProg] = useState('ti')
   const [activeInst, setActiveInst] = useState('stt-nf')
-  const [selectedDate, setSelectedDate] = useState(null)
 
   const inst = institutions[activeInst]
   const prog = programs[activeProg]
@@ -491,9 +504,24 @@ export default function LandingPage() {
                     onClick={() => setShowProfileMenu(!showProfileMenu)}
                     className="flex items-center gap-2 pl-2 pr-3 py-1 rounded-full transition-all hover:bg-black/5"
                   >
-                    <span className="w-7 h-7 rounded-full bg-lp-accent text-white text-[10px] font-bold flex items-center justify-center shrink-0">
-                      {initials}
-                    </span>
+                    <div className="w-7 h-7 rounded-full border border-lp-border flex items-center justify-center text-white font-bold text-[10px] overflow-hidden shrink-0">
+                      {profilePhoto ? (
+                        <img 
+                          src={resolveBackendAssetUrl(profilePhoto)} 
+                          alt="Profile" 
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                            e.target.nextSibling.style.display = 'flex';
+                          }}
+                        />
+                      ) : null}
+                      <div 
+                        className={`w-full h-full bg-lp-accent flex items-center justify-center text-white font-bold ${profilePhoto ? 'hidden' : 'flex'}`}
+                      >
+                        {initials}
+                      </div>
+                    </div>
                     <span className="text-[12px] font-semibold text-lp-text truncate max-w-[100px]">
                       {displayName}
                     </span>
@@ -554,6 +582,32 @@ export default function LandingPage() {
               <a href="#visi-misi" onClick={() => setIsMobileMenuOpen(false)} className="px-4 py-3 text-[13.5px] font-medium text-lp-text2 hover:text-lp-text hover:bg-black/5 rounded-xl transition-colors">Visi Misi</a>
               <a href="#kalender" onClick={() => setIsMobileMenuOpen(false)} className="px-4 py-3 text-[13.5px] font-medium text-lp-text2 hover:text-lp-text hover:bg-black/5 rounded-xl transition-colors">Kalender</a>
               <div className="h-px bg-black/5 mx-2 my-1" />
+              {isAuthenticated && (
+                <div className="flex items-center gap-3 px-4 py-3 border-b border-black/5 mb-1 bg-lp-surface/30">
+                  <div className="w-8 h-8 rounded-full border border-lp-border flex items-center justify-center text-white font-bold text-xs overflow-hidden shrink-0">
+                    {profilePhoto ? (
+                      <img 
+                        src={resolveBackendAssetUrl(profilePhoto)} 
+                        alt="Profile" 
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          e.target.nextSibling.style.display = 'flex';
+                        }}
+                      />
+                    ) : null}
+                    <div 
+                      className={`w-full h-full bg-lp-accent flex items-center justify-center text-white font-bold ${profilePhoto ? 'hidden' : 'flex'}`}
+                    >
+                      {initials}
+                    </div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-lp-text text-[13.5px] truncate">{displayName}</div>
+                    <div className="text-[10px] text-lp-text3 capitalize">{user?.role || ''}</div>
+                  </div>
+                </div>
+              )}
               {isAuthenticated ? (
                 <>
                   <Link to={dashboardHref} onClick={() => setIsMobileMenuOpen(false)} className="px-4 py-3 text-[13.5px] font-semibold text-lp-accent hover:bg-lp-accent/5 rounded-xl transition-colors">Dashboard</Link>
@@ -567,15 +621,15 @@ export default function LandingPage() {
         </div>
       </div>
 
-      <section className="relative min-h-screen flex items-end pb-44 overflow-hidden">
+      <section className="relative min-h-screen flex items-center lg:items-end pt-24 pb-16 sm:pt-28 sm:pb-24 lg:pt-0 lg:pb-36 xl:pb-44 overflow-hidden">
         <div className="absolute left-0 right-0 h-[160px] animate-scanAnim bg-[linear-gradient(180deg,transparent,rgba(75,115,255,0.03)_35%,rgba(75,115,255,0.06)_50%,rgba(75,115,255,0.03)_65%,transparent)] pointer-events-none" />
         <div className="relative z-10 w-full max-w-[1120px] mx-auto px-7">
-          <h1 className="font-sans text-[clamp(3.8rem,7.4vw,6.6rem)] font-normal leading-[0.96] tracking-[-0.035em] text-lp-text mb-8 animate-slideUp delay-300 fill-mode-both">
+          <h1 className="font-sans text-[clamp(2.2rem,7.4vw,6.6rem)] font-normal leading-[0.96] tracking-[-0.035em] text-lp-text mb-6 sm:mb-8 animate-slideUp delay-300 fill-mode-both">
             Student Hub<br />
-            <em className="italic text-lp-text/40">Openlcaw Reminder</em>
+            <em className="italic text-lp-text/40">Openclaw Reminder</em>
           </h1>
       
-          <div className="mb-10">
+          <div className="mb-8 sm:mb-10">
             <HighlighterDemo />
           </div>
           <div className="flex items-center gap-4 flex-wrap animate-slideUp delay-[650ms] fill-mode-both">
@@ -839,7 +893,7 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 lg:grid-cols-[2.5fr_1fr] gap-10">
             <div className={`${rvBase} ${rvDelays[2]}`}>
               <div className="bg-lp-surface border border-lp-border rounded-2xl overflow-hidden">
-                 {calendarMonths.map((m, i) => {
+                 {calendarMonths.map((m) => {
                    const eventsInMonth = academicCalendar.filter(ev => {
                       const d = new Date(ev.date)
                       return d.getFullYear() === m.year && d.getMonth() === m.month
@@ -889,7 +943,7 @@ export default function LandingPage() {
       <section className="py-24">
         <div className="max-w-[1120px] mx-auto px-7">
           <div className={`${rvBase} border border-lp-border rounded-[20px] overflow-hidden grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4`}>
-            {stats.map((s, i) => (
+            {stats.map((s) => (
               <div key={s.n} className="p-10 lg:py-14 sm:border-r border-lp-border last:border-r-0 border-b lg:border-b-0 last:border-b-0">
                 <span className="font-sans text-[4rem] font-normal text-lp-text leading-none tracking-tight block mb-2.5">{s.n}</span>
                 <p className="text-[13px] font-light text-lp-text2 leading-relaxed max-w-[140px]">{s.label}</p>

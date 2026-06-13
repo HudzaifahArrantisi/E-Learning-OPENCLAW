@@ -189,6 +189,7 @@ const ChatPage = ({ role }) => {
   const searchTimeoutRef = useRef(null)
   const selectedConvRef = useRef(null)
   const fileInputRef = useRef(null)
+  const deletedConvsRef = useRef(new Set())
   const [uploadingFile, setUploadingFile] = useState(false)
 
   // Keep ref in sync with state
@@ -218,6 +219,10 @@ const ChatPage = ({ role }) => {
       } else {
         // Jika tidak ada di daftar local, tapi loading sudah selesai
         if (!loading) {
+          if (deletedConvsRef.current.has(conversationId)) {
+            navigate(basePath, { replace: true })
+            return
+          }
           try {
               if (conversationId.startsWith('temp-')) {
                 const contactIdStr = conversationId.replace('temp-', '')
@@ -242,6 +247,7 @@ const ChatPage = ({ role }) => {
                     tempContactId: contactId
                   }
                   setSelectedConversation(tempConv)
+                  selectedConvRef.current = tempConv
                   setMessages([])
                   setShowMobileList(false)
                 } else {
@@ -269,6 +275,7 @@ const ChatPage = ({ role }) => {
               })
 
               setSelectedConversation(fetchedConv)
+              selectedConvRef.current = fetchedConv
               setMessages([])
               setShowMobileList(false)
 
@@ -279,7 +286,23 @@ const ChatPage = ({ role }) => {
               navigate(basePath, { replace: true })
             }
           } catch (err) {
-            console.error('Fetch conversation detail error:', err)
+            if (err.response?.status === 404) {
+              setConversations((current) => current.filter((item) => item.id !== conversationId))
+              if (selectedConvRef.current?.id === conversationId) {
+                setSelectedConversation(null)
+                selectedConvRef.current = null
+                setMessages([])
+              }
+
+              if (hiddenChats[conversationId]) {
+                const updated = { ...hiddenChats }
+                delete updated[conversationId]
+                setHiddenChats(updated)
+                localStorage.setItem('hiddenChats', JSON.stringify(updated))
+              }
+            } else {
+              console.error('Fetch conversation detail error:', err)
+            }
             navigate(basePath, { replace: true })
           }
         }
@@ -386,6 +409,7 @@ const ChatPage = ({ role }) => {
   }
 
   const selectConversation = async (conv) => {
+    selectedConvRef.current = conv
     setSelectedConversation(conv)
     setMessages([])
     setShowMobileList(false)
@@ -422,6 +446,9 @@ const ChatPage = ({ role }) => {
             id: activeConversationId,
             isTemp: false
           }))
+          if (selectedConvRef.current) {
+            selectedConvRef.current = { ...selectedConvRef.current, id: activeConversationId, isTemp: false }
+          }
         } else {
           throw new Error('Failed to create conversation')
         }
@@ -502,31 +529,57 @@ const ChatPage = ({ role }) => {
       confirmText: 'Hapus',
       cancelText: 'Batal',
       isDanger: true,
-      onConfirm: () => {
-        const newHidden = { ...hiddenChats, [conv.id]: conv.last_message?.id || 'none' }
+      onConfirm: async () => {
+        try {
+          // Actually delete from backend
+          deletedConvsRef.current.add(conv.id)
+          await api.deleteConversation(conv.id)
+        } catch (err) {
+          console.error('Delete conversation error:', err)
+          // Even if backend fails, still clean up locally (soft delete)
+        }
+
+        // Remove from local conversations list
+        setConversations(prev => prev.filter(c => c.id !== conv.id))
+
+        // Also remove from hiddenChats localStorage if it was there
+        const newHidden = { ...hiddenChats }
+        delete newHidden[conv.id]
         setHiddenChats(newHidden)
         localStorage.setItem('hiddenChats', JSON.stringify(newHidden))
+
+        // If the deleted conversation was selected, deselect and go back to list
         if (selectedConversation?.id === conv.id) {
           setSelectedConversation(null)
-          navigate(basePath)
+          selectedConvRef.current = null
+          setMessages([])
           setShowMobileList(true)
+          navigate(basePath, { replace: true })
         }
       }
     })
   }
 
   const handleInputChange = (e) => {
-    setNewMessage(e.target.value)
-    if (selectedConversation && !selectedConversation.isTemp && e.target.value.length > 0) {
+    const value = e.target.value
+    setNewMessage(value)
+    if (!selectedConversation || selectedConversation.isTemp) return
+
+    if (value.length > 0) {
       api.webSocket.sendTypingIndicator(selectedConversation.id, true)
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current)
       typingTimeoutRef.current = setTimeout(() => {
         api.webSocket.sendTypingIndicator(selectedConversation.id, false)
       }, 2000)
+    } else {
+      // Input dikosongkan -> hentikan indikator "sedang mengetik" segera
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current)
+      api.webSocket.sendTypingIndicator(selectedConversation.id, false)
     }
   }
 
   const handleAttachClick = () => {
+    if (uploadingFile) return
     if (fileInputRef.current) {
       fileInputRef.current.click()
     }
@@ -555,6 +608,9 @@ const ChatPage = ({ role }) => {
             id: activeConversationId,
             isTemp: false
           }))
+          if (selectedConvRef.current) {
+            selectedConvRef.current = { ...selectedConvRef.current, id: activeConversationId, isTemp: false }
+          }
         } else {
           throw new Error('Failed to create conversation')
         }
@@ -758,6 +814,7 @@ const ChatPage = ({ role }) => {
       }
 
       setSelectedConversation(tempConv)
+      selectedConvRef.current = tempConv
       setMessages([])
       setShowMobileList(false)
       setShowNewChat(false)
@@ -786,6 +843,22 @@ const ChatPage = ({ role }) => {
       return other?.user?.name || conv.name
     }
     return conv.name
+  }
+
+  const getConvPhoto = (conv) => {
+    if (conv.type === 'private' && conv.participants) {
+      const other = conv.participants.find(p => p.user_id !== user?.id)
+      return other?.user?.photo ? resolveBackendAssetUrl(other.user.photo) : null
+    }
+    return null
+  }
+
+  const getConvRole = (conv) => {
+    if (conv.type === 'private' && conv.participants) {
+      const other = conv.participants.find(p => p.user_id !== user?.id)
+      return other?.user?.role || 'User'
+    }
+    return 'Grup'
   }
 
   const getInitials = (name) => {
@@ -863,13 +936,15 @@ const ChatPage = ({ role }) => {
             
             {/* Avatar */}
             <div className="relative flex-shrink-0">
-              <div className={`w-11 h-11 rounded-full flex items-center justify-center font-bold text-[15px] shadow-sm select-none ${
+              <div className={`w-11 h-11 rounded-full flex items-center justify-center font-bold text-[15px] shadow-sm select-none overflow-hidden ${
                 isSelected 
                   ? 'bg-white/20 text-white' 
                   : 'bg-gradient-to-br from-[#BAC6D1] to-[#A2ADB8] text-white border border-gray-200'
               }`}>
                 {conv.type === 'group' ? (
                   <i className="fas fa-users text-sm" />
+                ) : getConvPhoto(conv) ? (
+                  <img src={getConvPhoto(conv)} alt={convName} className="w-full h-full object-cover" />
                 ) : (
                   <span>{initials}</span>
                 )}
@@ -1164,16 +1239,18 @@ const ChatPage = ({ role }) => {
                   </div>
 
                   <div className="flex flex-col items-center justify-center w-1/3 cursor-pointer group">
-                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#BAC6D1] to-[#A2ADB8] text-white flex items-center justify-center text-[15px] font-bold shadow-sm transition-transform duration-200 group-hover:scale-105">
+                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#BAC6D1] to-[#A2ADB8] text-white flex items-center justify-center text-[15px] font-bold shadow-sm transition-transform duration-200 group-hover:scale-105 overflow-hidden">
                       {selectedConversation.type === 'group' ? (
                         <i className="fas fa-users text-sm" />
+                      ) : getConvPhoto(selectedConversation) ? (
+                        <img src={getConvPhoto(selectedConversation)} alt={getConvName(selectedConversation)} className="w-full h-full object-cover" />
                       ) : (
                         <span>{getInitials(getConvName(selectedConversation))}</span>
                       )}
                     </div>
                     <span className="font-semibold text-gray-900 text-[13px] mt-1 truncate max-w-full">{getConvName(selectedConversation)}</span>
-                    <span className="text-[10px] text-gray-400 mt-0.5 flex items-center gap-1">
-                      <span>{selectedConversation.type === 'group' ? 'Grup' : 'iMessage'}</span>
+                    <span className="text-[10px] text-gray-400 mt-0.5 flex items-center gap-1 capitalize">
+                      <span>{selectedConversation.type === 'group' ? 'Grup' : getConvRole(selectedConversation)}</span>
                       <span className={`w-1.5 h-1.5 rounded-full ${isWsConnected ? 'bg-[#34C759]' : 'bg-red-400'}`} />
                     </span>
                   </div>
@@ -1377,13 +1454,20 @@ const ChatPage = ({ role }) => {
                       {/* Pill Input Container */}
                       <div className="flex-grow flex items-center bg-white border border-[#D2D2D7]/80 rounded-[20px] pl-2 pr-1.5 py-1 focus-within:border-[#007AFF]/60 focus-within:ring-1 focus-within:ring-[#007AFF]/30 transition-all">
                         {/* Attach button */}
-                        <button 
-                          type="button" 
-                          onClick={handleAttachClick} 
-                          className="w-8 h-8 flex items-center justify-center bg-[#007AFF] hover:bg-[#0066CC] text-white rounded-full active:scale-95 flex-shrink-0 mr-2 shadow-sm transition-all"
+                        <button
+                          type="button"
+                          onClick={handleAttachClick}
+                          disabled={uploadingFile}
+                          className={`w-8 h-8 flex items-center justify-center text-white rounded-full active:scale-95 flex-shrink-0 mr-2 shadow-sm transition-all ${
+                            uploadingFile ? 'bg-[#007AFF]/50 cursor-not-allowed' : 'bg-[#007AFF] hover:bg-[#0066CC]'
+                          }`}
                           title="Unggah File/Gambar"
                         >
-                          <i className="fas fa-plus text-[14px]" />
+                          {uploadingFile ? (
+                            <i className="fas fa-spinner fa-spin text-[14px]" />
+                          ) : (
+                            <i className="fas fa-plus text-[14px]" />
+                          )}
                         </button>
                         <textarea
                           value={newMessage} 

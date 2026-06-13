@@ -68,9 +68,9 @@ func GetMyProfile(c *gin.Context) {
     }
 
     if role == "mahasiswa" {
-        var profile struct {
-            ID        int            `json:"id"`
-            UserID    int            `json:"user_id"`
+		var profile struct {
+			ID        int            `json:"id"`
+			UserID    int            `json:"user_id"`
             Name      string         `json:"name"`
             NIM       string         `json:"nim"`
             Alamat    sql.NullString `json:"alamat"`
@@ -253,10 +253,11 @@ func GetPublicProfile(c *gin.Context) {
         return
     }
 
-    if role == "mahasiswa" {
-        var profile struct {
-            ID        int            `json:"id"`
-            Name      string         `json:"name"`
+	if role == "mahasiswa" {
+		var profile struct {
+			ID        int            `json:"id"`
+			UserID    int            `json:"user_id"`
+			Name      string         `json:"name"`
             NIM       string         `json:"nim"`
             Alamat    sql.NullString `json:"alamat"`
             Photo     sql.NullString `json:"photo"`
@@ -265,14 +266,14 @@ func GetPublicProfile(c *gin.Context) {
         }
         
         query := `
-            SELECT id, name, nim, alamat, photo, created_at, updated_at
+			SELECT id, user_id, name, nim, alamat, photo, created_at, updated_at
             FROM mahasiswa
             WHERE (LOWER(name) = $1 OR LOWER(REPLACE(name, ' ', '_')) = $1 OR LOWER(name) LIKE $2) AND deleted_at IS NULL
             LIMIT 1
         `
         
         err := config.DB.QueryRow(query, cleanUsername, "%"+cleanUsername+"%").Scan(
-            &profile.ID, &profile.Name, &profile.NIM, &profile.Alamat, &profile.Photo, &profile.CreatedAt, &profile.UpdatedAt,
+			&profile.ID, &profile.UserID, &profile.Name, &profile.NIM, &profile.Alamat, &profile.Photo, &profile.CreatedAt, &profile.UpdatedAt,
         )
         if err != nil {
             if err == sql.ErrNoRows {
@@ -284,7 +285,8 @@ func GetPublicProfile(c *gin.Context) {
         }
         
         utils.SuccessResponse(c, gin.H{
-            "id":               profile.ID,
+			"id":               profile.ID,
+			"user_id":          profile.UserID,
             "name":             profile.Name,
             "username":         username,
             "nim":              profile.NIM,
@@ -301,8 +303,9 @@ func GetPublicProfile(c *gin.Context) {
     }
 
     if role == "dosen" {
-        var profile struct {
-            ID        int            `json:"id"`
+		var profile struct {
+			ID        int            `json:"id"`
+			UserID    int            `json:"user_id"`
             Name      string         `json:"name"`
             NIP       string         `json:"nip"`
             CreatedAt string         `json:"created_at"`
@@ -310,14 +313,14 @@ func GetPublicProfile(c *gin.Context) {
         }
         
         query := `
-            SELECT id, name, nip, created_at, updated_at
+			SELECT id, user_id, name, nip, created_at, updated_at
             FROM dosen
             WHERE (LOWER(name) = $1 OR LOWER(REPLACE(name, ' ', '_')) = $1 OR LOWER(name) LIKE $2) AND deleted_at IS NULL
             LIMIT 1
         `
         
         err := config.DB.QueryRow(query, cleanUsername, "%"+cleanUsername+"%").Scan(
-            &profile.ID, &profile.Name, &profile.NIP, &profile.CreatedAt, &profile.UpdatedAt,
+			&profile.ID, &profile.UserID, &profile.Name, &profile.NIP, &profile.CreatedAt, &profile.UpdatedAt,
         )
         if err != nil {
             if err == sql.ErrNoRows {
@@ -348,6 +351,7 @@ func GetPublicProfile(c *gin.Context) {
 
     var profile struct {
         ID             int            `json:"id"`
+        UserID         int            `json:"user_id"`
         Name           string         `json:"name"`
         Username       string         `json:"username"`
         Bio            sql.NullString `json:"bio"`
@@ -361,7 +365,7 @@ func GetPublicProfile(c *gin.Context) {
     }
 
     query := `
-        SELECT id, name, username, bio, website, phone, profile_picture, 
+        SELECT id, user_id, name, username, bio, website, phone, profile_picture, 
             followers_count, following_count, created_at, updated_at
         FROM ` + table + ` 
         WHERE (username = $1 OR username = $2) AND deleted_at IS NULL
@@ -369,7 +373,7 @@ func GetPublicProfile(c *gin.Context) {
 
     // Coba dengan username yang sudah dibersihkan
     err := config.DB.QueryRow(query, username, cleanUsername).Scan(
-        &profile.ID, &profile.Name, &profile.Username,
+        &profile.ID, &profile.UserID, &profile.Name, &profile.Username,
         &profile.Bio, &profile.Website, &profile.Phone, &profile.ProfilePicture,
         &profile.FollowersCount, &profile.FollowingCount,
         &profile.CreatedAt, &profile.UpdatedAt,
@@ -385,14 +389,14 @@ func GetPublicProfile(c *gin.Context) {
             nameFromUsername = strings.Replace(nameFromUsername, "Ormawa ", "Ormawa ", -1)
             
             fallbackQuery := `
-                SELECT id, name, username, bio, website, phone, profile_picture, 
+                SELECT id, user_id, name, username, bio, website, phone, profile_picture, 
                        followers_count, following_count, created_at, updated_at
                 FROM ` + table + ` 
                 WHERE name LIKE $1 AND deleted_at IS NULL
             `
             
             err = config.DB.QueryRow(fallbackQuery, "%"+nameFromUsername+"%").Scan(
-                &profile.ID, &profile.Name, &profile.Username,
+                &profile.ID, &profile.UserID, &profile.Name, &profile.Username,
                 &profile.Bio, &profile.Website, &profile.Phone, &profile.ProfilePicture,
                 &profile.FollowersCount, &profile.FollowingCount,
                 &profile.CreatedAt, &profile.UpdatedAt,
@@ -415,6 +419,7 @@ func GetPublicProfile(c *gin.Context) {
 
     utils.SuccessResponse(c, gin.H{
         "id":               profile.ID,
+        "user_id":          profile.UserID,
         "name":             profile.Name,
         "username":         profile.Username,
         "bio":              profile.Bio.String,

@@ -7,6 +7,7 @@ import Navbar from '../../components/Navbar'
 import useAuth from '../../hooks/useAuth'
 import { FaCamera, FaEdit, FaEnvelope, FaIdCard, FaMapMarkerAlt, FaSave, FaUser } from 'react-icons/fa'
 import { getProfilePhotoUrl } from '../../utils/profileUtils'
+import SocialProfileStats from '../../components/SocialProfileStats'
 
 const ProfileMahasiswa = () => {
   const queryClient = useQueryClient()
@@ -20,6 +21,8 @@ const ProfileMahasiswa = () => {
     queryFn: () => api.get('/api/mahasiswa/profile').then((res) => res.data.data),
     staleTime: 5 * 60 * 1000,
   })
+
+  const socialUserId = profile?.user_id || user?.id
 
   const [formData, setFormData] = useState({
     alamat: '',
@@ -262,6 +265,12 @@ const ProfileMahasiswa = () => {
                 
                 <h3 className="text-2xl font-normal text-lp-text tracking-tight truncate px-2">{profile?.name || 'Mahasiswa'}</h3>
                 <p className="text-lp-text3 font-mono text-[11px] mb-8 mt-1 tracking-widest uppercase">{profile?.nim || 'NIM'}</p>
+
+                {socialUserId && (
+                  <div className="mb-6">
+                    <SocialProfileStats userId={socialUserId} />
+                  </div>
+                )}
                 
                 <div className="space-y-3 pt-8 border-t border-lp-border">
                   {!isEditing ? (

@@ -40,6 +40,16 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB) {
 	api.GET("/profile/me", controllers.GetMyProfile)
 	api.PUT("/profile/me", controllers.UpdateMyProfile)
 
+	// === SOCIAL FOLLOW & NOTIFICATIONS ===
+	api.POST("/users/:id/follow", controllers.FollowUser)
+	api.DELETE("/users/:id/follow", controllers.UnfollowUser)
+	api.GET("/users/:id/follow-status", controllers.GetFollowStatus)
+	api.GET("/users/:id/followers", controllers.GetFollowers)
+	api.GET("/users/:id/following", controllers.GetFollowing)
+	api.GET("/notifications", controllers.GetSocialNotifications)
+	api.PATCH("/notifications/read-all", controllers.MarkAllSocialNotificationsRead)
+	api.PATCH("/notifications/:id/read", controllers.MarkSocialNotificationRead)
+
 	// === GENERAL COURSE INFO ===
 	api.GET("/courses/:course_id/info", controllers.GetCourseInfo)
 

@@ -4,12 +4,17 @@ import { createPortal } from 'react-dom'
 import { Link, useNavigate } from 'react-router-dom'
 import useAuth from '../hooks/useAuth'
 import { resolveBackendAssetUrl } from '../utils/assetUrl'
+import api from '../services/api'
 
 export default function ProfileHoverCard({ role, username, displayName, displayAvatar, userId, children, className = '' }) {
   const { user } = useAuth()
   const navigate = useNavigate()
   const [isOpen, setIsOpen] = useState(false)
   const [coords, setCoords] = useState({ top: 0, left: 0 })
+  const [followState, setFollowState] = useState(null)
+  const [followBusy, setFollowBusy] = useState(false)
+  const [resolvedUserId, setResolvedUserId] = useState(userId || null)
+  const [profileData, setProfileData] = useState(null)
 
   const triggerRef = useRef(null)
   const cardRef = useRef(null)
@@ -121,6 +126,42 @@ export default function ProfileHoverCard({ role, username, displayName, displayA
     }
   }, [])
 
+  const cleanUserId = userId || null
+  const [prevUserId, setPrevUserId] = useState(cleanUserId)
+  if (cleanUserId !== prevUserId) {
+    setResolvedUserId(cleanUserId)
+    setPrevUserId(cleanUserId)
+  }
+
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen)
+  if (isOpen !== prevIsOpen) {
+    setPrevIsOpen(isOpen)
+    if (!isOpen) {
+      setProfileData(null)
+    }
+  }
+
+  useEffect(() => {
+    if (!isOpen || profileData || !cleanRole || !cleanUser) return
+    api.get(`/api/profile/public/${cleanRole}/${cleanUser}`)
+      .then((res) => {
+        setProfileData(res.data.data)
+        if (res.data.data?.user_id) {
+          setResolvedUserId(res.data.data.user_id)
+        }
+      })
+      .catch(() => {
+        setProfileData(null)
+      })
+  }, [isOpen, profileData, cleanRole, cleanUser])
+
+  useEffect(() => {
+    if (!isOpen || !user || !resolvedUserId || Number(user.id) === Number(resolvedUserId)) return
+    api.getFollowStatus(resolvedUserId)
+      .then((res) => setFollowState(res.data.data))
+      .catch(() => setFollowState(null))
+  }, [isOpen, user, resolvedUserId])
+
   const getRoleDisplay = (r) => {
     switch (r) {
       case 'admin': return 'Admin'
@@ -148,11 +189,71 @@ export default function ProfileHoverCard({ role, username, displayName, displayA
     setIsOpen(false)
     if (!user) return
     const userRole = user.role || 'mahasiswa'
-    const targetId = userId || cleanUser
+    const targetId = resolvedUserId || cleanUser
     navigate(`/${userRole}/pesan/temp-${targetId}`)
   }
 
-  const cardContent = (
+  const handleFollowClick = async (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!resolvedUserId || followBusy) return
+    setFollowBusy(true)
+    try {
+      const res = followState?.is_following
+        ? await api.unfollowUser(resolvedUserId)
+        : await api.followUser(resolvedUserId)
+      setFollowState((current) => ({ ...current, ...res.data.data }))
+    } finally {
+      setFollowBusy(false)
+    }
+  }
+
+  const cardContent = cleanRole === 'mahasiswa' ? (
+    <div
+      ref={cardRef}
+      style={{
+        position: 'absolute',
+        top: `${coords.top}px`,
+        left: `${coords.left}px`,
+        zIndex: 9999,
+      }}
+      className="w-[240px] bg-white border border-gray-200 rounded-2xl shadow-2xl p-4 flex flex-col font-sans select-none animate-fadeIn pointer-events-auto"
+      onMouseEnter={() => {
+        if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current)
+      }}
+      onMouseLeave={() => closeCard(150)}
+    >
+      <div className="flex flex-col items-center text-center">
+        {/* Avatar */}
+        <div className="w-16 h-16 bg-gray-100 border border-gray-200 rounded-full flex items-center justify-center font-bold overflow-hidden mb-3 shrink-0">
+          {profileData?.profile_picture || displayAvatar ? (
+            <img
+              src={resolveBackendAssetUrl(profileData?.profile_picture || displayAvatar)}
+              alt={profileData?.name || displayName}
+              className="w-full h-full object-cover"
+              onError={(e) => { e.target.style.display = 'none' }}
+            />
+          ) : (
+            (profileData?.name || displayName || cleanUser || '?')[0].toUpperCase()
+          )}
+        </div>
+        
+        {/* Info */}
+        <h4 className="font-bold text-gray-900 text-sm truncate w-full px-1 leading-tight tracking-tight">
+          {profileData?.name || displayName || username}
+        </h4>
+        
+        <span className={`inline-block px-2 py-0.5 mt-2 text-[9px] font-bold uppercase tracking-wider rounded border ${getRoleBadgeClass('mahasiswa')}`}>
+          Mahasiswa
+        </span>
+
+        {/* NIM */}
+        <div className="mt-2.5 text-xs text-gray-500 font-mono">
+          NIM: {profileData?.nim || '...'}
+        </div>
+      </div>
+    </div>
+  ) : (
     <div
       ref={cardRef}
       style={{
@@ -194,10 +295,23 @@ export default function ProfileHoverCard({ role, username, displayName, displayA
 
         {/* Action Button */}
         <div className="flex flex-col gap-1.5 mt-1">
-          {user && userId && Number(user.id) !== Number(userId) ? (
+          {user && resolvedUserId && Number(user.id) !== Number(resolvedUserId) ? (
+            <button
+              onClick={handleFollowClick}
+              disabled={followBusy || !followState}
+              className={`w-full py-1.5 active:scale-[0.98] text-[11px] font-semibold rounded-xl shadow-sm transition-all disabled:opacity-50 ${
+                followState?.is_following
+                  ? 'bg-gray-100 hover:bg-gray-200 text-gray-800 border border-gray-200'
+                  : 'bg-[#007AFF] hover:bg-[#0066CC] text-white'
+              }`}
+            >
+              {followBusy ? 'Memproses...' : followState?.is_following ? 'Following' : 'Follow'}
+            </button>
+          ) : null}
+          {user && resolvedUserId && Number(user.id) !== Number(resolvedUserId) ? (
             <button
               onClick={handleMessageClick}
-              className="w-full py-1.5 bg-[#007AFF] hover:bg-[#0066CC] active:scale-[0.98] text-white text-[11px] font-semibold rounded-xl shadow-sm transition-all"
+              className="w-full py-1.5 bg-gray-50 hover:bg-gray-100 active:scale-[0.98] text-gray-700 text-[11px] font-semibold rounded-xl border border-gray-200 transition-all"
             >
               Kirim Pesan
             </button>

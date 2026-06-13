@@ -367,14 +367,13 @@ func CreatePost(c *gin.Context) {
 		table = "ormawa"
 	case "dosen":
 		table = "dosen"
-	case "mahasiswa":
-		table = "mahasiswa"
 	case "orangtua":
 		table = "ortu"
 	default:
 		utils.ErrorResponse(c, http.StatusForbidden, "Role tidak diizinkan membuat post")
 		return
 	}
+
 
 	err := config.DB.QueryRow(
 		"SELECT name, username FROM "+table+" WHERE user_id = $1 AND deleted_at IS NULL",

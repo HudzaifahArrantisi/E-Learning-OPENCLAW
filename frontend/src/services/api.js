@@ -80,6 +80,16 @@ api.pinConversation = (conversationId) =>
 api.unpinConversation = (conversationId) => 
   api.delete(`/api/chat/conversations/${conversationId}/pin`)
 
+// Social follow & notifications
+api.followUser = (userId) => api.post(`/api/users/${userId}/follow`)
+api.unfollowUser = (userId) => api.delete(`/api/users/${userId}/follow`)
+api.getFollowStatus = (userId) => api.get(`/api/users/${userId}/follow-status`)
+api.getFollowers = (userId, params = {}) => api.get(`/api/users/${userId}/followers`, { params })
+api.getFollowing = (userId, params = {}) => api.get(`/api/users/${userId}/following`, { params })
+api.getSocialNotifications = (params = {}) => api.get('/api/notifications', { params })
+api.markSocialNotificationRead = (notificationId) => api.patch(`/api/notifications/${notificationId}/read`)
+api.markAllSocialNotificationsRead = () => api.patch('/api/notifications/read-all')
+
 // ==============================================================
 // =========== WEBSOCKET SERVICE FOR REAL-TIME CHAT =============
 // ==============================================================

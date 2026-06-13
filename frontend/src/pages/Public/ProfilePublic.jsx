@@ -1,5 +1,5 @@
 // src/pages/Public/ProfilePublic.jsx
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import api from '../../services/api'
@@ -156,6 +156,54 @@ const GridPostItem = ({ post, openPostModal, getMediaUrls, isImagePost, handlePo
   )
 }
 
+// Helper untuk memproses media — support new post.media array + legacy media_url
+const getMediaUrls = (mediaUrlOrPost) => {
+  // If a post object with .media array is passed
+  if (mediaUrlOrPost && typeof mediaUrlOrPost === 'object' && !Array.isArray(mediaUrlOrPost)) {
+    if (Array.isArray(mediaUrlOrPost.media) && mediaUrlOrPost.media.length > 0) {
+      // Even if the backend maps it to .media, if media_url is a JSON string, it needs parsing
+      const rawUrl = mediaUrlOrPost.media[0].media_url
+      if (typeof rawUrl === 'string' && (rawUrl.trim().startsWith('[') || rawUrl.trim().startsWith('{'))) {
+         return getMediaUrls(rawUrl)
+      }
+      return mediaUrlOrPost.media.map(m => m.media_url)
+    }
+    // Fallback to .media_url
+    return getMediaUrls(mediaUrlOrPost.media_url)
+  }
+
+  // Legacy: mediaUrl string or array
+  const mediaUrl = mediaUrlOrPost
+  if (!mediaUrl) return []
+  if (Array.isArray(mediaUrl)) return mediaUrl
+  
+  if (typeof mediaUrl === 'string') {
+    const trimmed = mediaUrl.trim()
+    if (trimmed.startsWith('[') || trimmed.startsWith('{')) {
+      try {
+        const parsed = JSON.parse(trimmed)
+        return Array.isArray(parsed) ? parsed : [parsed]
+      } catch {
+        return [trimmed]
+      }
+    }
+    return [trimmed]
+  }
+  return []
+}
+
+// Check if post is image/content
+const isImagePost = (post) => {
+  if (!post) return false
+  if (post.media_type === 'image') return true
+  // Check new carousel media array
+  if (Array.isArray(post.media) && post.media.length > 0) return true
+  
+  const urls = getMediaUrls(post.media_url)
+  return urls.length > 0
+}
+
+
 const ProfilePublic = () => {
   const { user } = useAuth()
   const { role, username } = useParams()
@@ -164,16 +212,24 @@ const ProfilePublic = () => {
   const [loadingPosts, setLoadingPosts] = useState(false)
   const [selectedPost, setSelectedPost] = useState(null)
   const [showPostModal, setShowPostModal] = useState(false)
-  const [commentText, setCommentText] = useState('')
-  const [isCommenting, setIsCommenting] = useState(false)
-  const [localComments, setLocalComments] = useState([])
   const [activeFilter, setActiveFilter] = useState('semua') // 'semua', 'foto', 'text'
-  const [filteredPosts, setFilteredPosts] = useState([])
-  const [modalSlide, setModalSlide] = useState(0)
-  const modalTouchStartX = useRef(null)
-  const modalTouchStartY = useRef(null)
-  const modalTouchEndX = useRef(null)
-  const modalTouchEndY = useRef(null)
+
+  const filteredPosts = useMemo(() => {
+    if (!userPosts.length) return []
+    switch (activeFilter) {
+      case 'foto':
+        return userPosts.filter(post => isImagePost(post))
+      case 'text':
+        return userPosts.filter(post => !isImagePost(post))
+      default:
+        return userPosts
+    }
+  }, [activeFilter, userPosts])
+  const [followState, setFollowState] = useState(null)
+  const [followBusy, setFollowBusy] = useState(false)
+  const [socialList, setSocialList] = useState(null)
+  const [socialItems, setSocialItems] = useState([])
+  const [socialLoading, setSocialLoading] = useState(false)
 
   const { data: profile, isLoading, error } = useQuery({
     queryKey: ['public-profile', role, username],
@@ -189,7 +245,52 @@ const ProfilePublic = () => {
   })
 
   useEffect(() => {
-    if (!profile) return
+    if (!user || !profile?.user_id) return
+    api.getFollowStatus(profile.user_id)
+      .then((res) => setFollowState(res.data.data))
+      .catch(() => setFollowState(null))
+  }, [user, profile?.user_id])
+
+  const toggleFollow = async (targetId = profile?.user_id) => {
+    if (!targetId || followBusy) return
+    setFollowBusy(true)
+    try {
+      const isTargetProfile = Number(targetId) === Number(profile?.user_id)
+      const currentlyFollowing = isTargetProfile
+        ? followState?.is_following
+        : socialItems.find((item) => Number(item.account.id) === Number(targetId))?.is_following
+      const res = currentlyFollowing ? await api.unfollowUser(targetId) : await api.followUser(targetId)
+      if (isTargetProfile) {
+        setFollowState((current) => ({ ...current, ...res.data.data }))
+      }
+      setSocialItems((items) => items.map((item) => (
+        Number(item.account.id) === Number(targetId)
+          ? { ...item, is_following: !currentlyFollowing }
+          : item
+      )))
+    } finally {
+      setFollowBusy(false)
+    }
+  }
+
+  const openSocialList = async (type) => {
+    if (!user || !profile?.user_id) return
+    setSocialList(type)
+    setSocialLoading(true)
+    try {
+      const res = type === 'followers'
+        ? await api.getFollowers(profile.user_id)
+        : await api.getFollowing(profile.user_id)
+      setSocialItems(res.data.data?.items || [])
+    } catch {
+      setSocialItems([])
+    } finally {
+      setSocialLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (!profile || role === 'mahasiswa') return
 
     const fetchPosts = async () => {
       setLoadingPosts(true)
@@ -199,7 +300,6 @@ const ProfilePublic = () => {
         
         const postsData = res.data.data || []
         setUserPosts(postsData)
-        setFilteredPosts(postsData)
       } catch (err) {
         console.log('Fallback to feed filtering...', err)
         try {
@@ -222,11 +322,8 @@ const ProfilePublic = () => {
           
           console.log('Filtered posts from feed:', filtered)
           setUserPosts(filtered)
-          setFilteredPosts(filtered)
-        } catch (e) {
-          console.error('Gagal ambil postingan', e)
+        } catch {
           setUserPosts([])
-          setFilteredPosts([])
         }
       } finally {
         setLoadingPosts(false)
@@ -236,112 +333,9 @@ const ProfilePublic = () => {
     fetchPosts()
   }, [profile, role, username])
 
-  // Helper untuk memproses media — support new post.media array + legacy media_url
-  const getMediaUrls = (mediaUrlOrPost) => {
-    // If a post object with .media array is passed
-    if (mediaUrlOrPost && typeof mediaUrlOrPost === 'object' && !Array.isArray(mediaUrlOrPost)) {
-      if (Array.isArray(mediaUrlOrPost.media) && mediaUrlOrPost.media.length > 0) {
-        // Even if the backend maps it to .media, if media_url is a JSON string, it needs parsing
-        const rawUrl = mediaUrlOrPost.media[0].media_url
-        if (typeof rawUrl === 'string' && (rawUrl.trim().startsWith('[') || rawUrl.trim().startsWith('{'))) {
-           return getMediaUrls(rawUrl)
-        }
-        return mediaUrlOrPost.media.map(m => m.media_url)
-      }
-      // Fallback to .media_url
-      return getMediaUrls(mediaUrlOrPost.media_url)
-    }
 
-    // Legacy: mediaUrl string or array
-    const mediaUrl = mediaUrlOrPost
-    if (!mediaUrl) return []
-    if (Array.isArray(mediaUrl)) return mediaUrl
-    
-    if (typeof mediaUrl === 'string') {
-      const trimmed = mediaUrl.trim()
-      if (trimmed.startsWith('[') || trimmed.startsWith('{')) {
-        try {
-          const parsed = JSON.parse(trimmed)
-          return Array.isArray(parsed) ? parsed : [parsed]
-        } catch (e) {
-          return [trimmed]
-        }
-      }
-      return [trimmed]
-    }
-    return []
-  }
 
-  const updateModalSlide = (nextSlideOrUpdater) => {
-    if (!selectedPost) return
-    const urls = getMediaUrls(selectedPost)
-    if (urls.length <= 1) return
-    setModalSlide((prev) => {
-      const next = typeof nextSlideOrUpdater === 'function'
-        ? nextSlideOrUpdater(prev)
-        : nextSlideOrUpdater
-      return Math.max(0, Math.min(next, urls.length - 1))
-    })
-  }
 
-  const handleModalTouchStart = (e) => {
-    modalTouchStartX.current = e.touches[0].clientX
-    modalTouchStartY.current = e.touches[0].clientY
-    modalTouchEndX.current = null
-    modalTouchEndY.current = null
-  }
-
-  const handleModalTouchMove = (e) => {
-    modalTouchEndX.current = e.touches[0].clientX
-    modalTouchEndY.current = e.touches[0].clientY
-  }
-
-  const handleModalTouchEnd = () => {
-    if (
-      modalTouchStartX.current === null ||
-      modalTouchEndX.current === null ||
-      !selectedPost
-    ) return
-
-    const deltaX = modalTouchStartX.current - modalTouchEndX.current
-    const deltaY = (modalTouchStartY.current || 0) - (modalTouchEndY.current || 0)
-    const threshold = 50
-
-    // Fokus ke swipe horizontal agar natural di modal
-    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > threshold) {
-      if (!selectedPost) return
-      const urls = getMediaUrls(selectedPost)
-      if (deltaX > 0) {
-        setModalSlide(s => Math.min(urls.length - 1, s + 1))
-      } else {
-        setModalSlide(s => Math.max(0, s - 1))
-      }
-    }
-
-    modalTouchStartX.current = null
-    modalTouchStartY.current = null
-    modalTouchEndX.current = null
-    modalTouchEndY.current = null
-  }
-
-  // Filter posts berdasarkan tipe
-  useEffect(() => {
-    if (!userPosts.length) {
-      setFilteredPosts([])
-      return
-    }
-
-    switch (activeFilter) {
-      case 'foto':
-        setFilteredPosts(userPosts.filter(post => isImagePost(post)))
-        break
-      case 'text':
-        setFilteredPosts(userPosts.filter(post => !isImagePost(post)))
-        break
-      default:
-        setFilteredPosts(userPosts)
-    }
-  }, [activeFilter, userPosts])
 
   // Fungsi untuk mendapatkan URL gambar yang benar
   const getImageUrl = (mediaUrl) => {
@@ -379,124 +373,17 @@ const ProfilePublic = () => {
         fullPostData.media = post.media
       }
       
-      setModalSlide(0)
       setSelectedPost(fullPostData)
-      setLocalComments(fullPostData.comments || [])
       setShowPostModal(true)
     } catch (error) {
       console.error('Gagal mengambil detail post:', error)
       // Fallback ke data post dasar jika gagal
-      setModalSlide(0)
       setSelectedPost(post)
-      setLocalComments([])
       setShowPostModal(true)
     }
   }
 
-  // Fungsi untuk menambah komentar
-  const handleAddComment = async (e) => {
-    e.preventDefault()
-    if (!commentText.trim() || !selectedPost || isCommenting) return
 
-    setIsCommenting(true)
-    const tempComment = {
-      id: `temp-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`, // temporary ID
-      content: commentText.trim(),
-      author_name: user?.name || 'Anda',
-      user_role: user?.role || 'mahasiswa',
-      created_at: new Date().toISOString(),
-      replies: []
-    }
-
-    try {
-      // Optimistically update UI
-      setLocalComments(prev => [tempComment, ...prev])
-      setCommentText('')
-
-      // Send to backend
-      await api.post(`/api/post/${selectedPost.id}/comment`, {
-        content: commentText.trim()
-      })
-
-      // Refresh comments from server
-      const postRes = await api.get(`/api/post/${selectedPost.id}`)
-      setLocalComments(postRes.data.data.comments || [])
-      
-    } catch (error) {
-      console.error('Gagal menambah komentar:', error)
-      // Remove optimistic update on error
-      setLocalComments(prev => prev.filter(comment => String(comment.id) !== String(tempComment?.id)))
-      alert('Gagal menambah komentar')
-    } finally {
-      setIsCommenting(false)
-    }
-  }
-
-  // Fungsi untuk like post
-  const handleLikePost = async () => {
-    if (!selectedPost) return
-
-    const originalLiked = selectedPost.user_has_liked
-    const originalLikesCount = selectedPost.likes_count || 0
-
-    try {
-      // Optimistically update UI
-      setSelectedPost(prev => ({
-        ...prev,
-        user_has_liked: !prev.user_has_liked,
-        likes_count: prev.user_has_liked ? prev.likes_count - 1 : prev.likes_count + 1
-      }))
-
-      // Update in posts list
-      setUserPosts(prev => prev.map(post => 
-        post.id === selectedPost.id 
-          ? { 
-              ...post, 
-              user_has_liked: !post.user_has_liked,
-              likes_count: post.user_has_liked ? post.likes_count - 1 : post.likes_count + 1
-            }
-          : post
-      ))
-
-      // Send to backend
-      await api.post(`/api/post/${selectedPost.id}/like`)
-
-    } catch (error) {
-      console.error('Gagal like post:', error)
-      // Revert optimistic update on error
-      setSelectedPost(prev => ({
-        ...prev,
-        user_has_liked: originalLiked,
-        likes_count: originalLikesCount
-      }))
-    }
-  }
-
-  // Fungsi untuk save post
-  const handleSavePost = async () => {
-    if (!selectedPost) return
-
-    const originalSaved = selectedPost.user_has_saved
-
-    try {
-      // Optimistically update UI
-      setSelectedPost(prev => ({
-        ...prev,
-        user_has_saved: !prev.user_has_saved
-      }))
-
-      // Send to backend
-      await api.post(`/api/post/${selectedPost.id}/save`)
-
-    } catch (error) {
-      console.error('Gagal save post:', error)
-      // Revert optimistic update on error
-      setSelectedPost(prev => ({
-        ...prev,
-        user_has_saved: originalSaved
-      }))
-    }
-  }
 
   // Fungsi utility
   const getRoleDisplay = (role) => {
@@ -527,33 +414,7 @@ const ProfilePublic = () => {
     })
   }
 
-  // Clean username untuk link
-  const cleanUsername = (username) => {
-    if (!username) return ''
-    return username.toLowerCase()
-      .replace(/^ormawa_/, '')
-      .replace(/^ukm_/, '')
-      .replace(/^admin_/, '')
-      .trim()
-  }
 
-  // Check if post is image/content
-  const isImagePost = (post) => {
-    if (!post) return false
-    if (post.media_type === 'image') return true
-    // Check new carousel media array
-    if (Array.isArray(post.media) && post.media.length > 0) return true
-    
-    const urls = getMediaUrls(post.media_url)
-    return urls.length > 0
-  }
-
-  // Truncate text for preview
-  const truncateText = (text, maxLength = 100) => {
-    if (!text) return ''
-    if (text.length <= maxLength) return text
-    return text.substring(0, maxLength) + '...'
-  }
 
   const getFeedPath = () => {
     if (!user?.role) return '/'
@@ -702,46 +563,78 @@ const ProfilePublic = () => {
                     </span>
                     {user && Number(user.id) === Number(profile.user_id) && (
                       <>
-                        <Link 
-                          to={`/${role}/setting-profile`}
-                          className="px-4 py-1.5 bg-lp-surface border border-lp-border rounded-lg text-[12px] font-semibold text-lp-text hover:bg-white transition-all"
-                        >
-                          Edit Profil
-                        </Link>
-                        <Link
-                          to={`/${role}/posting`}
-                          className="px-4 py-1.5 bg-lp-text text-white rounded-lg text-[12px] font-semibold hover:bg-lp-atext transition-all"
-                        >
-                          Buat Postingan
-                        </Link>
+                        {role === 'mahasiswa' ? (
+                          <Link 
+                            to="/mahasiswa/profile"
+                            className="px-4 py-1.5 bg-lp-surface border border-lp-border rounded-lg text-[12px] font-semibold text-lp-text hover:bg-white transition-all"
+                          >
+                            Edit Profil
+                          </Link>
+                        ) : (
+                          <>
+                            <Link 
+                              to={`/${role}/setting-profile`}
+                              className="px-4 py-1.5 bg-lp-surface border border-lp-border rounded-lg text-[12px] font-semibold text-lp-text hover:bg-white transition-all"
+                            >
+                              Edit Profil
+                            </Link>
+                            <Link
+                              to={`/${role}/posting`}
+                              className="px-4 py-1.5 bg-lp-text text-white rounded-lg text-[12px] font-semibold hover:bg-lp-atext transition-all"
+                            >
+                              Buat Postingan
+                            </Link>
+                          </>
+                        )}
                       </>
+                    )}
+                    {role !== 'mahasiswa' && user && followState && !followState.is_own_account && (
+                      <button
+                        type="button"
+                        disabled={followBusy}
+                        onClick={() => toggleFollow()}
+                        className={`px-5 py-1.5 rounded-lg text-[12px] font-semibold transition-all disabled:opacity-60 ${
+                          followState.is_following
+                            ? 'bg-lp-surface border border-lp-border text-lp-text'
+                            : 'bg-lp-accent text-white hover:bg-lp-atext'
+                        }`}
+                      >
+                        {followBusy ? 'Memproses...' : followState.is_following ? 'Following' : 'Follow'}
+                      </button>
                     )}
                   </div>
                 </div>
                 
-                <div className="flex items-center justify-center sm:justify-start gap-6 mb-6">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
-                    <span className="font-bold text-lg text-lp-text">{userPosts.length}</span>
-                    <span className="text-lp-text3 text-[12px] uppercase tracking-wide">Postingan</span>
+                {role !== 'mahasiswa' && (
+                  <div className="flex items-center justify-center sm:justify-start gap-6 mb-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
+                      <span className="font-bold text-lg text-lp-text">{userPosts.length}</span>
+                      <span className="text-lp-text3 text-[12px] uppercase tracking-wide">Postingan</span>
+                    </div>
+                    <button type="button" onClick={() => openSocialList('followers')} className="flex flex-col sm:flex-row sm:items-center sm:gap-2 cursor-pointer hover:opacity-70 transition-opacity">
+                      <span className="font-bold text-lg text-lp-text">{followState?.followers_count ?? profile.followers_count ?? 0}</span>
+                      <span className="text-lp-text3 text-[12px] uppercase tracking-wide">Pengikut</span>
+                    </button>
+                    <button type="button" onClick={() => openSocialList('following')} className="flex flex-col sm:flex-row sm:items-center sm:gap-2 cursor-pointer hover:opacity-70 transition-opacity">
+                      <span className="font-bold text-lg text-lp-text">{followState?.following_count ?? profile.following_count ?? 0}</span>
+                      <span className="text-lp-text3 text-[12px] uppercase tracking-wide">Mengikuti</span>
+                    </button>
                   </div>
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2 cursor-pointer hover:opacity-70 transition-opacity">
-                    <span className="font-bold text-lg text-lp-text">{profile.followers_count || 0}</span>
-                    <span className="text-lp-text3 text-[12px] uppercase tracking-wide">Pengikut</span>
-                  </div>
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2 cursor-pointer hover:opacity-70 transition-opacity">
-                    <span className="font-bold text-lg text-lp-text">{profile.following_count || 0}</span>
-                    <span className="text-lp-text3 text-[12px] uppercase tracking-wide">Mengikuti</span>
-                  </div>
-                </div>
+                )}
 
                 <div className="space-y-1">
                   <p className="text-lp-text3 text-[13px] font-medium">@{profile.username}</p>
-                  {profile.bio && (
+                  {role === 'mahasiswa' && profile.nim && (
+                    <p className="text-lp-text text-[14px] font-mono leading-relaxed max-w-lg mx-auto sm:mx-0 py-1">
+                      NIM: {profile.nim}
+                    </p>
+                  )}
+                  {role !== 'mahasiswa' && profile.bio && (
                     <p className="text-lp-text2 text-[14px] leading-relaxed max-w-lg mx-auto sm:mx-0 py-1">
                       {profile.bio}
                     </p>
                   )}
-                  {profile.website && (
+                  {role !== 'mahasiswa' && profile.website && (
                     <a href={profile.website} target="_blank" rel="noopener noreferrer" className="text-lp-accent text-[13px] font-semibold hover:underline block w-fit mx-auto sm:mx-0">
                       {profile.website.replace(/^https?:\/\//, '')}
                     </a>
@@ -752,88 +645,91 @@ const ProfilePublic = () => {
           </div>
         </header>
 
-
-        {/* Filter Tabs - Premium Glass Effect */}
-        <div className="max-w-4xl mx-auto px-4 sm:px-8 mt-6">
-          <div className="flex justify-center border-t border-lp-border">
-            <div className="flex gap-12 sm:gap-16">
-              <button
-                onClick={() => setActiveFilter('semua')}
-                className={`py-4 flex items-center gap-2 text-[12px] font-bold uppercase tracking-widest transition-all ${
-                  activeFilter === 'semua'
-                    ? 'text-lp-text border-t-2 border-lp-text -mt-[2px]'
-                    : 'text-lp-text3 hover:text-lp-text2'
-                }`}
-              >
-                <FaEllipsisH className="text-[10px]" />
-                <span>Postingan</span>
-              </button>
-              <button
-                onClick={() => setActiveFilter('foto')}
-                className={`py-4 flex items-center gap-2 text-[12px] font-bold uppercase tracking-widest transition-all ${
-                  activeFilter === 'foto'
-                    ? 'text-lp-text border-t-2 border-lp-text -mt-[2px]'
-                    : 'text-lp-text3 hover:text-lp-text2'
-                }`}
-              >
-                <FaImage className="text-[10px]" />
-                <span>Foto</span>
-              </button>
-              <button
-                onClick={() => setActiveFilter('text')}
-                className={`py-4 flex items-center gap-2 text-[12px] font-bold uppercase tracking-widest transition-all ${
-                  activeFilter === 'text'
-                    ? 'text-lp-text border-t-2 border-lp-text -mt-[2px]'
-                    : 'text-lp-text3 hover:text-lp-text2'
-                }`}
-              >
-                <FaFileAlt className="text-[10px]" />
-                <span>Teks</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Grid Postingan - Diperbaiki untuk responsif */}
-        <div className="max-w-4xl mx-auto p-3 sm:p-4">
-          {loadingPosts ? (
-            <div className="text-center py-8 sm:py-12">
-              <div className="w-8 h-8 sm:w-10 sm:h-10 border-2 border-lp-border border-t-lp-accent rounded-full animate-spin mx-auto"></div>
-              <p className="text-lp-text2 mt-3 text-sm font-light">Memuat postingan...</p>
-            </div>
-          ) : filteredPosts.length === 0 ? (
-            <div className="text-center py-12 sm:py-16 text-lp-text2">
-              <div className="text-4xl sm:text-5xl mb-3">
-                {activeFilter === 'foto' ? '📷' : activeFilter === 'text' ? '📄' : '📭'}
+        {role !== 'mahasiswa' && (
+          <>
+            {/* Filter Tabs - Premium Glass Effect */}
+            <div className="max-w-4xl mx-auto px-4 sm:px-8 mt-6">
+              <div className="flex justify-center border-t border-lp-border">
+                <div className="flex gap-12 sm:gap-16">
+                  <button
+                    onClick={() => setActiveFilter('semua')}
+                    className={`py-4 flex items-center gap-2 text-[12px] font-bold uppercase tracking-widest transition-all ${
+                      activeFilter === 'semua'
+                        ? 'text-lp-text border-t-2 border-lp-text -mt-[2px]'
+                        : 'text-lp-text3 hover:text-lp-text2'
+                    }`}
+                  >
+                    <FaEllipsisH className="text-[10px]" />
+                    <span>Postingan</span>
+                  </button>
+                  <button
+                    onClick={() => setActiveFilter('foto')}
+                    className={`py-4 flex items-center gap-2 text-[12px] font-bold uppercase tracking-widest transition-all ${
+                      activeFilter === 'foto'
+                        ? 'text-lp-text border-t-2 border-lp-text -mt-[2px]'
+                        : 'text-lp-text3 hover:text-lp-text2'
+                    }`}
+                  >
+                    <FaImage className="text-[10px]" />
+                    <span>Foto</span>
+                  </button>
+                  <button
+                    onClick={() => setActiveFilter('text')}
+                    className={`py-4 flex items-center gap-2 text-[12px] font-bold uppercase tracking-widest transition-all ${
+                      activeFilter === 'text'
+                        ? 'text-lp-text border-t-2 border-lp-text -mt-[2px]'
+                        : 'text-lp-text3 hover:text-lp-text2'
+                    }`}
+                  >
+                    <FaFileAlt className="text-[10px]" />
+                    <span>Teks</span>
+                  </button>
+                </div>
               </div>
-              <p className="text-base sm:text-lg font-medium">
-                {activeFilter === 'semua' 
-                  ? 'Belum ada postingan' 
-                  : activeFilter === 'foto' 
-                  ? 'Belum ada postingan foto' 
-                  : 'Belum ada postingan teks'}
-              </p>
-              <p className="text-xs sm:text-sm mt-1">
-                {activeFilter === 'semua' 
-                  ? 'User ini belum membuat postingan apapun' 
-                  : `Tidak ada postingan ${activeFilter} dari user ini`}
-              </p>
             </div>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1 sm:gap-2 md:gap-3">
-              {filteredPosts.map((post) => (
-                <GridPostItem 
-                  key={post.id} 
-                  post={post} 
-                  openPostModal={openPostModal} 
-                  getMediaUrls={getMediaUrls} 
-                  isImagePost={isImagePost} 
-                  handlePostImageError={handlePostImageError} 
-                />
-              ))}
+
+            {/* Grid Postingan - Diperbaiki untuk responsif */}
+            <div className="max-w-4xl mx-auto p-3 sm:p-4">
+              {loadingPosts ? (
+                <div className="text-center py-8 sm:py-12">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 border-2 border-lp-border border-t-lp-accent rounded-full animate-spin mx-auto"></div>
+                  <p className="text-lp-text2 mt-3 text-sm font-light">Memuat postingan...</p>
+                </div>
+              ) : filteredPosts.length === 0 ? (
+                <div className="text-center py-12 sm:py-16 text-lp-text2">
+                  <div className="text-4xl sm:text-5xl mb-3">
+                    {activeFilter === 'foto' ? '📷' : activeFilter === 'text' ? '📄' : '📭'}
+                  </div>
+                  <p className="text-base sm:text-lg font-medium">
+                    {activeFilter === 'semua' 
+                      ? 'Belum ada postingan' 
+                      : activeFilter === 'foto' 
+                      ? 'Belum ada postingan foto' 
+                      : 'Belum ada postingan teks'}
+                  </p>
+                  <p className="text-xs sm:text-sm mt-1">
+                    {activeFilter === 'semua' 
+                      ? 'User ini belum membuat postingan apapun' 
+                      : `Tidak ada postingan ${activeFilter} dari user ini`}
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-1 sm:gap-2 md:gap-3">
+                  {filteredPosts.map((post) => (
+                    <GridPostItem 
+                      key={post.id} 
+                      post={post} 
+                      openPostModal={openPostModal} 
+                      getMediaUrls={getMediaUrls} 
+                      isImagePost={isImagePost} 
+                      handlePostImageError={handlePostImageError} 
+                    />
+                  ))}
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          </>
+        )}
       </div>
 
       {showPostModal && selectedPost && (
@@ -842,6 +738,38 @@ const ProfilePublic = () => {
           onClose={() => setShowPostModal(false)}
           getRelativeTime={getRelativeTime}
         />
+      )}
+      {socialList && (
+        <div className="fixed inset-0 z-[100] bg-black/40 flex items-center justify-center p-4" onClick={() => setSocialList(null)}>
+          <div className="w-full max-w-md max-h-[70vh] overflow-hidden bg-white rounded-2xl shadow-xl" onClick={(event) => event.stopPropagation()}>
+            <div className="px-5 py-4 border-b border-lp-border flex items-center justify-between">
+              <h2 className="font-bold text-lp-text">{socialList === 'followers' ? 'Pengikut' : 'Mengikuti'}</h2>
+              <button type="button" onClick={() => setSocialList(null)} className="p-2 text-lp-text3 hover:text-lp-text"><FaTimes /></button>
+            </div>
+            <div className="overflow-y-auto max-h-[58vh] divide-y divide-lp-border">
+              {socialLoading ? (
+                <p className="p-8 text-center text-sm text-lp-text3">Memuat...</p>
+              ) : socialItems.length === 0 ? (
+                <p className="p-8 text-center text-sm text-lp-text3">Belum ada akun.</p>
+              ) : socialItems.map(({ account, is_following: isFollowing }) => (
+                <div key={account.id} className="p-4 flex items-center gap-3">
+                  <div className="w-11 h-11 rounded-full overflow-hidden bg-lp-surface flex items-center justify-center font-bold text-lp-text3">
+                    {account.profile_picture ? <img src={resolveBackendAssetUrl(account.profile_picture)} alt="" className="w-full h-full object-cover" /> : account.name?.[0]?.toUpperCase()}
+                  </div>
+                  <Link to={`/profile/${account.role}/${account.username}`} onClick={() => setSocialList(null)} className="min-w-0 flex-1">
+                    <p className="font-semibold text-sm text-lp-text truncate">{account.name}</p>
+                    <p className="text-xs text-lp-text3 truncate">@{account.username} · {account.role}</p>
+                  </Link>
+                  {Number(account.id) !== Number(user?.id) && (
+                    <button type="button" disabled={followBusy} onClick={() => toggleFollow(account.id)} className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${isFollowing ? 'border border-lp-border bg-lp-surface text-lp-text' : 'bg-lp-accent text-white'}`}>
+                      {isFollowing ? 'Unfollow' : 'Follow'}
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       )}
   </div>
   );

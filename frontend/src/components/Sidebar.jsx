@@ -18,6 +18,7 @@ const Sidebar = ({ role, isOpen, onClose }) => {
   const { user } = useAuth()
   const { unreadCount } = useChatNotification()
   const [internalOpen, setInternalOpen] = useState(false)
+  const [postModalOpen, setPostModalOpen] = useState(false)
 
   const isControlled = useMemo(() => typeof isOpen === 'boolean', [isOpen])
   const sidebarOpen = isControlled ? isOpen : internalOpen
@@ -33,6 +34,12 @@ const Sidebar = ({ role, isOpen, onClose }) => {
     return () => window.removeEventListener('nf-sidebar-toggle', handleGlobalToggle)
   }, [isControlled])
 
+  useEffect(() => {
+    const handlePostModalState = (event) => setPostModalOpen(Boolean(event.detail?.open))
+    window.addEventListener('nf-post-modal-state', handlePostModalState)
+    return () => window.removeEventListener('nf-post-modal-state', handlePostModalState)
+  }, [])
+
   const closeSidebar = () => {
     if (isControlled) {
       if (typeof onClose === 'function') {
@@ -45,7 +52,7 @@ const Sidebar = ({ role, isOpen, onClose }) => {
   }
 
   const shouldHideSidebar = useMemo(() => {
-    const hiddenPathMatchers = [/^\/profile\//i, /\/popup(\/|$)/i]
+    const hiddenPathMatchers = [/\/popup(\/|$)/i]
     return hiddenPathMatchers.some((matcher) => matcher.test(location.pathname))
   }, [location.pathname])
 
@@ -106,7 +113,7 @@ const Sidebar = ({ role, isOpen, onClose }) => {
 
   const items = (menuItems[role] || []).filter(item => !item.hidden)
 
-  if (shouldHideSidebar) return null
+  if (shouldHideSidebar || postModalOpen) return null
 
   return (
     <>
