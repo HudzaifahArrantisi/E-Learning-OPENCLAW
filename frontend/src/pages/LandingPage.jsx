@@ -32,7 +32,9 @@ export default function LandingPage() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [showProfileMenu, setShowProfileMenu] = useState(false)
   const profileMenuRef = useRef(null)
-  const [showTutorial, setShowTutorial] = useState(false)
+  const [showTutorial, setShowTutorial] = useState(() => {
+    return !sessionStorage.getItem('tutorialSeen')
+  })
   const [activeRoleGuide, setActiveRoleGuide] = useState(0)
 
   // Fetch profile if user is logged in
@@ -41,7 +43,13 @@ export default function LandingPage() {
 
   // PWA & APK install states
   const [deferredPrompt, setDeferredPrompt] = useState(null)
-  const [showInstallBtn, setShowInstallBtn] = useState(true)
+  const [showInstallBtn, setShowInstallBtn] = useState(() => {
+    const isIos = typeof window !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream
+    const isStandalone = typeof window !== 'undefined' && (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone)
+    if (isIos && !isStandalone) return true
+    if (isStandalone) return false
+    return true
+  })
   const [isPreparingInstall, setIsPreparingInstall] = useState(false)
   const installRequestedRef = useRef(false)
   const installTimeoutRef = useRef(null)
@@ -96,13 +104,6 @@ export default function LandingPage() {
     }
   }, [isAuthenticated])
 
-  useEffect(() => {
-    const tutorialSeen = sessionStorage.getItem('tutorialSeen')
-    if (!tutorialSeen) {
-      setShowTutorial(true)
-    }
-  }, [])
-
   const closeTutorial = () => {
     sessionStorage.setItem('tutorialSeen', 'true')
     setShowTutorial(false)
@@ -112,8 +113,10 @@ export default function LandingPage() {
   useEffect(() => {
     // Check if the event was already captured globally
     if (window.deferredInstallPrompt) {
-      setDeferredPrompt(window.deferredInstallPrompt)
-      setShowInstallBtn(true)
+      setTimeout(() => {
+        setDeferredPrompt(window.deferredInstallPrompt)
+        setShowInstallBtn(true)
+      }, 0)
     }
 
     const handleBeforeInstallPrompt = (e) => {
@@ -151,19 +154,6 @@ export default function LandingPage() {
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
     window.addEventListener('pwa-prompt-ready', handleGlobalPromptReady)
     window.addEventListener('appinstalled', handleAppInstalled)
-
-    // Deteksi iOS Safari
-    const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone
-
-    if (isIos && !isStandalone) {
-      setShowInstallBtn(true)
-    }
-
-    // Jika aplikasi sudah dalam mode standalone, sembunyikan tombol
-    if (isStandalone) {
-      setShowInstallBtn(false)
-    }
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
@@ -665,13 +655,50 @@ export default function LandingPage() {
                   />
                 </svg>
                 <svg
+                  className="absolute pointer-events-none z-20 sm:hidden overflow-visible top-[calc(100%+8px)] right-[calc(50%_-_50vw)] w-[calc(50vw_+_56px)] h-[86px]"
+                  viewBox="0 0 220 86"
+                  preserveAspectRatio="none"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M218 78 C174 79 127 75 94 65 C63 55 51 38 57 22 C60 14 66 9 72 5"
+                    stroke="#FF9800"
+                    strokeWidth="2.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    vectorEffect="non-scaling-stroke"
+                    className="animate-draw-arrow"
+                    style={{
+                      strokeDasharray: 300,
+                      strokeDashoffset: 300,
+                      animationDelay: '1400ms',
+                    }}
+                  />
+                  <path
+                    d="M72 5 L58 13 M72 5 L73 21"
+                    stroke="#FF9800"
+                    strokeWidth="2.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    vectorEffect="non-scaling-stroke"
+                    className="animate-draw-arrow"
+                    style={{
+                      strokeDasharray: 300,
+                      strokeDashoffset: 300,
+                      animationDelay: '1400ms',
+                    }}
+                  />
+                </svg>
+                <svg
                   className="absolute pointer-events-none z-20 hidden sm:block overflow-visible -top-[76px] left-[calc(100%+10px)] w-[170px] h-[112px]"
                   viewBox="0 0 170 112"
                   fill="none"
                   xmlns="http://www.w3.org/2000/svg"
                 >
                   <path
-                    d="M160 10 C125 13 96 24 84 39 C75 51 78 73 68 87 C58 101 40 103 22 102"
+                    d="M160 43 C130 43 106 48 92 58 C80 67 80 78 68 88 C56 99 39 102 22 102"
                     stroke="#FF9800"
                     strokeWidth="2.8"
                     strokeLinecap="round"
@@ -709,38 +736,38 @@ export default function LandingPage() {
       <AnimatedBeamSection />
 
       {/* 03 - PANDUAN AKSES (ROLE GUIDES) */}
-      <section id="panduan" className="py-24 bg-lp-surface/30">
+      <section id="panduan" className="py-14 sm:py-16 bg-lp-surface/30">
         <div className="max-w-[1120px] mx-auto px-7">
-          <div className={`${rvBase} flex items-center gap-4 text-[10.5px] font-medium tracking-[0.16em] uppercase text-lp-text3 mb-10 after:content-[''] after:flex-1 after:h-px after:bg-lp-border`}>
+          <div className={`${rvBase} flex items-center gap-4 text-[10.5px] font-medium tracking-[0.16em] uppercase text-lp-text3 mb-8 after:content-[''] after:flex-1 after:h-px after:bg-lp-border`}>
             <span className="font-mono">01</span> Role Guides
           </div>
-          <div className={`${rvBase} ${rvDelays[1]} text-center mb-14`}>
-            <h2 className="font-sans text-[clamp(2.5rem,5vw,4rem)] leading-[1.06] tracking-tight text-lp-text max-w-[700px] mx-auto">Satu Platform untuk<br /><em className="italic text-lp-text/40">Semua Kebutuhan.</em></h2>
-            <p className="text-[14px] font-light text-lp-text2 max-w-[400px] mx-auto mt-6">
+          <div className={`${rvBase} ${rvDelays[1]} text-center mb-10`}>
+            <h2 className="font-sans text-[clamp(2rem,4vw,3rem)] leading-[1.08] tracking-tight text-lp-text max-w-[700px] mx-auto">Satu Platform untuk<br /><em className="italic text-lp-text/40">Semua Kebutuhan.</em></h2>
+            <p className="text-[13px] sm:text-[14px] font-light text-lp-text2 max-w-[400px] mx-auto mt-4 leading-relaxed">
               Pilih peran Anda untuk melihat bagaimana Student Hub mempermudah kehidupan akademik Anda sehari-hari.
             </p>
           </div>
 
-          <div className={`${rvBase} ${rvDelays[2]} grid grid-cols-1 lg:grid-cols-[1fr_2fr] gap-8 lg:gap-16`}>
+          <div className={`${rvBase} ${rvDelays[2]} grid grid-cols-1 lg:grid-cols-[1fr_2.2fr] gap-6 lg:gap-10`}>
             {/* Role Selector */}
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-2.5">
               {roleGuides.map((role, idx) => (
                 <button
                   key={role.id}
                   onClick={() => setActiveRoleGuide(idx)}
-                  className={`flex items-center gap-4 p-4 rounded-2xl transition-all duration-300 text-left border ${activeRoleGuide === idx
-                      ? 'bg-white border-lp-borderA shadow-[0_8px_30px_rgba(0,0,0,0.06)] scale-[1.02]'
+                  className={`flex items-center gap-3.5 p-3 rounded-xl transition-all duration-300 text-left border ${activeRoleGuide === idx
+                      ? 'bg-white border-lp-borderA shadow-[0_4px_20px_rgba(0,0,0,0.04)] scale-[1.01]'
                       : 'bg-lp-surface border-lp-border hover:bg-white/60 hover:border-lp-borderA/50'
                     }`}
                 >
-                  <div className="w-12 h-12 flex items-center justify-center text-2xl shrink-0">
+                  <div className="w-10 h-10 flex items-center justify-center text-xl shrink-0">
                     {role.icon}
                   </div>
                   <div>
-                    <h3 className={`text-[15px] font-bold tracking-tight mb-1 ${activeRoleGuide === idx ? 'text-lp-text' : 'text-lp-text2'}`}>
+                    <h3 className={`text-[14px] font-bold tracking-tight mb-0.5 ${activeRoleGuide === idx ? 'text-lp-text' : 'text-lp-text2'}`}>
                       {role.title}
                     </h3>
-                    <p className="text-[11.5px] text-lp-text3 font-light leading-relaxed line-clamp-1">
+                    <p className="text-[11px] text-lp-text3 font-light leading-relaxed line-clamp-1">
                       Lihat panduan lengkap {role.id}
                     </p>
                   </div>
@@ -749,34 +776,34 @@ export default function LandingPage() {
             </div>
 
             {/* Role Content */}
-            <div className="bg-white border border-lp-border rounded-[24px] p-6 sm:p-10 shadow-[0_20px_60px_rgba(0,0,0,0.04)] relative overflow-hidden">
+            <div className="bg-white border border-lp-border rounded-[20px] p-5 sm:p-8 shadow-[0_12px_40px_rgba(0,0,0,0.03)] relative overflow-hidden">
               {/* Decorative Blur */}
               <div className={`absolute -top-20 -right-20 w-64 h-64 rounded-full blur-[80px] opacity-10 bg-gradient-to-br ${roleGuides[activeRoleGuide].color} pointer-events-none transition-colors duration-700`}></div>
 
-              <div className="flex items-center gap-4 mb-8 relative z-10">
-                <div className="w-14 h-14 flex items-center justify-center text-3xl shrink-0">
+              <div className="flex items-center gap-3.5 mb-6 relative z-10">
+                <div className="w-11 h-11 flex items-center justify-center text-2xl shrink-0">
                   {roleGuides[activeRoleGuide].icon}
                 </div>
                 <div>
-                  <h3 className="text-[22px] font-bold text-lp-text tracking-tight leading-tight">
+                  <h3 className="text-[18px] sm:text-[20px] font-bold text-lp-text tracking-tight leading-tight">
                     {roleGuides[activeRoleGuide].title}
                   </h3>
-                  <p className="text-[13px] text-lp-text2 font-light mt-1">Langkah-langkah penggunaan sistem</p>
+                  <p className="text-[12px] text-lp-text2 font-light mt-0.5">Langkah-langkah penggunaan sistem</p>
                 </div>
               </div>
 
-              <div className="space-y-6 relative z-10">
-                <div className="absolute left-[27px] top-4 bottom-4 w-[2px] bg-lp-surface hidden sm:block"></div>
+              <div className="space-y-4 sm:space-y-5 relative z-10">
+                <div className="absolute left-[20px] top-3 bottom-3 w-[1.5px] bg-lp-surface hidden sm:block"></div>
                 {roleGuides[activeRoleGuide].steps.map((step, idx) => (
-                  <div key={idx} className="flex gap-4 sm:gap-6 relative group">
-                    <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-full bg-lp-surface border-2 border-white shadow-sm flex items-center justify-center text-[12px] sm:text-[14px] font-mono font-bold text-lp-text2 shrink-0 group-hover:bg-lp-text group-hover:text-white transition-colors relative z-10">
+                  <div key={idx} className="flex gap-4 sm:gap-5 relative group">
+                    <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-lp-surface border-2 border-white shadow-sm flex items-center justify-center text-[11px] sm:text-[12px] font-mono font-bold text-lp-text2 shrink-0 group-hover:bg-lp-text group-hover:text-white transition-colors relative z-10">
                       {step.num}
                     </div>
-                    <div className="pt-0.5 sm:pt-2 pb-2">
-                      <h4 className="text-[15px] font-bold text-lp-text mb-1.5 tracking-tight group-hover:text-lp-accent transition-colors">
+                    <div className="pt-0.5 sm:pt-1 pb-1">
+                      <h4 className="text-[14px] font-bold text-lp-text mb-1 tracking-tight group-hover:text-lp-accent transition-colors">
                         {step.title}
                       </h4>
-                      <p className="text-[13.5px] text-lp-text2 leading-relaxed font-light">
+                      <p className="text-[12.5px] sm:text-[13px] text-lp-text2 leading-relaxed font-light">
                         {step.desc}
                       </p>
                     </div>
