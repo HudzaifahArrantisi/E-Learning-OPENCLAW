@@ -144,6 +144,7 @@ const VisiMisiPage = () => {
         items={[
           { label: 'Home', href: '/' },
           { label: 'Kurikulum', href: '/kurikulum' },
+          { label: 'Visi Misi', href: '/visi-misi' },
           { label: 'Kalender', href: '/kalender-akademik' },
           { label: 'Login', href: '/' }
         ]}

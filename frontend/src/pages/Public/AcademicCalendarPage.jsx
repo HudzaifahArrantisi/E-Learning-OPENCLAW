@@ -177,8 +177,9 @@ const AcademicCalendarPage = () => {
         logoAlt="Student Hub Logo"
         items={[
           { label: 'Home', href: '/' },
-          { label: 'Visi Misi', href: '/visi-misi' },
           { label: 'Kurikulum', href: '/kurikulum' },
+          { label: 'Visi Misi', href: '/visi-misi' },
+          { label: 'Kalender', href: '/kalender-akademik' },
           { label: 'Login', href: '/' }
         ]}
         activeHref="/kalender-akademik"

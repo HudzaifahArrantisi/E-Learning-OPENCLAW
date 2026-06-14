@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"net/http"
+	"net/mail"
 	"strings"
 
 	"nf-student-hub-backend/config"
@@ -12,6 +13,29 @@ import (
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 )
+
+const nurulFikriDomain = "@nurulfikri.ac.id"
+
+// isInstitutionalEmail: cek domain @nurulfikri.ac.id (case-insensitive).
+func isInstitutionalEmail(s string) bool {
+	return strings.HasSuffix(strings.ToLower(strings.TrimSpace(s)), nurulFikriDomain)
+}
+
+func normalizeLoginEmail(email string) string {
+	email = strings.TrimSpace(email)
+	if strings.Contains(email, "@") {
+		return email
+	}
+	return email + nurulFikriDomain
+}
+
+func isValidLoginInput(email, password string) bool {
+	if len(email) == 0 || len(email) > 254 || len(password) == 0 || len(password) > 128 {
+		return false
+	}
+	_, err := mail.ParseAddress(email)
+	return err == nil
+}
 
 // ============== VERIFIKASI TOKEN (WAJIB ADA!) ==============
 func Verify(c *gin.Context) {
@@ -87,8 +111,8 @@ func Verify(c *gin.Context) {
 
 func Login(c *gin.Context) {
 	var input struct {
-		Identifier string `json:"identifier" binding:"required"`
-		Password   string `json:"password" binding:"required"`
+		Email    string `json:"email" binding:"required"`
+		Password string `json:"password" binding:"required"`
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -99,7 +123,14 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	input.Identifier = strings.TrimSpace(input.Identifier)
+	input.Email = normalizeLoginEmail(input.Email)
+	if !isValidLoginInput(input.Email, input.Password) {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "Login gagal. Periksa kembali kredensial Anda.",
+		})
+		return
+	}
 
 	query := `
 		SELECT u.id, u.email, u.password, u.role,
@@ -120,7 +151,7 @@ func Login(c *gin.Context) {
 		LEFT JOIN ukm uk ON u.id = uk.user_id
 		LEFT JOIN ormawa o ON u.id = o.user_id
 		LEFT JOIN ortu ot ON u.id = ot.user_id
-		WHERE u.email = $1 OR m.nim = $2
+		WHERE LOWER(u.email) = LOWER($1)
 	`
 
 	var user struct {
@@ -132,7 +163,7 @@ func Login(c *gin.Context) {
 	var nim sql.NullString
 	var name sql.NullString
 
-	err := config.DB.QueryRow(query, input.Identifier, input.Identifier).Scan(
+	err := config.DB.QueryRow(query, input.Email).Scan(
 		&user.ID, &user.Email, &user.Password, &user.Role, &nim, &name,
 	)
 
@@ -140,14 +171,14 @@ func Login(c *gin.Context) {
 		if err == sql.ErrNoRows {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"success": false,
-				"message": "Login gagal",
+				"message": "Login gagal. Periksa kembali kredensial Anda.",
 			})
 			return
 		}
 		fmt.Println("Login DB Error:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
-			"message": "Database error",
+			"message": "Login tidak dapat diproses saat ini.",
 		})
 		return
 	}
@@ -156,7 +187,7 @@ func Login(c *gin.Context) {
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(input.Password)); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"success": false,
-			"message": "Login gagal atau kredensial tidak aktif",
+			"message": "Login gagal. Periksa kembali kredensial Anda.",
 		})
 		return
 	}
@@ -166,7 +197,7 @@ func Login(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
-			"message": "Failed to generate token",
+			"message": "Login tidak dapat diproses saat ini.",
 		})
 		return
 	}
@@ -205,6 +236,14 @@ func Register(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"success": false,
 			"message": err.Error(),
+		})
+		return
+	}
+
+	if !isInstitutionalEmail(input.Email) {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "Email harus menggunakan domain @nurulfikri.ac.id.",
 		})
 		return
 	}

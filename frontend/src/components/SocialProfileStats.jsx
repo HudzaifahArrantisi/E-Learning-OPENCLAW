@@ -3,8 +3,10 @@ import { Link } from 'react-router-dom'
 import { FaTimes } from 'react-icons/fa'
 import api from '../services/api'
 import { resolveBackendAssetUrl } from '../utils/assetUrl'
+import useAuth from '../hooks/useAuth'
 
 const SocialProfileStats = ({ userId }) => {
+  const { user } = useAuth()
   const [status, setStatus] = useState({ followers_count: 0, following_count: 0 })
   const [listType, setListType] = useState(null)
   const [items, setItems] = useState([])
@@ -80,7 +82,11 @@ const SocialProfileStats = ({ userId }) => {
                     <p className="truncate text-xs text-lp-text3">@{account.username} · {account.role}</p>
                   </Link>
                   <button type="button" disabled={busyId === account.id} onClick={() => toggleFollow(account.id, isFollowing)} className={`rounded-lg px-3 py-1.5 text-xs font-semibold disabled:opacity-50 ${isFollowing ? 'border border-lp-border bg-lp-surface text-lp-text' : 'bg-lp-accent text-white'}`}>
-                    {isFollowing ? 'Unfollow' : 'Follow'}
+                    {isFollowing
+                      ? 'Unfollow'
+                      : (listType === 'followers' && user && Number(user.id) === Number(userId)
+                        ? 'Follback'
+                        : 'Follow')}
                   </button>
                 </div>
               ))}

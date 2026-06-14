@@ -1,6 +1,7 @@
 // src/components/Sidebar.jsx
 import React, { useEffect, useMemo, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
+import { motion, AnimatePresence } from 'framer-motion'
 import useAuth from '../hooks/useAuth'
 import useChatNotification from '../hooks/useChatNotification'
 import { 
@@ -13,12 +14,24 @@ import {
 import { IoIosSettings, IoIosPaper } from 'react-icons/io'
 import { MdDashboard, MdClass, MdPayment } from 'react-icons/md'
 
+const MotionLink = motion(Link)
+
 const Sidebar = ({ role, isOpen, onClose }) => {
   const location = useLocation()
   const { user } = useAuth()
   const { unreadCount } = useChatNotification()
   const [internalOpen, setInternalOpen] = useState(false)
   const [postModalOpen, setPostModalOpen] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 1024)
+    }
+    handleResize()
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   const isControlled = useMemo(() => typeof isOpen === 'boolean', [isOpen])
   const sidebarOpen = isControlled ? isOpen : internalOpen
@@ -117,23 +130,28 @@ const Sidebar = ({ role, isOpen, onClose }) => {
 
   return (
     <>
-      {/* Overlay untuk mobile */}
-      {sidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[70] lg:hidden animate-fadeIn"
-          onClick={closeSidebar}
-          aria-hidden="true"
-        />
-      )}
+      {/* Overlay untuk mobile dengan animasi pudar dan blur */}
+      <AnimatePresence>
+        {sidebarOpen && (
+          <motion.div 
+            initial={{ opacity: 0, backdropFilter: 'blur(0px)' }}
+            animate={{ opacity: 1, backdropFilter: 'blur(4px)' }}
+            exit={{ opacity: 0, backdropFilter: 'blur(0px)' }}
+            transition={{ duration: 0.25, ease: 'easeInOut' }}
+            className="fixed inset-0 bg-black/40 z-[70] lg:hidden"
+            onClick={closeSidebar}
+            aria-hidden="true"
+          />
+        )}
+      </AnimatePresence>
       
-      {/* Sidebar - Glassmorphism Style */}
-      <div className={`
-        fixed lg:sticky top-0 left-0 z-[80]
-        w-[260px] bg-white/80 backdrop-blur-2xl border-r border-lp-border
-        transform transition-all duration-500 ease-in-out
-        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-        flex flex-col h-[100dvh] min-h-[100dvh] overflow-hidden
-      `}>
+      {/* Sidebar - Glassmorphism Style dengan animasi pegas (spring) */}
+      <motion.div 
+        initial={false}
+        animate={{ x: isMobile ? (sidebarOpen ? 0 : '-100%') : 0 }}
+        transition={{ type: 'spring', stiffness: 380, damping: 30, mass: 0.8 }}
+        className="fixed lg:sticky top-0 left-0 z-[80] w-[260px] bg-white/80 backdrop-blur-2xl border-r border-lp-border flex flex-col h-[100dvh] min-h-[100dvh] overflow-hidden"
+      >
 
         {/* Header Sidebar */}
         <div className="px-5 pt-7 pb-5 border-b border-lp-border">
@@ -167,19 +185,22 @@ const Sidebar = ({ role, isOpen, onClose }) => {
         {/* Menu Items */}
         <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto overscroll-contain custom-scrollbar">
           {items.map((item) => (
-            <Link
+            <MotionLink
               key={item.path}
               to={item.path}
               onClick={() => window.innerWidth < 1024 && closeSidebar()}
+              whileHover={{ x: 6 }}
+              whileTap={{ scale: 0.98 }}
+              transition={{ type: 'spring', stiffness: 450, damping: 28 }}
               className={`
-                flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group
+                flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150 group
                 ${isActive(item.path) 
                   ? 'bg-lp-accentS text-lp-atext font-semibold' 
                   : 'text-lp-text2 hover:bg-lp-surface hover:text-lp-text'
                 }
               `}
             >
-              <div className={`text-base ${isActive(item.path) ? 'text-lp-atext' : 'text-lp-text3 group-hover:text-lp-text2'}`}>
+              <div className={`text-base transition-transform duration-200 group-hover:scale-110 ${isActive(item.path) ? 'text-lp-atext' : 'text-lp-text3 group-hover:text-lp-text2'}`}>
                 {item.icon}
               </div>
               <span className="text-[13px] font-light">{item.label}</span>
@@ -192,20 +213,23 @@ const Sidebar = ({ role, isOpen, onClose }) => {
               {!(item.path.includes('/pesan') && unreadCount > 0) && isActive(item.path) && (
                 <div className="ml-auto w-1.5 h-1.5 rounded-full bg-lp-accent animate-pulse" />
               )}
-            </Link>
+            </MotionLink>
           ))}
 
           {/* Landing Page Link */}
-          <Link
+          <MotionLink
             to="/"
             onClick={() => window.innerWidth < 1024 && closeSidebar()}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group text-lp-text2 hover:bg-lp-surface hover:text-lp-text w-full mt-4 border-t border-lp-border pt-4"
+            whileHover={{ x: 6 }}
+            whileTap={{ scale: 0.98 }}
+            transition={{ type: 'spring', stiffness: 450, damping: 28 }}
+            className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150 group text-lp-text2 hover:bg-lp-surface hover:text-lp-text w-full mt-4 border-t border-lp-border pt-4"
           >
-            <div className="text-base text-lp-text3 group-hover:text-lp-atext">
+            <div className="text-base text-lp-text3 transition-transform duration-200 group-hover:scale-110 group-hover:text-lp-atext">
               <FaHome className="text-lg" />
             </div>
             <span className="text-[13px] font-light">Home</span>
-          </Link>
+          </MotionLink>
         </nav>
 
         {/* Footer Sidebar */}
@@ -216,7 +240,7 @@ const Sidebar = ({ role, isOpen, onClose }) => {
             <div className="w-1 h-1 rounded-full bg-lp-accent/40" />
           </div>
         </div>
-      </div>
+      </motion.div>
     </>
   )
 }

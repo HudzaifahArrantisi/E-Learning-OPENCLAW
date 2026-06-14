@@ -44,3 +44,33 @@ body {
 
 /* ================= FILL MODE FOR ANIMATIONS ================= */
 .fill-mode-both { animation-fill-mode: both; }
+
+/* ================= HIGHLIGHT DRAW CIRCLE ANIMATION ================= */
+@keyframes drawCircle {
+  from {
+    stroke-dashoffset: 380;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.animate-draw-circle {
+  animation: drawCircle 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* ================= HIGHLIGHT DRAW ARROW ANIMATION ================= */
+@keyframes drawArrow {
+  from {
+    stroke-dashoffset: 400;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.animate-draw-arrow {
+  animation: drawArrow 1.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+

@@ -394,14 +394,10 @@ const ChatPage = ({ role }) => {
       if (r.data?.success) {
         const convs = r.data.data || []
         setConversations(convs)
+        // Don't auto-select a conversation — let users see the chat list first
         if (!selectedConvRef.current && !conversationId) {
-          const firstVisible = convs.find(c => hiddenChats[c.id] !== (c.last_message?.id || 'none') && c.last_message)
-          if (firstVisible) {
-            selectConversation(firstVisible)
-          } else {
-            setSelectedConversation(null)
-            setMessages([])
-          }
+          setSelectedConversation(null)
+          setMessages([])
         }
       }
     } catch (e) { console.error('Load conversations:', e) }

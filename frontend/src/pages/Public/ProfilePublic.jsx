@@ -762,7 +762,11 @@ const ProfilePublic = () => {
                   </Link>
                   {Number(account.id) !== Number(user?.id) && (
                     <button type="button" disabled={followBusy} onClick={() => toggleFollow(account.id)} className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${isFollowing ? 'border border-lp-border bg-lp-surface text-lp-text' : 'bg-lp-accent text-white'}`}>
-                      {isFollowing ? 'Unfollow' : 'Follow'}
+                      {isFollowing
+                        ? 'Unfollow'
+                        : (socialList === 'followers' && user && Number(user.id) === Number(profile?.user_id)
+                          ? 'Follback'
+                          : 'Follow')}
                     </button>
                   )}
                 </div>

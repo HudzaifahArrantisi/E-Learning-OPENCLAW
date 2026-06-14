@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
 import api from '../services/api'
 import queryClient from '../lib/queryClient'
+import { normalizeLoginIdentifier } from '../utils/auth'
 
 const AuthContext = createContext(null)
 
@@ -65,15 +66,16 @@ export function AuthProvider({ children }) {
       setLoading(true)
       setError(null)
 
+      const email = normalizeLoginIdentifier(identifier)
       const response = await api.post('/api/auth/login', {
-        identifier,
+        email,
         password
       })
 
       if (response.data.success) {
         const { token, user, role, redirect } = response.data.data
 
-        const userData = normalizeUser(user || { email: identifier }, role)
+        const userData = normalizeUser(user || { email }, role)
         if (!userData.role) {
           throw new Error('Role akun tidak ditemukan pada respons login')
         }

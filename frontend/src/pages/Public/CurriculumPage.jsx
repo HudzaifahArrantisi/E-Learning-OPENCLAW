@@ -3,7 +3,7 @@
  * Design System: Editorial Noir (shared)
  */
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 
 const CSS = `
@@ -406,6 +406,7 @@ export default function VisiMisiPage() {
           <span className="nav-brand">STUDENT HUB</span>
           <a href="/" className="nav-link">Home</a>
           <a href="/kurikulum" className="nav-link">Kurikulum</a>
+          <a href="/visi-misi" className="nav-link">Visi Misi</a>
           <a href="/kalender-akademik" className="nav-link">Kalender</a>
           <Link to="/" className="nav-enter">Masuk</Link>
         </nav>
@@ -499,6 +500,7 @@ export default function VisiMisiPage() {
               <nav className="footer-nav">
                 <a href="/">Home</a>
                 <a href="/kurikulum">Kurikulum</a>
+                <a href="/visi-misi">Visi Misi</a>
                 <a href="/kalender-akademik">Kalender</a>
                 <a href="/">Login</a>
               </nav>

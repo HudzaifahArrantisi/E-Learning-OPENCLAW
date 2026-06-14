@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
-  featureCards, howItWorks, benefits, roles, semesters,
   stats, footerLinks, programs, institutions, academicCalendar, calendarMonths,
   EVENT_COLORS, EVENT_LABELS, fmtDate, roleGuides
 } from '../data/landingData'
@@ -156,7 +155,7 @@ export default function LandingPage() {
     // Deteksi iOS Safari
     const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone
-    
+
     if (isIos && !isStandalone) {
       setShowInstallBtn(true)
     }
@@ -488,11 +487,11 @@ export default function LandingPage() {
         <div className={`pointer-events-auto transition-all duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)] relative ${isMobileMenuOpen ? 'w-full sm:w-max' : 'w-max max-w-full'}`}>
           <nav className="flex items-center justify-between bg-white/80 backdrop-blur-md border border-black/10 rounded-full py-1 px-1.5 pl-4 sm:pl-5 whitespace-nowrap gap-0.5 shadow-[0_8px_32px_rgba(0,0,0,0.06)]">
             <span className="text-[11.5px] font-bold text-lp-text tracking-[0.07em] mr-2.5 sm:mr-4">STUDENT-HUB</span>
-            
+
             <div className="hidden sm:flex items-center gap-0.5">
+              <a href="#panduan" className="text-lp-text2 text-[12.5px] px-4 py-2 rounded-full transition-all hover:text-lp-text hover:bg-black/5">Panduan</a>
               <a href="#platform" className="text-lp-text2 text-[12.5px] px-4 py-2 rounded-full transition-all hover:text-lp-text hover:bg-black/5">Platform</a>
               <a href="#kurikulum" className="text-lp-text2 text-[12.5px] px-4 py-2 rounded-full transition-all hover:text-lp-text hover:bg-black/5">Kurikulum</a>
-              <a href="#panduan" className="text-lp-text2 text-[12.5px] px-4 py-2 rounded-full transition-all hover:text-lp-text hover:bg-black/5">Panduan</a>
               <a href="#visi-misi" className="text-lp-text2 text-[12.5px] px-4 py-2 rounded-full transition-all hover:text-lp-text hover:bg-black/5">Visi Misi</a>
               <a href="#kalender" className="text-lp-text2 text-[12.5px] px-4 py-2 rounded-full transition-all hover:text-lp-text hover:bg-black/5">Kalender</a>
             </div>
@@ -506,9 +505,9 @@ export default function LandingPage() {
                   >
                     <div className="w-7 h-7 rounded-full border border-lp-border flex items-center justify-center text-white font-bold text-[10px] overflow-hidden shrink-0">
                       {profilePhoto ? (
-                        <img 
-                          src={resolveBackendAssetUrl(profilePhoto)} 
-                          alt="Profile" 
+                        <img
+                          src={resolveBackendAssetUrl(profilePhoto)}
+                          alt="Profile"
                           className="w-full h-full object-cover"
                           onError={(e) => {
                             e.target.style.display = 'none';
@@ -516,7 +515,7 @@ export default function LandingPage() {
                           }}
                         />
                       ) : null}
-                      <div 
+                      <div
                         className={`w-full h-full bg-lp-accent flex items-center justify-center text-white font-bold ${profilePhoto ? 'hidden' : 'flex'}`}
                       >
                         {initials}
@@ -562,7 +561,7 @@ export default function LandingPage() {
               ) : (
                 <button onClick={() => setIsLoginModalOpen(true)} className="hidden sm:block bg-lp-text text-lp-bg text-[12px] sm:text-[12.5px] font-semibold px-4 sm:px-5 py-2 rounded-full transition-all hover:bg-lp-atext tracking-[0.01em]">Masuk</button>
               )}
-              <button 
+              <button
                 className="sm:hidden w-8 h-8 flex flex-col justify-center items-center gap-[4px] bg-lp-surface border border-lp-border/50 rounded-full"
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                 aria-label="Toggle mobile menu"
@@ -576,9 +575,9 @@ export default function LandingPage() {
 
           <div className={`sm:hidden absolute top-[calc(100%+8px)] left-0 right-0 bg-white/95 backdrop-blur-xl border border-black/10 rounded-[20px] shadow-[0_24px_48px_rgba(0,0,0,0.1)] transition-all duration-500 ease-in-out origin-top overflow-hidden ${isMobileMenuOpen ? 'max-h-[500px] opacity-100 translate-y-0' : 'max-h-0 opacity-0 -translate-y-4 pointer-events-none'}`}>
             <div className="flex flex-col gap-1 p-2">
+              <a href="#panduan" onClick={() => setIsMobileMenuOpen(false)} className="px-4 py-3 text-[13.5px] font-medium text-lp-text2 hover:text-lp-text hover:bg-black/5 rounded-xl transition-colors">Panduan</a>
               <a href="#platform" onClick={() => setIsMobileMenuOpen(false)} className="px-4 py-3 text-[13.5px] font-medium text-lp-text2 hover:text-lp-text hover:bg-black/5 rounded-xl transition-colors">Platform</a>
               <a href="#kurikulum" onClick={() => setIsMobileMenuOpen(false)} className="px-4 py-3 text-[13.5px] font-medium text-lp-text2 hover:text-lp-text hover:bg-black/5 rounded-xl transition-colors">Kurikulum</a>
-              <a href="#panduan" onClick={() => setIsMobileMenuOpen(false)} className="px-4 py-3 text-[13.5px] font-medium text-lp-text2 hover:text-lp-text hover:bg-black/5 rounded-xl transition-colors">Panduan</a>
               <a href="#visi-misi" onClick={() => setIsMobileMenuOpen(false)} className="px-4 py-3 text-[13.5px] font-medium text-lp-text2 hover:text-lp-text hover:bg-black/5 rounded-xl transition-colors">Visi Misi</a>
               <a href="#kalender" onClick={() => setIsMobileMenuOpen(false)} className="px-4 py-3 text-[13.5px] font-medium text-lp-text2 hover:text-lp-text hover:bg-black/5 rounded-xl transition-colors">Kalender</a>
               <div className="h-px bg-black/5 mx-2 my-1" />
@@ -586,9 +585,9 @@ export default function LandingPage() {
                 <div className="flex items-center gap-3 px-4 py-3 border-b border-black/5 mb-1 bg-lp-surface/30">
                   <div className="w-8 h-8 rounded-full border border-lp-border flex items-center justify-center text-white font-bold text-xs overflow-hidden shrink-0">
                     {profilePhoto ? (
-                      <img 
-                        src={resolveBackendAssetUrl(profilePhoto)} 
-                        alt="Profile" 
+                      <img
+                        src={resolveBackendAssetUrl(profilePhoto)}
+                        alt="Profile"
                         className="w-full h-full object-cover"
                         onError={(e) => {
                           e.target.style.display = 'none';
@@ -596,7 +595,7 @@ export default function LandingPage() {
                         }}
                       />
                     ) : null}
-                    <div 
+                    <div
                       className={`w-full h-full bg-lp-accent flex items-center justify-center text-white font-bold ${profilePhoto ? 'hidden' : 'flex'}`}
                     >
                       {initials}
@@ -628,31 +627,88 @@ export default function LandingPage() {
             Student Hub<br />
             <em className="italic text-lp-text/40">Openclaw Reminder</em>
           </h1>
-      
+
           <div className="mb-8 sm:mb-10">
             <HighlighterDemo />
           </div>
           <div className="flex items-center gap-4 flex-wrap animate-slideUp delay-[650ms] fill-mode-both">
             <button onClick={handleCtaClick} className="inline-flex items-center gap-2 bg-lp-text text-lp-bg font-sans text-[13px] font-semibold py-3 px-6 rounded-full transition-all hover:bg-lp-atext hover:-translate-y-px">{isAuthenticated ? 'Go to Dashboard →' : 'Start Learning →'}</button>
-            
+
             {showInstallBtn && (
-              <button 
-                type="button"
-                onClick={handleInstallClick} 
-                className="inline-flex items-center gap-2 bg-lp-accent text-white font-sans text-[13px] font-semibold py-3 px-6 rounded-full transition-all hover:bg-lp-accent/90 hover:-translate-y-px shadow-sm"
-              >
-                <i className="fa-brands fa-android"></i> Instal Aplikasi
-              </button>
+              <div className="relative inline-block transition-all duration-200 hover:-translate-y-px">
+                <button
+                  type="button"
+                  onClick={handleInstallClick}
+                  className="inline-flex items-center gap-2 bg-lp-accent text-white font-sans text-[13px] font-semibold py-3 px-6 rounded-full transition-all hover:bg-lp-accent/90 shadow-sm relative z-10"
+                >
+                  <i className="fa-brands fa-android"></i> Instal Aplikasi
+                </button>
+                <svg
+                  className="absolute -inset-4 w-[calc(100%+32px)] h-[calc(100%+32px)] pointer-events-none z-0 overflow-visible"
+                  viewBox="0 0 100 100"
+                  preserveAspectRatio="none"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M15,25 C40,12 60,12 85,25 C98,40 98,60 85,75 C60,88 40,88 15,75 C2,60 2,40 15,25 C22,17 33,16 45,20"
+                    stroke="#FF9800"
+                    strokeWidth="3.5"
+                    strokeLinecap="round"
+                    vectorEffect="non-scaling-stroke"
+                    className="animate-draw-circle"
+                    style={{
+                      strokeDasharray: 380,
+                      strokeDashoffset: 380,
+                      animationDelay: '1000ms',
+                    }}
+                  />
+                </svg>
+                <svg
+                  className="absolute pointer-events-none z-20 hidden sm:block overflow-visible -top-[76px] left-[calc(100%+10px)] w-[170px] h-[112px]"
+                  viewBox="0 0 170 112"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M160 10 C125 13 96 24 84 39 C75 51 78 73 68 87 C58 101 40 103 22 102"
+                    stroke="#FF9800"
+                    strokeWidth="2.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="animate-draw-arrow"
+                    style={{
+                      strokeDasharray: 240,
+                      strokeDashoffset: 240,
+                      animationDelay: '1400ms',
+                    }}
+                  />
+                  <path
+                    d="M22 102 L39 91 M22 102 L41 108"
+                    stroke="#FF9800"
+                    strokeWidth="2.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="animate-draw-arrow"
+                    style={{
+                      strokeDasharray: 240,
+                      strokeDashoffset: 240,
+                      animationDelay: '1400ms',
+                    }}
+                  />
+                </svg>
+              </div>
             )}
 
-          
+
           </div>
+
         </div>
       </section>
 
       <AnimatedBeamSection />
-      
-            {/* 03 - PANDUAN AKSES (ROLE GUIDES) */}
+
+      {/* 03 - PANDUAN AKSES (ROLE GUIDES) */}
       <section id="panduan" className="py-24 bg-lp-surface/30">
         <div className="max-w-[1120px] mx-auto px-7">
           <div className={`${rvBase} flex items-center gap-4 text-[10.5px] font-medium tracking-[0.16em] uppercase text-lp-text3 mb-10 after:content-[''] after:flex-1 after:h-px after:bg-lp-border`}>
@@ -664,7 +720,7 @@ export default function LandingPage() {
               Pilih peran Anda untuk melihat bagaimana Student Hub mempermudah kehidupan akademik Anda sehari-hari.
             </p>
           </div>
-          
+
           <div className={`${rvBase} ${rvDelays[2]} grid grid-cols-1 lg:grid-cols-[1fr_2fr] gap-8 lg:gap-16`}>
             {/* Role Selector */}
             <div className="flex flex-col gap-3">
@@ -672,11 +728,10 @@ export default function LandingPage() {
                 <button
                   key={role.id}
                   onClick={() => setActiveRoleGuide(idx)}
-                  className={`flex items-center gap-4 p-4 rounded-2xl transition-all duration-300 text-left border ${
-                    activeRoleGuide === idx 
-                      ? 'bg-white border-lp-borderA shadow-[0_8px_30px_rgba(0,0,0,0.06)] scale-[1.02]' 
+                  className={`flex items-center gap-4 p-4 rounded-2xl transition-all duration-300 text-left border ${activeRoleGuide === idx
+                      ? 'bg-white border-lp-borderA shadow-[0_8px_30px_rgba(0,0,0,0.06)] scale-[1.02]'
                       : 'bg-lp-surface border-lp-border hover:bg-white/60 hover:border-lp-borderA/50'
-                  }`}
+                    }`}
                 >
                   <div className="w-12 h-12 flex items-center justify-center text-2xl shrink-0">
                     {role.icon}
@@ -697,7 +752,7 @@ export default function LandingPage() {
             <div className="bg-white border border-lp-border rounded-[24px] p-6 sm:p-10 shadow-[0_20px_60px_rgba(0,0,0,0.04)] relative overflow-hidden">
               {/* Decorative Blur */}
               <div className={`absolute -top-20 -right-20 w-64 h-64 rounded-full blur-[80px] opacity-10 bg-gradient-to-br ${roleGuides[activeRoleGuide].color} pointer-events-none transition-colors duration-700`}></div>
-              
+
               <div className="flex items-center gap-4 mb-8 relative z-10">
                 <div className="w-14 h-14 flex items-center justify-center text-3xl shrink-0">
                   {roleGuides[activeRoleGuide].icon}
@@ -794,8 +849,8 @@ export default function LandingPage() {
             <div className={`${rvBase} ${rvDelays[2]} order-1 lg:order-2`}>
               <h2 className="font-sans text-[clamp(2.8rem,5.5vw,4.5rem)] leading-[1.06] tracking-tight text-lp-text mb-5">Reminders<br /><em className="italic text-lp-text/40">where you are.</em></h2>
               <p className="text-[16px] font-light text-lp-text2 max-w-[380px] leading-relaxed mb-7">
-                No need to open another app. Student Hub sends smart, 
-                contextual reminders directly to your Telegram  classes, 
+                No need to open another app. Student Hub sends smart,
+                contextual reminders directly to your Telegram  classes,
                 deadlines, attendance confirmations, and daily digests.
               </p>
             </div>
@@ -888,49 +943,49 @@ export default function LandingPage() {
             <span className="font-mono">06</span> Kalender Akademik
           </div>
           <div className={`${rvBase} ${rvDelays[1]} mb-10`}>
-             <h2 className="font-sans text-[clamp(2.8rem,5.5vw,4.5rem)] leading-[1.06] tracking-tight text-lp-text">Jadwal<br /><em className="italic text-lp-text/40">Kegiatan.</em></h2>
+            <h2 className="font-sans text-[clamp(2.8rem,5.5vw,4.5rem)] leading-[1.06] tracking-tight text-lp-text">Jadwal<br /><em className="italic text-lp-text/40">Kegiatan.</em></h2>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-[2.5fr_1fr] gap-10">
             <div className={`${rvBase} ${rvDelays[2]}`}>
               <div className="bg-lp-surface border border-lp-border rounded-2xl overflow-hidden">
-                 {calendarMonths.map((m) => {
-                   const eventsInMonth = academicCalendar.filter(ev => {
-                      const d = new Date(ev.date)
-                      return d.getFullYear() === m.year && d.getMonth() === m.month
-                   })
-                   if (eventsInMonth.length === 0) return null
-                   return (
-                     <div key={m.name} className="border-b border-lp-border last:border-0 p-6 md:p-8 hover:bg-lp-card transition-colors">
-                        <div className="font-semibold text-[16px] mb-5 text-lp-text">{m.name}</div>
-                        <div className="flex flex-col gap-4">
-                           {eventsInMonth.map((ev, ei) => (
-                              <div key={ei} className="flex gap-4 items-start">
-                                 <div className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0 shadow-sm" style={{ backgroundColor: EVENT_COLORS[ev.type] }} />
-                                 <div>
-                                    <div className="text-[14px] font-medium text-lp-text mb-0.5">{ev.event}</div>
-                                    <div className="text-[12.5px] text-lp-text2 font-light">
-                                      {fmtDate(ev.date)} {ev.endDate && <span className="opacity-70">hingga {fmtDate(ev.endDate)}</span>}
-                                    </div>
-                                 </div>
+                {calendarMonths.map((m) => {
+                  const eventsInMonth = academicCalendar.filter(ev => {
+                    const d = new Date(ev.date)
+                    return d.getFullYear() === m.year && d.getMonth() === m.month
+                  })
+                  if (eventsInMonth.length === 0) return null
+                  return (
+                    <div key={m.name} className="border-b border-lp-border last:border-0 p-6 md:p-8 hover:bg-lp-card transition-colors">
+                      <div className="font-semibold text-[16px] mb-5 text-lp-text">{m.name}</div>
+                      <div className="flex flex-col gap-4">
+                        {eventsInMonth.map((ev, ei) => (
+                          <div key={ei} className="flex gap-4 items-start">
+                            <div className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0 shadow-sm" style={{ backgroundColor: EVENT_COLORS[ev.type] }} />
+                            <div>
+                              <div className="text-[14px] font-medium text-lp-text mb-0.5">{ev.event}</div>
+                              <div className="text-[12.5px] text-lp-text2 font-light">
+                                {fmtDate(ev.date)} {ev.endDate && <span className="opacity-70">hingga {fmtDate(ev.endDate)}</span>}
                               </div>
-                           ))}
-                        </div>
-                     </div>
-                   )
-                 })}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             </div>
             <div className={`${rvBase} ${rvDelays[3]}`}>
               <div className="sticky top-28 bg-lp-card border border-lp-border rounded-2xl p-6">
-                 <h3 className="font-semibold text-[14px] text-lp-text mb-5 tracking-tight">Keterangan</h3>
-                 <div className="flex flex-col gap-3.5">
-                    {Object.entries(EVENT_LABELS).map(([k, label]) => (
-                       <div key={k} className="flex items-center gap-3.5 text-[13px] text-lp-text2">
-                          <span className="w-3 h-3 rounded-[3px] shadow-sm flex-shrink-0" style={{ backgroundColor: EVENT_COLORS[k] }} />
-                          {label}
-                       </div>
-                    ))}
-                 </div>
+                <h3 className="font-semibold text-[14px] text-lp-text mb-5 tracking-tight">Keterangan</h3>
+                <div className="flex flex-col gap-3.5">
+                  {Object.entries(EVENT_LABELS).map(([k, label]) => (
+                    <div key={k} className="flex items-center gap-3.5 text-[13px] text-lp-text2">
+                      <span className="w-3 h-3 rounded-[3px] shadow-sm flex-shrink-0" style={{ backgroundColor: EVENT_COLORS[k] }} />
+                      {label}
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
@@ -975,7 +1030,7 @@ export default function LandingPage() {
             <div>
               <span className="text-[12.5px] font-semibold text-lp-text tracking-wide block mb-3.5">STUDENT HUB</span>
               <p className="text-[13.5px] font-light text-lp-text2 leading-relaxed max-w-[270px] mb-7">
-                E-Learning Reminder Platform for the modern campus. Powered by OpenClaw automation 
+                E-Learning Reminder Platform for the modern campus. Powered by OpenClaw automation
                 and Telegram integration. Built for institutions that take education seriously.
               </p>
               <div className="flex gap-4">
@@ -1016,9 +1071,9 @@ export default function LandingPage() {
       {showTutorial && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-lp-surface/60 backdrop-blur-sm animate-fadeIn">
           <div className="bg-white border border-lp-border rounded-[24px] max-w-[400px] w-full shadow-[0_24px_60px_rgba(0,0,0,0.1)] relative transform transition-all animate-slideUp">
-            
+
             {/* Simple Close Button */}
-            <button 
+            <button
               onClick={closeTutorial}
               className="absolute top-4 right-4 text-lp-text3 hover:text-lp-text transition-all p-1"
             >
@@ -1026,7 +1081,7 @@ export default function LandingPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
-            
+
             <div className="p-6 sm:p-8">
               <div className="mb-6">
                 <h3 className="text-[18px] font-bold text-lp-text mb-2 tracking-tight">Panduan Cepat</h3>
@@ -1034,7 +1089,7 @@ export default function LandingPage() {
                   Gunakan akun berikut untuk mengakses dashboard mahasiswa:
                 </p>
               </div>
-              
+
               <div className="space-y-4 mb-7">
                 <div className="p-4 bg-lp-bg border border-lp-border rounded-xl">
                   <div className="flex items-center gap-2 mb-2">
@@ -1043,7 +1098,7 @@ export default function LandingPage() {
                   </div>
                   <div className="space-y-1.5">
                     <p className="text-[12px] text-lp-text2 font-light">
-                      Email: <code className="bg-lp-accent/5 text-lp-accent px-1 rounded font-mono">nim@nurulfikri.ac.id</code>
+                      Email: <code className="bg-lp-accent/5 text-lp-accent px-1 rounded font-mono">Nim kalian</code>
                     </p>
                     <p className="text-[12px] text-lp-text2 font-light">
                       Sandi: <code className="bg-black/5 px-1 rounded font-mono">password</code>
@@ -1051,8 +1106,8 @@ export default function LandingPage() {
                   </div>
                 </div>
               </div>
-              
-              <button 
+
+              <button
                 onClick={closeTutorial}
                 className="w-full bg-lp-text text-lp-bg text-[13px] font-bold py-3 rounded-xl hover:bg-lp-atext transition-all flex items-center justify-center gap-2"
               >
