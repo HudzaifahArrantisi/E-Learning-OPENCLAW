@@ -340,13 +340,13 @@ const ScanAbsensiContent = () => {
         <Navbar user={user} onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
         
         <main className="flex-1 overflow-y-auto">
-          <div className="p-6 lg:p-10 max-w-7xl mx-auto">
+          <div className="p-4 sm:p-6 lg:p-10 max-w-7xl mx-auto">
 
             {/* Header Section */}
             <motion.div 
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8 mb-12"
+              className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4 mb-6 lg:gap-8 lg:mb-12"
             >
               <div>
                 <div className="flex items-center gap-3 mb-4">
@@ -375,7 +375,7 @@ const ScanAbsensiContent = () => {
                     setSelectedCourse(null)
                     setShowQRScanner(true)
                   }}
-                  className="group px-8 py-4 bg-lp-text text-lp-bg rounded-full text-[13px] font-bold hover:bg-lp-atext hover:-translate-y-1 transition-all duration-500 uppercase tracking-widest flex items-center gap-3 shadow-[0_12px_24px_rgba(0,0,0,0.1)]"
+                  className="group px-6 py-3 sm:px-8 sm:py-4 bg-lp-text text-lp-bg rounded-full text-[12px] sm:text-[13px] font-bold hover:bg-lp-atext hover:-translate-y-1 transition-all duration-500 uppercase tracking-widest flex items-center gap-3 shadow-[0_12px_24px_rgba(0,0,0,0.1)]"
                 >
                   <FaCamera className="text-lg" />
                   <span>Mulai Scan QR</span>

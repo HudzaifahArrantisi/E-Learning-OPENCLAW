@@ -68,7 +68,7 @@ const Navbar = ({ onMenuToggle, onToggleSidebar }) => {
               </div>
             </Link>
             <div className="flex flex-col">
-              <Link to={roleProfilePath} className="text-[13px] font-semibold text-lp-text tracking-tight hover:underline max-w-[120px] sm:max-w-xs truncate">{displayName}</Link>
+              <Link to={roleProfilePath} className="text-[13px] font-semibold text-lp-text tracking-tight hover:underline max-w-[100px] sm:max-w-[180px] truncate">{displayName}</Link>
               <p className="text-[10px] text-lp-text3 capitalize font-mono tracking-wider">{roleName}</p>
             </div>
           </div>

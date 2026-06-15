@@ -21,6 +21,63 @@ const ROLE_DASHBOARD = {
   ormawa: '/ormawa',
 }
 
+function NumberTicker({ value, duration = 1.5 }) {
+  const [count, setCount] = useState(0)
+  const nodeRef = useRef(null)
+  const hasAnimated = useRef(false)
+
+  useEffect(() => {
+    if (!nodeRef.current) return
+
+    const numberMatch = value.match(/[\d.]+/)
+    const target = numberMatch ? parseFloat(numberMatch[0]) : 0
+
+    if (isNaN(target)) {
+      setCount(value)
+      return
+    }
+
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting && !hasAnimated.current) {
+        hasAnimated.current = true
+        let startTime = null
+
+        const animate = (timestamp) => {
+          if (!startTime) startTime = timestamp
+          const progress = Math.min((timestamp - startTime) / (duration * 1000), 1)
+          const easeProgress = 1 - Math.pow(1 - progress, 3) // Cubic ease-out
+          const current = Math.floor(easeProgress * target)
+          
+          setCount(current)
+          
+          if (progress < 1) {
+            requestAnimationFrame(animate)
+          } else {
+            setCount(target)
+          }
+        }
+
+        requestAnimationFrame(animate)
+        observer.disconnect()
+      }
+    }, { threshold: 0.1 })
+
+    observer.observe(nodeRef.current)
+
+    return () => observer.disconnect()
+  }, [value, duration])
+
+  const suffixMatch = value.match(/[^\d.]+/)
+  const suffix = suffixMatch ? suffixMatch[0] : ""
+
+  return (
+    <span ref={nodeRef} className="tabular-nums">
+      {count}
+      {suffix}
+    </span>
+  )
+}
+
 export default function LandingPage() {
   const { user, logout, isAuthenticated } = useAuth()
   const navigate = useNavigate()
@@ -1026,8 +1083,10 @@ export default function LandingPage() {
         <div className="max-w-[1120px] mx-auto px-7">
           <div className={`${rvBase} border border-lp-border rounded-[20px] overflow-hidden grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4`}>
             {stats.map((s) => (
-              <div key={s.n} className="p-10 lg:py-14 sm:border-r border-lp-border last:border-r-0 border-b lg:border-b-0 last:border-b-0">
-                <span className="font-sans text-[4rem] font-normal text-lp-text leading-none tracking-tight block mb-2.5">{s.n}</span>
+              <div key={s.label} className="p-10 lg:py-14 sm:border-r border-lp-border last:border-r-0 border-b lg:border-b-0 last:border-b-0">
+                <span className="font-sans text-[4rem] font-normal text-lp-text leading-none tracking-tight block mb-2.5">
+                  <NumberTicker value={s.n} />
+                </span>
                 <p className="text-[13px] font-light text-lp-text2 leading-relaxed max-w-[140px]">{s.label}</p>
               </div>
             ))}

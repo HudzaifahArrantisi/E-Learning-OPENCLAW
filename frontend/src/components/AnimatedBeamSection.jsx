@@ -21,10 +21,7 @@ const C = {
 /* ────────── reusable cn helper ────────── */
 function cn(...classes) { return classes.filter(Boolean).join(" ") }
 
-/* ══════════════════════════════════════════════════════════════
-   AnimatedBeam — draws an SVG wire between two elements + a
-   travelling pulse dot.  Automatically recalculates on resize.
-   ══════════════════════════════════════════════════════════════ */
+
 
 function AnimatedBeam({
   containerRef, fromRef, toRef, curvature = 0,
@@ -262,9 +259,10 @@ const FlowNode = ({ className, innerRef, icon, label, sublabel, color, stepNum, 
 
 const messages = [
   { step: 1, icon: "👨‍🏫", text: "Dosen menginput tugas baru di Student Hub", color: C.accent, side: "left" },
-  { step: 2, icon: "💾", text: "Tugas tersimpan ke database sistem", color: C.green, side: "right" },
-  { step: 3, icon: "🦀", text: "OpenClaw membaca data tugas dari database", color: C.claw, side: "left" },
-  { step: 4, icon: "⚙️", text: "Rule Engine memproses jadwal & tenggat waktu", color: C.amber, side: "right" },
+  { step: 2, icon: "🗄️", text: "Tugas tersimpan ke database sistem", color: C.green, side: "right" },
+  { step: 3, icon: "📖", text: "OpenClaw mendeteksi & membaca data tugas baru dari database", color: C.amber, side: "left" },
+  { step: 3, icon: "⚙️", text: "Rule Engine memproses jadwal & tenggat waktu", color: C.red, side: "right" },
+  { step: 4, icon: "🦀", text: "OpenClaw Core mengonsolidasikan data untuk dikirim", color: C.claw, side: "right" },
   { step: 5, icon: "📨", text: "Notifikasi dikirim ke Telegram mahasiswa", color: C.tg, side: "left" },
   { step: 6, icon: "✅", text: "Mahasiswa membaca notif tugas yang dikirim dosen", color: C.green, side: "right" },
 ]
@@ -452,6 +450,7 @@ export default function AnimatedBeamSection() {
                 sublabel="OpenClaw mendeteksi tugas baru"
                 color={C.amber}
                 variant="card"
+                stepNum="3"
                 active={active}
                 delay={0.3}
               />
@@ -464,9 +463,9 @@ export default function AnimatedBeamSection() {
                 sublabel="Automation Engine"
                 color={C.claw}
                 variant="hub"
-                stepNum="3"
+                stepNum="4"
                 active={active}
-                delay={0.45}
+                delay={0.6}
               />
 
               <FlowNode
@@ -477,9 +476,9 @@ export default function AnimatedBeamSection() {
                 sublabel="Menghitung tenggat & reminder"
                 color={C.red}
                 variant="card"
-                stepNum="4"
+                stepNum="3"
                 active={active}
-                delay={0.6}
+                delay={0.45}
               />
 
               <FlowNode

@@ -21,19 +21,21 @@ func isInstitutionalEmail(s string) bool {
 	return strings.HasSuffix(strings.ToLower(strings.TrimSpace(s)), nurulFikriDomain)
 }
 
-func normalizeLoginEmail(email string) string {
-	email = strings.TrimSpace(email)
-	if strings.Contains(email, "@") {
-		return email
-	}
-	return email + nurulFikriDomain
+func normalizeLoginIdentifier(identifier string) string {
+	return strings.TrimSpace(identifier)
 }
 
-func isValidLoginInput(email, password string) bool {
-	if len(email) == 0 || len(email) > 254 || len(password) == 0 || len(password) > 128 {
+func isValidLoginInput(identifier, password string) bool {
+	if len(identifier) == 0 || len(identifier) > 254 || len(password) == 0 || len(password) > 128 {
 		return false
 	}
-	_, err := mail.ParseAddress(email)
+	if strings.ContainsAny(identifier, " \t\r\n") {
+		return false
+	}
+	if !strings.Contains(identifier, "@") {
+		return true
+	}
+	_, err := mail.ParseAddress(identifier)
 	return err == nil
 }
 
@@ -111,8 +113,9 @@ func Verify(c *gin.Context) {
 
 func Login(c *gin.Context) {
 	var input struct {
-		Email    string `json:"email" binding:"required"`
-		Password string `json:"password" binding:"required"`
+		Identifier string `json:"identifier"`
+		Email      string `json:"email"`
+		Password   string `json:"password" binding:"required"`
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -123,8 +126,11 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	input.Email = normalizeLoginEmail(input.Email)
-	if !isValidLoginInput(input.Email, input.Password) {
+	identifier := normalizeLoginIdentifier(input.Identifier)
+	if identifier == "" {
+		identifier = normalizeLoginIdentifier(input.Email)
+	}
+	if !isValidLoginInput(identifier, input.Password) {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"success": false,
 			"message": "Login gagal. Periksa kembali kredensial Anda.",
@@ -152,6 +158,18 @@ func Login(c *gin.Context) {
 		LEFT JOIN ormawa o ON u.id = o.user_id
 		LEFT JOIN ortu ot ON u.id = ot.user_id
 		WHERE LOWER(u.email) = LOWER($1)
+		   OR (
+		     $2
+		     AND (
+		       LOWER(SPLIT_PART(u.email, '@', 1)) = LOWER($1)
+		       OR m.nim = $1
+		       OR d.nip = $1
+		       OR LOWER(uk.username) = LOWER($1)
+		       OR LOWER(o.username) = LOWER($1)
+		     )
+		   )
+		ORDER BY CASE WHEN LOWER(u.email) = LOWER($1) THEN 0 ELSE 1 END
+		LIMIT 1
 	`
 
 	var user struct {
@@ -163,7 +181,7 @@ func Login(c *gin.Context) {
 	var nim sql.NullString
 	var name sql.NullString
 
-	err := config.DB.QueryRow(query, input.Email).Scan(
+	err := config.DB.QueryRow(query, identifier, !strings.Contains(identifier, "@")).Scan(
 		&user.ID, &user.Email, &user.Password, &user.Role, &nim, &name,
 	)
 
@@ -306,7 +324,6 @@ func Register(c *gin.Context) {
 		},
 	})
 }
-
 
 // ============== HELPER REDIRECT PATH ==============
 func getRedirectPath(role string) string {

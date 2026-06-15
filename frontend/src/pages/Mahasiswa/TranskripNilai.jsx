@@ -4,7 +4,7 @@ import Sidebar from '../../components/Sidebar'
 import useAuth from '../../hooks/useAuth'
 import api from '../../services/api'
 import {
-  FiBarChart2, FiBookOpen, FiChevronDown, FiChevronRight,
+  FiBarChart2, FiBookOpen, FiChevronDown, FiMenu,
   FiAward, FiTrendingUp, FiBook, FiUser, FiCalendar,
   FiCheckCircle, FiClock, FiSearch, FiFilter
 } from 'react-icons/fi'
@@ -85,15 +85,15 @@ const TranskripNilai = () => {
             <div className="h-10 w-72 bg-lp-surface rounded-xl animate-pulse mb-6" />
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
               {[1,2,3].map(i => (
-                <div key={i} className="bg-lp-surface/50 rounded-2xl p-6 border border-lp-border animate-pulse">
-                  <div className="h-5 w-24 bg-gray-700 rounded mb-4" />
-                  <div className="h-10 w-20 bg-gray-600 rounded" />
+                <div key={i} className="bg-lp-surface rounded-2xl p-6 border border-lp-border animate-pulse">
+                  <div className="h-5 w-24 bg-lp-border/50 rounded mb-4" />
+                  <div className="h-10 w-20 bg-lp-border rounded" />
                 </div>
               ))}
             </div>
             {[1,2,3].map(i => (
-              <div key={i} className="bg-lp-surface/50 rounded-2xl p-6 border border-lp-border animate-pulse mb-4">
-                <div className="h-6 w-64 bg-gray-700 rounded" />
+              <div key={i} className="bg-lp-surface rounded-2xl p-6 border border-lp-border animate-pulse mb-4">
+                <div className="h-6 w-64 bg-lp-border/50 rounded" />
               </div>
             ))}
           </div>
@@ -118,8 +118,8 @@ const TranskripNilai = () => {
           {/* Header */}
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-8">
             <div className="flex items-center gap-4">
-              <button onClick={toggleSidebar} className="lg:hidden p-3 rounded-xl bg-lp-surface/80 border border-lp-border">
-                <FiChevronRight className="text-xl text-lp-text2" />
+              <button onClick={toggleSidebar} className="lg:hidden p-2.5 rounded-xl bg-lp-surface/80 border border-lp-border hover:bg-lp-border transition-colors" title="Buka menu">
+                <FiMenu className="text-lg text-lp-text2" />
               </button>
               <div>
                 <div className="flex items-center gap-3 mb-1">
@@ -275,8 +275,8 @@ const TranskripNilai = () => {
                         </div>
 
                         {/* Grades Table */}
-                        <div className="px-5 pb-5">
-                          <div className="overflow-x-auto">
+                        <div className="pb-5">
+                          <div className="overflow-x-auto -mx-5 px-5">
                             <table className="w-full min-w-[600px]">
                               <thead>
                                 <tr className="text-xs text-lp-text3 uppercase tracking-wider">

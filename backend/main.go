@@ -40,9 +40,6 @@ func main() {
 	r := gin.Default()
 
 
-	// ============================================================
-	// 🩺 HEALTH CHECK — Used by Docker healthcheck & monitoring
-	// ============================================================
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"status":  "ok",
@@ -53,9 +50,6 @@ func main() {
 	// ============================================================
 	// 🔒 SECURITY MIDDLEWARES
 	// ============================================================
-
-	// CORS Configuration — MUST BE AT THE TOP
-	// Reads extra allowed origins from ALLOWED_ORIGINS env var (comma-separated)
 	allowedOriginsEnv := os.Getenv("ALLOWED_ORIGINS")
 	var extraOrigins []string
 	if allowedOriginsEnv != "" {

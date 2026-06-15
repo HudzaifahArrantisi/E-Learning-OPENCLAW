@@ -221,7 +221,7 @@ const DashboardLayout = ({
                   className="flex items-center gap-2 rounded-xl px-2 py-1 transition-colors hover:bg-lp-surface"
                 >
                   <div className="flex flex-col items-end">
-                    <span className="text-[12px] font-semibold text-lp-text leading-tight max-w-[100px] truncate">{profileName}</span>
+                    <span className="text-[12px] font-semibold text-lp-text leading-tight max-w-[120px] sm:max-w-[160px] truncate">{profileName}</span>
                     <span className="text-[10px] text-lp-text3 font-mono hidden sm:block">@{profileUsername}</span>
                   </div>
                   <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-xs overflow-hidden border border-lp-border flex-shrink-0">
@@ -284,7 +284,7 @@ const DashboardLayout = ({
                 <button
                   key={tab.key}
                   onClick={() => setActiveTab(tab.key)}
-                  className={`flex-shrink-0 px-4 py-2.5 text-[11px] font-medium transition-all duration-200 relative uppercase tracking-wider ${
+                  className={`flex-shrink-0 px-3 sm:px-4 py-2.5 text-[10px] sm:text-[11px] font-medium transition-all duration-200 relative uppercase tracking-wider ${
                     activeTab === tab.key 
                       ? 'text-lp-text font-semibold' 
                       : 'text-lp-text3 hover:text-lp-text2 font-light'

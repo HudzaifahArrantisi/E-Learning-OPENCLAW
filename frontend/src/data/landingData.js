@@ -127,7 +127,7 @@ const platformFeatures = [
 const stats = [
   { n: '5', label: 'Distinct user roles with granular access control' },
   { n: '8', label: 'Semesters of structured curriculum content' },
-  { n: '∞', label: 'Automated workflows via OpenClaw engine' },
+  { n: '1500+', label: 'Automated workflows via OpenClaw engine' },
   { n: '1', label: 'Unified platform for every campus need' },
 ]
 

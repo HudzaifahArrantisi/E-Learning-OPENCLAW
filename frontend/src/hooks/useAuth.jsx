@@ -66,16 +66,16 @@ export function AuthProvider({ children }) {
       setLoading(true)
       setError(null)
 
-      const email = normalizeLoginIdentifier(identifier)
+      const normalizedIdentifier = normalizeLoginIdentifier(identifier)
       const response = await api.post('/api/auth/login', {
-        email,
+        identifier: normalizedIdentifier,
         password
       })
 
       if (response.data.success) {
         const { token, user, role, redirect } = response.data.data
 
-        const userData = normalizeUser(user || { email }, role)
+        const userData = normalizeUser(user || { email: normalizedIdentifier }, role)
         if (!userData.role) {
           throw new Error('Role akun tidak ditemukan pada respons login')
         }

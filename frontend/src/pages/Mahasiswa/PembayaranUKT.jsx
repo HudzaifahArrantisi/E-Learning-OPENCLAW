@@ -691,11 +691,16 @@ const PembayaranUKT = () => {
                       <FaQrcode className="text-xl text-lp-text2" />
                       <h3 className="font-semibold text-lp-text tracking-tight">QRIS Pembayaran</h3>
                     </div>
-                    <div className="bg-white p-4 rounded-xl border border-lp-border shadow-sm mb-4">
+                    <div className="bg-white p-4 rounded-xl border border-lp-border shadow-sm mb-4 w-full max-w-[220px]">
                       {paymentDetails.qrcode ? (
-                        <QRCode value={paymentDetails.qrcode} size={220} level="H" />
+                        <QRCode
+                          value={paymentDetails.qrcode}
+                          size="100%"
+                          level="H"
+                          style={{ height: 'auto', maxWidth: '100%', width: '100%' }}
+                        />
                       ) : (
-                        <div className="w-[220px] h-[220px] flex items-center justify-center bg-lp-surface rounded border border-lp-border border-dashed">
+                        <div className="w-full aspect-square flex items-center justify-center bg-lp-surface rounded border border-lp-border border-dashed">
                           <p className="text-[12px] text-lp-text3 font-mono">QR Code tidak tersedia</p>
                         </div>
                       )}

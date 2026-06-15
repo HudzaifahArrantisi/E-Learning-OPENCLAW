@@ -57,6 +57,7 @@ const PemantauanUKT = () => {
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [riwayatDialogOpen, setRiwayatDialogOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -150,9 +151,9 @@ const PemantauanUKT = () => {
   if (!isKemahasiswaanAdmin) {
     return (
       <div className="flex">
-        <Sidebar role="admin" />
+        <Sidebar role="admin" isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
         <div className="main-content flex-1" style={{ marginLeft: 0, paddingLeft: 0 }}>
-          <Navbar user={user} />
+          <Navbar user={user} onToggleSidebar={() => setSidebarOpen((open) => !open)} />
           <Container maxWidth="xl" sx={{ p: 3, pl: 0, pr: 3 }}>
             <Alert
               severity="error"
@@ -182,9 +183,9 @@ const PemantauanUKT = () => {
   if (isLoading) {
     return (
       <div className="flex">
-        <Sidebar role="admin" />
+        <Sidebar role="admin" isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
         <div className="main-content flex-1" style={{ marginLeft: 0, paddingLeft: 0 }}>
-          <Navbar user={user} />
+          <Navbar user={user} onToggleSidebar={() => setSidebarOpen((open) => !open)} />
           <Container maxWidth="xl" sx={{ p: 3, pl: 0, pr: 3, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '80vh' }}>
             <CircularProgress size={60} color="primary" thickness={4} />
             <Typography variant="h6" mt={2} fontWeight="medium" color="text.primary">
@@ -202,9 +203,9 @@ const PemantauanUKT = () => {
   if (error) {
     return (
       <div className="flex">
-        <Sidebar role="admin" />
+        <Sidebar role="admin" isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
         <div className="main-content flex-1" style={{ marginLeft: 0, paddingLeft: 0 }}>
-          <Navbar user={user} />
+          <Navbar user={user} onToggleSidebar={() => setSidebarOpen((open) => !open)} />
           <Container maxWidth="xl" sx={{ p: 3, pl: 0, pr: 3 }}>
             <Alert
               severity="error"
@@ -247,10 +248,10 @@ const PemantauanUKT = () => {
 
   return (
     <div className="flex">
-      <Sidebar role="admin" />
+      <Sidebar role="admin" isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       {/* Main Content - Menempel ke sidebar */}
       <div className="main-content flex-1" style={{ marginLeft: 0, paddingLeft: 0 }}>
-        <Navbar user={user} />
+        <Navbar user={user} onToggleSidebar={() => setSidebarOpen((open) => !open)} />
         <Container
           maxWidth="xl"
           sx={{
@@ -445,6 +446,8 @@ const PemantauanUKT = () => {
                   boxShadow: 'none',
                   border: '1px solid',
                   borderColor: 'divider',
+                  overflowX: 'auto',
+                  WebkitOverflowScrolling: 'touch',
                 }}
               >
                 <Table

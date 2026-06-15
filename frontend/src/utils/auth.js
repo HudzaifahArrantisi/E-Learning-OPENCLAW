@@ -1,14 +1,11 @@
-export const NURULFIKRI_DOMAIN = '@nurulfikri.ac.id'
-
 export function normalizeLoginIdentifier(identifier) {
-  const value = (identifier || '').trim()
-  return value.includes('@') ? value : `${value}${NURULFIKRI_DOMAIN}`
+  return (identifier || '').trim()
 }
 
 export function getIdentifierError(identifier) {
   const value = (identifier || '').trim()
-  if (!value || (value.includes('@') && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value))) {
-    return 'Masukkan NIM atau email yang valid.'
+  if (!value || /\s/.test(value) || (value.includes('@') && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value))) {
+    return 'Masukkan ID akun, NIM/NIP, username, atau email yang valid.'
   }
   return null
 }

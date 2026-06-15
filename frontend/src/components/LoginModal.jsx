@@ -115,7 +115,7 @@ export default function LoginModal({ isOpen, onClose }) {
           {/* Identifier */}
           <div className="flex flex-col gap-2">
             <label className="text-[11px] font-bold text-lp-text2 tracking-[0.08em] uppercase font-mono" htmlFor="modal-identifier">
-              NIM atau Email
+              ID Akun atau Email
             </label>
             <div className="relative flex items-center group">
               <input
@@ -123,7 +123,7 @@ export default function LoginModal({ isOpen, onClose }) {
                 className={`w-full h-[46px] bg-lp-surface border ${error ? 'border-lp-red/40' : 'border-lp-border'} rounded-xl pl-10 pr-4 text-lp-text text-sm font-sans outline-none transition-all duration-200 placeholder:text-lp-text3 placeholder:text-[13.5px] hover:border-lp-borderA focus:border-lp-borderA focus:bg-lp-accentS/30 focus:ring-2 focus:ring-lp-accent/10 shadow-sm`}
                 type="text"
                 name="identifier"
-                placeholder="Contoh: 2310112345 atau nama@email.com"
+                placeholder="NIM, NIP, username, atau email"
                 value={form.identifier}
                 onChange={handleChange}
                 autoComplete="username"

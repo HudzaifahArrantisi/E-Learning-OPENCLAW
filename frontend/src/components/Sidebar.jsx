@@ -236,7 +236,7 @@ const Sidebar = ({ role, isOpen, onClose }) => {
         <div className="px-5 py-4 border-t border-lp-border pb-[max(1rem,env(safe-area-inset-bottom))]">
           <div className="flex items-center gap-1.5 justify-center">
             <div className="w-1 h-1 rounded-full bg-lp-accent/40" />
-            <span className="text-[9px] font-mono text-lp-text3 tracking-[0.06em]">© 2025 Student Hub</span>
+            <span className="text-[9px] font-mono text-lp-text3 tracking-[0.06em]">© {new Date().getFullYear()} Student Hub</span>
             <div className="w-1 h-1 rounded-full bg-lp-accent/40" />
           </div>
         </div>

@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+// eslint-disable-next-line no-unused-vars
+import { AnimatePresence, motion } from 'framer-motion'
 import useAuth from '../hooks/useAuth'
 import useProfile from '../hooks/useProfile'
 import { resolveBackendAssetUrl } from '../utils/assetUrl'
@@ -69,14 +71,14 @@ const PillNav = ({
 
   return (
     <div className="fixed top-5 left-0 right-0 z-50 flex justify-center px-4 sm:px-5 pointer-events-none" ref={navRef}>
-      <div className={`pointer-events-auto transition-all duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)] relative ${isMobileMenuOpen ? 'w-full sm:w-max' : 'w-max max-w-full'}`}>
-        <nav className="flex items-center justify-between bg-lp-surface/80 backdrop-blur-2xl border border-lp-border rounded-full py-1 px-1.5 pl-4 sm:pl-5 whitespace-nowrap gap-0.5 shadow-[0_8px_32px_rgba(0,0,0,0.06)]">
+      <div className="pointer-events-auto w-full max-w-[480px] sm:w-max relative transition-all duration-300">
+        <nav className="w-full sm:w-auto flex items-center justify-between bg-lp-surface/80 backdrop-blur-2xl border border-lp-border rounded-full py-1.5 px-2 pl-4 sm:pl-5 whitespace-nowrap gap-0.5 shadow-[0_8px_32px_rgba(0,0,0,0.06)]">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 px-3 py-1.5 shrink-0">
             {logo && (
               <img src={logo} alt={logoAlt} className="w-5 h-5" />
             )}
-            <span className="text-[12px] font-bold text-lp-text tracking-tight hidden sm:inline">Student Hub</span>
+            <span className="text-[12px] font-bold text-lp-text tracking-tight">Student Hub</span>
           </Link>
 
           <div className="hidden sm:block w-px h-5 bg-lp-border mx-1" />
@@ -194,103 +196,163 @@ const PillNav = ({
 
             {/* Mobile Menu Button */}
             <button 
-              className="sm:hidden w-8 h-8 flex flex-col justify-center items-center gap-[4px] bg-lp-surface border border-lp-border/50 rounded-full"
+              className="sm:hidden w-8 h-8 flex flex-col justify-center items-center gap-[4px] bg-lp-surface border border-lp-border/60 rounded-full transition-all active:scale-90 hover:bg-lp-surface/90"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               aria-label="Toggle mobile menu"
             >
-              <span className={`w-[13px] h-[1.5px] bg-lp-text transition-transform ${isMobileMenuOpen ? 'translate-y-[5.5px] rotate-45' : ''}`} />
-              <span className={`w-[13px] h-[1.5px] bg-lp-text transition-opacity ${isMobileMenuOpen ? 'opacity-0' : ''}`} />
-              <span className={`w-[13px] h-[1.5px] bg-lp-text transition-transform ${isMobileMenuOpen ? '-translate-y-[5.5px] -rotate-45' : ''}`} />
+              <span className={`w-[13px] h-[1.5px] bg-lp-text rounded-full transition-all duration-300 ${isMobileMenuOpen ? 'translate-y-[5.5px] rotate-45' : ''}`} />
+              <span className={`w-[13px] h-[1.5px] bg-lp-text rounded-full transition-all duration-300 ${isMobileMenuOpen ? 'opacity-0' : ''}`} />
+              <span className={`w-[13px] h-[1.5px] bg-lp-text rounded-full transition-all duration-300 ${isMobileMenuOpen ? '-translate-y-[5.5px] -rotate-45' : ''}`} />
             </button>
           </div>
         </nav>
 
         {/* Mobile Dropdown Menu */}
-        <div className={`sm:hidden absolute top-[calc(100%+8px)] left-0 right-0 bg-white/95 backdrop-blur-xl border border-black/10 rounded-[20px] shadow-[0_24px_48px_rgba(0,0,0,0.1)] transition-all duration-500 ease-in-out origin-top overflow-hidden z-[60] ${isMobileMenuOpen ? 'max-h-[500px] opacity-100 translate-y-0' : 'max-h-0 opacity-0 -translate-y-4 pointer-events-none'}`}>
-          <div className="flex flex-col gap-1 p-2">
-            {filteredItems.map((item, index) => (
-              <Link
-                key={index}
-                to={item.href}
-                onClick={() => setIsMobileMenuOpen(false)}
-                className={`px-4 py-3 text-[13.5px] font-medium rounded-xl transition-colors ${
-                  item.href === activeHref
-                    ? 'bg-lp-text text-white'
-                    : 'text-lp-text2 hover:text-lp-text hover:bg-black/5'
-                }`}
-              >
-                {item.label}
-              </Link>
-            ))}
-            <div className="h-px bg-black/5 mx-2 my-1" />
-            {currentUser && (
-              <div className="flex items-center gap-3 px-4 py-3 border-b border-black/5 mb-1 bg-lp-surface/30">
-                <div className="w-8 h-8 rounded-full border border-lp-border flex items-center justify-center text-white font-bold text-xs overflow-hidden shrink-0">
-                  {profilePhoto ? (
-                    <img 
-                      src={resolveBackendAssetUrl(profilePhoto)} 
-                      alt="Profile" 
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                        e.target.nextSibling.style.display = 'flex';
-                      }}
-                    />
-                  ) : null}
-                  <div 
-                    className={`w-full h-full bg-lp-accent flex items-center justify-center text-white font-bold ${profilePhoto ? 'hidden' : 'flex'}`}
+        <AnimatePresence>
+          {isMobileMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0, scale: 0.95 }}
+              animate={{ 
+                opacity: 1, 
+                height: 'auto', 
+                scale: 1,
+                transition: {
+                  height: { type: 'spring', stiffness: 220, damping: 26 },
+                  opacity: { duration: 0.2 },
+                  scale: { type: 'spring', stiffness: 220, damping: 26 }
+                }
+              }}
+              exit={{ 
+                opacity: 0, 
+                height: 0, 
+                scale: 0.95,
+                transition: {
+                  height: { duration: 0.2, ease: 'easeInOut' },
+                  opacity: { duration: 0.15 },
+                  scale: { duration: 0.15, ease: 'easeInOut' }
+                }
+              }}
+              style={{ overflow: 'hidden' }}
+              className="sm:hidden absolute top-[calc(100%+8px)] left-0 right-0 bg-white/95 backdrop-blur-2xl border border-black/10 rounded-[20px] shadow-[0_24px_48px_rgba(0,0,0,0.1)] z-[60] origin-top"
+            >
+              <div className="flex flex-col gap-1 p-2">
+                {filteredItems.map((item, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, x: -8 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.04 + 0.05 }}
                   >
-                    {initials}
-                  </div>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="font-semibold text-lp-text text-[13.5px] truncate">{displayName}</div>
-                  <div className="text-[10px] text-lp-text3 capitalize">{currentUser.role || ''}</div>
-                </div>
-              </div>
-            )}
-            {currentUser ? (
-              <>
-                {currentDashboardHref && (
-                  <Link
-                    to={currentDashboardHref}
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="px-4 py-3 text-[13.5px] font-semibold text-lp-accent hover:bg-lp-accent/5 rounded-xl transition-colors"
+                    <Link
+                      to={item.href}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className={`px-4 py-3 text-[13.5px] font-medium rounded-xl transition-colors block ${
+                        item.href === activeHref
+                          ? 'bg-lp-text text-white shadow-sm'
+                          : 'text-lp-text2 hover:text-lp-text hover:bg-black/5'
+                      }`}
+                    >
+                      {item.label}
+                    </Link>
+                  </motion.div>
+                ))}
+                
+                <div className="h-px bg-black/5 mx-2 my-1" />
+                
+                {currentUser && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: filteredItems.length * 0.04 + 0.05 }}
+                    className="flex items-center gap-3 px-4 py-3 border-b border-black/5 mb-1 bg-lp-surface/30 rounded-xl"
                   >
-                    Dashboard
-                  </Link>
+                    <div className="w-8 h-8 rounded-full border border-lp-border flex items-center justify-center text-white font-bold text-xs overflow-hidden shrink-0">
+                      {profilePhoto ? (
+                        <img 
+                          src={resolveBackendAssetUrl(profilePhoto)} 
+                          alt="Profile" 
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                            e.target.nextSibling.style.display = 'flex';
+                          }}
+                        />
+                      ) : null}
+                      <div 
+                        className={`w-full h-full bg-lp-accent flex items-center justify-center text-white font-bold ${profilePhoto ? 'hidden' : 'flex'}`}
+                      >
+                        {initials}
+                      </div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-semibold text-lp-text text-[13.5px] truncate">{displayName}</div>
+                      <div className="text-[10px] text-lp-text3 capitalize">{currentUser.role || ''}</div>
+                    </div>
+                  </motion.div>
                 )}
-                <button
-                  onClick={() => {
-                    setIsMobileMenuOpen(false)
-                    if (onLogout) {
-                      onLogout()
-                    } else {
-                      auth.logout()
-                    }
-                  }}
-                  className="px-4 py-3 text-[13.5px] font-semibold text-red-500 hover:bg-red-50 rounded-xl transition-colors text-left w-full"
-                >
-                  Logout
-                </button>
-              </>
-            ) : (
-              <button
-                onClick={() => {
-                  setIsMobileMenuOpen(false)
-                  if (onLoginClick) {
-                    onLoginClick()
-                  } else {
-                    navigate('/?login=true')
-                  }
-                }}
-                className="px-4 py-3 text-[13.5px] font-semibold text-lp-accent hover:bg-lp-accent/5 rounded-xl transition-colors text-left w-full"
-              >
-                Masuk
-              </button>
-            )}
-          </div>
-        </div>
+                
+                {currentUser ? (
+                  <>
+                    {currentDashboardHref && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: (filteredItems.length + 1) * 0.04 + 0.05 }}
+                      >
+                        <Link
+                          to={currentDashboardHref}
+                          onClick={() => setIsMobileMenuOpen(false)}
+                          className="px-4 py-3 text-[13.5px] font-semibold text-lp-accent hover:bg-lp-accent/5 rounded-xl transition-colors block"
+                        >
+                          Dashboard
+                        </Link>
+                      </motion.div>
+                    )}
+                    <motion.div
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: (filteredItems.length + 2) * 0.04 + 0.05 }}
+                    >
+                      <button
+                        onClick={() => {
+                          setIsMobileMenuOpen(false)
+                          if (onLogout) {
+                            onLogout()
+                          } else {
+                            auth.logout()
+                          }
+                        }}
+                        className="px-4 py-3 text-[13.5px] font-semibold text-red-500 hover:bg-red-50 rounded-xl transition-colors text-left w-full block"
+                      >
+                        Logout
+                      </button>
+                    </motion.div>
+                  </>
+                ) : (
+                  <motion.div
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: (filteredItems.length + 1) * 0.04 + 0.05 }}
+                  >
+                    <button
+                      onClick={() => {
+                        setIsMobileMenuOpen(false)
+                        if (onLoginClick) {
+                          onLoginClick()
+                        } else {
+                          navigate('/?login=true')
+                        }
+                      }}
+                      className="px-4 py-3 text-[13.5px] font-semibold text-lp-accent hover:bg-lp-accent/5 rounded-xl transition-colors text-left w-full block"
+                    >
+                      Masuk
+                    </button>
+                  </motion.div>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   )
