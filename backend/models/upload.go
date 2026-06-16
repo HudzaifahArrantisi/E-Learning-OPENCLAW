@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-// Upload represents a file stored in the database (BYTEA)
+// Upload represents a file stored in the database (BYTEA) or filesystem
 type Upload struct {
 	ID               int64          `json:"id"`
 	UploaderID       int            `json:"uploader_id"`
@@ -18,7 +18,10 @@ type Upload struct {
 	OriginalSize     int64          `json:"original_size"`
 	CompressedSize   int64          `json:"compressed_size"`
 	CompressionRatio float32        `json:"compression_ratio"`
-	FileData         []byte         `json:"-"` // NEVER send binary in JSON response
+	FileData         []byte         `json:"-"` // NEVER send binary in JSON response (legacy BYTEA, deprecated for new uploads)
+	FilePath         string         `json:"file_path,omitempty"`  // Relative path in filesystem (new uploads)
+	Width            int            `json:"width,omitempty"`      // Image width in pixels
+	Height           int            `json:"height,omitempty"`     // Image height in pixels
 	RelatedID        *int           `json:"related_id,omitempty"`
 	RelatedTable     *string        `json:"related_table,omitempty"`
 	Visibility       string         `json:"visibility"`
@@ -44,11 +47,14 @@ type UploadMetadata struct {
 	OriginalSize     int64     `json:"original_size"`
 	CompressedSize   int64     `json:"compressed_size"`
 	CompressionRatio float32   `json:"compression_ratio"`
+	Width            int       `json:"width,omitempty"`
+	Height           int       `json:"height,omitempty"`
 	Visibility       string    `json:"visibility"`
 	Status           string    `json:"status"`
 	FileURL          string    `json:"file_url"` // Virtual URL: /api/files/{id}
 	CreatedAt        time.Time `json:"created_at"`
 }
+
 
 // UploadSession for chunked/resumable uploads (Instagram-style)
 type UploadSession struct {

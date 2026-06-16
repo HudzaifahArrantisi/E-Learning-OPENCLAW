@@ -240,7 +240,7 @@ func GetMahasiswaCoursesByDay(c *gin.Context) {
 		LEFT JOIN (
 			SELECT DISTINCT a.student_id::text as student_id, asess.course_id, a.status, a.created_at
 			FROM attendance a
-			JOIN attendance_sessions asess ON a.session_id::text = asess.id::text
+			JOIN attendance_sessions asess ON a.session_id = asess.id
 			WHERE (a.created_at)::date = CURRENT_DATE
 		) a ON mk.kode = a.course_id AND mmk.mahasiswa_id::text = a.student_id
 		WHERE mmk.mahasiswa_id::text = $1::text
@@ -464,7 +464,7 @@ func GetMahasiswaJadwalHariIni(c *gin.Context) {
 		LEFT JOIN (
 			SELECT DISTINCT a.student_id::text as student_id, asess.course_id, a.status, a.created_at, a.pertemuan_ke
 			FROM attendance a
-			JOIN attendance_sessions asess ON a.session_id::text = asess.id::text
+			JOIN attendance_sessions asess ON a.session_id = asess.id
 			WHERE (a.created_at)::date = CURRENT_DATE AND a.student_id::text = $1::text
 		) a ON mk.kode = a.course_id AND mmk.mahasiswa_id::text = a.student_id
 		LEFT JOIN attendance_sessions asess ON mk.kode = asess.course_id 
@@ -716,7 +716,7 @@ func GetAttendanceHistoryByCourse(c *gin.Context) {
 			asess.session_code,
 			(a.created_at)::date as tanggal_raw
 		FROM attendance a
-		JOIN attendance_sessions asess ON a.session_id::text = asess.id::text
+		JOIN attendance_sessions asess ON a.session_id = asess.id
 		JOIN mata_kuliah mk ON asess.course_id = mk.kode
 		JOIN dosen d ON mk.dosen_id = d.id
 		WHERE a.student_id = $1 
@@ -767,7 +767,7 @@ func GetAttendanceHistoryByCourse(c *gin.Context) {
 			SUM(CASE WHEN a.status = 'sakit' THEN 1 ELSE 0 END) as sakit,
 			SUM(CASE WHEN a.status = 'alpa' THEN 1 ELSE 0 END) as alpa
 		FROM attendance a
-		JOIN attendance_sessions asess ON a.session_id::text = asess.id::text
+		JOIN attendance_sessions asess ON a.session_id = asess.id
 		WHERE a.student_id = $1 AND asess.course_id = $2
 	`, mahasiswaID, courseID).Scan(&totalSessions, &hadirCount, &izinCount, &sakitCount, &alpaCount)
 
@@ -849,7 +849,7 @@ func GetAttendanceHistory(c *gin.Context) {
 			mk.jam_mulai,
 			mk.jam_selesai
 		FROM attendance a
-		JOIN attendance_sessions asess ON a.session_id::text = asess.id::text
+		JOIN attendance_sessions asess ON a.session_id = asess.id
 		JOIN mata_kuliah mk ON asess.course_id = mk.kode
 		JOIN dosen d ON mk.dosen_id = d.id
 		WHERE a.student_id = $1

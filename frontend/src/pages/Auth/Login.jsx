@@ -126,6 +126,9 @@ export default function Login() {
                 <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
               </svg>
             </div>
+            <p className="text-[11px] text-lp-text3 font-mono mt-1 pl-0.5">
+              Gunakan NIM, NIP, username, atau email (NIM@nurulfikri.ac.id)
+            </p>
           </div>
 
           {/* Password */}

@@ -79,7 +79,156 @@ func getSignedURLSecret() string {
 }
 
 // ============================================================
-// POST /api/uploads — Upload file ke database (BYTEA)
+// INTERNAL: Unified upload pipeline
+// ============================================================
+// processAndStoreFile is the single source of truth for all upload
+// operations. It handles: MIME validation → image optimization →
+// filesystem storage → database metadata insert.
+//
+// Returns (uploadID, fileURL, error).
+// ============================================================
+func processAndStoreFile(
+	fileBytes []byte,
+	fileHeader *multipart.FileHeader,
+	uploaderID int,
+	uploaderRole string,
+	uploadType string,
+	relatedID *int,
+	relatedTable *string,
+	visibility string,
+) (int64, string, error) {
+
+	// 1. Detect MIME type from content (security — not relying on extension)
+	detectedMime := http.DetectContentType(fileBytes)
+
+	// 2. Validate MIME type
+	allowed, ok := allowedMimeTypes[uploadType]
+	if !ok {
+		return 0, "", fmt.Errorf("tipe upload tidak dikenali")
+	}
+
+	mimeValid := false
+	for _, m := range allowed {
+		if strings.HasPrefix(detectedMime, m) || detectedMime == m {
+			mimeValid = true
+			break
+		}
+	}
+	// Fallback: check declared Content-Type header for document types
+	// (http.DetectContentType returns "application/octet-stream" for many doc types)
+	if !mimeValid && fileHeader != nil {
+		declaredMime := fileHeader.Header.Get("Content-Type")
+		for _, m := range allowed {
+			if declaredMime == m {
+				mimeValid = true
+				detectedMime = declaredMime
+				break
+			}
+		}
+	}
+	if !mimeValid {
+		return 0, "", fmt.Errorf("tipe file '%s' tidak diizinkan untuk upload %s", detectedMime, uploadType)
+	}
+
+	// 3. Generate SHA-256 checksum
+	hash := sha256.Sum256(fileBytes)
+	checksum := hex.EncodeToString(hash[:])
+
+	// 4. Get file extension (sanitized)
+	originalFilename := "file"
+	if fileHeader != nil {
+		originalFilename = filepath.Base(fileHeader.Filename)
+	}
+	ext := strings.ToLower(filepath.Ext(originalFilename))
+	if ext == "" {
+		ext = ".bin"
+	}
+
+	// 5. Smart image optimization (native Go — no Python subprocess)
+	// Only processes image MIME types; documents pass through unchanged.
+	finalBytes := fileBytes
+	originalSize := int64(len(fileBytes))
+	compressedSize := originalSize
+	compressionRatio := float32(0)
+	imgWidth := 0
+	imgHeight := 0
+
+	if utils.IsImageMime(detectedMime) {
+		processed, processErr := utils.ProcessUploadedImage(fileBytes, detectedMime)
+		if processErr != nil {
+			log.Printf("[Upload] ⚠️ Image optimization failed (%s): %v — storing original", originalFilename, processErr)
+			// Fallback: store original image without optimization
+		} else {
+			finalBytes = processed.Data
+			compressedSize = processed.CompressedSize
+			compressionRatio = processed.CompressionRatio
+			detectedMime = processed.MimeType
+			ext = processed.Extension
+			imgWidth = processed.Width
+			imgHeight = processed.Height
+			log.Printf("[Upload] 🖼️ Image optimized: %dKB → %dKB (%.1f%% saved, %dx%d, %s)",
+				originalSize/1024, compressedSize/1024, compressionRatio,
+				imgWidth, imgHeight, detectedMime)
+		}
+	}
+
+	// 6. Save file to filesystem
+	filePath, err := utils.SaveToStorage(finalBytes, uploadType, ext)
+	if err != nil {
+		return 0, "", fmt.Errorf("gagal menyimpan file ke storage: %v", err)
+	}
+
+	// 7. Insert metadata to database (NO binary data — only path)
+	fileUUID := uuid.New().String()
+
+	query := `
+		INSERT INTO uploads (
+			uploader_id, uploader_role, type, variant,
+			original_filename, mime_type, file_extension,
+			original_size, compressed_size, compression_ratio,
+			file_path, width, height,
+			related_id, related_table,
+			visibility, status, checksum_hash, uuid, created_at, updated_at
+		) VALUES (
+			$1, $2, $3, 'original',
+			$4, $5, $6,
+			$7, $8, $9,
+			$10, $11, $12,
+			$13, $14,
+			$15, 'ready', $16, $17, NOW(), NOW()
+		)
+		RETURNING id, created_at
+	`
+
+	var uploadID int64
+	var createdAt time.Time
+	err = config.DB.QueryRow(query,
+		uploaderID, uploaderRole, uploadType,
+		originalFilename, detectedMime, ext,
+		originalSize, compressedSize, compressionRatio,
+		filePath, imgWidth, imgHeight,
+		relatedID, relatedTable,
+		visibility, checksum, fileUUID,
+	).Scan(&uploadID, &createdAt)
+
+	if err != nil {
+		// Cleanup: remove file from storage if DB insert fails
+		if cleanupErr := utils.DeleteFromStorage(filePath); cleanupErr != nil {
+			log.Printf("[Upload] ⚠️ Failed to cleanup file after DB error: %v", cleanupErr)
+		}
+		return 0, "", fmt.Errorf("gagal menyimpan metadata ke database: %v", err)
+	}
+
+	fileURL := fmt.Sprintf("/api/files/%s", fileUUID)
+
+	log.Printf("[Upload] ✅ File saved: id=%d, type=%s, path=%s, size=%dKB→%dKB, url=%s",
+		uploadID, uploadType, filePath, originalSize/1024, compressedSize/1024, fileURL)
+
+	return uploadID, fileURL, nil
+}
+
+// ============================================================
+// POST /api/uploads — Upload file (filesystem + metadata in DB)
 // ============================================================
 func UploadFile(c *gin.Context) {
 	userID, exists := c.Get("user_id")
@@ -129,7 +278,7 @@ func UploadFile(c *gin.Context) {
 		return
 	}
 
-	// 4. Open file
+	// 4. Open and read file
 	file, err := fileHeader.Open()
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, "Gagal membuka file")
@@ -137,59 +286,13 @@ func UploadFile(c *gin.Context) {
 	}
 	defer file.Close()
 
-	// 5. Read file into memory
 	fileBytes, err := io.ReadAll(file)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, "Gagal membaca file")
 		return
 	}
 
-	// 6. Detect MIME type from content (keamanan — tidak bergantung pada extension)
-	detectedMime := http.DetectContentType(fileBytes)
-
-	// Validate MIME type
-	allowed, ok := allowedMimeTypes[uploadType]
-	if !ok {
-		utils.ErrorResponse(c, http.StatusBadRequest, "Tipe upload tidak dikenali")
-		return
-	}
-
-	mimeValid := false
-	for _, m := range allowed {
-		if strings.HasPrefix(detectedMime, m) || detectedMime == m {
-			mimeValid = true
-			break
-		}
-	}
-	// Fallback: check declared Content-Type header for document types
-	// (http.DetectContentType returns "application/octet-stream" for many doc types)
-	if !mimeValid {
-		declaredMime := fileHeader.Header.Get("Content-Type")
-		for _, m := range allowed {
-			if declaredMime == m {
-				mimeValid = true
-				detectedMime = declaredMime
-				break
-			}
-		}
-	}
-	if !mimeValid {
-		utils.ErrorResponse(c, http.StatusBadRequest,
-			fmt.Sprintf("Tipe file '%s' tidak diizinkan untuk upload %s", detectedMime, uploadType))
-		return
-	}
-
-	// 7. Generate SHA-256 checksum
-	hash := sha256.Sum256(fileBytes)
-	checksum := hex.EncodeToString(hash[:])
-
-	// 8. Get file extension (sanitized)
-	ext := strings.ToLower(filepath.Ext(filepath.Base(fileHeader.Filename)))
-	if ext == "" {
-		ext = ".bin"
-	}
-
-	// 9. Parse optional related_id and related_table
+	// 5. Parse optional related_id and related_table
 	var relatedID *int
 	var relatedTable *string
 	if rid := c.PostForm("related_id"); rid != "" {
@@ -201,7 +304,7 @@ func UploadFile(c *gin.Context) {
 		relatedTable = &rt
 	}
 
-	// 10. Parse visibility
+	// 6. Parse visibility
 	visibility := c.PostForm("visibility")
 	if visibility == "" {
 		visibility = "public"
@@ -211,86 +314,49 @@ func UploadFile(c *gin.Context) {
 		visibility = "public"
 	}
 
-	// 11. Optimize file via Python (image/pdf supported, others passthrough)
-	compressedBytes := fileBytes
-	originalSize := int64(len(fileBytes))
-	compressedSize := originalSize
-	compressionRatio := float32(0)
+	// 7. Process and store via unified pipeline
+	uid, _ := userID.(int)
+	roleStr, _ := role.(string)
 
-	optimizedBytes, optimizedMime, optimizedExt, optimized, optimizeErr := utils.OptimizeFileWithPython(fileBytes, detectedMime, ext, 1200, 75)
-	if optimizeErr != nil {
-		log.Printf("[Upload] Python optimizer skipped (%s): %v", fileHeader.Filename, optimizeErr)
-	} else if optimized {
-		compressedBytes = optimizedBytes
-		compressedSize = int64(len(optimizedBytes))
-		compressionRatio = float32(100.0 - (float64(compressedSize) / float64(originalSize) * 100.0))
-		detectedMime = optimizedMime
-		ext = optimizedExt
-		log.Printf("[Upload] File optimized by Python: %dKB → %dKB (%.1f%% saved)",
-			originalSize/1024, compressedSize/1024, compressionRatio)
-	}
-
-	// 12. Insert ke database
-	// Generate UUID for secure file access
-	fileUUID := uuid.New().String()
-
-	query := `
-		INSERT INTO uploads (
-			uploader_id, uploader_role, type, variant,
-			original_filename, mime_type, file_extension,
-			original_size, compressed_size, compression_ratio,
-			file_data, related_id, related_table,
-			visibility, status, checksum_hash, uuid, created_at, updated_at
-		) VALUES (
-			$1, $2, $3, 'original',
-			$4, $5, $6,
-			$7, $8, $9,
-			$10, $11, $12,
-			$13, 'ready', $14, $15, NOW(), NOW()
-		)
-		RETURNING id, created_at
-	`
-
-	var uploadID int64
-	var createdAt time.Time
-	err = config.DB.QueryRow(query,
-		userID, role, uploadType,
-		filepath.Base(fileHeader.Filename), detectedMime, ext,
-		originalSize, compressedSize, compressionRatio,
-		compressedBytes, relatedID, relatedTable,
-		visibility, checksum, fileUUID,
-	).Scan(&uploadID, &createdAt)
-
+	uploadID, fileURL, err := processAndStoreFile(
+		fileBytes, fileHeader,
+		uid, roleStr, uploadType,
+		relatedID, relatedTable, visibility,
+	)
 	if err != nil {
-		log.Printf("[Upload] ERROR inserting to DB: %v", err)
-		utils.ErrorResponse(c, http.StatusInternalServerError,
-			"Gagal menyimpan file ke database: "+err.Error())
+		log.Printf("[Upload] ERROR: %v", err)
+		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	// 13. Generate virtual URL (UUID-based for security)
-	fileURL := fmt.Sprintf("/api/files/%s", fileUUID)
-
-	log.Printf("[Upload] ✅ File saved: id=%d, type=%s, size=%dKB→%dKB, url=%s",
-		uploadID, uploadType, originalSize/1024, compressedSize/1024, fileURL)
+	// 8. Build response — query back the saved metadata for complete response
+	var origSize, compSize int64
+	var ratio float32
+	var mime, createdAtStr string
+	var width, height int
+	config.DB.QueryRow(`
+		SELECT original_size, compressed_size, compression_ratio, mime_type, width, height, created_at::text
+		FROM uploads WHERE id = $1
+	`, uploadID).Scan(&origSize, &compSize, &ratio, &mime, &width, &height, &createdAtStr)
 
 	utils.SuccessResponse(c, gin.H{
 		"id":                uploadID,
 		"file_url":          fileURL,
 		"original_filename": fileHeader.Filename,
-		"mime_type":         detectedMime,
-		"original_size":     originalSize,
-		"compressed_size":   compressedSize,
-		"compression_ratio": fmt.Sprintf("%.1f%%", compressionRatio),
+		"mime_type":         mime,
+		"original_size":     origSize,
+		"compressed_size":   compSize,
+		"compression_ratio": fmt.Sprintf("%.1f%%", ratio),
+		"width":             width,
+		"height":            height,
 		"type":              uploadType,
 		"visibility":        visibility,
 		"status":            "ready",
-		"created_at":        createdAt,
 	}, "File berhasil diupload!")
 }
 
 // ============================================================
-// GET /api/files/:id — Stream file dari database ke browser
+// GET /api/files/:id — Stream file from filesystem (or DB fallback)
 // ============================================================
 func ServeFile(c *gin.Context) {
 	fileUUID := c.Param("id")
@@ -313,7 +379,7 @@ func ServeFile(c *gin.Context) {
 		isNumeric = true
 	}
 
-	// Build query based on variant and ID type
+	// Build query — now includes file_path for filesystem serving
 	var query string
 	var args []interface{}
 
@@ -321,20 +387,20 @@ func ServeFile(c *gin.Context) {
 		// Try to find variant first
 		if isNumeric {
 			query = `
-				SELECT file_data, mime_type, original_filename, compressed_size,
-					   visibility, uploader_id, uploader_role, checksum_hash
+				SELECT file_path, file_data, mime_type, original_filename, compressed_size,
+				       visibility, uploader_id, uploader_role, checksum_hash
 				FROM uploads
 				WHERE parent_id = $1 AND variant = $2 
-					  AND deleted_at IS NULL AND status = 'ready'
+				      AND deleted_at IS NULL AND status = 'ready'
 				LIMIT 1
 			`
 		} else {
 			query = `
-				SELECT file_data, mime_type, original_filename, compressed_size,
-					   visibility, uploader_id, uploader_role, checksum_hash
+				SELECT file_path, file_data, mime_type, original_filename, compressed_size,
+				       visibility, uploader_id, uploader_role, checksum_hash
 				FROM uploads
 				WHERE parent_id = (SELECT id FROM uploads WHERE uuid = $1 LIMIT 1) AND variant = $2 
-					  AND deleted_at IS NULL AND status = 'ready'
+				      AND deleted_at IS NULL AND status = 'ready'
 				LIMIT 1
 			`
 		}
@@ -342,15 +408,15 @@ func ServeFile(c *gin.Context) {
 	} else {
 		if isNumeric {
 			query = `
-				SELECT file_data, mime_type, original_filename, compressed_size,
-					   visibility, uploader_id, uploader_role, checksum_hash
+				SELECT file_path, file_data, mime_type, original_filename, compressed_size,
+				       visibility, uploader_id, uploader_role, checksum_hash
 				FROM uploads
 				WHERE id = $1 AND deleted_at IS NULL AND status = 'ready'
 			`
 		} else {
 			query = `
-				SELECT file_data, mime_type, original_filename, compressed_size,
-					   visibility, uploader_id, uploader_role, checksum_hash
+				SELECT file_path, file_data, mime_type, original_filename, compressed_size,
+				       visibility, uploader_id, uploader_role, checksum_hash
 				FROM uploads
 				WHERE uuid = $1 AND deleted_at IS NULL AND status = 'ready'
 			`
@@ -358,6 +424,7 @@ func ServeFile(c *gin.Context) {
 		args = []interface{}{fileUUID}
 	}
 
+	var filePath *string
 	var fileData []byte
 	var mimeType, filename, visibility, uploaderRole string
 	var checksum *string
@@ -365,7 +432,7 @@ func ServeFile(c *gin.Context) {
 	var uploaderID int
 
 	err := config.DB.QueryRow(query, args...).Scan(
-		&fileData, &mimeType, &filename, &fileSize,
+		&filePath, &fileData, &mimeType, &filename, &fileSize,
 		&visibility, &uploaderID, &uploaderRole, &checksum,
 	)
 
@@ -375,21 +442,21 @@ func ServeFile(c *gin.Context) {
 			var fallbackQuery string
 			if isNumeric {
 				fallbackQuery = `
-					SELECT file_data, mime_type, original_filename, compressed_size,
-						   visibility, uploader_id, uploader_role, checksum_hash
+					SELECT file_path, file_data, mime_type, original_filename, compressed_size,
+					       visibility, uploader_id, uploader_role, checksum_hash
 					FROM uploads
 					WHERE id = $1 AND deleted_at IS NULL AND status = 'ready'
 				`
 			} else {
 				fallbackQuery = `
-					SELECT file_data, mime_type, original_filename, compressed_size,
-						   visibility, uploader_id, uploader_role, checksum_hash
+					SELECT file_path, file_data, mime_type, original_filename, compressed_size,
+					       visibility, uploader_id, uploader_role, checksum_hash
 					FROM uploads
 					WHERE uuid = $1 AND deleted_at IS NULL AND status = 'ready'
 				`
 			}
 			err = config.DB.QueryRow(fallbackQuery, fileUUID).Scan(
-				&fileData, &mimeType, &filename, &fileSize,
+				&filePath, &fileData, &mimeType, &filename, &fileSize,
 				&visibility, &uploaderID, &uploaderRole, &checksum,
 			)
 		}
@@ -416,9 +483,35 @@ func ServeFile(c *gin.Context) {
 		}
 	}
 
+	// Resolve file data: filesystem first, BYTEA fallback for legacy records
+	var responseData []byte
+
+	if filePath != nil && *filePath != "" {
+		// New uploads: read from filesystem
+		data, readErr := utils.ReadFromStorage(*filePath)
+		if readErr != nil {
+			log.Printf("[ServeFile] ⚠️ Failed to read from filesystem (%s), falling back to BYTEA: %v", *filePath, readErr)
+			// Fall back to BYTEA if filesystem read fails
+			if len(fileData) > 0 {
+				responseData = fileData
+			} else {
+				c.Status(http.StatusNotFound)
+				return
+			}
+		} else {
+			responseData = data
+		}
+	} else if len(fileData) > 0 {
+		// Legacy uploads: read from database BYTEA
+		responseData = fileData
+	} else {
+		c.Status(http.StatusNotFound)
+		return
+	}
+
 	// Set response headers
 	c.Header("Content-Type", mimeType)
-	c.Header("Content-Length", strconv.Itoa(len(fileData)))
+	c.Header("Content-Length", strconv.Itoa(len(responseData)))
 	c.Header("Content-Disposition", fmt.Sprintf(`inline; filename="%s"`, filename))
 
 	// Aggressive caching — files are immutable (identified by checksum)
@@ -437,7 +530,7 @@ func ServeFile(c *gin.Context) {
 		}
 	}
 
-	c.Data(http.StatusOK, mimeType, fileData)
+	c.Data(http.StatusOK, mimeType, responseData)
 }
 
 // ============================================================
@@ -446,24 +539,46 @@ func ServeFile(c *gin.Context) {
 func DownloadFile(c *gin.Context) {
 	fileUUID := c.Param("id")
 
+	var filePath *string
 	var fileData []byte
 	var mimeType, filename string
 
 	err := config.DB.QueryRow(`
-		SELECT file_data, mime_type, original_filename
+		SELECT file_path, file_data, mime_type, original_filename
 		FROM uploads
 		WHERE uuid = $1 AND deleted_at IS NULL AND status = 'ready'
-	`, fileUUID).Scan(&fileData, &mimeType, &filename)
+	`, fileUUID).Scan(&filePath, &fileData, &mimeType, &filename)
 
 	if err != nil {
 		c.Status(http.StatusNotFound)
 		return
 	}
 
+	// Resolve file data: filesystem first, BYTEA fallback
+	var responseData []byte
+	if filePath != nil && *filePath != "" {
+		data, readErr := utils.ReadFromStorage(*filePath)
+		if readErr != nil {
+			if len(fileData) > 0 {
+				responseData = fileData
+			} else {
+				c.Status(http.StatusNotFound)
+				return
+			}
+		} else {
+			responseData = data
+		}
+	} else if len(fileData) > 0 {
+		responseData = fileData
+	} else {
+		c.Status(http.StatusNotFound)
+		return
+	}
+
 	c.Header("Content-Type", mimeType)
-	c.Header("Content-Length", strconv.Itoa(len(fileData)))
+	c.Header("Content-Length", strconv.Itoa(len(responseData)))
 	c.Header("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, filename))
-	c.Data(http.StatusOK, mimeType, fileData)
+	c.Data(http.StatusOK, mimeType, responseData)
 }
 
 // ============================================================
@@ -486,6 +601,7 @@ func GetUploadsByType(c *gin.Context) {
 		SELECT id, uuid, uploader_id, uploader_role, type,
 		       original_filename, mime_type, file_extension,
 		       original_size, compressed_size, compression_ratio,
+		       COALESCE(width, 0), COALESCE(height, 0),
 		       visibility, status, created_at
 		FROM uploads
 		WHERE type = $1 AND deleted_at IS NULL AND status = 'ready'
@@ -509,12 +625,14 @@ func GetUploadsByType(c *gin.Context) {
 		var uploaderID int
 		var fileUUIDStr, uploaderRole, uType, filename, mimeType, extStr, vis, status string
 		var ratio float32
+		var width, height int
 		var createdAt time.Time
 
 		err := rows.Scan(
 			&id, &fileUUIDStr, &uploaderID, &uploaderRole, &uType,
 			&filename, &mimeType, &extStr,
 			&origSize, &compSize, &ratio,
+			&width, &height,
 			&vis, &status, &createdAt,
 		)
 		if err != nil {
@@ -533,6 +651,8 @@ func GetUploadsByType(c *gin.Context) {
 			"original_size":     origSize,
 			"compressed_size":   compSize,
 			"compression_ratio": ratio,
+			"width":             width,
+			"height":            height,
 			"visibility":        vis,
 			"created_at":        createdAt,
 		})
@@ -586,6 +706,10 @@ func DeleteUpload(c *gin.Context) {
 		utils.ErrorResponse(c, http.StatusInternalServerError, "Gagal menghapus file: "+err.Error())
 		return
 	}
+
+	// Note: Physical files on filesystem are NOT deleted during soft delete.
+	// They can be cleaned up later by a background job that scans for
+	// records with deleted_at IS NOT NULL and removes their file_path files.
 
 	utils.SuccessResponse(c, nil, "File berhasil dihapus")
 }
@@ -704,6 +828,7 @@ func GetUploadStatus(c *gin.Context) {
 // HELPER: UploadFileToDB — Reusable function untuk controller lain
 // ============================================================
 // Digunakan dari UKM/Ormawa/Admin CreatePost, Dosen UploadMateri, dll.
+// Now uses the unified processAndStoreFile pipeline (filesystem storage).
 func UploadFileToDB(c *gin.Context, formFieldName string, uploaderID int, uploaderRole string, uploadType string, relatedID *int, relatedTable *string) (int64, string, error) {
 	fileHeader, err := c.FormFile(formFieldName)
 	if err != nil {
@@ -731,97 +856,8 @@ func UploadFileToDB(c *gin.Context, formFieldName string, uploaderID int, upload
 		return 0, "", fmt.Errorf("gagal membaca file")
 	}
 
-	// Detect MIME type
-	detectedMime := http.DetectContentType(fileBytes)
-
-	// Validate MIME
-	allowed, ok := allowedMimeTypes[uploadType]
-	if !ok {
-		return 0, "", fmt.Errorf("tipe upload tidak dikenali")
-	}
-	mimeValid := false
-	for _, m := range allowed {
-		if strings.HasPrefix(detectedMime, m) || detectedMime == m {
-			mimeValid = true
-			break
-		}
-	}
-	if !mimeValid {
-		declaredMime := fileHeader.Header.Get("Content-Type")
-		for _, m := range allowed {
-			if declaredMime == m {
-				mimeValid = true
-				detectedMime = declaredMime
-				break
-			}
-		}
-	}
-	if !mimeValid {
-		return 0, "", fmt.Errorf("tipe file '%s' tidak diizinkan", detectedMime)
-	}
-
-	// Checksum
-	hash := sha256.Sum256(fileBytes)
-	checksum := hex.EncodeToString(hash[:])
-
-	// Extension
-	ext := strings.ToLower(filepath.Ext(filepath.Base(fileHeader.Filename)))
-	if ext == "" {
-		ext = ".bin"
-	}
-
-	// Optimize file via Python (image/pdf supported, others passthrough)
-	compressedBytes := fileBytes
-	originalSize := int64(len(fileBytes))
-	compressedSize := originalSize
-	compressionRatio := float32(0)
-
-	optimizedBytes, optimizedMime, optimizedExt, optimized, optimizeErr := utils.OptimizeFileWithPython(fileBytes, detectedMime, ext, 1200, 75)
-	if optimizeErr != nil {
-		log.Printf("[Upload] Python optimizer skipped (%s): %v", fileHeader.Filename, optimizeErr)
-	} else if optimized {
-		compressedBytes = optimizedBytes
-		compressedSize = int64(len(optimizedBytes))
-		compressionRatio = float32(100.0 - (float64(compressedSize) / float64(originalSize) * 100.0))
-		detectedMime = optimizedMime
-		ext = optimizedExt
-	}
-
-	// Insert ke database
-	var uploadIDResult int64
-	var returnedUUID string
-	err = config.DB.QueryRow(`
-		INSERT INTO uploads (
-			uploader_id, uploader_role, type, variant,
-			original_filename, mime_type, file_extension,
-			original_size, compressed_size, compression_ratio,
-			file_data, related_id, related_table,
-			visibility, status, checksum_hash, uuid, created_at, updated_at
-		) VALUES (
-			$1, $2, $3, 'original',
-			$4, $5, $6,
-			$7, $8, $9,
-			$10, $11, $12,
-			'public', 'ready', $13, $14, NOW(), NOW()
-		)
-		RETURNING id, uuid
-	`, uploaderID, uploaderRole, uploadType,
-		filepath.Base(fileHeader.Filename), detectedMime, ext,
-		originalSize, compressedSize, compressionRatio,
-		compressedBytes, relatedID, relatedTable,
-		checksum, uuid.New().String(),
-	).Scan(&uploadIDResult, &returnedUUID)
-
-	if err != nil {
-		return 0, "", fmt.Errorf("gagal menyimpan file ke database: %v", err)
-	}
-
-	fileURL := fmt.Sprintf("/api/files/%s", returnedUUID)
-
-	log.Printf("[Upload] ✅ Saved: id=%d, type=%s, role=%s, %dKB→%dKB",
-		uploadIDResult, uploadType, uploaderRole, originalSize/1024, compressedSize/1024)
-
-	return uploadIDResult, fileURL, nil
+	// Use unified pipeline
+	return processAndStoreFile(fileBytes, fileHeader, uploaderID, uploaderRole, uploadType, relatedID, relatedTable, "public")
 }
 
 // ============================================================
@@ -833,98 +869,10 @@ func readFileBytes(file io.Reader) ([]byte, error) {
 }
 
 // ============================================================
-// uploadBytesToDB uploads raw file bytes directly to the uploads table
+// uploadBytesToDB uploads raw file bytes directly
 // Used by carousel multi-upload (avoids needing gin context per file)
+// Now uses the unified processAndStoreFile pipeline (filesystem storage).
 // ============================================================
 func uploadBytesToDB(fh *multipart.FileHeader, fileBytes []byte, uploaderID int, uploaderRole string, uploadType string) (int64, string, error) {
-	// Detect MIME type
-	detectedMime := http.DetectContentType(fileBytes)
-
-	// Validate MIME
-	allowed, ok := allowedMimeTypes[uploadType]
-	if !ok {
-		return 0, "", fmt.Errorf("tipe upload tidak dikenali")
-	}
-	mimeValid := false
-	for _, m := range allowed {
-		if strings.HasPrefix(detectedMime, m) || detectedMime == m {
-			mimeValid = true
-			break
-		}
-	}
-	if !mimeValid {
-		declaredMime := fh.Header.Get("Content-Type")
-		for _, m := range allowed {
-			if declaredMime == m {
-				mimeValid = true
-				detectedMime = declaredMime
-				break
-			}
-		}
-	}
-	if !mimeValid {
-		return 0, "", fmt.Errorf("tipe file '%s' tidak diizinkan", detectedMime)
-	}
-
-	// Checksum
-	hash := sha256.Sum256(fileBytes)
-	checksum := hex.EncodeToString(hash[:])
-
-	// Extension
-	ext := strings.ToLower(filepath.Ext(filepath.Base(fh.Filename)))
-	if ext == "" {
-		ext = ".bin"
-	}
-
-	// Optimize file via Python
-	compressedBytes := fileBytes
-	originalSize := int64(len(fileBytes))
-	compressedSize := originalSize
-	compressionRatio := float32(0)
-
-	optimizedBytes, optimizedMime, optimizedExt, optimized, optimizeErr := utils.OptimizeFileWithPython(fileBytes, detectedMime, ext, 1200, 75)
-	if optimizeErr != nil {
-		log.Printf("[Upload] Python optimizer skipped (%s): %v", fh.Filename, optimizeErr)
-	} else if optimized {
-		compressedBytes = optimizedBytes
-		compressedSize = int64(len(optimizedBytes))
-		compressionRatio = float32(100.0 - (float64(compressedSize) / float64(originalSize) * 100.0))
-		detectedMime = optimizedMime
-		ext = optimizedExt
-	}
-
-	// Insert ke database
-	var uploadIDResult int64
-	var returnedUUID string
-	err := config.DB.QueryRow(`
-		INSERT INTO uploads (
-			uploader_id, uploader_role, type, variant,
-			original_filename, mime_type, file_extension,
-			original_size, compressed_size, compression_ratio,
-			file_data, related_id, related_table,
-			visibility, status, checksum_hash, uuid, created_at, updated_at
-		) VALUES (
-			$1, $2, $3, 'original',
-			$4, $5, $6,
-			$7, $8, $9,
-			$10, NULL, NULL,
-			'public', 'ready', $11, $12, NOW(), NOW()
-		)
-		RETURNING id, uuid
-	`, uploaderID, uploaderRole, uploadType,
-		filepath.Base(fh.Filename), detectedMime, ext,
-		originalSize, compressedSize, compressionRatio,
-		compressedBytes, checksum, uuid.New().String(),
-	).Scan(&uploadIDResult, &returnedUUID)
-
-	if err != nil {
-		return 0, "", fmt.Errorf("gagal menyimpan file ke database: %v", err)
-	}
-
-	fileURL := fmt.Sprintf("/api/files/%s", returnedUUID)
-
-	log.Printf("[Upload] ✅ Carousel file saved: id=%d, %dKB→%dKB",
-		uploadIDResult, originalSize/1024, compressedSize/1024)
-
-	return uploadIDResult, fileURL, nil
+	return processAndStoreFile(fileBytes, fh, uploaderID, uploaderRole, uploadType, nil, nil, "public")
 }

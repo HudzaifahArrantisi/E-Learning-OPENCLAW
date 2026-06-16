@@ -57,14 +57,14 @@ func CreateAttendanceSession(c *gin.Context) {
 		return
 	}
 
-	// Check jika sudah ada sesi aktif untuk pertemuan ini (hari ini)
+	// Check jika sudah ada sesi aktif untuk pertemuan ini
 	var existingSession int
 	err = config.DB.QueryRow(`
-		SELECT COUNT(*) 
-		FROM attendance_sessions 
-		WHERE dosen_id = $1 AND course_id = $2 AND pertemuan_ke = $3 
+		SELECT COUNT(*)
+		FROM attendance_sessions
+		WHERE dosen_id = $1 AND course_id = $2 AND pertemuan_ke = $3
 			AND status = 'active'
-			AND (created_at)::date = CURRENT_DATE
+			AND expires_at > NOW()
 	`, dosenID, input.CourseID, input.PertemuanKe).Scan(&existingSession)
 
 	if existingSession > 0 {
@@ -89,8 +89,12 @@ func CreateAttendanceSession(c *gin.Context) {
 	sessionCode := fmt.Sprintf("ABS-%s-P%d-%s", input.CourseID, input.PertemuanKe,
 		time.Now().Format("020106150405"))
 	qrToken := utils.GenerateRandomString(32)
-	// Sesi tetap aktif sampai dosen menutupnya secara manual.
-	expiresAt := time.Now().AddDate(100, 0, 0)
+	// Set expiration berdasarkan duration atau default 120 menit
+	durationMinutes := input.Duration
+	if durationMinutes <= 0 || durationMinutes > 480 {
+		durationMinutes = 120
+	}
+	expiresAt := time.Now().Add(time.Duration(durationMinutes) * time.Minute)
 
 	// Insert ke attendance_sessions
 	query := `
@@ -679,13 +683,13 @@ func CloseAttendanceSession(c *gin.Context) {
 	// Auto-fill status 'alpa' for students who have not scanned/registered attendance
 	_, err = config.DB.Exec(`
 		INSERT INTO attendance (student_id, session_id, student_code, status, pertemuan_ke, created_at)
-		SELECT m.id, $1::text, m.nim, 'alpa', $2, NOW()
+		SELECT m.id, $1, m.nim, 'alpa', $2, NOW()
 		FROM mahasiswa m
 		JOIN mahasiswa_mata_kuliah mmk ON m.id = mmk.mahasiswa_id
 		WHERE mmk.mata_kuliah_kode = $3
 		  AND NOT EXISTS (
-			  SELECT 1 FROM attendance a 
-			  WHERE a.student_id = m.id AND a.session_id::text = $1::text
+			  SELECT 1 FROM attendance a
+			  WHERE a.student_id = m.id AND a.session_id = $1
 		  )
 	`, input.SessionID, pertemuanKe, courseID)
 	if err != nil {
@@ -707,14 +711,14 @@ func CloseAttendanceSession(c *gin.Context) {
 	// Get final attendance stats
 	var finalAttendanceCount, hadirCount, izinCount, sakitCount, alpaCount int
 	config.DB.QueryRow(`
-		SELECT 
+		SELECT
 			COUNT(DISTINCT id),
 			COUNT(DISTINCT CASE WHEN status = 'hadir' THEN id END),
 			COUNT(DISTINCT CASE WHEN status = 'izin' THEN id END),
 			COUNT(DISTINCT CASE WHEN status = 'sakit' THEN id END),
 			COUNT(DISTINCT CASE WHEN status = 'alpa' THEN id END)
 		FROM attendance
-		WHERE session_id::text = $1::text
+		WHERE session_id = $1
 	`, input.SessionID).Scan(&finalAttendanceCount, &hadirCount, &izinCount, &sakitCount, &alpaCount)
 
 	utils.SuccessResponse(c, gin.H{
@@ -777,7 +781,7 @@ func GetActiveSessions(c *gin.Context) {
 			) as total_students
 		FROM attendance_sessions asess
 		JOIN mata_kuliah mk ON asess.course_id = mk.kode
-		LEFT JOIN attendance a ON asess.id::text = a.session_id::text
+		LEFT JOIN attendance a ON asess.id = a.session_id
 		WHERE asess.dosen_id = $1 
 			AND asess.status = 'active' 
 			AND asess.expires_at > NOW()
@@ -786,8 +790,13 @@ func GetActiveSessions(c *gin.Context) {
 	args := []interface{}{dosenID}
 
 	if pertemuanFilter != "" {
+		pertemuan, err := strconv.Atoi(pertemuanFilter)
+		if err != nil {
+			utils.ValidationError(c, "pertemuan_ke harus berupa angka (1-16)")
+			return
+		}
 		query += fmt.Sprintf(" AND asess.pertemuan_ke = $%d", len(args)+1)
-		args = append(args, pertemuanFilter)
+		args = append(args, pertemuan)
 	}
 
 	if courseFilter != "" {
@@ -996,7 +1005,7 @@ func GetRiwayatPertemuanDosen(c *gin.Context) {
 			) as total_students
 		FROM attendance_sessions asess
 		JOIN mata_kuliah mk ON asess.course_id = mk.kode
-		LEFT JOIN attendance a ON asess.id::text = a.session_id::text
+		LEFT JOIN attendance a ON asess.id = a.session_id
 		WHERE asess.dosen_id = $1
 	`
 

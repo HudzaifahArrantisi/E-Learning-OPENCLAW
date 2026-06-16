@@ -101,13 +101,6 @@ func main() {
 	r.Use(middlewares.SecurityHeaders())
 	r.Use(middlewares.RateLimitMiddleware(200, 1*time.Minute)) // Global: 200 req/min per IP
 
-	// ============================================================
-	// 📦 FILE SERVING — Database BYTEA (no filesystem)
-	// ============================================================
-	// All file uploads are stored in PostgreSQL BYTEA column.
-	// Files are served via /api/files/:id endpoint (in routes.go).
-	// No /uploads directory is needed or created.
-	// ============================================================
 
 	routes.SetupRoutes(r, config.GormDB)
 
@@ -145,9 +138,9 @@ func main() {
 	log.Println("Starting STUDENT HUB Server...")
 	log.Println("🔒 Security Headers: Active")
 	log.Println("🚦 Rate Limiter: Active (200 req/min per IP)")
-	log.Println("📦 Upload System: Database BYTEA (no filesystem)")
-	log.Println("🖼️ Image Compression: Auto JPEG 75% on upload")
-	log.Println("📡 File Serving: /api/files/:id (streaming from DB)")
+	log.Println("📦 Upload System: Filesystem storage (metadata in DB)")
+	log.Println("🖼️ Image Compression: Smart auto-compress (native Go, JPEG/PNG)")
+	log.Println("📡 File Serving: /api/files/:id (filesystem + BYTEA fallback)")
 	log.Println("🦀 OpenClaw Reminder: Embedded & Running")
 	log.Println("📝 Structured Logging: Active (stdout → Docker)")
 

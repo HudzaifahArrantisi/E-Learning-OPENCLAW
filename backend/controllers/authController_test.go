@@ -38,6 +38,12 @@ func TestIsValidLoginInput(t *testing.T) {
 	if !isValidLoginInput("invalid-email", "password") {
 		t.Fatal("expected bare identifier to be valid")
 	}
+	if !isValidLoginInput("0110224237", "password") {
+		t.Fatal("expected NIM starting with zero to be valid")
+	}
+	if !isValidLoginInput("0110224237@nurulfikri.ac.id", "password") {
+		t.Fatal("expected institutional email with zero-prefixed NIM to be valid")
+	}
 	if isValidLoginInput("user@", "password") {
 		t.Fatal("expected malformed email to be rejected")
 	}
@@ -56,6 +62,8 @@ func TestGetLoginAccountIdentifier(t *testing.T) {
 		{name: "bare NIM", input: "2310112345", want: "2310112345", wantAllow: true},
 		{name: "institutional email uses local part", input: "2310112345@nurulfikri.ac.id", want: "2310112345", wantAllow: true},
 		{name: "institutional email trims spaces", input: " 2310112345@nurulfikri.ac.id ", want: "2310112345", wantAllow: true},
+		{name: "NIM starting with zero", input: "0110224237", want: "0110224237", wantAllow: true},
+		{name: "institutional email with zero-prefixed NIM", input: "0110224237@nurulfikri.ac.id", want: "0110224237", wantAllow: true},
 		{name: "external email only matches exact email", input: "admin@example.com", want: "admin@example.com", wantAllow: false},
 		{name: "empty identifier", input: " ", want: "", wantAllow: false},
 	}

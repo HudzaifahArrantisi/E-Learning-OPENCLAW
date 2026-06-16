@@ -4,8 +4,14 @@ export function normalizeLoginIdentifier(identifier) {
 
 export function getIdentifierError(identifier) {
   const value = (identifier || '').trim()
-  if (!value || /\s/.test(value) || (value.includes('@') && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value))) {
-    return 'Masukkan ID akun, NIM/NIP, username, atau email yang valid.'
+  if (!value) {
+    return 'ID akun tidak boleh kosong.'
+  }
+  if (/\s/.test(value)) {
+    return 'ID akun tidak boleh mengandung spasi.'
+  }
+  if (value.includes('@') && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+    return 'Format email tidak valid. Gunakan NIM atau NIM@nurulfikri.ac.id.'
   }
   return null
 }
