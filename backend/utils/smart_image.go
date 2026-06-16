@@ -108,9 +108,7 @@ func ProcessUploadedImage(data []byte, detectedMime string) (*ProcessedImage, er
 	}, nil
 }
 
-// smartResize proportionally resizes the image if its longest edge exceeds maxDim.
-// Returns the (possibly resized) image and whether a resize occurred.
-// Uses CatmullRom (Lanczos-like) interpolation for sharp downscaling.
+
 func smartResize(img image.Image, maxDim int) (image.Image, bool) {
 	if maxDim <= 0 {
 		return img, false
