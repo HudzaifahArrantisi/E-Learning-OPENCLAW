@@ -25,6 +25,25 @@ func normalizeLoginIdentifier(identifier string) string {
 	return strings.TrimSpace(identifier)
 }
 
+func getLoginAccountIdentifier(identifier string) (string, bool) {
+	identifier = normalizeLoginIdentifier(identifier)
+	if identifier == "" {
+		return "", false
+	}
+	if !strings.Contains(identifier, "@") {
+		return identifier, true
+	}
+	if !isInstitutionalEmail(identifier) {
+		return identifier, false
+	}
+
+	localPart, _, found := strings.Cut(identifier, "@")
+	if !found || localPart == "" {
+		return identifier, false
+	}
+	return localPart, true
+}
+
 func isValidLoginInput(identifier, password string) bool {
 	if len(identifier) == 0 || len(identifier) > 254 || len(password) == 0 || len(password) > 128 {
 		return false
@@ -137,6 +156,7 @@ func Login(c *gin.Context) {
 		})
 		return
 	}
+	accountIdentifier, allowAccountLookup := getLoginAccountIdentifier(identifier)
 
 	query := `
 		SELECT u.id, u.email, u.password, u.role,
@@ -161,11 +181,11 @@ func Login(c *gin.Context) {
 		   OR (
 		     $2
 		     AND (
-		       LOWER(SPLIT_PART(u.email, '@', 1)) = LOWER($1)
-		       OR m.nim = $1
-		       OR d.nip = $1
-		       OR LOWER(uk.username) = LOWER($1)
-		       OR LOWER(o.username) = LOWER($1)
+		       LOWER(SPLIT_PART(u.email, '@', 1)) = LOWER($3)
+		       OR m.nim = $3
+		       OR d.nip = $3
+		       OR LOWER(uk.username) = LOWER($3)
+		       OR LOWER(o.username) = LOWER($3)
 		     )
 		   )
 		ORDER BY CASE WHEN LOWER(u.email) = LOWER($1) THEN 0 ELSE 1 END
@@ -181,7 +201,7 @@ func Login(c *gin.Context) {
 	var nim sql.NullString
 	var name sql.NullString
 
-	err := config.DB.QueryRow(query, identifier, !strings.Contains(identifier, "@")).Scan(
+	err := config.DB.QueryRow(query, identifier, allowAccountLookup, accountIdentifier).Scan(
 		&user.ID, &user.Email, &user.Password, &user.Role, &nim, &name,
 	)
 

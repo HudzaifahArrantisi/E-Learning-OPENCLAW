@@ -45,3 +45,27 @@ func TestIsValidLoginInput(t *testing.T) {
 		t.Fatal("expected empty password to be rejected")
 	}
 }
+
+func TestGetLoginAccountIdentifier(t *testing.T) {
+	tests := []struct {
+		name      string
+		input     string
+		want      string
+		wantAllow bool
+	}{
+		{name: "bare NIM", input: "2310112345", want: "2310112345", wantAllow: true},
+		{name: "institutional email uses local part", input: "2310112345@nurulfikri.ac.id", want: "2310112345", wantAllow: true},
+		{name: "institutional email trims spaces", input: " 2310112345@nurulfikri.ac.id ", want: "2310112345", wantAllow: true},
+		{name: "external email only matches exact email", input: "admin@example.com", want: "admin@example.com", wantAllow: false},
+		{name: "empty identifier", input: " ", want: "", wantAllow: false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, gotAllow := getLoginAccountIdentifier(tt.input)
+			if got != tt.want || gotAllow != tt.wantAllow {
+				t.Fatalf("getLoginAccountIdentifier(%q) = (%q, %v), want (%q, %v)", tt.input, got, gotAllow, tt.want, tt.wantAllow)
+			}
+		})
+	}
+}
