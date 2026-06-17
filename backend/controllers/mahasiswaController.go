@@ -117,7 +117,7 @@ func GetMahasiswaStats(c *gin.Context) {
 			END as rate
 		FROM attendance_sessions asess
 		JOIN mahasiswa_mata_kuliah mmk ON asess.course_id = mmk.mata_kuliah_kode
-		LEFT JOIN attendance a ON asess.id = a.session_id AND a.student_id = mmk.mahasiswa_id
+		LEFT JOIN attendance a ON asess.id::text = a.session_id::text AND a.student_id = mmk.mahasiswa_id
 		WHERE mmk.mahasiswa_id = $1
 	`, mahasiswaID).Scan(&attendanceRate)
 
@@ -223,30 +223,44 @@ func GetMahasiswaCoursesByDay(c *gin.Context) {
 	mahasiswaIDStr := strconv.Itoa(mahasiswaID)
 	query := `
 		SELECT DISTINCT
-			mk.kode, 
-			mk.nama, 
-			d.name as dosen, 
-			mk.sks, 
-			mk.hari, 
-			mk.jam_mulai, 
+			mk.kode,
+			mk.nama,
+			d.name as dosen,
+			mk.sks,
+			mk.hari,
+			mk.jam_mulai,
 			mk.jam_selesai,
 			COALESCE(a.status, 'belum_absen') as status_absen,
 			COALESCE(TO_CHAR(a.created_at, 'HH24:MI'), '') as waktu_absen,
-			COUNT(DISTINCT mmk2.mahasiswa_id) as total_mahasiswa
+			COALESCE(a.pertemuan_ke, 0) as pertemuan_ke,
+			COALESCE(asess.session_code, '') as session_code,
+			(
+				SELECT COUNT(DISTINCT mmk2.mahasiswa_id)
+				FROM mahasiswa_mata_kuliah mmk2
+				WHERE mmk2.mata_kuliah_kode = mk.kode
+			) as total_mahasiswa
 		FROM mata_kuliah mk
 		JOIN dosen d ON mk.dosen_id = d.id
 		JOIN mahasiswa_mata_kuliah mmk ON mk.kode = mmk.mata_kuliah_kode
-		JOIN mahasiswa_mata_kuliah mmk2 ON mk.kode = mmk2.mata_kuliah_kode
 		LEFT JOIN (
-			SELECT DISTINCT a.student_id::text as student_id, asess.course_id, a.status, a.created_at
+			SELECT DISTINCT a.student_id::text as student_id, asess.course_id, a.status, a.created_at, a.pertemuan_ke
 			FROM attendance a
-			JOIN attendance_sessions asess ON a.session_id = asess.id
-			WHERE (a.created_at)::date = CURRENT_DATE
+			JOIN attendance_sessions asess ON a.session_id::text = asess.id::text
+			WHERE (a.created_at)::date = CURRENT_DATE AND a.student_id::text = $1::text
 		) a ON mk.kode = a.course_id AND mmk.mahasiswa_id::text = a.student_id
+		LEFT JOIN LATERAL (
+			SELECT session_code, pertemuan_ke
+			FROM attendance_sessions
+			WHERE course_id = mk.kode
+				AND status = 'active'
+				AND expires_at > NOW()
+				AND (created_at)::date = CURRENT_DATE
+			ORDER BY created_at DESC
+			LIMIT 1
+		) asess ON TRUE
 		WHERE mmk.mahasiswa_id::text = $1::text
 			AND TRIM(LOWER(mk.hari::text)) = TRIM(LOWER($2::text))
 			AND mk.deleted_at IS NULL
-		GROUP BY mk.kode, mk.nama, d.name, mk.sks, mk.hari, mk.jam_mulai, mk.jam_selesai, a.status, a.created_at
 		ORDER BY mk.jam_mulai
 	`
 
@@ -261,28 +275,18 @@ func GetMahasiswaCoursesByDay(c *gin.Context) {
 	var totalMahasiswa int
 
 	for rows.Next() {
-		var kode, nama, dosen, courseHari, jamMulai, jamSelesai, statusAbsen, waktuAbsen string
-		var sks, totalMhs int
+		var kode, nama, dosen, courseHari, jamMulai, jamSelesai, statusAbsen, waktuAbsen, sessionCode string
+		var sks, pertemuanKe, totalMhs int
 
 		err := rows.Scan(&kode, &nama, &dosen, &sks, &courseHari, &jamMulai, &jamSelesai,
-			&statusAbsen, &waktuAbsen, &totalMhs)
+			&statusAbsen, &waktuAbsen, &pertemuanKe, &sessionCode, &totalMhs)
 		if err != nil {
 			continue
 		}
 
 		totalMahasiswa += totalMhs
 
-		// Check if there's active session today
-		var activeSession bool
-		config.DB.QueryRow(`
-			SELECT EXISTS(
-				SELECT 1 FROM attendance_sessions 
-				WHERE course_id = $1 
-					AND status = 'active' 
-					AND expires_at > NOW()
-					AND (created_at)::date = CURRENT_DATE
-			)
-		`, kode).Scan(&activeSession)
+		activeSession := sessionCode != ""
 
 		courses = append(courses, gin.H{
 			"kode":            kode,
@@ -296,6 +300,8 @@ func GetMahasiswaCoursesByDay(c *gin.Context) {
 			"waktu_absen":     waktuAbsen,
 			"total_mahasiswa": totalMhs,
 			"active_session":  activeSession,
+			"pertemuan_ke":    pertemuanKe,
+			"session_code":    sessionCode,
 			"can_scan":        activeSession && statusAbsen == "belum_absen",
 		})
 	}
@@ -456,21 +462,27 @@ func GetMahasiswaJadwalHariIni(c *gin.Context) {
 			mk.jam_selesai,
 			COALESCE(a.status, 'belum_absen') as status_absen,
 			COALESCE(TO_CHAR(a.created_at, 'HH24:MI'), '') as waktu_absen,
-			a.pertemuan_ke,
-			asess.session_code
+			COALESCE(a.pertemuan_ke, 0) as pertemuan_ke,
+			COALESCE(asess.session_code, '') as session_code
 		FROM mata_kuliah mk
 		JOIN dosen d ON mk.dosen_id = d.id
 		JOIN mahasiswa_mata_kuliah mmk ON mk.kode = mmk.mata_kuliah_kode
 		LEFT JOIN (
 			SELECT DISTINCT a.student_id::text as student_id, asess.course_id, a.status, a.created_at, a.pertemuan_ke
 			FROM attendance a
-			JOIN attendance_sessions asess ON a.session_id = asess.id
+			JOIN attendance_sessions asess ON a.session_id::text = asess.id::text
 			WHERE (a.created_at)::date = CURRENT_DATE AND a.student_id::text = $1::text
 		) a ON mk.kode = a.course_id AND mmk.mahasiswa_id::text = a.student_id
-		LEFT JOIN attendance_sessions asess ON mk.kode = asess.course_id 
-			AND asess.status = 'active' 
-			AND asess.expires_at > NOW()
-			AND (asess.created_at)::date = CURRENT_DATE
+		LEFT JOIN LATERAL (
+			SELECT session_code, pertemuan_ke
+			FROM attendance_sessions
+			WHERE course_id = mk.kode
+				AND status = 'active'
+				AND expires_at > NOW()
+				AND (created_at)::date = CURRENT_DATE
+			ORDER BY created_at DESC
+			LIMIT 1
+		) asess ON TRUE
 		WHERE mmk.mahasiswa_id::text = $2::text
 			AND TRIM(LOWER(mk.hari::text)) = TRIM(LOWER($3::text))
 			AND mk.deleted_at IS NULL
@@ -571,26 +583,43 @@ func ScanAttendance(c *gin.Context) {
 		Status      string
 	}
 
+	// Cari sesi BERDASARKAN TOKEN SAJA, lalu validasi bertahap agar pesan error spesifik
 	err = config.DB.QueryRow(`
 		SELECT asess.id, asess.course_id, asess.session_code, asess.dosen_id, asess.pertemuan_ke,
 		       asess.expires_at, mk.hari, mk.jam_mulai, mk.jam_selesai, asess.status
 		FROM attendance_sessions asess
 		JOIN mata_kuliah mk ON asess.course_id = mk.kode
-		WHERE asess.session_token = $1 
-			AND asess.status = 'active' 
-			AND asess.course_id = $2
-	`, input.SessionToken, input.CourseID).Scan(
+		WHERE asess.session_token = $1
+	`, input.SessionToken).Scan(
 		&session.ID, &session.CourseID, &session.SessionCode, &session.DosenID, &session.PertemuanKe,
 		&session.ExpiresAt, &session.CourseDay, &session.CourseStart, &session.CourseEnd, &session.Status)
 
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, "QR Code tidak valid atau sesi belum dibuka dosen")
+		if err == sql.ErrNoRows {
+			utils.ErrorResponse(c, http.StatusBadRequest,
+				"QR Code tidak dikenali. Kemungkinan dosen sudah me-refresh QR — minta QR terbaru.")
+			return
+		}
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Gagal memvalidasi QR: "+err.Error())
+		return
+	}
+
+	// Validasi: sesi harus masih aktif (belum ditutup dosen)
+	if session.Status != "active" {
+		utils.ErrorResponse(c, http.StatusBadRequest, "Sesi absensi sudah ditutup oleh dosen.")
+		return
+	}
+
+	// Validasi: sesi belum kadaluarsa
+	if time.Now().After(session.ExpiresAt) {
+		utils.ErrorResponse(c, http.StatusBadRequest, "Sesi absensi sudah berakhir (kadaluarsa).")
 		return
 	}
 
 	// Validasi: Mata kuliah harus sesuai dengan yang dipilih mahasiswa
 	if session.CourseID != input.CourseID {
-		utils.ErrorResponse(c, http.StatusBadRequest, "QR Code tidak sesuai dengan mata kuliah yang dipilih")
+		utils.ErrorResponse(c, http.StatusBadRequest,
+			"QR Code ini untuk mata kuliah lain, tidak sesuai dengan yang Anda pilih.")
 		return
 	}
 
@@ -607,26 +636,6 @@ func ScanAttendance(c *gin.Context) {
 		utils.ErrorResponse(c, http.StatusForbidden, "Anda tidak terdaftar pada mata kuliah ini")
 		return
 	}
-	// Cek apakah sudah absen untuk pertemuan ini
-	var existingStatus string
-	err = config.DB.QueryRow(`
-		SELECT a.status
-		FROM attendance a
-		WHERE a.student_id = $1 AND a.session_id = $2
-		LIMIT 1
-	`, mahasiswaID, session.ID).Scan(&existingStatus)
-
-	if err == nil {
-		utils.ErrorResponse(c, http.StatusBadRequest,
-			"Anda sudah melakukan absensi untuk pertemuan ke-"+strconv.Itoa(session.PertemuanKe)+
-				" dengan status: "+existingStatus)
-		return
-	}
-	if err != sql.ErrNoRows {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "Gagal memeriksa status absensi")
-		return
-	}
-
 	// Get student code (nim)
 	var studentCode string
 	err = config.DB.QueryRow("SELECT nim FROM mahasiswa WHERE id = $1", mahasiswaID).Scan(&studentCode)
@@ -634,19 +643,75 @@ func ScanAttendance(c *gin.Context) {
 		studentCode = fmt.Sprintf("MHS-%d", mahasiswaID)
 	}
 
-	// Insert attendance dengan status hadir dan pertemuan_ke
-	_, err = config.DB.Exec(`
+	tx, err := config.DB.Begin()
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Gagal memulai transaksi absensi")
+		return
+	}
+	defer tx.Rollback()
+
+	// Kunci transaksi per mahasiswa+sesi agar scan ganda tetap idempoten meski schema belum punya UNIQUE constraint.
+	if _, err := tx.Exec("SELECT pg_advisory_xact_lock($1, $2)", mahasiswaID, session.ID); err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Gagal mengunci transaksi absensi: "+err.Error())
+		return
+	}
+
+	var existingStatus string
+	err = tx.QueryRow(`
+		SELECT status
+		FROM attendance
+		WHERE student_id = $1 AND session_id::text = $2::text
+		ORDER BY created_at DESC
+		LIMIT 1
+	`, mahasiswaID, session.ID).Scan(&existingStatus)
+
+	if err == nil {
+		if commitErr := tx.Commit(); commitErr != nil {
+			utils.ErrorResponse(c, http.StatusInternalServerError, "Gagal menyelesaikan transaksi absensi")
+			return
+		}
+
+		var courseName, dosenName string
+		config.DB.QueryRow(`
+			SELECT mk.nama, d.name 
+			FROM mata_kuliah mk
+			JOIN dosen d ON mk.dosen_id = d.id
+			WHERE mk.kode = $1
+		`, session.CourseID).Scan(&courseName, &dosenName)
+
+		utils.SuccessResponse(c, gin.H{
+			"course_id":    session.CourseID,
+			"course_name":  courseName,
+			"dosen":        dosenName,
+			"pertemuan_ke": session.PertemuanKe,
+			"status":       existingStatus,
+			"already":      true,
+			"time":         time.Now().Format("15:04"),
+			"date":         time.Now().Format("2006-01-02"),
+		}, "Kehadiran Anda sudah tercatat sebelumnya untuk pertemuan ke-"+strconv.Itoa(session.PertemuanKe))
+		return
+	}
+	if err != sql.ErrNoRows {
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Gagal memeriksa status absensi: "+err.Error())
+		return
+	}
+
+	_, err = tx.Exec(`
 		INSERT INTO attendance (student_id, session_id, student_code, status, pertemuan_ke, created_at)
 		VALUES ($1, $2, $3, 'hadir', $4, NOW())
 	`, mahasiswaID, session.ID, studentCode, session.PertemuanKe)
-
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to record attendance: "+err.Error())
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Gagal mencatat absensi: "+err.Error())
+		return
+	}
+
+	if err := tx.Commit(); err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Gagal menyelesaikan transaksi absensi")
 		return
 	}
 
 	// Update attendance_summary
-	_, err = config.DB.Exec(`
+	if _, err := config.DB.Exec(`
 		INSERT INTO attendance_summary 
 		(student_id, nim, student_name, session_id, course_id, course_name, status, 
 		 attendance_date, attendance_time, dosen_name, hari, jam_mulai, jam_selesai)
@@ -660,7 +725,9 @@ func ScanAttendance(c *gin.Context) {
 		ON CONFLICT (student_id, session_id) DO UPDATE SET
 			status = 'hadir',
 			attendance_time = NOW()
-	`, session.ID, session.CourseID, mahasiswaID)
+	`, session.ID, session.CourseID, mahasiswaID); err != nil {
+		log.Printf("[absensi] gagal update attendance_summary (non-fatal): %v", err)
+	}
 
 	// Get course info untuk response
 	var courseName, dosenName string
@@ -716,7 +783,7 @@ func GetAttendanceHistoryByCourse(c *gin.Context) {
 			asess.session_code,
 			(a.created_at)::date as tanggal_raw
 		FROM attendance a
-		JOIN attendance_sessions asess ON a.session_id = asess.id
+		JOIN attendance_sessions asess ON a.session_id::text = asess.id::text
 		JOIN mata_kuliah mk ON asess.course_id = mk.kode
 		JOIN dosen d ON mk.dosen_id = d.id
 		WHERE a.student_id = $1 
@@ -767,7 +834,7 @@ func GetAttendanceHistoryByCourse(c *gin.Context) {
 			SUM(CASE WHEN a.status = 'sakit' THEN 1 ELSE 0 END) as sakit,
 			SUM(CASE WHEN a.status = 'alpa' THEN 1 ELSE 0 END) as alpa
 		FROM attendance a
-		JOIN attendance_sessions asess ON a.session_id = asess.id
+		JOIN attendance_sessions asess ON a.session_id::text = asess.id::text
 		WHERE a.student_id = $1 AND asess.course_id = $2
 	`, mahasiswaID, courseID).Scan(&totalSessions, &hadirCount, &izinCount, &sakitCount, &alpaCount)
 
@@ -849,7 +916,7 @@ func GetAttendanceHistory(c *gin.Context) {
 			mk.jam_mulai,
 			mk.jam_selesai
 		FROM attendance a
-		JOIN attendance_sessions asess ON a.session_id = asess.id
+		JOIN attendance_sessions asess ON a.session_id::text = asess.id::text
 		JOIN mata_kuliah mk ON asess.course_id = mk.kode
 		JOIN dosen d ON mk.dosen_id = d.id
 		WHERE a.student_id = $1
@@ -977,7 +1044,7 @@ func GetAttendanceSummary(c *gin.Context) {
     LEFT JOIN attendance_sessions asess 
         ON mk.kode = asess.course_id
     LEFT JOIN attendance a 
-        ON asess.id = a.session_id 
+        ON asess.id::text = a.session_id::text 
         AND a.student_id = $1
     WHERE mmk.mahasiswa_id = $2
     GROUP BY mk.kode, mk.nama, d.name

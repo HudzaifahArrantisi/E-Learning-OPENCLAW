@@ -3,9 +3,12 @@ package middlewares
 import (
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
+
+	"nf-student-hub-backend/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -80,13 +83,31 @@ func (rl *rateLimiter) isAllowed(ip string) bool {
 	return v.count <= rl.rate
 }
 
-// RateLimitMiddleware membatasi jumlah request per IP per window
+func rateLimitKey(c *gin.Context) string {
+	authHeader := c.GetHeader("Authorization")
+	if strings.HasPrefix(authHeader, "Bearer ") {
+		tokenString := strings.TrimSpace(strings.TrimPrefix(authHeader, "Bearer "))
+		if tokenString != "" {
+			if claims, err := utils.ValidateToken(tokenString); err == nil && claims.UserID > 0 {
+				return "user:" + strconv.Itoa(claims.UserID)
+			}
+		}
+	}
+
+	return "ip:" + c.ClientIP()
+}
+
+// RateLimitMiddleware membatasi jumlah request per user login, fallback per IP.
 func RateLimitMiddleware(maxRequests int, window time.Duration) gin.HandlerFunc {
 	limiter := newRateLimiter(maxRequests, window)
 	return func(c *gin.Context) {
-		ip := c.ClientIP()
+		if c.Request.Method == http.MethodOptions {
+			c.Next()
+			return
+		}
 
 		// Whitelist localhost and local private network IPs from rate limiting
+		ip := c.ClientIP()
 		if ip == "127.0.0.1" || ip == "::1" ||
 			strings.HasPrefix(ip, "192.168.") ||
 			strings.HasPrefix(ip, "10.") ||
@@ -95,7 +116,16 @@ func RateLimitMiddleware(maxRequests int, window time.Duration) gin.HandlerFunc 
 			return
 		}
 
-		if !limiter.isAllowed(ip) {
+		path := c.Request.URL.Path
+		if c.Request.Method == http.MethodGet && strings.HasPrefix(path, "/api/files/") {
+			c.Next()
+			return
+		}
+
+		key := rateLimitKey(c)
+
+		if !limiter.isAllowed(key) {
+			c.Header("Retry-After", strconv.Itoa(int(window.Seconds())))
 			c.JSON(http.StatusTooManyRequests, gin.H{
 				"success": false,
 				"message": "Terlalu banyak request. Coba lagi nanti.",

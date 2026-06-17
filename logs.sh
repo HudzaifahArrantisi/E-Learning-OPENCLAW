@@ -1,21 +1,3 @@
-#!/bin/bash
-# ============================================================
-# logs.sh — Simple Real-time Log Viewer
-#
-# Shows colored, real-time logs from Docker containers.
-# No Grafana, no Prometheus — just terminal logs.
-#
-# USAGE:
-#   ./logs.sh              ← all backend logs (default)
-#   ./logs.sh all          ← all services
-#   ./logs.sh nginx        ← only nginx logs
-#   ./logs.sh gateway      ← only openclaw gateway logs
-#   ./logs.sh errors       ← only ERROR lines from backend
-#   ./logs.sh post         ← only POST requests
-#   ./logs.sh get          ← only GET requests
-#   ./logs.sh auth         ← only /api/auth routes
-#   ./logs.sh route /api/x ← filter by custom route
-# ============================================================
 
 set -e
 

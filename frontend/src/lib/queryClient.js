@@ -11,6 +11,8 @@ const queryClient = new QueryClient({
       refetchOnWindowFocus: false,
       refetchOnMount: false,
       refetchOnReconnect: false,
+      retry: (failureCount, error) =>
+        error?.response?.status !== 429 && failureCount < 1,
     },
   },
 })

@@ -33,6 +33,83 @@ func GetMyProfile(c *gin.Context) {
         return
     }
 
+    // Dosen: skema berbeda (name, nip — tanpa username/bio)
+    if role == "dosen" {
+        var profile struct {
+            ID        int
+            UserID    int
+            Name      string
+            NIP       string
+            CreatedAt string
+            UpdatedAt string
+        }
+        err := config.DB.QueryRow(`
+            SELECT id, user_id, name, nip, created_at, updated_at
+            FROM dosen
+            WHERE user_id = $1 AND deleted_at IS NULL
+        `, userID).Scan(&profile.ID, &profile.UserID, &profile.Name, &profile.NIP,
+            &profile.CreatedAt, &profile.UpdatedAt)
+        if err != nil {
+            if err == sql.ErrNoRows {
+                utils.ErrorResponse(c, http.StatusNotFound, "Profile dosen tidak ditemukan")
+                return
+            }
+            utils.ErrorResponse(c, http.StatusInternalServerError, "Database error: "+err.Error())
+            return
+        }
+        utils.SuccessResponse(c, gin.H{
+            "id":              profile.ID,
+            "user_id":         profile.UserID,
+            "name":            profile.Name,
+            "nip":             profile.NIP,
+            "role":            role,
+            "created_at":      profile.CreatedAt,
+            "updated_at":      profile.UpdatedAt,
+            "followers_count": 0,
+            "following_count": 0,
+            "bio":             "Dosen STT Nurul Fikri",
+        }, "Profile dosen berhasil diambil")
+        return
+    }
+
+    // Orangtua: skema berbeda (name, alamat, child_id)
+    if role == "orangtua" {
+        var profile struct {
+            ID        int
+            UserID    int
+            Name      string
+            Alamat    sql.NullString
+            ChildID   sql.NullInt64
+            CreatedAt string
+            UpdatedAt string
+        }
+        err := config.DB.QueryRow(`
+            SELECT id, user_id, name, alamat, child_id, created_at, updated_at
+            FROM ortu
+            WHERE user_id = $1 AND deleted_at IS NULL
+        `, userID).Scan(&profile.ID, &profile.UserID, &profile.Name, &profile.Alamat,
+            &profile.ChildID, &profile.CreatedAt, &profile.UpdatedAt)
+        if err != nil {
+            if err == sql.ErrNoRows {
+                utils.ErrorResponse(c, http.StatusNotFound, "Profile orangtua tidak ditemukan")
+                return
+            }
+            utils.ErrorResponse(c, http.StatusInternalServerError, "Database error: "+err.Error())
+            return
+        }
+        utils.SuccessResponse(c, gin.H{
+            "id":         profile.ID,
+            "user_id":    profile.UserID,
+            "name":       profile.Name,
+            "alamat":     profile.Alamat.String,
+            "child_id":   profile.ChildID.Int64,
+            "role":       role,
+            "created_at": profile.CreatedAt,
+            "updated_at": profile.UpdatedAt,
+        }, "Profile orangtua berhasil diambil")
+        return
+    }
+
     table := ""
     switch role {
     case "admin":

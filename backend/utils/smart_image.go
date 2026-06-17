@@ -118,24 +118,19 @@ func smartResize(img image.Image, maxDim int) (image.Image, bool) {
 	origW := bounds.Dx()
 	origH := bounds.Dy()
 
-	// No resize needed if both dimensions are within limit
 	if origW <= maxDim && origH <= maxDim {
 		return img, false
 	}
 
-	// Calculate new dimensions preserving aspect ratio
 	var newW, newH int
 	if origW >= origH {
-		// Width is the longest edge
 		newW = maxDim
 		newH = int(float64(origH) * float64(maxDim) / float64(origW))
 	} else {
-		// Height is the longest edge
 		newH = maxDim
 		newW = int(float64(origW) * float64(maxDim) / float64(origH))
 	}
 
-	// Ensure minimum 1px
 	if newW < 1 {
 		newW = 1
 	}
@@ -143,25 +138,18 @@ func smartResize(img image.Image, maxDim int) (image.Image, bool) {
 		newH = 1
 	}
 
-	// Use NRGBA for images with alpha support
 	dst := image.NewNRGBA(image.Rect(0, 0, newW, newH))
 
-	// CatmullRom provides sharper results than BiLinear (Lanczos-like quality)
 	draw.CatmullRom.Scale(dst, dst.Bounds(), img, bounds, draw.Over, nil)
 
 	return dst, true
 }
 
-// encodeToJPEG encodes the image as JPEG with the configured quality.
-// Handles alpha channels by compositing onto white background.
 func encodeToJPEG(img image.Image) ([]byte, string, string, error) {
-	// JPEG doesn't support alpha — flatten to white background
 	bounds := img.Bounds()
 	flat := image.NewRGBA(bounds)
 
-	// Fill with white background
 	draw.Src.Draw(flat, bounds, image.White, image.Point{})
-	// Draw the image on top
 	draw.Over.Draw(flat, bounds, img, bounds.Min)
 
 	var buf bytes.Buffer
@@ -173,8 +161,6 @@ func encodeToJPEG(img image.Image) ([]byte, string, string, error) {
 	return buf.Bytes(), "image/jpeg", ".jpg", nil
 }
 
-// encodeToOptimizedPNG encodes the image as PNG with maximum compression.
-// Used for images with meaningful alpha channel (transparency).
 func encodeToOptimizedPNG(img image.Image) ([]byte, string, string, error) {
 	var buf bytes.Buffer
 	encoder := &png.Encoder{
@@ -188,20 +174,15 @@ func encodeToOptimizedPNG(img image.Image) ([]byte, string, string, error) {
 	return buf.Bytes(), "image/png", ".png", nil
 }
 
-// imageHasAlpha checks if an image actually uses its alpha channel.
-// Some PNG images are marked as RGBA but have fully opaque pixels.
-// We sample a subset of pixels to detect meaningful transparency.
+
 func imageHasAlpha(img image.Image) bool {
 	bounds := img.Bounds()
 
-	// Check based on image type first (fast path)
 	switch img.(type) {
 	case *image.YCbCr, *image.Gray, *image.Gray16:
-		return false // These formats never have alpha
+		return false 
 	}
 
-	// Sample pixels to check for non-opaque alpha values
-	// For performance, we sample at most ~1000 pixels across the image
 	stepX := bounds.Dx() / 32
 	stepY := bounds.Dy() / 32
 	if stepX < 1 {
@@ -215,15 +196,14 @@ func imageHasAlpha(img image.Image) bool {
 		for x := bounds.Min.X; x < bounds.Max.X; x += stepX {
 			_, _, _, a := img.At(x, y).RGBA()
 			if a < 0xFFFF {
-				return true // Found a non-opaque pixel
+				return true 
 			}
 		}
 	}
 
-	return false // All sampled pixels are fully opaque
+	return false 
 }
 
-// mimeToExtension maps common image MIME types to file extensions.
 func mimeToExtension(mime string) string {
 	switch strings.ToLower(mime) {
 	case "image/jpeg":
@@ -239,7 +219,6 @@ func mimeToExtension(mime string) string {
 	}
 }
 
-// IsImageMime checks if the given MIME type is an image we can process.
 func IsImageMime(mime string) bool {
 	switch strings.ToLower(mime) {
 	case "image/jpeg", "image/png", "image/webp", "image/gif":
@@ -249,8 +228,6 @@ func IsImageMime(mime string) bool {
 	}
 }
 
-// ValidateMagicBytes validates the file's magic bytes against the detected MIME type.
-// This provides defense-in-depth beyond http.DetectContentType.
 func ValidateMagicBytes(data []byte) (string, bool) {
 	if len(data) < 4 {
 		return "", false

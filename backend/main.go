@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"log"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -38,7 +39,6 @@ func main() {
 	}
 
 	r := gin.Default()
-
 
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{
@@ -99,8 +99,8 @@ func main() {
 	}))
 
 	r.Use(middlewares.SecurityHeaders())
-	r.Use(middlewares.RateLimitMiddleware(200, 1*time.Minute)) // Global: 200 req/min per IP
-
+	rateLimitMaxRequests := getEnvInt("RATE_LIMIT_MAX_REQUESTS", 800)
+	r.Use(middlewares.RateLimitMiddleware(rateLimitMaxRequests, 1*time.Minute))
 
 	routes.SetupRoutes(r, config.GormDB)
 
@@ -137,7 +137,7 @@ func main() {
 
 	log.Println("Starting STUDENT HUB Server...")
 	log.Println("🔒 Security Headers: Active")
-	log.Println("🚦 Rate Limiter: Active (200 req/min per IP)")
+	log.Printf("🚦 Rate Limiter: Active (%d req/min per user or IP)", rateLimitMaxRequests)
 	log.Println("📦 Upload System: Filesystem storage (metadata in DB)")
 	log.Println("🖼️ Image Compression: Smart auto-compress (native Go, JPEG/PNG)")
 	log.Println("📡 File Serving: /api/files/:id (filesystem + BYTEA fallback)")
@@ -157,7 +157,20 @@ func main() {
 	r.Run("0.0.0.0:" + port)
 }
 
+func getEnvInt(key string, fallback int) int {
+	raw := strings.TrimSpace(os.Getenv(key))
+	if raw == "" {
+		return fallback
+	}
 
+	value, err := strconv.Atoi(raw)
+	if err != nil || value <= 0 {
+		log.Printf("Invalid %s=%q; using default %d", key, raw, fallback)
+		return fallback
+	}
+
+	return value
+}
 
 // startOpenClaw initializes and embeds the OpenClaw reminder system
 func startOpenClaw(r *gin.Engine) {

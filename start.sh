@@ -1,13 +1,3 @@
-#!/bin/bash
-# ============================================================
-# start.sh — One-command setup for Kali Linux / VPS
-# Automates: Docker check → env setup → build → run → verify
-#
-# USAGE:
-#   chmod +x start.sh
-#   ./start.sh           ← local dev (Kali Linux)
-#   ./start.sh --prod    ← VPS production mode
-# ============================================================
 
 set -e
 
@@ -58,9 +48,7 @@ if ! docker info &> /dev/null 2>&1; then
 fi
 echo -e "${GREEN}   ✅ Docker is running${NC}"
 
-# ──────────────────────────────────────────
-# Step 2: Run setup-env.sh (create .env if missing)
-# ──────────────────────────────────────────
+
 echo -e "${YELLOW}[2/6] Setting up environment files...${NC}"
 
 if [ -f "./setup-env.sh" ]; then

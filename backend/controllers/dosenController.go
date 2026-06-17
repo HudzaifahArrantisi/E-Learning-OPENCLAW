@@ -304,7 +304,7 @@ func GetAttendanceSessionDetail(c *gin.Context) {
 		LEFT JOIN LATERAL (
 			SELECT status, created_at
 			FROM attendance
-			WHERE student_id = m.id AND session_id = $1
+			WHERE student_id = m.id AND session_id::text = $1::text
 			ORDER BY created_at DESC
 			LIMIT 1
 		) a ON TRUE
@@ -500,7 +500,7 @@ func UpdateAttendanceStatus(c *gin.Context) {
 		SELECT a.id 
 		FROM attendance a
 		WHERE a.student_id = $1 
-			AND a.session_id = $2
+			AND a.session_id::text = $2::text
 			AND (a.created_at)::date = CURRENT_DATE
 		LIMIT 1
 	`, input.StudentID, input.SessionID).Scan(&attendanceID)
@@ -530,7 +530,7 @@ func UpdateAttendanceStatus(c *gin.Context) {
 	}
 
 	// Update attendance_summary
-	_, err = config.DB.Exec(`
+	if _, err := config.DB.Exec(`
 		INSERT INTO attendance_summary 
 		(student_id, nim, student_name, session_id, course_id, course_name, status, 
 		 attendance_date, attendance_time, dosen_name, hari, jam_mulai, jam_selesai)
@@ -544,7 +544,9 @@ func UpdateAttendanceStatus(c *gin.Context) {
 		ON CONFLICT (student_id, session_id) DO UPDATE SET
 			status = $5,
 			attendance_time = NOW()
-	`, input.SessionID, input.Status, courseID, input.StudentID, input.Status)
+	`, input.SessionID, input.Status, courseID, input.StudentID, input.Status); err != nil {
+		log.Printf("[absensi] gagal update attendance_summary (non-fatal): %v", err)
+	}
 
 	rowsAffected, _ := result.RowsAffected()
 
@@ -689,7 +691,7 @@ func CloseAttendanceSession(c *gin.Context) {
 		WHERE mmk.mata_kuliah_kode = $3
 		  AND NOT EXISTS (
 			  SELECT 1 FROM attendance a
-			  WHERE a.student_id = m.id AND a.session_id = $1
+			  WHERE a.student_id = m.id AND a.session_id::text = $1::text
 		  )
 	`, input.SessionID, pertemuanKe, courseID)
 	if err != nil {
@@ -718,7 +720,7 @@ func CloseAttendanceSession(c *gin.Context) {
 			COUNT(DISTINCT CASE WHEN status = 'sakit' THEN id END),
 			COUNT(DISTINCT CASE WHEN status = 'alpa' THEN id END)
 		FROM attendance
-		WHERE session_id = $1
+		WHERE session_id::text = $1::text
 	`, input.SessionID).Scan(&finalAttendanceCount, &hadirCount, &izinCount, &sakitCount, &alpaCount)
 
 	utils.SuccessResponse(c, gin.H{
@@ -781,7 +783,7 @@ func GetActiveSessions(c *gin.Context) {
 			) as total_students
 		FROM attendance_sessions asess
 		JOIN mata_kuliah mk ON asess.course_id = mk.kode
-		LEFT JOIN attendance a ON asess.id = a.session_id
+		LEFT JOIN attendance a ON asess.id::text = a.session_id::text
 		WHERE asess.dosen_id = $1 
 			AND asess.status = 'active' 
 			AND asess.expires_at > NOW()
@@ -1005,7 +1007,7 @@ func GetRiwayatPertemuanDosen(c *gin.Context) {
 			) as total_students
 		FROM attendance_sessions asess
 		JOIN mata_kuliah mk ON asess.course_id = mk.kode
-		LEFT JOIN attendance a ON asess.id = a.session_id
+		LEFT JOIN attendance a ON asess.id::text = a.session_id::text
 		WHERE asess.dosen_id = $1
 	`
 
@@ -1017,12 +1019,18 @@ func GetRiwayatPertemuanDosen(c *gin.Context) {
 	}
 
 	if pertemuanKe != "" {
+		pertemuan, convErr := strconv.Atoi(pertemuanKe)
+		if convErr != nil {
+			utils.ValidationError(c, "pertemuan_ke harus berupa angka (1-16)")
+			return
+		}
 		query += fmt.Sprintf(" AND asess.pertemuan_ke = $%d", len(args)+1)
-		args = append(args, pertemuanKe)
+		args = append(args, pertemuan)
 	}
 
 	query += `
-		GROUP BY asess.id, mk.nama
+		GROUP BY asess.id, asess.course_id, mk.nama, asess.pertemuan_ke,
+		         asess.created_at, asess.expires_at, asess.status
 		ORDER BY asess.created_at DESC
 		LIMIT 50
 	`
@@ -1117,7 +1125,7 @@ func GetRealtimeAttendance(c *gin.Context) {
 		LEFT JOIN LATERAL (
 			SELECT status, created_at
 			FROM attendance
-			WHERE student_id = m.id AND session_id = $1
+			WHERE student_id = m.id AND session_id::text = $1::text
 			ORDER BY created_at DESC
 			LIMIT 1
 		) a ON TRUE

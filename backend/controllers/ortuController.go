@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strconv"
 	"time"
-	
+
 	"nf-student-hub-backend/config"
 	"nf-student-hub-backend/utils"
 
@@ -46,11 +46,9 @@ func GetOrtuProfile(c *gin.Context) {
 	utils.SuccessResponse(c, ortu, "Profile orangtua retrieved")
 }
 
-
 func PayChildInvoice(c *gin.Context) {
 	utils.ErrorResponse(c, http.StatusMethodNotAllowed, "Gunakan endpoint /api/ukt/bayar untuk pembayaran")
 }
-
 
 // GetChildAttendance - Get kehadiran anak dengan detail lengkap
 func GetChildAttendance(c *gin.Context) {
@@ -124,12 +122,12 @@ func GetChildAttendance(c *gin.Context) {
 
 	var attendances []gin.H
 	var summary struct {
-		Total       int `json:"total"`
-		Hadir       int `json:"hadir"`
-		Izin        int `json:"izin"`
-		Sakit       int `json:"sakit"`
-		Alpa        int `json:"alpa"`
-		Persentase  float64 `json:"persentase"`
+		Total      int     `json:"total"`
+		Hadir      int     `json:"hadir"`
+		Izin       int     `json:"izin"`
+		Sakit      int     `json:"sakit"`
+		Alpa       int     `json:"alpa"`
+		Persentase float64 `json:"persentase"`
 	}
 
 	for rows.Next() {
@@ -259,7 +257,7 @@ func GetChildAttendanceToday(c *gin.Context) {
 	var todaySchedule []gin.H
 	for rows.Next() {
 		var kode, mataKuliah, hari, jamMulai, jamSelesai, dosen, statusAbsen, waktuAbsen string
-		
+
 		err := rows.Scan(&kode, &mataKuliah, &hari, &jamMulai, &jamSelesai, &dosen, &statusAbsen, &waktuAbsen)
 		if err != nil {
 			continue
@@ -288,8 +286,8 @@ func GetChildAttendanceToday(c *gin.Context) {
 	`, childID).Scan(&childInfo.Name, &childInfo.NIM)
 
 	utils.SuccessResponse(c, gin.H{
-		"child_info":    childInfo,
-		"hari_ini":      hariIni,
+		"child_info":     childInfo,
+		"hari_ini":       hariIni,
 		"today_schedule": todaySchedule,
 	}, "Today's attendance retrieved successfully")
 }
@@ -325,7 +323,7 @@ func GetChildProfile(c *gin.Context) {
 		JOIN mahasiswa m ON o.child_id = m.id
 		JOIN users u ON m.user_id = u.id
 		WHERE o.user_id = $1
-	`, userID).Scan(&child.ID, &child.Name, &child.NIM, &child.Email, &child.Phone, 
+	`, userID).Scan(&child.ID, &child.Name, &child.NIM, &child.Email, &child.Phone,
 		&child.Address, &child.Faculty, &child.Major, &child.Semester, &child.Photo)
 
 	if err != nil {
@@ -393,14 +391,14 @@ func GetChildAcademicInfo(c *gin.Context) {
 		}
 
 		courses = append(courses, gin.H{
-			"kode":         kode,
-			"nama":         nama,
-			"dosen":        dosen,
-			"sks":          sks,
-			"semester":     semester,
-			"hari":         hari,
-			"jam_mulai":    jamMulai,
-			"jam_selesai":  jamSelesai,
+			"kode":        kode,
+			"nama":        nama,
+			"dosen":       dosen,
+			"sks":         sks,
+			"semester":    semester,
+			"hari":        hari,
+			"jam_mulai":   jamMulai,
+			"jam_selesai": jamSelesai,
 		})
 	}
 
@@ -441,7 +439,7 @@ func GetOrtuStats(c *gin.Context) {
 			END as rate
 		FROM attendance_sessions asess
 		JOIN mahasiswa_mata_kuliah mmk ON asess.course_id = mmk.mata_kuliah_kode
-		LEFT JOIN attendance a ON asess.id = a.session_id AND a.student_id = mmk.mahasiswa_id
+		LEFT JOIN attendance a ON asess.id::text = a.session_id::text AND a.student_id = mmk.mahasiswa_id
 		WHERE mmk.mahasiswa_id = $1
 	`, childID).Scan(&attendanceRate)
 

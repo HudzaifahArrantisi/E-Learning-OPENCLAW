@@ -1,22 +1,3 @@
-#!/bin/bash
-# ============================================================
-# deploy.sh — Deploy E-Learning-OPENCLAW on VPS
-#
-# Run after git clone (first time) or git pull (updates):
-#   chmod +x deploy.sh
-#   ./deploy.sh
-#
-# What it does:
-#   1. Checks Docker is running
-#   2. Checks backend/.env exists
-#   3. Fixes line endings
-#   4. Pulls latest changes from git
-#   5. Builds frontend (React/Vite)
-#   6. Stops old containers & rebuilds backend
-#   7. Reloads nginx
-#   8. Shows status
-# ============================================================
-
 set -e
 
 # Colors

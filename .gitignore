@@ -1,7 +1,4 @@
-# ==========================================
-# 🛑 KEAMANAN & SENSITIVE FILES (PENTING!)
-# ==========================================
-# Jangan pernah hapus bagian ini
+
 .env
 .env.*
 **/.env

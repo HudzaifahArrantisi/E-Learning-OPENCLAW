@@ -5,7 +5,7 @@ import api from '../../services/api'
 import Navbar from '../../components/Navbar'
 import Sidebar from '../../components/Sidebar'
 import useAuth from '../../hooks/useAuth'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion as Motion, AnimatePresence } from 'framer-motion'
 import { 
   FaQrcode, 
   FaCheckCircle, 
@@ -30,6 +30,29 @@ import QrScanner from 'qr-scanner';
 const getCurrentIndonesianDay = () => {
   const dayMap = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu']
   return dayMap[new Date().getDay()]
+}
+
+const normalizeCoursesResponse = (data = {}) => {
+  let rawCourses = []
+  if (Array.isArray(data.courses)) {
+    rawCourses = data.courses
+  } else if (Array.isArray(data.jadwal)) {
+    rawCourses = data.jadwal
+  }
+
+  const courses = rawCourses.map((course) => ({
+    ...course,
+    active_session: Boolean(course.active_session || course.is_active_session),
+    status_absen: course.status_absen || 'belum_absen',
+    waktu_absen: course.waktu_absen || '',
+    total_mahasiswa: course.total_mahasiswa ?? course.total_students ?? 0,
+  }))
+
+  return {
+    ...data,
+    courses,
+    total_courses: data.total_courses ?? data.total ?? courses.length,
+  }
 }
 
 class ScannerErrorBoundary extends React.Component {
@@ -86,19 +109,15 @@ const ScanAbsensiContent = () => {
         return Promise.resolve({ hari: '', courses: [], total_courses: 0 })
       }
 
-      return api.getMahasiswaCoursesByDay(day).then(res => {
-        console.log('Courses by day:', res.data)
+      const isToday = day === getCurrentIndonesianDay()
+      const request = isToday ? api.getTodaySchedule() : api.getMahasiswaCoursesByDay(day)
+
+      return request.then(res => {
         const data = res.data.data || {}
-        if (!Array.isArray(data.courses) && Array.isArray(data.jadwal)) {
-          return {
-            ...data,
-            courses: data.jadwal
-          }
-        }
-        return {
+        return normalizeCoursesResponse({
           ...data,
-          courses: Array.isArray(data.courses) ? data.courses : []
-        }
+          hari: data.hari || day,
+        })
       }).catch(error => {
         console.error('Failed fetching courses by day:', error)
         return {
@@ -164,60 +183,7 @@ const ScanAbsensiContent = () => {
     }
   })
 
-  React.useEffect(() => {
-    let activeScanner = null
-
-    if (showQRScanner && videoRef.current) {
-      const scanner = new QrScanner(
-        videoRef.current,
-        result => handleScanResult(result),
-        {
-          preferredCamera: 'environment',
-          highlightScanRegion: true,
-          highlightCodeOutline: true,
-        }
-      )
-
-      scanner.start()
-        .then(() => {
-          setQrScanner(scanner)
-          setIsScanning(true)
-        })
-        .catch(err => {
-          console.error('Error starting scanner:', err)
-          setScannerMessage({
-            type: 'error',
-            text: err.name === 'NotAllowedError'
-              ? 'Izinkan akses kamera untuk scan QR Code'
-              : `Gagal membuka kamera: ${err.message || 'Kamera tidak tersedia'}`
-          })
-          scanner.stop()
-          scanner.destroy()
-        })
-
-      activeScanner = scanner
-    }
-
-    return () => {
-      if (activeScanner) {
-        activeScanner.stop()
-        activeScanner.destroy()
-      }
-      if (videoRef.current?.srcObject) {
-        videoRef.current.srcObject.getTracks().forEach(track => track.stop())
-        videoRef.current.srcObject = null
-      }
-      setQrScanner(null)
-      setIsScanning(false)
-    }
-  }, [showQRScanner])
-
-  const stopScanning = () => {
-    setShowQRScanner(false)
-    setScannerMessage(null)
-  }
-
-  const handleScanResult = (result) => {
+  function handleScanResult(result) {
     console.log('QR Scan result:', result)
 
     if (isProcessingScanRef.current || scanAttendanceMutation.isPending) {
@@ -285,14 +251,68 @@ const ScanAbsensiContent = () => {
     setScannerMessage({ type: 'loading', text: 'QR terbaca. Sedang mencatat kehadiran...' })
     qrScanner?.stop()
     setIsScanning(false)
-    scanAttendanceMutation.mutate({ 
+    scanAttendanceMutation.mutate({
       session_token: sessionToken,
-      course_id: resolvedCourseId 
+      course_id: resolvedCourseId
     }, {
       onSettled: () => {
         isProcessingScanRef.current = false
       }
     })
+  }
+
+  React.useEffect(() => {
+    let activeScanner = null
+    const videoElement = videoRef.current
+
+    if (showQRScanner && videoElement) {
+      const scanner = new QrScanner(
+        videoElement,
+        result => handleScanResult(result),
+        {
+          preferredCamera: 'environment',
+          highlightScanRegion: true,
+          highlightCodeOutline: true,
+        }
+      )
+
+      scanner.start()
+        .then(() => {
+          setQrScanner(scanner)
+          setIsScanning(true)
+        })
+        .catch(err => {
+          console.error('Error starting scanner:', err)
+          setScannerMessage({
+            type: 'error',
+            text: err.name === 'NotAllowedError'
+              ? 'Izinkan akses kamera untuk scan QR Code'
+              : `Gagal membuka kamera: ${err.message || 'Kamera tidak tersedia'}`
+          })
+          scanner.stop()
+          scanner.destroy()
+        })
+
+      activeScanner = scanner
+    }
+
+    return () => {
+      if (activeScanner) {
+        activeScanner.stop()
+        activeScanner.destroy()
+      }
+      if (videoElement?.srcObject) {
+        videoElement.srcObject.getTracks().forEach(track => track.stop())
+        videoElement.srcObject = null
+      }
+      setQrScanner(null)
+      setIsScanning(false)
+    }
+  }, [showQRScanner])
+
+  const stopScanning = () => {
+    setShowQRScanner(false)
+    setScannerMessage(null)
   }
 
   // Render status badge
@@ -343,7 +363,7 @@ const ScanAbsensiContent = () => {
           <div className="p-4 sm:p-6 lg:p-10 max-w-7xl mx-auto">
 
             {/* Header Section */}
-            <motion.div 
+            <Motion.div
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4 mb-6 lg:gap-8 lg:mb-12"
@@ -381,12 +401,12 @@ const ScanAbsensiContent = () => {
                   <span>Mulai Scan QR</span>
                 </button>
               </div>
-            </motion.div>
+            </Motion.div>
 
             {/* Scan Result Notification */}
             <AnimatePresence>
               {scanResult && (
-                <motion.div
+                <Motion.div
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -6 }}
@@ -429,7 +449,7 @@ const ScanAbsensiContent = () => {
                   >
                     ✕
                   </button>
-                </motion.div>
+                </Motion.div>
               )}
             </AnimatePresence>
 
@@ -442,7 +462,7 @@ const ScanAbsensiContent = () => {
               </div>
             </div>
 
-            <motion.div 
+            <Motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
@@ -474,7 +494,7 @@ const ScanAbsensiContent = () => {
                   </button>
                 ))}
               </div>
-            </motion.div>
+            </Motion.div>
 
             {/* Mata Kuliah Section */}
             <div className="flex items-center justify-between mb-8">
@@ -499,7 +519,7 @@ const ScanAbsensiContent = () => {
             ) : coursesByDay?.courses && coursesByDay.courses.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
                 {coursesByDay.courses.map((course, index) => (
-                  <motion.div 
+                  <Motion.div
                     key={index}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -592,7 +612,7 @@ const ScanAbsensiContent = () => {
                         </button>
                       </div>
                     </div>
-                  </motion.div>
+                  </Motion.div>
                 ))}
               </div>
             ) : (
@@ -615,13 +635,13 @@ const ScanAbsensiContent = () => {
       {/* QR Scanner Modal */}
       <AnimatePresence>
         {showQRScanner && (
-          <motion.div
+          <Motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 bg-lp-text/30 backdrop-blur-md flex items-center justify-center z-[90] p-4"
           >
-            <motion.div
+            <Motion.div
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -685,21 +705,21 @@ const ScanAbsensiContent = () => {
                   )}
                 </div>
               </div>
-            </motion.div>
-          </motion.div>
+            </Motion.div>
+          </Motion.div>
         )}
       </AnimatePresence>
 
       {/* History Modal */}
       <AnimatePresence>
         {showHistoryModal && selectedCourse && (
-          <motion.div
+          <Motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 bg-lp-text/30 backdrop-blur-md flex items-center justify-center z-[90] p-4"
           >
-            <motion.div
+            <Motion.div
               initial={{ opacity: 0, y: 50 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 50 }}
@@ -833,8 +853,8 @@ const ScanAbsensiContent = () => {
                   Tutup
                 </button>
               </div>
-            </motion.div>
-          </motion.div>
+            </Motion.div>
+          </Motion.div>
         )}
       </AnimatePresence>
     </div>

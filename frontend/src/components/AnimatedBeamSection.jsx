@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState, useId } from "react"
 // eslint-disable-next-line no-unused-vars
-import { AnimatePresence, motion } from "framer-motion"
+import { motion } from "framer-motion"
+import minimaxImg from "../assets/minimax.webp"
+import chatgptImg from "../assets/chatgpt.webp"
 
 /* ───────────────── palette & timing tokens ───────────────── */
 
@@ -140,18 +142,38 @@ function AnimatedBeam({
    FlowNode — a single node in the system flow
    ══════════════════════════════════════════════════════════════ */
 
+/* ───────────────── AI Icon Components ───────────────── */
+
+const OpenAIIcon = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-5.5 h-5.5 text-[#10A37F]">
+    <path d="M21.7 10.3c.1-.4.2-.9.2-1.3 0-1.9-1.2-3.6-3-4.2-.3-.1-.7-.2-1-.2-.4 0-.8.1-1.2.2C15.8 3.5 14 2.3 12 2.3c-.7 0-1.4.2-2 .5-.3-.4-.8-.7-1.3-.9C7.4 1.5 5.8 2 4.6 3.1c-.6.6-1 1.3-1.2 2.1-.5.1-1 .4-1.4.8C.8 7.2.3 9.1.7 11c.2.8.6 1.5 1.2 2-.1.4-.2.9-.2 1.3 0 1.9 1.2 3.6 3 4.2.3.1.7.2 1 .2.4 0 .8-.1 1.2-.2.9 1.3 2.7 2.5 4.7 2.5.7 0 1.4-.2 2-.5.3.4.8.7 1.3.9 1.3.4 2.9-.1 4.1-1.2.6-.6 1-1.3 1.2-2.1.5-.1 1-.4 1.4-.8 1.2-1.2 1.7-3.1 1.3-5-.2-.8-.6-1.5-1.2-2zm-9.7 9.4c-.9 0-1.8-.4-2.4-1l5.5-3.2c.4-.2.6-.7.6-1.2v-5.7l1.7 1c.5.3.8.8.8 1.4v6.3c0 .8-.7 1.4-1.5 1.4H12zm-6.2-3.6c-.5-.3-.8-.8-.8-1.4V8.4c0-.8.7-1.4 1.5-1.4h4.7v6.4c0 .4.2.9.6 1.2l5.5 3.2-5.5 3.2c-.4.2-.9.2-1.3 0l-4.7-2.8zm-.8-7.7c0-.6.3-1.1.8-1.4l5.5-3.2c.4-.2.9-.2 1.3 0l4.7 2.8c.5.3.8.8.8 1.4v6.3c0 .8-.7 1.4-1.5 1.4h-4.7V8.9c0-.4-.2-.9-.6-1.2L6.8 5.5l-.2-.1v3.1zm11.7-2.8c.5.3.8.8.8 1.4v6.3c0 .8-.7 1.4-1.5 1.4h-4.7V7.5c0-.4-.2-.9-.6-1.2L6.2 3.1C7.4 2.4 9 2.5 10.1 3.2l4.7 2.8c.4.2.8.5 1 .9zM7.4 8.2l5.5-3.2c.4-.2.9-.2 1.3 0l4.7 2.8c.5.3.8.8.8 1.4v6.3c0 .8-.7 1.4-1.5 1.4h-4.7V10.5c0-.4-.2-.9-.6-1.2L7.4 8.2z" fill="currentColor"/>
+  </svg>
+)
+
+const MiniMaxIcon = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-5.5 h-5.5 text-[#FF5A5F]">
+    <path d="M12 2L14.8 8.4L21.2 11.2L14.8 14L12 20.4L9.2 14L2.8 11.2L9.2 8.4L12 2Z" fill="currentColor"/>
+    <path d="M18.4 17.6L19.5 20.1L22 21.2L19.5 22.3L18.4 24.8L17.3 22.3L14.8 21.2L17.3 20.1L18.4 17.6Z" fill="currentColor" opacity="0.6"/>
+  </svg>
+)
+
+/* ══════════════════════════════════════════════════════════════
+   FlowNode — a single node in the system flow
+   ══════════════════════════════════════════════════════════════ */
+
 const FlowNode = ({ className, innerRef, icon, label, sublabel, color, stepNum, variant = "default", active, delay = 0 }) => {
   const isHub = variant === "hub"
   const isCard = variant === "card"
+  const isMini = variant === "mini"
 
   const renderIcon = () => {
-    if (typeof icon === "string" && (icon.startsWith("/") || icon.includes("."))) {
+    if (typeof icon === "string" && (icon.startsWith("/") || icon.includes(".") || icon.startsWith("data:"))) {
       return (
         <img
           src={icon}
           alt={label || "icon"}
           className={cn(
-            isHub ? "h-full w-full object-contain p-1.5" : "h-6 w-6 object-contain"
+            isHub ? "h-full w-full object-contain p-1.5" : isMini ? "h-7 w-7 sm:h-8 sm:w-8 object-contain rounded-full" : "h-6 w-6 object-contain"
           )}
           draggable="false"
         />
@@ -163,8 +185,8 @@ const FlowNode = ({ className, innerRef, icon, label, sublabel, color, stepNum, 
   return (
     <motion.div
       className={cn(
-        "flex flex-col items-center gap-2 relative z-10 select-none",
-        isCard ? "w-full sm:w-[220px]" : "w-28 sm:w-36",
+        "flex flex-col items-center gap-1.5 relative z-10 select-none",
+        isCard ? "w-full max-w-[155px] sm:max-w-none sm:w-[220px]" : isMini ? "w-16 sm:w-20" : "w-28 sm:w-36",
         className
       )}
       initial={{ opacity: 0, y: 22, scale: 0.85 }}
@@ -184,24 +206,44 @@ const FlowNode = ({ className, innerRef, icon, label, sublabel, color, stepNum, 
       {isCard ? (
         <div
           ref={innerRef}
-          className="w-full p-3.5 rounded-2xl border bg-white/95 shadow-md flex items-start gap-2.5 text-left transition-all duration-300 hover:shadow-lg"
+          className="w-full p-2.5 sm:p-3.5 rounded-2xl border bg-white/95 shadow-md flex items-start gap-1.5 sm:gap-2.5 text-left transition-all duration-300 hover:shadow-lg"
           style={{
             borderColor: color ? `${color}35` : C.border,
             boxShadow: `0 8px 24px -6px ${color}12, 0 2px 8px rgba(0,0,0,0.03)`,
           }}
         >
-          <span className="text-[22px] shrink-0 mt-0.5">{renderIcon()}</span>
+          <span className="text-[18px] sm:text-[22px] shrink-0 mt-0.5">{renderIcon()}</span>
           <div className="min-w-0">
-            <span className="block text-[11.5px] font-bold text-lp-text leading-tight">
+            <span className="block text-[10px] sm:text-[11.5px] font-bold text-lp-text leading-tight">
               {label}
             </span>
             {sublabel && (
-              <span className="block text-[9.5px] text-lp-text2 font-light mt-1.5 leading-snug">
+              <span className="block text-[8.5px] sm:text-[9.5px] text-lp-text2 font-light mt-1 leading-snug">
                 {sublabel}
               </span>
             )}
           </div>
         </div>
+      ) : isMini ? (
+        <>
+          <div
+            ref={innerRef}
+            className="relative flex items-center justify-center w-11 h-11 sm:w-13 sm:h-13 rounded-full border bg-white shadow-sm transition-all duration-300 hover:scale-105"
+            style={{
+              borderColor: color ? `${color}45` : C.border,
+              boxShadow: `0 4px 12px -3px ${color}25, 0 2px 4px rgba(0,0,0,0.02)`,
+            }}
+          >
+            <span className="text-[18px] sm:text-[20px] flex items-center justify-center">
+              {renderIcon()}
+            </span>
+          </div>
+          <div className="text-center w-full">
+            <span className="block text-[10px] sm:text-[10.5px] font-extrabold text-lp-text tracking-tight leading-tight">
+              {label}
+            </span>
+          </div>
+        </>
       ) : (
         <>
           <div
@@ -252,79 +294,7 @@ const FlowNode = ({ className, innerRef, icon, label, sublabel, color, stepNum, 
 }
 
 
-/* ══════════════════════════════════════════════════════════════
-   MessageBubble — animated chat-style message that appears
-   step by step during the flow demo
-   ══════════════════════════════════════════════════════════════ */
 
-const messages = [
-  { step: 1, icon: "👨‍🏫", text: "Dosen menginput tugas baru di Student Hub", color: C.accent, side: "left" },
-  { step: 2, icon: "🗄️", text: "Tugas tersimpan ke database sistem", color: C.green, side: "right" },
-  { step: 3, icon: "📖", text: "OpenClaw mendeteksi & membaca data tugas baru dari database", color: C.amber, side: "left" },
-  { step: 3, icon: "⚙️", text: "Rule Engine memproses jadwal & tenggat waktu", color: C.red, side: "right" },
-  { step: 4, icon: "🦀", text: "OpenClaw Core mengonsolidasikan data untuk dikirim", color: C.claw, side: "right" },
-  { step: 5, icon: "📨", text: "Notifikasi dikirim ke Telegram mahasiswa", color: C.tg, side: "left" },
-  { step: 6, icon: "✅", text: "Mahasiswa membaca notif tugas yang dikirim dosen", color: C.green, side: "right" },
-]
-
-function MessageTimeline({ currentStep, active }) {
-  return (
-    <div className="flex flex-col gap-3 mt-8 sm:mt-10 w-full max-w-[560px] mx-auto px-1 sm:px-0 relative z-10">
-      <AnimatePresence>
-        {messages.filter(m => m.step <= currentStep && active).map((msg) => (
-          <motion.div
-            key={msg.step}
-            initial={{ opacity: 0, x: msg.side === "left" ? -25 : 25, y: 12, scale: 0.94 }}
-            animate={{ opacity: 1, x: 0, y: 0, scale: 1 }}
-            transition={{ type: "spring", stiffness: 280, damping: 24 }}
-            className={cn(
-              "flex items-start gap-3",
-              msg.side === "right" && "flex-row-reverse"
-            )}
-          >
-            {/* Icon avatar */}
-            <span className="flex-shrink-0 w-8.5 h-8.5 rounded-full flex items-center justify-center text-[15px] shadow-sm border bg-white"
-              style={{
-                borderColor: `${msg.color}25`,
-              }}
-            >
-              {msg.icon}
-            </span>
-
-            {/* Bubble */}
-            <div className={cn(
-              "relative px-4 py-3 rounded-2xl max-w-[80%] sm:max-w-[75%] border",
-              msg.side === "left"
-                ? "rounded-bl-[6px] bg-white border-black/[0.05] shadow-[0_4px_16px_rgba(0,0,0,0.03)]"
-                : "rounded-br-[6px] bg-white border-black/[0.05] shadow-[0_4px_16px_rgba(0,0,0,0.03)]"
-            )}
-            >
-              {/* Accent strip */}
-              <span className="absolute inset-y-2 w-[3px] rounded-full"
-                style={{
-                  background: msg.color,
-                  [msg.side === "left" ? "left" : "right"]: "0px",
-                  opacity: 0.85,
-                }}
-              />
-              <div className="flex items-center gap-1.5 mb-1.5">
-                <span className="inline-block w-1.5 h-1.5 rounded-full animate-pulse"
-                  style={{ background: msg.color }} />
-                <span className="text-[9px] font-bold uppercase tracking-[0.12em]"
-                  style={{ color: msg.color }}>
-                  Langkah {msg.step}
-                </span>
-              </div>
-              <p className="text-[11.5px] sm:text-[12.5px] font-normal text-lp-text leading-relaxed">
-                {msg.text}
-              </p>
-            </div>
-          </motion.div>
-        ))}
-      </AnimatePresence>
-    </div>
-  )
-}
 
 
 /* ══════════════════════════════════════════════════════════════
@@ -337,14 +307,15 @@ export default function AnimatedBeamSection() {
   /* Node refs */
   const dosenRef     = useRef(null)
   const dbRef        = useRef(null)
-  const clawRef      = useRef(null)
   const readDbRef    = useRef(null)
+  const clawRef      = useRef(null)
   const ruleRef      = useRef(null)
+  const openaiRef    = useRef(null)
+  const minimaxRef   = useRef(null)
   const telegramRef  = useRef(null)
   const mhsRef       = useRef(null)
 
   const [active, setActive] = useState(false)
-  const [step, setStep] = useState(0)
   const [isMobile, setIsMobile] = useState(false)
 
   /* Track screen size for dynamic curves */
@@ -366,30 +337,29 @@ export default function AnimatedBeamSection() {
     return () => obs.disconnect()
   }, [])
 
-  /* Step-by-step message reveal */
-  useEffect(() => {
-    if (!active) return
-    const timer = setInterval(() => {
-      setStep(s => {
-        if (s >= 6) { clearInterval(timer); return s }
-        return s + 1
-      })
-    }, 1250)
-    return () => clearInterval(timer)
-  }, [active])
+
 
   /* Beam definitions:  from → to, curvature, delay, color */
   const beams = [
-    // Main horizontal flow
+    // Dosen -> Database (vertical straight)
     { from: dosenRef,    to: dbRef,       curvature: 0,                     delay: 0,    color: C.accent },
-    { from: dbRef,       to: readDbRef,   curvature: isMobile ? -15 : -35,  delay: 0.4,  color: C.amber,  dashed: true },
-    { from: dbRef,       to: ruleRef,     curvature: isMobile ? 15 : 35,    delay: 0.6,  color: C.red,    dashed: true },
-    { from: readDbRef,   to: clawRef,     curvature: isMobile ? -15 : -35,  delay: 0.8,  color: C.amber,  dashed: true },
-    { from: ruleRef,     to: clawRef,     curvature: isMobile ? 15 : 35,    delay: 1.0,  color: C.red,    dashed: true },
-    { from: clawRef,     to: telegramRef, curvature: 0,                     delay: 1.2,  color: C.tg     },
-    { from: telegramRef, to: mhsRef,      curvature: 0,                     delay: 1.6,  color: C.tg     },
+    // Database -> Read Database (diagonal down-left)
+    { from: dbRef,       to: readDbRef,   curvature: isMobile ? 0 : -20,    delay: 1.0,  color: C.amber,  dashed: true },
+    // Database -> Rule Engine (diagonal down-right)
+    { from: dbRef,       to: ruleRef,     curvature: isMobile ? 0 : 20,     delay: 1.0,  color: C.red,    dashed: true },
+    // Read Database -> OpenClaw Core (diagonal down-right)
+    { from: readDbRef,   to: clawRef,     curvature: 0,                     delay: 2.2,  color: C.amber,  dashed: true },
+    // Rule Engine -> OpenClaw Core (diagonal down-left)
+    { from: ruleRef,     to: clawRef,     curvature: 0,                     delay: 2.2,  color: C.red,    dashed: true },
+    // OpenClaw Core -> OpenAI (diagonal down-left)
+    { from: clawRef,     to: openaiRef,   curvature: 0,                     delay: 3.4,  color: "#10A37F" },
+    // OpenClaw Core -> Minimax (diagonal down-right)
+    { from: clawRef,     to: minimaxRef,  curvature: 0,                     delay: 3.4,  color: "#FF5A5F" },
+    // OpenClaw Core -> Telegram (vertical straight)
+    { from: clawRef,     to: telegramRef, curvature: 0,                     delay: 4.6,  color: C.tg     },
+    // Telegram -> Mahasiswa (vertical straight)
+    { from: telegramRef, to: mhsRef,      curvature: 0,                     delay: 5.8,  color: C.green  },
   ]
-
   return (
     <section className="py-12 sm:py-16 relative overflow-hidden bg-transparent">
 
@@ -446,8 +416,8 @@ export default function AnimatedBeamSection() {
                 className="area-read"
                 innerRef={readDbRef}
                 icon="📖"
-                label="Baca Database"
-                sublabel="OpenClaw mendeteksi tugas baru"
+                label="Membaca Tugas"
+                sublabel="Openclaw membaca tugas upload dari dosen lewat database"
                 color={C.amber}
                 variant="card"
                 stepNum="3"
@@ -473,12 +443,34 @@ export default function AnimatedBeamSection() {
                 innerRef={ruleRef}
                 icon="⚙️"
                 label="Rule Engine"
-                sublabel="Menghitung tenggat & reminder"
+                sublabel="Openclaw membuat Rule engine untuk tugas"
                 color={C.red}
                 variant="card"
-                stepNum="3"
+                stepNum="4"
                 active={active}
                 delay={0.45}
+              />
+
+              <FlowNode
+                className="area-openai"
+                innerRef={openaiRef}
+                icon={chatgptImg}
+                label="OpenAI"
+                color="#10A37F"
+                variant="mini"
+                active={active}
+                delay={0.7}
+              />
+
+              <FlowNode
+                className="area-minimax"
+                innerRef={minimaxRef}
+                icon={minimaxImg}
+                label="Minimax"
+                color="#FF5A5F"
+                variant="mini"
+                active={active}
+                delay={0.7}
               />
 
               <FlowNode
@@ -489,12 +481,12 @@ export default function AnimatedBeamSection() {
                     <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z" fill="#26A5E4"/>
                   </svg>
                 }
-                label="Telegram Mahasiswa"
-                sublabel="Notif disalurkan ke grup"
+                label="Telegram"
+                sublabel="Notif dikirim ke Telegram"
                 color={C.tg}
-                stepNum="5"
+                stepNum="6"
                 active={active}
-                delay={0.75}
+                delay={0.8}
               />
 
               <FlowNode
@@ -504,7 +496,7 @@ export default function AnimatedBeamSection() {
                 label="Mahasiswa"
                 sublabel="Membaca reminder tugas"
                 color={C.green}
-                stepNum="6"
+                stepNum="7"
                 active={active}
                 delay={0.9}
               />
@@ -527,43 +519,45 @@ export default function AnimatedBeamSection() {
           </div>
         </div>
 
-        {/* ─────────── Message Timeline ─────────── */}
-        <MessageTimeline currentStep={step} active={active} />
+
       </div>
 
       {/* Styles for Grid layout and keyframes */}
       <style>{`
-        /* Mobile Layout: 2-column grid stack */
+        /* Mobile Layout: 3-column layout matching the diagram */
         .flow-grid {
           display: grid;
-          gap: 2.2rem 1rem;
+          gap: 1.6rem 0.5rem;
           justify-items: center;
           align-items: center;
           grid-template-areas:
-            "dosen dosen"
-            "db db"
-            "read rule"
-            "claw claw"
-            "tg tg"
-            "mhs mhs";
+            ". dosen ."
+            ". db ."
+            "read . rule"
+            ". claw ."
+            "openai . minimax"
+            ". tg ."
+            ". mhs .";
+          grid-template-columns: 1.2fr 0.6fr 1.2fr;
         }
 
-        /* Desktop Layout: 5 columns, 3 rows */
+        /* Desktop Layout: 7 columns, 3 rows */
         @media (min-width: 768px) {
           .flow-grid {
             grid-template-areas:
-              ". . read . ."
-              "dosen db claw tg mhs"
-              ". . rule . .";
-            grid-template-columns: repeat(5, 1fr);
+              ". . . read . . ."
+              "dosen db . claw . tg mhs"
+              ". . openai rule minimax . .";
+            grid-template-columns: 1.1fr 1.1fr 0.8fr 1.6fr 0.8fr 1.1fr 1.1fr;
             grid-template-rows: auto auto auto;
-            gap: 3.5rem 1.8rem;
+            gap: 2.5rem 1.2rem;
+            align-items: center;
           }
         }
 
         @media (min-width: 1024px) {
           .flow-grid {
-            gap: 4.2rem 2.8rem;
+            gap: 3.2rem 1.8rem;
           }
         }
 
@@ -573,8 +567,18 @@ export default function AnimatedBeamSection() {
         .area-read { grid-area: read; }
         .area-claw { grid-area: claw; }
         .area-rule { grid-area: rule; }
+        .area-openai { grid-area: openai; }
+        .area-minimax { grid-area: minimax; }
         .area-tg { grid-area: tg; }
         .area-mhs { grid-area: mhs; }
+
+        @media (min-width: 768px) {
+          .area-openai,
+          .area-minimax {
+            align-self: start;
+            margin-top: -3.2rem;
+          }
+        }
 
         /* Hub glow animation pulse ring */
         @keyframes hubPing {
