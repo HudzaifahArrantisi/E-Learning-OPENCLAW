@@ -7,6 +7,14 @@ const api = axios.create({
   timeout: 30000,
 })
 
+const normalizeRequiredPathId = (value, fieldName) => {
+  const id = String(value ?? '').trim()
+  if (!id) {
+    throw new Error(`${fieldName} wajib diisi`)
+  }
+  return encodeURIComponent(id)
+}
+
 // ===================== INTERCEPTORS =====================
 api.interceptors.request.use(
   (config) => {
@@ -49,8 +57,8 @@ api.deleteConversation = (conversationId) =>
 // Messages
 api.getMessages = (conversationId, params = {}) => 
   api.get(`/api/chat/conversations/${conversationId}/messages`, { params })
-api.sendMessage = (conversationId, data) => 
-  api.post(`/api/chat/conversations/${conversationId}/messages`, data)
+api.sendMessage = (conversationId, data) =>
+  api.post(`/api/chat/conversations/${normalizeRequiredPathId(conversationId, 'conversationId')}/messages`, data)
 api.markMessagesAsRead = (conversationId) => 
   api.post(`/api/chat/conversations/${conversationId}/messages/read`)
 api.deleteMessage = (messageId) => 

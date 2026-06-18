@@ -1,6 +1,6 @@
 // components/SharePostModal.jsx
 import React, { useState, useEffect, useRef, useCallback } from 'react'
-import { AnimatePresence, motion } from 'framer-motion'
+import { motion as Motion } from 'framer-motion'
 import api from '../services/api'
 import useAuth from '../hooks/useAuth'
 import { resolveBackendAssetUrl } from '../utils/assetUrl'
@@ -11,6 +11,25 @@ const getInitials = (name) => {
   const parts = name.trim().split(/\s+/)
   if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase()
   return parts[0].substring(0, 2).toUpperCase()
+}
+
+const getConversationId = (conversation) => {
+  if (!conversation) return ''
+  if (typeof conversation === 'string' || typeof conversation === 'number') {
+    return String(conversation).trim()
+  }
+
+  return String(
+    conversation.id ||
+    conversation.public_id ||
+    conversation.conversation_id ||
+    ''
+  ).trim()
+}
+
+const getConversationIdFromResponse = (response) => {
+  const payload = response?.data?.data ?? response?.data
+  return getConversationId(payload)
 }
 
 const SharePostModal = ({ post, onClose }) => {
@@ -52,7 +71,8 @@ const SharePostModal = ({ post, onClose }) => {
       try {
         const r = await api.getConversations()
         if (r.data?.success) {
-          setConversations(r.data.data || [])
+          const validConversations = (r.data.data || []).filter(conv => getConversationId(conv))
+          setConversations(validConversations)
         }
       } catch (e) {
         console.error('Load conversations for share:', e)
@@ -66,14 +86,18 @@ const SharePostModal = ({ post, onClose }) => {
   // Debounced user search
   useEffect(() => {
     if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current)
-    if (!searchQuery.trim()) {
-      setSearchResults([])
-      return
-    }
-    setSearching(true)
+    const query = searchQuery.trim()
+
     searchTimeoutRef.current = setTimeout(async () => {
+      if (!query) {
+        setSearchResults([])
+        setSearching(false)
+        return
+      }
+
+      setSearching(true)
       try {
-        const r = await api.searchUsers(searchQuery, '')
+        const r = await api.searchUsers(query, '')
         if (r.data?.success) {
           // Exclude self
           const results = (r.data.data || []).filter(u => u.id !== user?.id)
@@ -127,7 +151,12 @@ const SharePostModal = ({ post, onClose }) => {
     const promises = selectedTargets.map(async (target) => {
       try {
         if (target.type === 'conversation') {
-          await api.sendMessage(target.targetId, {
+          const conversationId = getConversationId(target.targetId || target.id)
+          if (!conversationId) {
+            throw new Error('Conversation ID kosong')
+          }
+
+          await api.sendMessage(conversationId, {
             content: buildSharePayload(),
             message_type: 'text',
           })
@@ -135,7 +164,11 @@ const SharePostModal = ({ post, onClose }) => {
           // Create or get existing private conversation
           const r = await api.createConversation({ type: 'private', participants: [target.targetId] })
           if (r.data?.success) {
-            const convId = r.data.data
+            const convId = getConversationIdFromResponse(r)
+            if (!convId) {
+              throw new Error('Conversation ID kosong dari server')
+            }
+
             await api.sendMessage(convId, {
               content: buildSharePayload(),
               message_type: 'text',
@@ -191,10 +224,11 @@ const SharePostModal = ({ post, onClose }) => {
   // Filter conversations by search query
   const filteredConversations = searchQuery.trim()
     ? conversations.filter(c => {
+        if (!getConversationId(c)) return false
         const name = (getConvName(c) || '').toLowerCase()
         return name.includes(searchQuery.trim().toLowerCase())
       })
-    : conversations.filter(c => c.last_message) // Only show convos with messages
+    : conversations.filter(c => getConversationId(c) && c.last_message) // Only show convos with messages
 
   // Post preview card
   const postPreviewUrl = (() => {
@@ -242,7 +276,7 @@ const SharePostModal = ({ post, onClose }) => {
       className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-end sm:items-center justify-center z-[100] p-0 sm:p-4"
       onClick={onClose}
     >
-      <motion.div
+      <Motion.div
         initial={{ opacity: 0, y: 50, scale: 0.97 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 50, scale: 0.97 }}
@@ -333,14 +367,15 @@ const SharePostModal = ({ post, onClose }) => {
                     Percakapan
                   </div>
                   {filteredConversations.map(conv => {
+                    const convId = getConversationId(conv)
                     const convName = getConvName(conv)
                     const initials = getInitials(convName)
-                    const isSelected = selectedTargets.some(t => t.id === conv.id)
-                    const status = sendStatus[conv.id] || 'idle'
+                    const isSelected = selectedTargets.some(t => t.id === convId)
+                    const status = sendStatus[convId] || 'idle'
                     return (
                       <div
-                        key={conv.id}
-                        onClick={() => toggleTarget({ id: conv.id, type: 'conversation', targetId: conv.id, name: convName })}
+                        key={convId}
+                        onClick={() => toggleTarget({ id: convId, type: 'conversation', targetId: convId, name: convName })}
                         className="flex items-center gap-3 px-5 py-2.5 hover:bg-gray-50 active:bg-gray-100 transition-colors cursor-pointer select-none"
                       >
                         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#BAC6D1] to-[#A2ADB8] text-white flex items-center justify-center text-[13px] font-bold flex-shrink-0">
@@ -455,7 +490,7 @@ const SharePostModal = ({ post, onClose }) => {
             </div>
           )}
         </div>
-      </motion.div>
+      </Motion.div>
     </div>
   )
 }

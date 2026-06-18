@@ -1302,7 +1302,7 @@ const ChatPage = ({ role }) => {
                                     : `bg-[#E9E9EB] text-black ${isLastInSequence ? 'rounded-[18px] rounded-bl-[4px]' : 'rounded-[18px]'}`
                                 }`}>
                                   {msg.message_type === 'image' ? (
-                                    <img src={resolveBackendAssetUrl(msg.file_url)} alt={msg.content} className="max-w-xs md:max-w-md rounded-xl shadow-sm cursor-pointer hover:opacity-95 transition-opacity" onClick={() => window.open(resolveBackendAssetUrl(msg.file_url), '_blank')} />
+                                    <img src={resolveBackendAssetUrl(msg.file_url)} alt={msg.content} className="max-w-[200px] md:max-w-[280px] max-h-[200px] md:max-h-[280px] object-contain rounded-xl shadow-sm cursor-pointer hover:opacity-95 transition-opacity" onClick={() => window.open(resolveBackendAssetUrl(msg.file_url), '_blank')} />
                                   ) : msg.message_type === 'file' ? (
                                     <a href={resolveBackendAssetUrl(msg.file_url)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 py-1 text-inherit hover:opacity-85 no-underline">
                                       <div className="w-10 h-10 rounded-lg bg-black/5 flex items-center justify-center text-lg flex-shrink-0">
