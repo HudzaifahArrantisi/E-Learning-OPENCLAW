@@ -29,7 +29,7 @@ const useProfile = (expectedRole = null, options = {}) => {
         throw new Error(error.response?.data?.error || 'Gagal memuat profil')
       }
     },
-    enabled: !!token,
+    enabled: !!token && options.enabled !== false,
     staleTime: 1000 * 30,
     retry: 2,
     refetchOnWindowFocus: false,

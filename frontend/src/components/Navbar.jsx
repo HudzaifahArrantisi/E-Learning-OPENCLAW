@@ -5,9 +5,9 @@ import useAuth from '../hooks/useAuth';
 import useProfile from '../hooks/useProfile';
 import { getProfilePhotoUrl } from '../utils/profileUtils';
 
-const Navbar = ({ onMenuToggle, onToggleSidebar }) => {
+const Navbar = ({ onMenuToggle, onToggleSidebar, skipProfileFetch }) => {
   const { user: authUser } = useAuth();
-  const { data: profile } = useProfile();
+  const { data: profile } = useProfile(null, { enabled: !skipProfileFetch });
 
   const handleMenuToggle = () => {
     const toggleHandler = onMenuToggle || onToggleSidebar;

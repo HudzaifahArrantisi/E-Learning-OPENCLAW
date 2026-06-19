@@ -428,7 +428,7 @@ const AbsensiDosen = () => {
       <div className="flex-1 flex flex-col min-w-0 relative z-10">
 
         {/* Navbar */}
-        <Navbar user={user} onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
+        <Navbar user={user} onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} skipProfileFetch={true} />
 
         {/* Content */}
         <main className="flex-1 overflow-y-auto">

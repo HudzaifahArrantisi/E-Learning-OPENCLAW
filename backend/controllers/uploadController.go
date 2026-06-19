@@ -78,15 +78,10 @@ func getSignedURLSecret() string {
 	return secret
 }
 
-// ============================================================
-// INTERNAL: Unified upload pipeline
-// ============================================================
-// processAndStoreFile is the single source of truth for all upload
-// operations. It handles: MIME validation → image optimization →
-// filesystem storage → database metadata insert.
-//
-// Returns (uploadID, fileURL, error).
-// ============================================================
+
+// handel file url menggunakan uuid
+// save file di storage
+// 
 func processAndStoreFile(
 	fileBytes []byte,
 	fileHeader *multipart.FileHeader,
@@ -115,7 +110,6 @@ func processAndStoreFile(
 		}
 	}
 	// Fallback: check declared Content-Type header for document types
-	// (http.DetectContentType returns "application/octet-stream" for many doc types)
 	if !mimeValid && fileHeader != nil {
 		declaredMime := fileHeader.Header.Get("Content-Type")
 		for _, m := range allowed {
@@ -145,7 +139,6 @@ func processAndStoreFile(
 	}
 
 	// 5. Smart image optimization (native Go — no Python subprocess)
-	// Only processes image MIME types; documents pass through unchanged.
 	finalBytes := fileBytes
 	originalSize := int64(len(fileBytes))
 	compressedSize := originalSize
@@ -157,7 +150,6 @@ func processAndStoreFile(
 		processed, processErr := utils.ProcessUploadedImage(fileBytes, detectedMime)
 		if processErr != nil {
 			log.Printf("[Upload] ⚠️ Image optimization failed (%s): %v — storing original", originalFilename, processErr)
-			// Fallback: store original image without optimization
 		} else {
 			finalBytes = processed.Data
 			compressedSize = processed.CompressedSize
@@ -743,7 +735,7 @@ func GenerateSignedURL(c *gin.Context) {
 		return
 	}
 
-	// Generate signed token
+	// ngebuat signed url/token
 	expiry := time.Now().Add(SignedURLExpiry).Unix()
 	payload := fmt.Sprintf("%s:%d:%d", fileUUID, userID, expiry)
 
@@ -761,7 +753,7 @@ func GenerateSignedURL(c *gin.Context) {
 	}, "Signed URL berhasil dibuat")
 }
 
-// validateSignedURL verifies an HMAC-signed token
+// validashi hmac token masuk
 func validateSignedURL(fileID, token string) bool {
 	parts := strings.SplitN(token, ":", 3)
 	if len(parts) != 3 {

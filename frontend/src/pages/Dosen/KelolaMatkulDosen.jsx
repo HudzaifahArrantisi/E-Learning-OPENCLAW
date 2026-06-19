@@ -39,6 +39,15 @@ const [toast, setToast] = useState(null);
     fetchPertemuanList()
   }, [courseId])
 
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => {
+        setToast(null)
+      }, 4000)
+      return () => clearTimeout(timer)
+    }
+  }, [toast])
+
   const fetchPertemuanList = async () => {
     try {
       setLoading(true)
@@ -53,7 +62,7 @@ const [toast, setToast] = useState(null);
       setPertemuanList(response.data.data || [])
     } catch (error) {
       console.error('Error fetching pertemuan:', error)
-      alert('Gagal memuat pertemuan: ' + (error.response?.data?.message || error.message))
+      setToast({ message: 'Gagal memuat pertemuan: ' + (error.response?.data?.message || error.message), type: 'error' })
     } finally {
       setLoading(false)
     }
@@ -68,7 +77,7 @@ const [toast, setToast] = useState(null);
       setShowDetailPertemuan(true)
     } catch (error) {
       console.error('Error fetching pertemuan detail:', error)
-      alert('Gagal memuat detail pertemuan: ' + (error.response?.data?.message || error.message))
+      setToast({ message: 'Gagal memuat detail pertemuan: ' + (error.response?.data?.message || error.message), type: 'error' })
     } finally {
       setDetailLoading(false)
     }
@@ -111,13 +120,13 @@ const [toast, setToast] = useState(null);
       if (formData.file_tugas) data.append('file_tugas', formData.file_tugas)
 
       await api.createTugas(data)
-      alert('Tugas berhasil dibuat!')
+      setToast({ message: 'Tugas berhasil dibuat!', type: 'success' })
       setShowCreateTugas(false)
       setFormData(prev => ({ ...prev, title: '', desc: '', due_date: '', file_tugas: null }))
       fetchPertemuanList()
     } catch (error) {
       console.error('Error creating tugas:', error)
-      alert('Gagal membuat tugas: ' + (error.response?.data?.message || error.message))
+      setToast({ message: 'Gagal membuat tugas: ' + (error.response?.data?.message || error.message), type: 'error' })
     } finally {
       setSubmitting(false)
     }
@@ -130,14 +139,14 @@ const [toast, setToast] = useState(null);
 
     try {
       await api.deleteMateri(materiId)
-      alert('Materi berhasil dihapus!')
+      setToast({ message: 'Materi berhasil dihapus!', type: 'success' })
       if (selectedPertemuan) {
         fetchPertemuanDetail(selectedPertemuan)
       }
       fetchPertemuanList()
     } catch (error) {
       console.error('Error Delete Materi:', error)
-      alert('Gagal menghapus materi: ' + (error.response?.data?.message || error.message))
+      setToast({ message: 'Gagal menghapus materi: ' + (error.response?.data?.message || error.message), type: 'error' })
     }
   }
 
@@ -148,14 +157,14 @@ const [toast, setToast] = useState(null);
 
     try {
       await api.deleteTugas(tugasId)
-      alert('Tugas berhasil dihapus!')
+      setToast({ message: 'Tugas berhasil dihapus!', type: 'success' })
       if (selectedPertemuan) {
         fetchPertemuanDetail(selectedPertemuan)
       }
       fetchPertemuanList()
     } catch (error) {
       console.error('Error deleting tugas:', error)
-      alert('Gagal menghapus tugas: ' + (error.response?.data?.message || error.message))
+      setToast({ message: 'Gagal menghapus tugas: ' + (error.response?.data?.message || error.message), type: 'error' })
     }
   }
 
@@ -880,6 +889,36 @@ const [toast, setToast] = useState(null);
           </AnimatePresence>
         </div>
       </div>
+
+      {/* Toast Notification */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div 
+            initial={{ opacity: 0, y: 50, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            className="fixed bottom-6 right-6 z-[9999] max-w-sm w-full bg-white border border-lp-border rounded-2xl p-4 shadow-[0_20px_40px_rgba(0,0,0,0.1)] flex items-start gap-3.5"
+          >
+            <div className={`p-2 rounded-xl shrink-0 ${toast.type === 'success' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
+              {toast.type === 'success' ? <FiCheckCircle className="text-xl" /> : <FiXCircle className="text-xl" />}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-lp-text leading-tight mb-1">
+                {toast.type === 'success' ? 'Berhasil' : 'Pemberitahuan'}
+              </p>
+              <p className="text-lp-text2 text-xs font-light leading-relaxed">
+                {toast.message}
+              </p>
+            </div>
+            <button 
+              onClick={() => setToast(null)}
+              className="text-lp-text3 hover:text-lp-text text-sm font-mono p-1"
+            >
+              ✕
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

@@ -564,7 +564,7 @@ const ScanAbsensiContent = () => {
                       <div className="bg-lp-surface/50 border border-lp-border rounded-2xl p-3.5 mb-5 space-y-2">
                         <div className="flex items-center text-xs text-lp-text2 font-medium">
                           <FiClock className="mr-2 text-lp-text3 shrink-0" />
-                          <span>{course.jam_mulai} - {course.jam_selesai}</span>
+                          <span>{course.jam_mulai?.slice(0, 5)} - {course.jam_selesai?.slice(0, 5)}</span>
                         </div>
                         <div className="flex items-center">
                           {renderSessionStatus(course)}
