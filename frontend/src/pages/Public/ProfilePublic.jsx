@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query'
 import api from '../../services/api'
 import Sidebar from '../../components/Sidebar'
 import PostDetailModal from '../../components/PostDetailModal'
+import ProfileHoverCard from '../../components/ProfileHoverCard'
 import useAuth from '../../hooks/useAuth'
 import { resolveBackendAssetUrl } from '../../utils/assetUrl'
 
@@ -756,10 +757,19 @@ const ProfilePublic = () => {
                   <div className="w-11 h-11 rounded-full overflow-hidden bg-lp-surface flex items-center justify-center font-bold text-lp-text3">
                     {account.profile_picture ? <img src={resolveBackendAssetUrl(account.profile_picture)} alt="" className="w-full h-full object-cover" /> : account.name?.[0]?.toUpperCase()}
                   </div>
-                  <Link to={`/profile/${account.role}/${account.username}`} onClick={() => setSocialList(null)} className="min-w-0 flex-1">
-                    <p className="font-semibold text-sm text-lp-text truncate">{account.name}</p>
-                    <p className="text-xs text-lp-text3 truncate">@{account.username} · {account.role}</p>
-                  </Link>
+                  <ProfileHoverCard
+                    role={account.role || 'mahasiswa'}
+                    username={account.username}
+                    displayName={account.name}
+                    displayAvatar={account.profile_picture}
+                    userId={account.id}
+                    className="min-w-0 flex-1"
+                  >
+                    <div className="block cursor-pointer select-none">
+                      <p className="font-semibold text-sm text-lp-text truncate">{account.name}</p>
+                      <p className="text-xs text-lp-text3 truncate">@{account.username} · {account.role}</p>
+                    </div>
+                  </ProfileHoverCard>
                   {Number(account.id) !== Number(user?.id) && (
                     <button type="button" disabled={followBusy} onClick={() => toggleFollow(account.id)} className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${isFollowing ? 'border border-lp-border bg-lp-surface text-lp-text' : 'bg-lp-accent text-white'}`}>
                       {isFollowing

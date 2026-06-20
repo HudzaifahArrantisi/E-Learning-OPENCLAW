@@ -1,7 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import useAuth from '../hooks/useAuth'
+import api from '../services/api'
 import { getIdentifierError } from '../utils/auth'
+
+const NIM_PATTERN = /^[A-Za-z0-9.-]{4,32}$/
 
 const ROLE_DASHBOARD = {
   admin: '/admin',
@@ -12,20 +15,193 @@ const ROLE_DASHBOARD = {
   ormawa: '/ormawa',
 }
 
+const REGISTER_ROLES = [
+  { value: 'mahasiswa', label: 'Mahasiswa', enabled: true },
+  { value: 'dosen', label: 'Dosen', enabled: false },
+  { value: 'orangtua', label: 'Orang Tua', enabled: false },
+  { value: 'ukm', label: 'UKM', enabled: false },
+  { value: 'ormawa', label: 'Ormawa', enabled: false },
+]
+
 export default function LoginModal({ isOpen, onClose }) {
   const navigate = useNavigate()
-  const { login } = useAuth()
+  const { login, applyAuthResponse } = useAuth()
 
   const [form, setForm] = useState({ identifier: '', password: '' })
+  const [mode, setMode] = useState('login')
+  const [registerForm, setRegisterForm] = useState({
+    role: 'mahasiswa',
+    nim: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+  })
+  const [studentVerification, setStudentVerification] = useState(null)
+  const [checkingNim, setCheckingNim] = useState(false)
+  const [nimError, setNimError] = useState('')
+  const [registering, setRegistering] = useState(false)
+  const [info, setInfo] = useState('')
   const [showPw, setShowPw] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [unverifiedEmail, setUnverifiedEmail] = useState('')
+  const [resending, setResending] = useState(false)
+
+  const nimDebounceRef = useRef(null)
+  const nimRequestRef = useRef(0)
+
+  // Clear any pending debounce timer when the modal unmounts.
+  useEffect(() => () => {
+    if (nimDebounceRef.current) clearTimeout(nimDebounceRef.current)
+  }, [])
 
   if (!isOpen) return null
 
   const handleChange = (e) => {
     setError('')
+    setInfo('')
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }))
+  }
+
+  const switchMode = (nextMode) => {
+    setMode(nextMode)
+    setError('')
+    setInfo('')
+  }
+
+  const handleRegisterChange = (e) => {
+    const { name, value } = e.target
+    setError('')
+    setInfo('')
+    setRegisterForm(prev => ({ ...prev, [name]: value }))
+    if (name === 'nim') {
+      setStudentVerification(null)
+      setNimError('')
+      // Debounced auto-verify (800ms after the user stops typing).
+      if (nimDebounceRef.current) clearTimeout(nimDebounceRef.current)
+      const nim = value.trim()
+      if (NIM_PATTERN.test(nim)) {
+        setCheckingNim(true)
+        nimDebounceRef.current = setTimeout(() => runNimCheck(nim), 800)
+      } else {
+        setCheckingNim(false)
+      }
+    }
+  }
+
+  // Verify a NIM against PDDikti. Guards against stale/out-of-order responses
+  // so only the result for the latest typed NIM is applied.
+  const runNimCheck = async (nim) => {
+    const requestId = ++nimRequestRef.current
+    setCheckingNim(true)
+    setNimError('')
+    setInfo('')
+    setStudentVerification(null)
+    try {
+      const response = await api.verifyStudentRegistration({ nim })
+      if (requestId !== nimRequestRef.current) return // a newer request superseded this one
+      const data = response.data?.data
+      if (!response.data?.success || !data?.verification_token) {
+        throw new Error(response.data?.message || 'NIM tidak dapat diverifikasi.')
+      }
+      setStudentVerification(data)
+      setRegisterForm(prev => ({
+        ...prev,
+        email: `${data.nim}@nurulfikri.ac.id`,
+      }))
+    } catch (err) {
+      if (requestId !== nimRequestRef.current) return
+      setNimError(err.response?.data?.message || err.message || 'Gagal memverifikasi NIM.')
+    } finally {
+      if (requestId === nimRequestRef.current) setCheckingNim(false)
+    }
+  }
+
+  const handleResendVerification = async (email) => {
+    if (resending) return
+    setResending(true)
+    setError('')
+    try {
+      const response = await api.resendVerification({ email })
+      setInfo(response.data?.message || 'Tautan verifikasi telah dikirim ulang. Silakan cek email Anda.')
+    } catch (err) {
+      setError(err.response?.data?.message || 'Gagal mengirim ulang tautan verifikasi.')
+    } finally {
+      setResending(false)
+    }
+  }
+
+  const handleRegisterSubmit = async (e) => {
+    e.preventDefault()
+    if (registering) return
+    if (registerForm.role !== 'mahasiswa') {
+      setError('Registrasi mandiri saat ini hanya tersedia untuk mahasiswa.')
+      return
+    }
+    if (!studentVerification?.verification_token) {
+      setError('Silakan cek NIM melalui PDDikti terlebih dahulu.')
+      return
+    }
+    if (!registerForm.email.trim().toLowerCase().endsWith('@nurulfikri.ac.id')) {
+      setError('Email harus menggunakan domain @nurulfikri.ac.id.')
+      return
+    }
+    const emailLocalPart = registerForm.email.trim().split('@')[0]
+    if (emailLocalPart.toLowerCase() !== String(studentVerification.nim || '').toLowerCase()) {
+      setError('Email kampus harus menggunakan format NIM@nurulfikri.ac.id.')
+      return
+    }
+    if (registerForm.password.length < 6) {
+      setError('Password minimal 6 karakter.')
+      return
+    }
+    if (registerForm.password !== registerForm.confirmPassword) {
+      setError('Konfirmasi password tidak sama.')
+      return
+    }
+
+    setRegistering(true)
+    setError('')
+    setInfo('')
+    try {
+      const response = await api.register({
+        role: 'mahasiswa',
+        nim: studentVerification.nim,
+        name: studentVerification.name,
+        email: registerForm.email.trim(),
+        password: registerForm.password,
+        verification_token: studentVerification.verification_token,
+      })
+      if (!response.data?.success) {
+        throw new Error(response.data?.message || 'Registrasi gagal.')
+      }
+
+      // Email verification required: do not auto-login; send the student to login + check email.
+      if (response.data?.data?.email_verification_required) {
+        setMode('login')
+        setForm({ identifier: registerForm.email.trim(), password: '' })
+        setInfo(response.data?.message || 'Akun dibuat. Cek email kampus Anda untuk memverifikasi sebelum masuk.')
+        return
+      }
+
+      const payload = response.data?.data || {}
+      const result = payload.token
+        ? applyAuthResponse(payload, registerForm.email.trim())
+        : await login(registerForm.email.trim(), registerForm.password)
+      if (!result.success) {
+        setInfo('Akun berhasil dibuat. Silakan masuk menggunakan email/NIM dan password Anda.')
+        setMode('login')
+        setForm({ identifier: registerForm.email.trim(), password: '' })
+        return
+      }
+
+      onClose()
+      navigate(ROLE_DASHBOARD[result.user?.role] || '/mahasiswa', { replace: true })
+    } catch (err) {
+      setError(err.response?.data?.message || err.message || 'Registrasi gagal. Coba lagi nanti.')
+    } finally {
+      setRegistering(false)
+    }
   }
 
   const handleSubmit = async (e) => {
@@ -42,6 +218,8 @@ export default function LoginModal({ isOpen, onClose }) {
     }
     setLoading(true)
     setError('')
+    setInfo('')
+    setUnverifiedEmail('')
     const result = await login(form.identifier, form.password)
     if (result.success) {
       const role = String(result.user?.role || '').trim().toLowerCase()
@@ -56,6 +234,10 @@ export default function LoginModal({ isOpen, onClose }) {
       onClose()
       navigate(dashboardPath, { replace: true })
     } else {
+      // Email not verified yet — offer a resend affordance.
+      if (result.data?.email_unverified) {
+        setUnverifiedEmail(result.data.email || form.identifier)
+      }
       setError(result.message || 'Login gagal. Periksa kembali kredensial Anda.')
     }
     setLoading(false)
@@ -93,12 +275,34 @@ export default function LoginModal({ isOpen, onClose }) {
         </div>
 
         {/* ── Heading ── */}
-        <h2 className="text-[22px] font-bold text-lp-text tracking-tight leading-tight mb-1.5 text-center">Masuk ke akun</h2>
+        <div className="grid grid-cols-2 gap-1 bg-lp-surface rounded-full p-1 mb-6">
+          <button
+            type="button"
+            onClick={() => switchMode('login')}
+            className={`h-9 rounded-full text-[12.5px] font-semibold transition-all ${mode === 'login' ? 'bg-white text-lp-text shadow-sm' : 'text-lp-text2 hover:text-lp-text'}`}
+          >
+            Masuk
+          </button>
+          <button
+            type="button"
+            onClick={() => switchMode('register')}
+            className={`h-9 rounded-full text-[12.5px] font-semibold transition-all ${mode === 'register' ? 'bg-white text-lp-text shadow-sm' : 'text-lp-text2 hover:text-lp-text'}`}
+          >
+            Daftar
+          </button>
+        </div>
+
+        <h2 className="text-[22px] font-bold text-lp-text tracking-tight leading-tight mb-1.5 text-center">
+          {mode === 'login' ? 'Masuk ke akun' : 'Registrasi mahasiswa'}
+        </h2>
         <p className="text-[13px] text-lp-text2 mb-6 leading-relaxed text-center">
-          Selamat datang kembali. Silakan masuk untuk melanjutkan.
+          {mode === 'login'
+            ? 'Selamat datang kembali. Silakan masuk untuk melanjutkan.'
+            : 'Cek NIM ke PDDikti sebelum membuat akun Student Hub.'}
         </p>
 
         {/* ── Form ── */}
+        {mode === 'login' ? (
         <form className="flex flex-col gap-4" onSubmit={handleSubmit} noValidate>
           {/* Error */}
           {error && (
@@ -110,6 +314,24 @@ export default function LoginModal({ isOpen, onClose }) {
               </svg>
               {error}
             </div>
+          )}
+          {info && (
+            <div className="flex items-start gap-2.5 bg-lp-green/5 border border-lp-green/15 rounded-xl px-3.5 py-3 text-[12.5px] text-lp-green leading-relaxed animate-scaleIn">
+              {info}
+            </div>
+          )}
+          {unverifiedEmail && (
+            <button
+              type="button"
+              onClick={() => handleResendVerification(unverifiedEmail)}
+              disabled={resending}
+              className="flex items-center justify-center gap-2 bg-lp-accentS/40 border border-lp-borderA rounded-xl px-3.5 py-2.5 text-[12.5px] text-lp-atext font-semibold hover:bg-lp-accentS/60 transition-colors disabled:opacity-50"
+            >
+              {resending ? (
+                <span className="w-3.5 h-3.5 border-[1.5px] border-lp-atext/30 border-t-lp-atext rounded-full animate-spin" />
+              ) : null}
+              Kirim ulang email verifikasi
+            </button>
           )}
 
           {/* Identifier */}
@@ -200,6 +422,171 @@ export default function LoginModal({ isOpen, onClose }) {
             )}
           </button>
         </form>
+        ) : (
+        <form className="flex flex-col gap-4" onSubmit={handleRegisterSubmit} noValidate>
+          {error && (
+            <div className="flex items-start gap-2.5 bg-lp-red/5 border border-lp-red/15 rounded-xl px-3.5 py-3 text-[12.5px] text-lp-red leading-relaxed animate-scaleIn">
+              {error}
+            </div>
+          )}
+          {info && (
+            <div className="flex items-start gap-2.5 bg-lp-green/5 border border-lp-green/15 rounded-xl px-3.5 py-3 text-[12.5px] text-lp-green leading-relaxed animate-scaleIn">
+              {info}
+            </div>
+          )}
+
+          <div className="flex flex-col gap-2">
+            <label className="text-[11px] font-bold text-lp-text2 tracking-[0.08em] uppercase font-mono" htmlFor="register-role">
+              Role
+            </label>
+            <select
+              id="register-role"
+              name="role"
+              value={registerForm.role}
+              onChange={handleRegisterChange}
+              className="w-full h-[46px] bg-lp-surface border border-lp-border rounded-xl px-3.5 text-lp-text text-sm outline-none focus:border-lp-borderA focus:ring-2 focus:ring-lp-accent/10"
+            >
+              {REGISTER_ROLES.map(item => (
+                <option key={item.value} value={item.value} disabled={!item.enabled}>
+                  {item.label}{item.enabled ? '' : ' - hubungi admin'}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <label className="text-[11px] font-bold text-lp-text2 tracking-[0.08em] uppercase font-mono" htmlFor="register-nim">
+              NIM
+            </label>
+            <div className="relative">
+              <input
+                id="register-nim"
+                className={`w-full h-[46px] bg-lp-surface border rounded-xl px-3.5 pr-10 text-lp-text text-sm outline-none focus:ring-2 focus:ring-lp-accent/10 ${
+                  nimError ? 'border-lp-red/40' : studentVerification ? 'border-lp-green/40' : 'border-lp-border focus:border-lp-borderA'
+                }`}
+                type="text"
+                name="nim"
+                placeholder="0110224xxx"
+                value={registerForm.nim}
+                onChange={handleRegisterChange}
+                autoComplete="off"
+                maxLength={32}
+                required
+              />
+              {/* Inline status indicator */}
+              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                {checkingNim ? (
+                  <span className="block w-4 h-4 border-[1.5px] border-lp-text3/30 border-t-lp-text3 rounded-full animate-spin" />
+                ) : studentVerification ? (
+                  <svg className="w-4 h-4 stroke-lp-green fill-none stroke-[2.5] [stroke-linecap:round] [stroke-linejoin:round]" viewBox="0 0 24 24">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                ) : nimError ? (
+                  <svg className="w-4 h-4 stroke-lp-red fill-none stroke-2 [stroke-linecap:round]" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="8" x2="12" y2="12" />
+                    <line x1="12" y1="16" x2="12.01" y2="16" />
+                  </svg>
+                ) : null}
+              </div>
+            </div>
+            <p className="text-[11px] text-lp-text3">
+              {checkingNim ? 'Memverifikasi NIM ke PDDikti…' : 'Ketik NIM, verifikasi otomatis berjalan.'}
+            </p>
+            {nimError && (
+              <div className="flex items-start gap-2.5 bg-lp-red/5 border border-lp-red/15 rounded-xl px-3.5 py-2.5 text-[12.5px] text-lp-red leading-relaxed animate-scaleIn">
+                {nimError}
+              </div>
+            )}
+          </div>
+
+          {studentVerification && (
+            <div className="rounded-xl border border-lp-green/20 bg-lp-green/5 p-3.5 text-[12.5px] text-lp-text2 space-y-2 animate-scaleIn">
+              <div className="flex items-center gap-1.5 text-lp-green font-semibold">
+                <svg className="w-3.5 h-3.5 stroke-lp-green fill-none stroke-[2.5] [stroke-linecap:round] [stroke-linejoin:round]" viewBox="0 0 24 24">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                <span>NIM Terverifikasi</span>
+              </div>
+              <div className="space-y-0.5">
+                <p><span className="text-lp-text3">Nama:</span> <span className="font-semibold text-lp-text">{studentVerification.name}</span></p>
+                {studentVerification.study_program && (
+                  <p><span className="text-lp-text3">Prodi:</span> <span className="font-semibold text-lp-text">{studentVerification.study_program}</span></p>
+                )}
+                <p><span className="text-lp-text3">Kampus:</span> {studentVerification.institution}</p>
+              </div>
+            </div>
+          )}
+
+          <div className="flex flex-col gap-2">
+            <label className="text-[11px] font-bold text-lp-text2 tracking-[0.08em] uppercase font-mono" htmlFor="register-email">
+              Email kampus
+            </label>
+            <input
+              id="register-email"
+              className="w-full h-[46px] bg-lp-surface border border-lp-border rounded-xl px-3.5 text-lp-text text-sm outline-none focus:border-lp-borderA focus:ring-2 focus:ring-lp-accent/10"
+              type="email"
+              name="email"
+              placeholder="nim@nurulfikri.ac.id"
+              value={registerForm.email}
+              onChange={handleRegisterChange}
+              autoComplete="email"
+              readOnly={!!studentVerification}
+              required
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="flex flex-col gap-2">
+              <label className="text-[11px] font-bold text-lp-text2 tracking-[0.08em] uppercase font-mono" htmlFor="register-password">
+                Password
+              </label>
+              <input
+                id="register-password"
+                className="w-full h-[46px] bg-lp-surface border border-lp-border rounded-xl px-3.5 text-lp-text text-sm outline-none focus:border-lp-borderA focus:ring-2 focus:ring-lp-accent/10"
+                type="password"
+                name="password"
+                placeholder="Minimal 6 karakter"
+                value={registerForm.password}
+                onChange={handleRegisterChange}
+                autoComplete="new-password"
+                required
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <label className="text-[11px] font-bold text-lp-text2 tracking-[0.08em] uppercase font-mono" htmlFor="register-confirm-password">
+                Konfirmasi
+              </label>
+              <input
+                id="register-confirm-password"
+                className="w-full h-[46px] bg-lp-surface border border-lp-border rounded-xl px-3.5 text-lp-text text-sm outline-none focus:border-lp-borderA focus:ring-2 focus:ring-lp-accent/10"
+                type="password"
+                name="confirmPassword"
+                placeholder="Ulangi password"
+                value={registerForm.confirmPassword}
+                onChange={handleRegisterChange}
+                autoComplete="new-password"
+                required
+              />
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            className="w-full h-11 bg-lp-text text-white rounded-full font-sans text-[13px] font-semibold tracking-[0.02em] flex items-center justify-center gap-2 mt-2 transition-all duration-200 hover:bg-lp-atext hover:-translate-y-px shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={registering || checkingNim || !studentVerification}
+          >
+            {registering ? (
+              <>
+                <span className="w-3.5 h-3.5 border-[1.5px] border-white/30 border-t-white rounded-full animate-spin" />
+                Membuat akun...
+              </>
+            ) : (
+              'Daftar sebagai Mahasiswa'
+            )}
+          </button>
+        </form>
+        )}
       </div>
     </div>
   )

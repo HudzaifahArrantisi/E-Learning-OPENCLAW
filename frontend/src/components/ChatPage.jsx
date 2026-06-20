@@ -135,6 +135,14 @@ const formatLastMessagePreview = (message) => {
   return content
 }
 
+const isConversationRequestForUser = (conv, userId) => (
+  conv?.type === 'private' &&
+  conv.created_by != null &&
+  Number(conv.created_by) !== Number(userId) &&
+  !conv.has_replied &&
+  !conv.isTemp
+)
+
 const ChatPage = ({ role }) => {
   const { user } = useAuth()
   const { updateUnreadCount } = useChatNotification()
@@ -312,13 +320,7 @@ const ChatPage = ({ role }) => {
     selectOrFetch()
   }, [conversationId, conversations, hiddenChats, loading])
 
-  // Sync global unread count with local conversations list
-  useEffect(() => {
-    if (!loading) {
-      const total = conversations.reduce((sum, c) => sum + (c.unread_count || 0), 0)
-      updateUnreadCount(total)
-    }
-  }, [conversations, loading, updateUnreadCount])
+
 
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'auto' }) }, [messages])
 
@@ -626,19 +628,27 @@ const ChatPage = ({ role }) => {
     try {
       const r = await api.uploadFile(formData)
       if (r.data?.success) {
-        const uploadData = r.data.data
+        const uploadData = r.data.data || {}
         const fileUrl = uploadData.file_url
-        const fileName = uploadData.original_filename
-        const fileSize = uploadData.original_size
-        
-        const sendRes = await api.sendMessage(activeConversationId, {
-          conversation_id: activeConversationId,
+        const fileName = uploadData.original_filename || uploadData.file_name || file.name
+        const fileSize = Number(uploadData.original_size ?? uploadData.file_size ?? file.size)
+
+        if (!fileUrl || !fileName) {
+          throw new Error('Metadata file dari server tidak lengkap.')
+        }
+
+        const messagePayload = {
           content: fileName,
           message_type: isImage ? 'image' : 'file',
           file_url: fileUrl,
           file_name: fileName,
-          file_size: Number(fileSize)
-        })
+        }
+
+        if (Number.isFinite(fileSize)) {
+          messagePayload.file_size = fileSize
+        }
+
+        const sendRes = await api.sendMessage(activeConversationId, messagePayload)
         
         if (sendRes.data?.success) {
           setMessages(prev => {
@@ -665,7 +675,7 @@ const ChatPage = ({ role }) => {
       }
     } catch (err) {
       console.error('File upload error:', err)
-      alert(err.response?.data?.message || 'Gagal mengunggah file. Pastikan ukuran file tidak melebihi batas.')
+      alert(err.response?.data?.message || err.response?.data?.error || err.message || 'Gagal mengunggah file. Pastikan ukuran file tidak melebihi batas.')
     } finally {
       setUploadingFile(false)
     }
@@ -768,6 +778,21 @@ const ChatPage = ({ role }) => {
       api.webSocket.removeConnectionCallback(setIsWsConnected)
     }
   }, [user, handleWsMessage])
+
+  // Sync global unread count with local conversations list
+  // Must be defined BEFORE early returns to avoid hook order violations
+  useEffect(() => {
+    const visibleConversations = conversations.filter(c => hiddenChats[c.id] !== (c.last_message?.id || 'none') && c.last_message)
+    const unreadTotal = visibleConversations
+      .filter(c => !isConversationRequestForUser(c, user?.id))
+      .reduce((acc, conv) => acc + (conv.unread_count || 0), 0)
+    const unreadRequestsCount = visibleConversations
+      .filter(c => isConversationRequestForUser(c, user?.id) && c.unread_count > 0)
+      .length
+    if (!loading) {
+      updateUnreadCount(unreadTotal + unreadRequestsCount)
+    }
+  }, [conversations, hiddenChats, loading, updateUnreadCount, user?.id])
 
   const startNewChat = async (contactId) => {
     if (startingChat) return
@@ -877,13 +902,7 @@ const ChatPage = ({ role }) => {
     return m[r] || 'bg-gray-100 text-gray-800'
   }
 
-  const isMessageRequest = (conv) => (
-    conv?.type === 'private' &&
-    conv.created_by != null &&
-    Number(conv.created_by) !== Number(user?.id) &&
-    !conv.has_replied &&
-    !conv.isTemp
-  )
+  const isMessageRequest = (conv) => isConversationRequestForUser(conv, user?.id)
 
   const renderConvItem = (conv) => {
     const isSelected = selectedConversation?.id === conv.id;
@@ -1003,14 +1022,14 @@ const ChatPage = ({ role }) => {
   }
 
   const visibleConversations = conversations.filter(c => hiddenChats[c.id] !== (c.last_message?.id || 'none') && c.last_message)
-  
+
   const unreadTotal = visibleConversations
     .filter(c => !isMessageRequest(c))
     .reduce((acc, conv) => acc + (conv.unread_count || 0), 0)
 
   const unreadRequestsCount = visibleConversations
-    .filter(c => isMessageRequest(c))
-    .reduce((acc, conv) => acc + (conv.unread_count || 0), 0)
+    .filter(c => isMessageRequest(c) && c.unread_count > 0)
+    .length
 
   const activeTabConversations = visibleConversations.filter(c => {
     const isRequest = isMessageRequest(c)

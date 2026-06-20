@@ -581,6 +581,15 @@ api.getPertemuanList = (courseId, role = 'dosen') => {
 api.getCourseInfo = (courseId) => api.get(`/api/courses/${courseId}/info`)
 
 // ==============================================================
+// ==================== AUTH & PASSWORD =======================
+// ==============================================================
+
+api.verifyStudentRegistration = (data) => api.post('/api/auth/register/verify-student', data, { skipErrorRedirect: true })
+api.register = (data) => api.post('/api/auth/register', data, { skipErrorRedirect: true })
+api.resendVerification = (data) => api.post('/api/auth/resend-verification', data, { skipErrorRedirect: true })
+api.changePassword = (data) => api.post('/api/auth/change-password', data)
+
+// ==============================================================
 // ==================== STANDARD METHODS ========================
 // ==============================================================
 

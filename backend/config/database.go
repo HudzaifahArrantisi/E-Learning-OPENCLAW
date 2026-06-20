@@ -33,12 +33,16 @@ var initErr error
 //
 // IMPORTANT for Supabase serverless:
 //   - Use TRANSACTION pooler (port 6543), NOT session pooler (port 5432)
-//   - DB_DSN format: postgresql://postgres.[REF]:[PASS]@aws-0-[REGION].pooler.supabase.com:6543/postgres
+//   - DB_DSN or DATABASE_URL format:
+//     postgresql://postgres.[REF]:[PASS]@aws-0-[REGION].pooler.supabase.com:6543/postgres
 func InitDB() {
 	initOnce.Do(func() {
-		dsn := os.Getenv("DB_DSN")
+		dsn := strings.TrimSpace(os.Getenv("DB_DSN"))
 		if dsn == "" {
-			log.Fatal("DB_DSN environment variable is required for PostgreSQL connection")
+			dsn = strings.TrimSpace(os.Getenv("DATABASE_URL"))
+		}
+		if dsn == "" {
+			log.Fatal("DB_DSN or DATABASE_URL environment variable is required for PostgreSQL connection")
 		}
 
 		// Disable pgx prepared statement cache to fix Supabase transaction pooling (42P05 error)

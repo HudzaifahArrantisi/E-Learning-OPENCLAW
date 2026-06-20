@@ -19,7 +19,10 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB) {
 
 	// Public routes (with login rate limiter)
 	r.POST("/api/auth/login", middlewares.LoginRateLimiter(), controllers.Login)
+	r.POST("/api/auth/register/verify-student", middlewares.LoginRateLimiter(), controllers.VerifyStudentRegistration)
 	r.POST("/api/auth/register", middlewares.LoginRateLimiter(), controllers.Register)
+	r.GET("/api/auth/verify-email", controllers.VerifyEmail)
+	r.POST("/api/auth/resend-verification", middlewares.LoginRateLimiter(), controllers.ResendVerification)
 	r.GET("/api/profile/public/:role/:username", controllers.GetPublicProfile)
 	r.GET("/api/profile/public/:role/:username/posts", controllers.GetUserPosts)
 
@@ -37,6 +40,7 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB) {
 
 	// === AUTH & PROFILE ===
 	api.GET("/auth/verify", controllers.Verify)
+	api.POST("/auth/change-password", controllers.ChangePassword)
 	api.GET("/profile/me", controllers.GetMyProfile)
 	api.PUT("/profile/me", controllers.UpdateMyProfile)
 

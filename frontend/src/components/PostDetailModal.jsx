@@ -19,8 +19,128 @@ const cleanUsername = (username) => {
     .replace(/^ormawa_/, '')
     .replace(/^ukm_/, '')
     .replace(/^admin_/, '')
+    .replace(/\s+/g, '_')
     .trim()
 }
+
+const CommentItem = memo(({ comment, getRelativeTime, onReply }) => {
+  if (!comment) return null
+  const [showReplies, setShowReplies] = useState(false)
+  const username = cleanUsername(comment.author_username || comment.author_name)
+
+  const renderCommentContent = (content) => {
+    if (!content) return ''
+    const words = content.split(/(\s+)/)
+    return words.map((word, idx) => {
+      if (word.startsWith('@') && word.length > 1) {
+        return (
+          <span key={idx} className="text-[#00376B] dark:text-blue-400 font-semibold hover:underline cursor-pointer">
+            {word}
+          </span>
+        )
+      }
+      return word
+    })
+  }
+
+  return (
+    <div className="flex flex-col mb-3">
+      <div className="flex items-start space-x-3 group animate-fadeIn">
+        <ProfileHoverCard 
+          role={comment.user_role} 
+          username={username}
+          displayName={comment.author_name}
+          displayAvatar={comment.author_avatar}
+          userId={comment.author_id || comment.user_id}
+          className="flex-shrink-0"
+        >
+          <div className="w-8 h-8 bg-lp-surface border border-lp-border rounded-full flex items-center justify-center text-lp-text2 text-xs font-bold shrink-0 overflow-hidden shadow-sm">
+            {comment.author_avatar ? (
+              <img src={resolveBackendAssetUrl(comment.author_avatar)} alt={comment.author_name} className="w-full h-full object-cover" />
+            ) : (
+              comment.author_name?.[0]?.toUpperCase() || '?'
+            )}
+          </div>
+        </ProfileHoverCard>
+        
+        <div className="flex-1 min-w-0 pt-0.5">
+          <div className="text-[13px] leading-relaxed">
+            <span className="font-semibold text-lp-text tracking-tight mr-1.5 inline-block">
+              <ProfileHoverCard 
+                role={comment.user_role} 
+                username={username}
+                displayName={comment.author_name}
+                displayAvatar={comment.author_avatar}
+                userId={comment.author_id || comment.user_id}
+              >
+                <span className="hover:text-lp-accent transition-colors font-semibold">
+                  {username}
+                </span>
+              </ProfileHoverCard>
+            </span>
+            <span className="text-lp-text font-normal break-words">
+              {renderCommentContent(comment.content || '')}
+            </span>
+          </div>
+
+          <div className="text-lp-text3 text-[11px] font-normal mt-1 flex items-center gap-3">
+            <span>{getRelativeTime ? getRelativeTime(comment.created_at) : new Date(comment.created_at).toLocaleDateString('id-ID')}</span>
+            
+            {comment.likes_count > 0 && (
+              <span className="font-semibold">{comment.likes_count} suka</span>
+            )}
+            
+            <button 
+              onClick={() => onReply && onReply(comment)}
+              className="font-semibold hover:text-lp-text2 transition-colors cursor-pointer"
+            >
+              Balas
+            </button>
+          </div>
+        </div>
+        
+        <button className="pt-2 text-lp-text3 hover:text-lp-red px-1 shrink-0">
+          <FaRegHeart className="text-[10px]" />
+        </button>
+      </div>
+
+      {/* Nested Replies with Instagram style toggle */}
+      {comment.replies && comment.replies.length > 0 && (
+        <div className="pl-11 mt-2">
+          {!showReplies ? (
+            <button 
+              onClick={() => setShowReplies(true)}
+              className="flex items-center gap-2 text-xs text-lp-text3 hover:text-lp-text2 font-semibold transition-colors mt-1"
+            >
+              <span className="w-6 h-[1px] bg-lp-border inline-block" />
+              <span>Lihat balasan ({comment.replies.length})</span>
+            </button>
+          ) : (
+            <div className="space-y-3">
+              <button 
+                onClick={() => setShowReplies(false)}
+                className="flex items-center gap-2 text-xs text-lp-text3 hover:text-lp-text2 font-semibold transition-colors mb-2"
+              >
+                <span className="w-6 h-[1px] bg-lp-border inline-block" />
+                <span>Sembunyikan balasan</span>
+              </button>
+              <div className="space-y-3">
+                {comment.replies.map((reply) => (
+                  <CommentItem 
+                    key={reply.id} 
+                    comment={reply} 
+                    getRelativeTime={getRelativeTime} 
+                    onReply={onReply}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+})
 
 const PostDetailModal = ({ post, onClose, getRelativeTime }) => {
   if (!post) return null
@@ -98,6 +218,20 @@ const PostDetailModal = ({ post, onClose, getRelativeTime }) => {
     setCurrentSlide(0)
   }, [post])
 
+  const [replyingTo, setReplyingTo] = useState(null)
+
+  const fetchLatestComments = async () => {
+    try {
+      const response = await api.get(`/api/feed/${post.id}`, { skipErrorRedirect: true })
+      const comments = Array.isArray(response?.data?.data?.comments)
+        ? response.data.data.comments
+        : []
+      setLocalComments(comments)
+    } catch (error) {
+      console.error("Failed to fetch comments:", error)
+    }
+  }
+
   // Fetch comments
   useEffect(() => {
     let cancelled = false
@@ -119,6 +253,13 @@ const PostDetailModal = ({ post, onClose, getRelativeTime }) => {
     fetchComments()
     return () => { cancelled = true }
   }, [post.id])
+
+  const handleReplyClick = (comment) => {
+    setReplyingTo(comment)
+    const replyUsername = cleanUsername(comment.author_username || comment.author_name)
+    setCommentText(`@${replyUsername} `)
+    commentInputRef.current?.focus()
+  }
 
   // Mobile check
   useEffect(() => {
@@ -163,17 +304,73 @@ const PostDetailModal = ({ post, onClose, getRelativeTime }) => {
   const handleCommentSubmit = async (e) => {
     e.preventDefault()
     if (!commentText.trim() || isCommenting) return
+
+    const parentId = replyingTo ? replyingTo.id : null
+
     const tempComment = {
       id: `temp-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
       content: commentText.trim(),
       author_name: 'Anda',
       user_role: 'current_user',
       created_at: new Date().toISOString(),
+      parent_id: parentId,
+      replies: []
     }
-    setLocalComments(prev => [tempComment, ...prev])
+
+    if (parentId) {
+      const addReplyToLocal = (comments) => {
+        return comments.map(comment => {
+          if (comment.id === parentId) {
+            return {
+              ...comment,
+              replies: [...(comment.replies || []), tempComment]
+            }
+          }
+          if (comment.replies && comment.replies.length > 0) {
+            return {
+              ...comment,
+              replies: addReplyToLocal(comment.replies)
+            }
+          }
+          return comment
+        })
+      }
+      setLocalComments(prev => addReplyToLocal(prev))
+    } else {
+      setLocalComments(prev => [tempComment, ...prev])
+    }
+
     setCommentText('')
-    try { await addComment(post.id, commentText.trim()) }
-    catch (error) { setLocalComments(prev => prev.filter(c => c.id !== tempComment.id)) }
+    setReplyingTo(null)
+
+    try {
+      await addComment(post.id, tempComment.content, parentId)
+      fetchLatestComments()
+    } catch (error) {
+      // Revert local comments on error
+      if (parentId) {
+        const removeReplyFromLocal = (comments) => {
+          return comments.map(comment => {
+            if (comment.id === parentId) {
+              return {
+                ...comment,
+                replies: (comment.replies || []).filter(reply => String(reply.id) !== String(tempComment.id))
+              }
+            }
+            if (comment.replies && comment.replies.length > 0) {
+              return {
+                ...comment,
+                replies: removeReplyFromLocal(comment.replies)
+              }
+            }
+            return comment
+          })
+        }
+        setLocalComments(prev => removeReplyFromLocal(prev))
+      } else {
+        setLocalComments(prev => prev.filter(c => String(c.id) !== String(tempComment.id)))
+      }
+    }
   }
 
   const handleImageError = (e) => {
@@ -347,49 +544,12 @@ const PostDetailModal = ({ post, onClose, getRelativeTime }) => {
                   </div>
                 ) : localComments.length > 0 ? (
                   localComments.map((comment) => (
-                    <div key={comment.id} className="flex items-start space-x-3 group">
-                      <ProfileHoverCard 
-                        role={comment.user_role} 
-                        username={comment.author_username || comment.author_name}
-                        displayName={comment.author_name}
-                        displayAvatar={comment.author_avatar}
-                        userId={comment.author_id || comment.user_id}
-                        className="flex-shrink-0"
-                      >
-                        <div className="w-8 h-8 bg-lp-surface border border-lp-border rounded-full flex items-center justify-center text-lp-text2 text-xs font-bold shrink-0 overflow-hidden">
-                          {comment.author_avatar ? (
-                            <img src={resolveBackendAssetUrl(comment.author_avatar)} alt={comment.author_name} className="w-full h-full object-cover" />
-                          ) : (
-                            comment.author_name?.[0]?.toUpperCase() || '?'
-                          )}
-                        </div>
-                      </ProfileHoverCard>
-                      <div className="flex-1 min-w-0 pt-1">
-                        <span className="font-semibold text-lp-text text-[14px] tracking-tight mr-2">
-                          <ProfileHoverCard 
-                            role={comment.user_role} 
-                            username={comment.author_username || comment.author_name}
-                            displayName={comment.author_name}
-                            displayAvatar={comment.author_avatar}
-                            userId={comment.author_id || comment.user_id}
-                          >
-                            <span className="hover:opacity-80 transition-opacity">
-                              {comment.author_name || 'Unknown'}
-                            </span>
-                          </ProfileHoverCard>
-                        </span>
-                        <span className="text-lp-text text-[14px] font-normal break-words leading-relaxed">
-                          {comment.content}
-                        </span>
-                        <div className="text-lp-text3 text-[12px] font-normal mt-1 flex gap-3">
-                          <span>{formatTime(comment.created_at)}</span>
-                          <button className="font-semibold hidden group-hover:block hover:text-lp-text2">Balas</button>
-                        </div>
-                      </div>
-                      <button className="pt-2 text-lp-text3 hover:text-lp-red px-1">
-                        <FaRegHeart className="text-[10px]" />
-                      </button>
-                    </div>
+                    <CommentItem 
+                      key={comment.id} 
+                      comment={comment} 
+                      getRelativeTime={formatTime} 
+                      onReply={handleReplyClick}
+                    />
                   ))
                 ) : (
                   <div className="text-center py-8">
@@ -437,6 +597,19 @@ const PostDetailModal = ({ post, onClose, getRelativeTime }) => {
                   {formatTime(post.created_at)}
                 </div>
               </div>
+
+              {replyingTo && (
+                <div className="px-4 py-1.5 bg-gray-50 border-t border-lp-border flex items-center justify-between text-[12px] text-lp-text3">
+                  <span>Membalas <span className="font-semibold text-lp-text">@{cleanUsername(replyingTo.author_username || replyingTo.author_name)}</span></span>
+                  <button 
+                    type="button" 
+                    onClick={() => { setReplyingTo(null); setCommentText(''); }}
+                    className="text-lp-red font-semibold hover:underline text-[12px]"
+                  >
+                    Batal
+                  </button>
+                </div>
+              )}
 
               <form onSubmit={handleCommentSubmit} className="px-4 py-3 border-t border-lp-border flex items-center space-x-3">
                 <button type="button" className="text-lp-text hover:text-lp-text2">
@@ -511,43 +684,12 @@ const PostDetailModal = ({ post, onClose, getRelativeTime }) => {
           {localComments.length > 0 ? (
             <div className="space-y-3">
               {localComments.map((comment) => (
-                <div key={comment.id} className="flex items-start space-x-3 group">
-                  <ProfileHoverCard 
-                    role={comment.user_role} 
-                    username={comment.author_username || comment.author_name}
-                    displayName={comment.author_name}
-                    displayAvatar={comment.author_avatar}
-                    userId={comment.author_id || comment.user_id}
-                    className="flex-shrink-0"
-                  >
-                    <div className="w-8 h-8 bg-lp-surface border border-lp-border rounded-full flex items-center justify-center text-lp-text2 text-xs font-bold shrink-0 overflow-hidden">
-                      {comment.author_avatar ? (
-                        <img src={resolveBackendAssetUrl(comment.author_avatar)} alt={comment.author_name} className="w-full h-full object-cover" />
-                      ) : (
-                        comment.author_name?.[0]?.toUpperCase() || '?'
-                      )}
-                    </div>
-                  </ProfileHoverCard>
-                  <div className="flex-1 min-w-0 pt-1">
-                    <span className="font-semibold text-lp-text text-[14px] tracking-tight mr-2">
-                      <ProfileHoverCard 
-                        role={comment.user_role} 
-                        username={comment.author_username || comment.author_name}
-                        displayName={comment.author_name}
-                        displayAvatar={comment.author_avatar}
-                        userId={comment.author_id || comment.user_id}
-                      >
-                        <span className="hover:opacity-80 transition-opacity">
-                          {comment.author_name || 'Unknown'}
-                        </span>
-                      </ProfileHoverCard>
-                    </span>
-                    <span className="text-lp-text text-[14px] font-normal break-words leading-relaxed">{comment.content}</span>
-                    <div className="text-lp-text3 text-[12px] font-normal mt-1">
-                      <span>{formatTime(comment.created_at)}</span>
-                    </div>
-                  </div>
-                </div>
+                <CommentItem 
+                  key={comment.id} 
+                  comment={comment} 
+                  getRelativeTime={formatTime} 
+                  onReply={handleReplyClick}
+                />
               ))}
             </div>
           ) : (
@@ -562,8 +704,21 @@ const PostDetailModal = ({ post, onClose, getRelativeTime }) => {
         </div>
 
         <div className="border-t border-lp-border p-4">
+          {replyingTo && (
+            <div className="mb-2 flex items-center justify-between text-xs text-lp-text3 bg-gray-50 p-2 rounded-lg">
+              <span>Membalas <span className="font-semibold text-lp-text">@{cleanUsername(replyingTo.author_username || replyingTo.author_name)}</span></span>
+              <button 
+                type="button" 
+                onClick={() => { setReplyingTo(null); setCommentText(''); }}
+                className="text-lp-red font-semibold hover:underline"
+              >
+                Batal
+              </button>
+            </div>
+          )}
           <form onSubmit={handleCommentSubmit} className="flex items-center gap-3">
             <input
+              ref={commentInputRef}
               type="text"
               placeholder="Tambahkan komentar..."
               value={commentText}

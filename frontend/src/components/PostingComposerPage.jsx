@@ -418,209 +418,357 @@ const PostingComposerPage = ({
                   animate={{ opacity: 1, y: 0 }}
                   className="relative"
                 >
-                  <form onSubmit={handleSubmit} className="space-y-6">
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-[1fr_2.5fr] gap-6 items-start">
-                        <div className="sticky top-0">
-                          <div className="flex items-center gap-3 mb-4">
-                            <FiType className="text-lp-accent" />
-                            <label className="text-[11px] font-mono font-bold tracking-[0.3em] uppercase text-black/50">Narrative Details</label>
-                          </div>
-                          <h2 className="text-sm font-semibold italic text-black/70">Headline & Story.</h2>
-                          <p className="text-xs text-black/50 mt-2 leading-relaxed font-light">
-                            Set the tone of your publication with a compelling headline and detailed narrative.
-                          </p>
-                        </div>
-
-                        <div className="space-y-3">
-                          <div className="group relative">
-                            <input
-                              type="text"
-                              value={title}
-                              onChange={(event) => setTitle(event.target.value)}
-                              placeholder="Title of your publication..."
-                              className="w-full bg-black/5 border-b border-black/10 p-4 text-black text-base font-light italic tracking-tight focus:outline-none focus:border-lp-accent transition-all duration-500 placeholder:text-black/30"
-                              required
-                            />
-                            <div className="absolute bottom-0 left-0 h-[1px] bg-lp-accent w-0 group-focus-within:w-full transition-all duration-700" />
-                          </div>
-
-                          <div className="group relative">
-                            <textarea
-                              value={content}
-                              onChange={(event) => setContent(event.target.value)}
-                              rows={3}
-                              placeholder="Describe your narrative here..."
-                              className="w-full bg-black/5 border-b border-black/10 p-4 text-black text-base font-light leading-relaxed focus:outline-none focus:border-lp-accent transition-all duration-500 resize-none placeholder:text-black/30 scrollbar-hide"
-                              required
-                            />
-                            <div className="absolute bottom-0 left-0 h-[1px] bg-lp-accent w-0 group-focus-within:w-full transition-all duration-700" />
-                          </div>
-                        </div>
+                  <form onSubmit={handleSubmit} className="space-y-8">
+                    {/* Section 1: Narrative Details */}
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.1 }}
+                    >
+                      {/* Section Number Header */}
+                      <div className="flex items-center gap-4 mb-4">
+                        <span className="text-[11px] font-mono font-bold tracking-[0.3em] text-lp-accent">01</span>
+                        <div className="h-[1px] flex-1 bg-gradient-to-r from-lp-accent/30 to-transparent" />
+                        <span className="text-[10px] font-mono font-bold tracking-[0.2em] uppercase text-lp-text3">Narrative Details</span>
                       </div>
-                    </div>
 
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-[1fr_2.5fr] gap-6 items-start">
-                        <div>
-                          <div className="flex items-center gap-3 mb-4">
-                            <FiImage className="text-lp-accent" />
-                            <label className="text-[11px] font-mono font-bold tracking-[0.3em] uppercase text-black/50">Visual Assets</label>
-                          </div>
-                          <h2 className="text-sm font-semibold italic text-black/70">Media Integration.</h2>
-                          <p className="text-xs text-black/50 mt-2 leading-relaxed font-light">
-                            Attach up to 10 high-resolution visual modules to support your story.
-                          </p>
-                        </div>
+                      <div className="relative bg-white border border-lp-border rounded-[2rem] shadow-[0_8px_30px_rgba(0,0,0,0.02)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.05)] transition-all duration-500 overflow-hidden">
+                        {/* Left accent border strip */}
+                        <div className="absolute left-0 top-6 bottom-6 w-[3px] rounded-full bg-gradient-to-b from-lp-accent via-lp-accent/60 to-transparent" />
 
-                        <div className="space-y-4">
-                          <div
-                            onDragEnter={handleDrag}
-                            onDragLeave={handleDrag}
-                            onDragOver={handleDrag}
-                            onDrop={handleDrop}
-                            className={`relative group h-[140px] rounded-[2.5rem] border-2 border-dashed transition-all duration-700 flex flex-col items-center justify-center overflow-hidden cursor-pointer ${
-                              dragActive
-                                ? 'border-lp-accent bg-lp-accent/5'
-                                : 'border-black/10 bg-black/5 hover:border-black/20 hover:bg-black/5'
-                            }`}
-                          >
-                            <input
-                              type="file"
-                              accept="image/*"
-                              multiple
-                              onChange={handleFileChange}
-                              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                              id="file-upload"
-                            />
+                        <div className="p-6 sm:p-8 pl-7 sm:pl-10">
+                          <div className="grid grid-cols-1 lg:grid-cols-[1fr_2.5fr] gap-8 items-start">
+                            {/* Left: Section Description */}
+                            <div className="lg:sticky lg:top-4">
+                              <div className="w-10 h-10 rounded-xl bg-lp-accentS flex items-center justify-center mb-4">
+                                <FiType className="text-lp-accent text-base" />
+                              </div>
+                              <h2 className="text-lg font-bold text-lp-text tracking-tight mb-2">Headline & Story</h2>
+                              <p className="text-xs text-lp-text2 leading-relaxed font-normal">
+                                Tulis judul yang menarik dan narasi lengkap untuk publikasi Anda.
+                              </p>
+                              <div className="hidden lg:block mt-6 p-3 bg-lp-surface/60 rounded-xl border border-lp-border/50">
+                                <p className="text-[10px] text-lp-text3 font-mono tracking-wide leading-relaxed">
+                                  <span className="text-lp-accent font-bold">Tips:</span> Judul yang singkat dan padat akan lebih menarik perhatian pembaca.
+                                </p>
+                              </div>
+                            </div>
 
-                            <motion.div
-                              animate={dragActive ? { scale: 1.2, rotate: 10 } : { scale: 1, rotate: 0 }}
-                              className="w-12 h-12 bg-black/5 border border-black/10 rounded-3xl flex items-center justify-center mb-4 shadow-2xl relative"
-                            >
-                              <div className="absolute inset-0 bg-black/10 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
-                              <FiUpload className="text-base text-black relative z-10" />
-                            </motion.div>
-
-                            <p className="text-base font-light text-black/60 mb-2">
-                              Drop assets or{' '}
-                              <span className="text-black italic underline underline-offset-4 decoration-lp-accent/50 cursor-pointer">
-                                browse
-                              </span>
-                              .
-                            </p>
-                            <p className="text-[10px] text-black/40 font-mono tracking-[0.4em] uppercase">High Resolution Only</p>
-                          </div>
-
-                          <AnimatePresence>
-                            {previews.length > 0 && (
-                              <motion.div
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, scale: 0.95 }}
-                                className="space-y-3"
-                              >
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-3">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_10px_#10b981]" />
-                                    <span className="text-[10px] font-mono font-bold tracking-[0.3em] uppercase text-black/50">
-                                      {files.length} Assets Staged
-                                    </span>
-                                  </div>
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setFiles([])
-                                      setPreviews([])
-                                    }}
-                                    className="text-[10px] font-mono font-bold tracking-[0.3em] text-red-500/60 hover:text-red-500 transition-colors uppercase flex items-center gap-2"
-                                  >
-                                    <FiX /> Clear Data
-                                  </button>
+                            {/* Right: Form Fields */}
+                            <div className="space-y-5">
+                              {/* Title Field */}
+                              <div className="group/field">
+                                <div className="flex items-center justify-between mb-2 px-1">
+                                  <label className="text-xs font-semibold text-lp-text flex items-center gap-2">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-lp-accent" />
+                                    Judul Publikasi
+                                    <span className="text-red-400 text-[10px]">*</span>
+                                  </label>
+                                  <span className={`text-[10px] font-mono tracking-wider transition-colors duration-300 ${title.length > 100 ? 'text-lp-amber font-bold' : 'text-lp-text3'}`}>
+                                    {title.length}/150
+                                  </span>
                                 </div>
-                                <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
-                                  {previews.map((preview, index) => (
+                                <div className="relative">
+                                  <input
+                                    type="text"
+                                    value={title}
+                                    onChange={(event) => setTitle(event.target.value.slice(0, 150))}
+                                    placeholder="Masukkan judul publikasi Anda..."
+                                    className="w-full bg-lp-surface/50 border border-lp-border rounded-xl px-4 py-3.5 text-lp-text text-sm font-semibold tracking-tight focus:outline-none focus:border-lp-accent focus:bg-white focus:ring-[3px] focus:ring-lp-accentS focus:shadow-[0_0_0_1px_rgba(75,115,255,0.1)] transition-all duration-300 placeholder:text-lp-text3/60"
+                                    required
+                                    maxLength={150}
+                                  />
+                                  {title.length > 0 && (
                                     <motion.div
-                                      layout
-                                      initial={{ opacity: 0, scale: 0.8 }}
-                                      animate={{ 
-                                        opacity: 1, 
-                                        scale: dragOverIndex === index ? 1.05 : 1,
-                                        borderColor: dragOverIndex === index ? 'rgba(99,102,241,0.5)' : 'rgba(0,0,0,0.1)'
-                                      }}
-                                      exit={{ opacity: 0, scale: 0.8 }}
-                                      className={`relative group aspect-square rounded-3xl overflow-hidden border-2 bg-black shadow-xl cursor-grab active:cursor-grabbing ${
-                                        dragIndex === index ? 'opacity-50' : ''
-                                      }`}
-                                      key={preview}
-                                      draggable
-                                      onDragStart={() => handleDragStart(index)}
-                                      onDragOver={(e) => handleDragOver(e, index)}
-                                      onDragEnd={handleDragEnd}
+                                      initial={{ scale: 0 }}
+                                      animate={{ scale: 1 }}
+                                      className="absolute right-3 top-1/2 -translate-y-1/2"
                                     >
-                                      {/* Slide number badge */}
-                                      <div className="absolute top-2 left-2 z-20 bg-black/70 text-white text-[10px] font-bold w-6 h-6 rounded-full flex items-center justify-center backdrop-blur-sm">
-                                        {index + 1}
-                                      </div>
-                                      <img
-                                        src={preview}
-                                        alt={`Slide ${index + 1}`}
-                                        className="w-full h-full object-cover transition-all duration-1000 group-hover:scale-110 group-hover:rotate-1"
-                                        draggable={false}
-                                      />
-                                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-all duration-500 flex items-center justify-center gap-2 backdrop-blur-[2px]">
-                                        <button
-                                          type="button"
-                                          onClick={() => removeFile(index)}
-                                          className="w-10 h-10 bg-red-500/80 text-white rounded-full flex items-center justify-center shadow-2xl hover:scale-110 transition-transform"
-                                        >
-                                          <FiX className="text-base" />
-                                        </button>
-                                      </div>
+                                      <FiCheckCircle className="text-emerald-500 text-sm" />
                                     </motion.div>
-                                  ))}
+                                  )}
                                 </div>
-                                {files.length > 1 && (
-                                  <p className="text-[10px] text-black/40 font-mono tracking-[0.2em] uppercase text-center mt-2">
-                                    Drag to reorder slides
-                                  </p>
-                                )}
-                              </motion.div>
-                            )}
-                          </AnimatePresence>
+                              </div>
+
+                              {/* Content Field */}
+                              <div className="group/field">
+                                <div className="flex items-center justify-between mb-2 px-1">
+                                  <label className="text-xs font-semibold text-lp-text flex items-center gap-2">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-lp-accent" />
+                                    Konten / Deskripsi
+                                    <span className="text-red-400 text-[10px]">*</span>
+                                  </label>
+                                  <span className={`text-[10px] font-mono tracking-wider transition-colors duration-300 ${content.length > 2000 ? 'text-lp-amber font-bold' : 'text-lp-text3'}`}>
+                                    {content.length} karakter
+                                  </span>
+                                </div>
+                                <div className="relative">
+                                  <textarea
+                                    value={content}
+                                    onChange={(event) => setContent(event.target.value)}
+                                    rows={6}
+                                    placeholder="Tuliskan narasi lengkap untuk publikasi Anda di sini..."
+                                    className="w-full bg-lp-surface/50 border border-lp-border rounded-xl px-4 py-3.5 text-lp-text text-sm font-normal leading-relaxed focus:outline-none focus:border-lp-accent focus:bg-white focus:ring-[3px] focus:ring-lp-accentS focus:shadow-[0_0_0_1px_rgba(75,115,255,0.1)] transition-all duration-300 resize-none placeholder:text-lp-text3/60 scrollbar-hide"
+                                    required
+                                  />
+                                  {content.length > 0 && (
+                                    <motion.div
+                                      initial={{ scale: 0 }}
+                                      animate={{ scale: 1 }}
+                                      className="absolute right-3 top-3.5"
+                                    >
+                                      <FiCheckCircle className="text-emerald-500 text-sm" />
+                                    </motion.div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    </motion.div>
 
-                    <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-6">
-                      <div className="flex items-center gap-4 text-black/40">
-                        <FiFileText className="text-base" />
-                        <p className="text-[10px] font-mono tracking-[0.2em] uppercase font-bold">
-                          Review all data before sync
-                        </p>
+                    {/* Section 2: Visual Assets */}
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.2 }}
+                    >
+                      {/* Section Number Header */}
+                      <div className="flex items-center gap-4 mb-4">
+                        <span className="text-[11px] font-mono font-bold tracking-[0.3em] text-lp-accent">02</span>
+                        <div className="h-[1px] flex-1 bg-gradient-to-r from-lp-accent/30 to-transparent" />
+                        <span className="text-[10px] font-mono font-bold tracking-[0.2em] uppercase text-lp-text3">Visual Assets</span>
                       </div>
 
-                      <div className="flex items-center gap-6 w-full sm:w-auto">
-                        <button
-                          type="button"
-                          onClick={() => window.history.back()}
-                          className="flex-1 sm:flex-none px-6 py-3 text-[11px] font-mono font-bold tracking-[0.3em] uppercase text-black/50 hover:text-black transition-all border border-black/5 rounded-full hover:bg-black/5"
-                        >
-                          Discard
-                        </button>
-                        <button
-                          type="submit"
-                          disabled={mutation.isPending}
-                          className="flex-1 sm:flex-none relative group overflow-hidden bg-black text-white px-8 py-3 rounded-full text-[11px] font-bold tracking-[0.4em] uppercase disabled:opacity-50 transition-all duration-500 shadow-[0_20px_40px_rgba(0,0,0,0.1)]"
-                        >
-                          <div className="absolute inset-0 bg-lp-accent w-0 group-hover:w-full transition-all duration-700 ease-in-out -z-0" />
-                          <span className="relative z-10 flex items-center justify-center gap-4 group-hover:text-white transition-colors duration-500">
-                            {mutation.isPending ? 'Syncing...' : 'POSTING'}
-                            {!mutation.isPending && <FiChevronRight className="group-hover:translate-x-1 transition-transform" />}
+                      <div className="relative bg-white border border-lp-border rounded-[2rem] shadow-[0_8px_30px_rgba(0,0,0,0.02)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.05)] transition-all duration-500 overflow-hidden">
+                        {/* Left accent border strip */}
+                        <div className="absolute left-0 top-6 bottom-6 w-[3px] rounded-full bg-gradient-to-b from-purple-500 via-purple-400/60 to-transparent" />
+
+                        <div className="p-6 sm:p-8 pl-7 sm:pl-10">
+                          <div className="grid grid-cols-1 lg:grid-cols-[1fr_2.5fr] gap-8 items-start">
+                            {/* Left: Section Description */}
+                            <div className="lg:sticky lg:top-4">
+                              <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center mb-4">
+                                <FiImage className="text-purple-500 text-base" />
+                              </div>
+                              <h2 className="text-lg font-bold text-lp-text tracking-tight mb-2">Media Pendukung</h2>
+                              <p className="text-xs text-lp-text2 leading-relaxed font-normal">
+                                Lampirkan hingga 10 gambar resolusi tinggi untuk memperkaya publikasi.
+                              </p>
+                              <div className="hidden lg:block mt-6 space-y-2">
+                                <div className="flex items-center gap-2 text-[10px] text-lp-text3 font-mono">
+                                  <span className="w-4 h-4 rounded bg-lp-surface flex items-center justify-center text-[8px] font-bold">📷</span>
+                                  PNG, JPG, JPEG
+                                </div>
+                                <div className="flex items-center gap-2 text-[10px] text-lp-text3 font-mono">
+                                  <span className="w-4 h-4 rounded bg-lp-surface flex items-center justify-center text-[8px] font-bold">📁</span>
+                                  Max 10 file
+                                </div>
+                                <div className="flex items-center gap-2 text-[10px] text-lp-text3 font-mono">
+                                  <span className="w-4 h-4 rounded bg-lp-surface flex items-center justify-center text-[8px] font-bold">↕️</span>
+                                  Drag untuk urutan
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Right: Upload Area */}
+                            <div className="space-y-5">
+                              <div className="group/field">
+                                <div className="flex items-center justify-between mb-2 px-1">
+                                  <label className="text-xs font-semibold text-lp-text flex items-center gap-2">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-purple-500" />
+                                    Upload Gambar
+                                    <span className="text-lp-text3 text-[10px] font-normal">(opsional)</span>
+                                  </label>
+                                  {files.length > 0 && (
+                                    <span className="text-[10px] font-mono tracking-wider text-emerald-600 font-bold">
+                                      {files.length}/10 file
+                                    </span>
+                                  )}
+                                </div>
+                                <div
+                                  onDragEnter={handleDrag}
+                                  onDragLeave={handleDrag}
+                                  onDragOver={handleDrag}
+                                  onDrop={handleDrop}
+                                  className={`relative group h-[160px] rounded-xl border-2 border-dashed transition-all duration-300 flex flex-col items-center justify-center overflow-hidden cursor-pointer ${
+                                    dragActive
+                                      ? 'border-lp-accent bg-lp-accentS scale-[1.01]'
+                                      : 'border-lp-border bg-lp-surface/30 hover:border-lp-accent/40 hover:bg-lp-surface/60'
+                                  }`}
+                                >
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    multiple
+                                    onChange={handleFileChange}
+                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                    id="file-upload"
+                                  />
+
+                                  <motion.div
+                                    animate={dragActive ? { scale: 1.2, rotate: 10 } : { scale: 1, rotate: 0 }}
+                                    className="w-12 h-12 bg-white border border-lp-border rounded-xl flex items-center justify-center mb-3 shadow-sm relative"
+                                  >
+                                    <div className="absolute inset-0 bg-purple-100 blur-md rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
+                                    <FiUpload className="text-base text-purple-500 relative z-10" />
+                                  </motion.div>
+
+                                  <p className="text-sm font-medium text-lp-text">
+                                    Seret file ke sini atau{' '}
+                                    <span className="text-lp-accent font-semibold underline underline-offset-4 decoration-lp-accent/50 cursor-pointer">
+                                      pilih file
+                                    </span>
+                                  </p>
+                                  <p className="text-[10px] text-lp-text3 mt-1.5">Format: PNG, JPG, JPEG — Resolusi tinggi disarankan</p>
+                                </div>
+                              </div>
+
+                              <AnimatePresence>
+                                {previews.length > 0 && (
+                                  <motion.div
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, scale: 0.95 }}
+                                    className="space-y-3"
+                                  >
+                                    <div className="flex items-center justify-between px-1">
+                                      <div className="flex items-center gap-2">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981] animate-pulse" />
+                                        <span className="text-[10px] font-semibold tracking-wide text-emerald-600 uppercase">
+                                          {files.length} file siap diupload
+                                        </span>
+                                      </div>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setFiles([])
+                                          setPreviews([])
+                                        }}
+                                        className="text-[10px] font-semibold text-red-500/80 hover:text-red-500 transition-colors uppercase flex items-center gap-1.5 hover:bg-red-50 px-2 py-1 rounded-lg"
+                                      >
+                                        <FiX className="text-xs" /> Hapus Semua
+                                      </button>
+                                    </div>
+                                    <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
+                                      {previews.map((preview, index) => (
+                                        <motion.div
+                                          layout
+                                          initial={{ opacity: 0, scale: 0.8 }}
+                                          animate={{ 
+                                            opacity: 1, 
+                                            scale: dragOverIndex === index ? 1.05 : 1,
+                                            borderColor: dragOverIndex === index ? 'rgba(75,115,255,0.5)' : 'rgba(0,0,0,0.06)'
+                                          }}
+                                          exit={{ opacity: 0, scale: 0.8 }}
+                                          className={`relative group aspect-square rounded-xl overflow-hidden border-2 bg-lp-surface shadow-sm hover:shadow-md cursor-grab active:cursor-grabbing transition-shadow ${
+                                            dragIndex === index ? 'opacity-50' : ''
+                                          }`}
+                                          key={preview}
+                                          draggable
+                                          onDragStart={() => handleDragStart(index)}
+                                          onDragOver={(e) => handleDragOver(e, index)}
+                                          onDragEnd={handleDragEnd}
+                                        >
+                                          {/* Slide number badge */}
+                                          <div className="absolute top-1.5 left-1.5 z-20 bg-black/70 text-white text-[9px] font-bold w-5 h-5 rounded-full flex items-center justify-center backdrop-blur-sm">
+                                            {index + 1}
+                                          </div>
+                                          <img
+                                            src={preview}
+                                            alt={`Slide ${index + 1}`}
+                                            className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110"
+                                            draggable={false}
+                                          />
+                                          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center backdrop-blur-[1px]">
+                                            <button
+                                              type="button"
+                                              onClick={() => removeFile(index)}
+                                              className="w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform"
+                                            >
+                                              <FiX className="text-xs" />
+                                            </button>
+                                          </div>
+                                        </motion.div>
+                                      ))}
+                                    </div>
+                                    {files.length > 1 && (
+                                      <p className="text-[10px] text-lp-text3 text-center mt-1 flex items-center justify-center gap-1.5">
+                                        <span>↕️</span> Seret untuk mengubah urutan slide
+                                      </p>
+                                    )}
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+
+                    {/* Footer: Summary + Actions */}
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.3 }}
+                      className="bg-lp-surface/50 border border-lp-border rounded-2xl p-5 sm:p-6"
+                    >
+                      {/* Live Preview Summary */}
+                      <div className="flex flex-wrap items-center gap-3 mb-5 pb-5 border-b border-lp-border/60">
+                        <span className="text-[10px] font-mono font-bold tracking-[0.2em] uppercase text-lp-text3">Status Ringkasan:</span>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold border ${
+                            title.trim() ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-lp-surface text-lp-text3 border-lp-border'
+                          }`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${title.trim() ? 'bg-emerald-500' : 'bg-lp-text3/40'}`} />
+                            Judul
                           </span>
-                        </button>
+                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold border ${
+                            content.trim() ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-lp-surface text-lp-text3 border-lp-border'
+                          }`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${content.trim() ? 'bg-emerald-500' : 'bg-lp-text3/40'}`} />
+                            Konten
+                          </span>
+                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold border ${
+                            files.length > 0 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-lp-surface text-lp-text3 border-lp-border'
+                          }`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${files.length > 0 ? 'bg-emerald-500' : 'bg-lp-text3/40'}`} />
+                            Media ({files.length})
+                          </span>
+                        </div>
                       </div>
-                    </div>
+
+                      {/* Action Buttons */}
+                      <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+                        <div className="flex items-center gap-3 text-lp-text3">
+                          <FiFileText className="text-sm" />
+                          <p className="text-[10px] font-mono tracking-[0.15em] uppercase">
+                            Periksa semua data sebelum posting
+                          </p>
+                        </div>
+
+                        <div className="flex items-center gap-3 w-full sm:w-auto">
+                          <button
+                            type="button"
+                            onClick={() => window.history.back()}
+                            className="flex-1 sm:flex-none px-6 py-3 text-[11px] font-semibold tracking-[0.2em] uppercase text-lp-text2 hover:text-lp-text transition-all border border-lp-border rounded-xl hover:bg-white hover:shadow-sm"
+                          >
+                            Batal
+                          </button>
+                          <button
+                            type="submit"
+                            disabled={mutation.isPending || !title.trim() || !content.trim()}
+                            className="flex-1 sm:flex-none relative group overflow-hidden bg-lp-accent text-white px-8 py-3 rounded-xl text-[11px] font-bold tracking-[0.3em] uppercase disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-300 shadow-[0_4px_20px_rgba(75,115,255,0.25)] hover:shadow-[0_8px_30px_rgba(75,115,255,0.35)] hover:bg-lp-atext active:scale-[0.98]"
+                          >
+                            <span className="relative z-10 flex items-center justify-center gap-3">
+                              {mutation.isPending ? 'Mengunggah...' : 'Publikasikan'}
+                              {!mutation.isPending && <FiChevronRight className="group-hover:translate-x-1 transition-transform" />}
+                            </span>
+                          </button>
+                        </div>
+                      </div>
+                    </motion.div>
                   </form>
                 </motion.div>
               )}

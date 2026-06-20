@@ -685,15 +685,15 @@ func CloseAttendanceSession(c *gin.Context) {
 	// Auto-fill status 'alpa' for students who have not scanned/registered attendance
 	_, err = config.DB.Exec(`
 		INSERT INTO attendance (student_id, session_id, student_code, status, pertemuan_ke, created_at)
-		SELECT m.id, $1, m.nim, 'alpa', $2, NOW()
+		SELECT DISTINCT m.id, $1::text, m.nim, 'alpa', $2::integer, NOW()
 		FROM mahasiswa m
 		JOIN mahasiswa_mata_kuliah mmk ON m.id = mmk.mahasiswa_id
 		WHERE mmk.mata_kuliah_kode = $3
 		  AND NOT EXISTS (
 			  SELECT 1 FROM attendance a
-			  WHERE a.student_id = m.id AND a.session_id::text = $1::text
+			  WHERE a.student_id = m.id AND a.session_id::text = $4::text
 		  )
-	`, input.SessionID, pertemuanKe, courseID)
+	`, input.SessionID, pertemuanKe, courseID, input.SessionID)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, "Gagal memproses absensi alpa otomatis: "+err.Error())
 		return
@@ -763,8 +763,8 @@ func GetActiveSessions(c *gin.Context) {
 			asess.course_id,
 			mk.nama as course_name,
 			mk.hari,
-			mk.jam_mulai,
-			mk.jam_selesai,
+			TO_CHAR(mk.jam_mulai, 'HH24:MI') as jam_mulai,
+			TO_CHAR(mk.jam_selesai, 'HH24:MI') as jam_selesai,
 			asess.session_token,
 			asess.session_code,
 			asess.expires_at,
@@ -830,7 +830,8 @@ func GetActiveSessions(c *gin.Context) {
 			&sessionToken, &sessionCode, &expiresAt, &createdAt, &status, &pertemuanKe,
 			&attendanceCount, &hadirCount, &izinCount, &sakitCount, &alpaCount, &totalStudents)
 		if err != nil {
-			continue
+			utils.ErrorResponse(c, http.StatusInternalServerError, "Gagal membaca sesi aktif: "+err.Error())
+			return
 		}
 
 		// Calculate time left
@@ -957,7 +958,7 @@ func GetAttendanceByPertemuan(c *gin.Context) {
 
 	// Get course info
 	var courseName string
-	config.DB.QueryRow("SELECT nama FROM mata_kuliah WHERE kode = $2", courseID).Scan(&courseName)
+	config.DB.QueryRow("SELECT nama FROM mata_kuliah WHERE kode = $1", courseID).Scan(&courseName)
 
 	utils.SuccessResponse(c, gin.H{
 		"course_id":     courseID,

@@ -1120,6 +1120,13 @@ func GetAllPertemuanAttendance(c *gin.Context) {
 			COALESCE(TO_CHAR(a.created_at, 'HH24:MI'), '') as my_time
 		FROM attendance_sessions asess
 		JOIN mata_kuliah mk ON mk.kode = asess.course_id
+		LEFT JOIN LATERAL (
+			SELECT status, created_at
+			FROM attendance
+			WHERE session_id::text = asess.id::text AND student_id = $1
+			ORDER BY created_at DESC
+			LIMIT 1
+		) a ON TRUE
 		WHERE asess.course_id IN (
 			SELECT mmk.mata_kuliah_kode FROM mahasiswa_mata_kuliah mmk WHERE mmk.mahasiswa_id = $1
 		)

@@ -61,6 +61,28 @@ export function AuthProvider({ children }) {
     verifyToken()
   }, [verifyToken])
 
+  const applyAuthResponse = useCallback((payload, fallbackIdentifier = '') => {
+    const { token, user, role, redirect } = payload || {}
+    if (!token) {
+      throw new Error('Token login tidak ditemukan pada respons server')
+    }
+
+    const userData = normalizeUser(user || { email: fallbackIdentifier }, role)
+    if (!userData.role) {
+      throw new Error('Role akun tidak ditemukan pada respons login')
+    }
+
+    localStorage.setItem('token', token)
+    localStorage.setItem('role', userData.role)
+    localStorage.setItem('dashboardLastActivityAt', String(Date.now()))
+    api.defaults.headers.common['Authorization'] = `Bearer ${token}`
+
+    setUser(userData)
+    setError(null)
+
+    return { success: true, redirect, user: userData }
+  }, [])
+
   const login = async (identifier, password) => {
     try {
       setLoading(true)
@@ -73,21 +95,7 @@ export function AuthProvider({ children }) {
       })
 
       if (response.data.success) {
-        const { token, user, role, redirect } = response.data.data
-
-        const userData = normalizeUser(user || { email: normalizedIdentifier }, role)
-        if (!userData.role) {
-          throw new Error('Role akun tidak ditemukan pada respons login')
-        }
-
-        localStorage.setItem('token', token)
-        localStorage.setItem('role', userData.role)
-        localStorage.setItem('dashboardLastActivityAt', String(Date.now()))
-        api.defaults.headers.common['Authorization'] = `Bearer ${token}`
-        
-        setUser(userData)
-
-        return { success: true, redirect, user: userData }
+        return applyAuthResponse(response.data.data, normalizedIdentifier)
       } else {
         throw new Error(response.data.message || 'Login failed')
       }
@@ -95,7 +103,7 @@ export function AuthProvider({ children }) {
       console.error('Login error:', error)
       const message = error.response?.data?.message || 'Login gagal. Periksa koneksi atau kredensial.'
       setError(message)
-      return { success: false, message }
+      return { success: false, message, data: error.response?.data }
     } finally {
       setLoading(false)
     }
@@ -130,6 +138,7 @@ export function AuthProvider({ children }) {
     login,
     logout,
     refreshAuth,
+    applyAuthResponse,
     isAuthenticated: !!user && !!localStorage.getItem('token')
   }
 

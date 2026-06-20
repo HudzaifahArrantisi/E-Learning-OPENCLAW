@@ -35,7 +35,7 @@ var (
 // Load reads environment variables and returns a Config
 func Load() *Config {
 	cfg := &Config{
-		DBDSN:             getEnv("DB_DSN", ""),
+		DBDSN:             getFirstEnv([]string{"DB_DSN", "DATABASE_URL"}, ""),
 		TelegramBotToken:  getEnv("TELEGRAM_BOT_TOKEN", ""),
 		TelegramChannelID: getEnv("TELEGRAM_CHANNEL_ID", "@tugasreminder"),
 		Port:              getEnv("OPENCLAW_PORT", "9090"),
@@ -44,7 +44,7 @@ func Load() *Config {
 	}
 
 	if cfg.DBDSN == "" {
-		log.Println("[OpenClaw] WARNING: DB_DSN not set — OpenClaw DB features will be disabled")
+		log.Println("[OpenClaw] WARNING: DB_DSN or DATABASE_URL not set — OpenClaw DB features will be disabled")
 	}
 
 	if cfg.TelegramBotToken == "" {
@@ -118,6 +118,15 @@ func pingWithRetry(db *sql.DB, maxRetries int, initialDelay time.Duration) error
 func getEnv(key, fallback string) string {
 	if v := os.Getenv(key); v != "" {
 		return v
+	}
+	return fallback
+}
+
+func getFirstEnv(keys []string, fallback string) string {
+	for _, key := range keys {
+		if v := os.Getenv(key); v != "" {
+			return v
+		}
 	}
 	return fallback
 }

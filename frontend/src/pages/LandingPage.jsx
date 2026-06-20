@@ -86,6 +86,11 @@ export default function LandingPage() {
   const openClawAltRef = useRef(null)
   const openClawVisiRef = useRef(null)
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
+  const [emailVerifiedBanner, setEmailVerifiedBanner] = useState(() => {
+    if (typeof window === 'undefined') return null
+    const v = new URLSearchParams(window.location.search).get('email_verified')
+    return v === 'success' || v === 'failed' ? v : null
+  })
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [showProfileMenu, setShowProfileMenu] = useState(false)
   const profileMenuRef = useRef(null)
@@ -160,6 +165,18 @@ export default function LandingPage() {
       window.history.replaceState({}, document.title, window.location.pathname)
     }
   }, [isAuthenticated])
+
+  // After the email-verification link redirects here, open login on success,
+  // clean the URL, and auto-dismiss the banner. (Banner value is read from the URL above.)
+  useEffect(() => {
+    if (!emailVerifiedBanner) return
+    if (emailVerifiedBanner === 'success' && !isAuthenticated) {
+      setTimeout(() => setIsLoginModalOpen(true), 0)
+    }
+    window.history.replaceState({}, document.title, window.location.pathname)
+    const t = setTimeout(() => setEmailVerifiedBanner(null), 6000)
+    return () => clearTimeout(t)
+  }, [emailVerifiedBanner, isAuthenticated])
 
   const closeTutorial = () => {
     sessionStorage.setItem('tutorialSeen', 'true')
@@ -1152,6 +1169,24 @@ export default function LandingPage() {
         </div>
       </footer>
       <LoginModal isOpen={isLoginModalOpen} onClose={() => setIsLoginModalOpen(false)} />
+
+      {/* Email verification result banner */}
+      {emailVerifiedBanner && (
+        <div className="fixed top-5 left-1/2 -translate-x-1/2 z-[200] max-w-sm w-[90vw] animate-slideUp">
+          <div className={`flex items-start gap-2.5 rounded-2xl px-4 py-3.5 shadow-[0_12px_32px_rgba(0,0,0,0.12)] text-[13px] font-medium border ${
+            emailVerifiedBanner === 'success'
+              ? 'bg-lp-green/10 border-lp-green/25 text-lp-green'
+              : 'bg-lp-red/10 border-lp-red/25 text-lp-red'
+          }`}>
+            <span className="flex-1">
+              {emailVerifiedBanner === 'success'
+                ? 'Email berhasil diverifikasi. Silakan masuk ke akun Anda.'
+                : 'Tautan verifikasi tidak valid atau sudah kedaluwarsa. Silakan minta tautan baru.'}
+            </span>
+            <button onClick={() => setEmailVerifiedBanner(null)} className="shrink-0 opacity-70 hover:opacity-100">✕</button>
+          </div>
+        </div>
+      )}
 
       {/* TUTORIAL MODAL - Simplified & Smaller */}
       {showTutorial && (

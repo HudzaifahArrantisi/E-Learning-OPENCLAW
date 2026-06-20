@@ -160,6 +160,7 @@ func Login(c *gin.Context) {
 
 	query := `
 		SELECT u.id, u.email, u.password, u.role,
+		       COALESCE(u.is_email_verified, false) as is_email_verified,
 		       COALESCE(m.nim, '') as nim,
 		       CASE
 		         WHEN u.role = 'mahasiswa' THEN COALESCE(m.name, '')
@@ -200,9 +201,10 @@ func Login(c *gin.Context) {
 	}
 	var nim sql.NullString
 	var name sql.NullString
+	var isEmailVerified bool
 
 	err := config.DB.QueryRow(query, identifier, allowAccountLookup, accountIdentifier).Scan(
-		&user.ID, &user.Email, &user.Password, &user.Role, &nim, &name,
+		&user.ID, &user.Email, &user.Password, &user.Role, &isEmailVerified, &nim, &name,
 	)
 
 	if err != nil {
@@ -226,6 +228,17 @@ func Login(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"success": false,
 			"message": "Login gagal. Periksa kembali kredensial Anda.",
+		})
+		return
+	}
+
+	// Gate login on email verification (students only) when enabled.
+	if emailVerificationEnabled() && user.Role == "mahasiswa" && !isEmailVerified {
+		c.JSON(http.StatusForbidden, gin.H{
+			"success":          false,
+			"email_unverified": true,
+			"email":            user.Email,
+			"message":          "Email belum diverifikasi. Silakan cek email kampus Anda atau kirim ulang tautan verifikasi.",
 		})
 		return
 	}
@@ -263,11 +276,12 @@ func Login(c *gin.Context) {
 // ============== REGISTER (SUDAH DIPERBAIKI JUGA) ==============
 func Register(c *gin.Context) {
 	var input struct {
-		Email    string `json:"email" binding:"required,email"`
-		Password string `json:"password" binding:"required,min=6"`
-		Name     string `json:"name" binding:"required"`
-		Role     string `json:"role" binding:"required,oneof=mahasiswa orangtua"`
-		NIM      string `json:"nim,omitempty"`
+		Email             string `json:"email" binding:"required,email"`
+		Password          string `json:"password" binding:"required,min=6"`
+		Name              string `json:"name"`
+		Role              string `json:"role" binding:"required"`
+		NIM               string `json:"nim,omitempty"`
+		VerificationToken string `json:"verification_token,omitempty"`
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -283,6 +297,53 @@ func Register(c *gin.Context) {
 			"success": false,
 			"message": "Email harus menggunakan domain @nurulfikri.ac.id.",
 		})
+		return
+	}
+
+	input.Role = strings.ToLower(strings.TrimSpace(input.Role))
+	input.Email = strings.TrimSpace(input.Email)
+	if input.Role != "mahasiswa" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "Registrasi mandiri saat ini hanya tersedia untuk mahasiswa.",
+		})
+		return
+	}
+
+	studentNIM, ok := normalizeStudentNIM(input.NIM)
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "Format NIM tidak valid.",
+		})
+		return
+	}
+
+	verifiedStudent, ok := validateStudentVerificationToken(input.VerificationToken, studentNIM)
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "Verifikasi NIM belum valid atau sudah kedaluwarsa. Silakan cek NIM ulang.",
+		})
+		return
+	}
+	input.Name = verifiedStudent.Name
+	input.NIM = verifiedStudent.NIM
+
+	emailLocalPart, _, _ := strings.Cut(input.Email, "@")
+	if !strings.EqualFold(emailLocalPart, input.NIM) {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "Email kampus harus menggunakan format NIM@nurulfikri.ac.id.",
+		})
+		return
+	}
+
+	if conflict, err := checkRegistrationDuplicate(input.Email, input.NIM); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "Gagal memeriksa data registrasi"})
+		return
+	} else if conflict != "" {
+		c.JSON(http.StatusConflict, gin.H{"success": false, "message": conflict})
 		return
 	}
 
@@ -304,17 +365,10 @@ func Register(c *gin.Context) {
 		return
 	}
 
-	var redirect string
-	switch input.Role {
-	case "mahasiswa":
-		_, err = tx.Exec("INSERT INTO mahasiswa (user_id, name, nim) VALUES ($1, $2, $3)",
-			userID, input.Name, input.NIM)
-		redirect = "/mahasiswa"
-	case "orangtua":
-		_, err = tx.Exec("INSERT INTO ortu (user_id, name) VALUES ($1, $2)",
-			userID, input.Name)
-		redirect = "/ortu"
-	}
+	_, err = tx.Exec(`INSERT INTO mahasiswa (user_id, name, nim, nama_pt, prodi, pddikti_verified)
+		VALUES ($1, $2, $3, $4, $5, true)`,
+		userID, input.Name, input.NIM, verifiedStudent.Institution, verifiedStudent.StudyProgram)
+	redirect := "/mahasiswa"
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "Failed to create profile"})
@@ -326,14 +380,39 @@ func Register(c *gin.Context) {
 		return
 	}
 
+	// Send verification email (best-effort; never blocks registration).
+	emailSent := sendVerificationEmailBestEffort(c, userID, input.Email, input.Name)
+
+	// When verification is required, do NOT auto-login: force the student to verify first.
+	if emailVerificationEnabled() {
+		c.JSON(http.StatusOK, gin.H{
+			"success": true,
+			"message": "Akun berhasil dibuat. Silakan cek email kampus Anda untuk memverifikasi sebelum masuk.",
+			"data": gin.H{
+				"email_verification_required": true,
+				"email_verification_sent":     emailSent,
+				"email":                       input.Email,
+				"user": gin.H{
+					"id":    userID,
+					"email": input.Email,
+					"role":  input.Role,
+					"name":  input.Name,
+					"nim":   input.NIM,
+				},
+			},
+		})
+		return
+	}
+
 	token, _ := utils.GenerateToken(userID, input.Role)
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"data": gin.H{
-			"token":    token,
-			"role":     input.Role,
-			"redirect": redirect,
+			"token":                   token,
+			"role":                    input.Role,
+			"redirect":                redirect,
+			"email_verification_sent": emailSent,
 			"user": gin.H{
 				"id":    userID,
 				"email": input.Email,
@@ -363,4 +442,35 @@ func getRedirectPath(role string) string {
 	default:
 		return "/"
 	}
+}
+
+// ============== CHANGE PASSWORD ==============
+func ChangePassword(c *gin.Context) {
+	userID, exists := c.Get("user_id")
+	if !exists {
+		utils.ErrorResponse(c, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	var input struct {
+		NewPassword string `json:"new_password" binding:"required,min=6"`
+	}
+	if err := c.ShouldBindJSON(&input); err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, "Invalid input: "+err.Error())
+		return
+	}
+
+	newHash, err := bcrypt.GenerateFromPassword([]byte(input.NewPassword), bcrypt.DefaultCost)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Gagal mengenkripsi password")
+		return
+	}
+
+	_, err = config.DB.Exec("UPDATE users SET password = $1, updated_at = NOW() WHERE id = $2", string(newHash), userID)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Gagal menyimpan password baru")
+		return
+	}
+
+	utils.SuccessResponse(c, nil, "Password berhasil diubah")
 }

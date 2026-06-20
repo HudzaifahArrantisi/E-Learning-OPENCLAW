@@ -4,6 +4,7 @@ import { FaTimes } from 'react-icons/fa'
 import api from '../services/api'
 import { resolveBackendAssetUrl } from '../utils/assetUrl'
 import useAuth from '../hooks/useAuth'
+import ProfileHoverCard from './ProfileHoverCard'
 
 const SocialProfileStats = ({ userId }) => {
   const { user } = useAuth()
@@ -77,10 +78,19 @@ const SocialProfileStats = ({ userId }) => {
                   <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-full bg-lp-surface font-bold text-lp-text3">
                     {account.profile_picture ? <img src={resolveBackendAssetUrl(account.profile_picture)} alt="" className="h-full w-full object-cover" /> : account.name?.[0]?.toUpperCase()}
                   </div>
-                  <Link to={`/profile/${account.role}/${account.username}`} className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold text-lp-text">{account.name}</p>
-                    <p className="truncate text-xs text-lp-text3">@{account.username} · {account.role}</p>
-                  </Link>
+                  <ProfileHoverCard
+                    role={account.role || 'mahasiswa'}
+                    username={account.username}
+                    displayName={account.name}
+                    displayAvatar={account.profile_picture}
+                    userId={account.id}
+                    className="min-w-0 flex-1"
+                  >
+                    <div className="block cursor-pointer select-none">
+                      <p className="truncate text-sm font-semibold text-lp-text">{account.name}</p>
+                      <p className="truncate text-xs text-lp-text3">@{account.username} · {account.role}</p>
+                    </div>
+                  </ProfileHoverCard>
                   <button type="button" disabled={busyId === account.id} onClick={() => toggleFollow(account.id, isFollowing)} className={`rounded-lg px-3 py-1.5 text-xs font-semibold disabled:opacity-50 ${isFollowing ? 'border border-lp-border bg-lp-surface text-lp-text' : 'bg-lp-accent text-white'}`}>
                     {isFollowing
                       ? 'Unfollow'

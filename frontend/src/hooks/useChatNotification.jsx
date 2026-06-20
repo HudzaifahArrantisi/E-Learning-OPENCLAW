@@ -20,6 +20,27 @@ const getInitials = (name) => {
   return parts[0].substring(0, 2).toUpperCase()
 }
 
+const isMessageRequest = (conv, currentUserId) => (
+  conv?.type === 'private' &&
+  conv.created_by != null &&
+  Number(conv.created_by) !== Number(currentUserId) &&
+  !conv.has_replied &&
+  !conv.isTemp
+)
+
+const calculateTotalUnread = (convs, currentUserId) => {
+  if (!currentUserId) return 0
+  const normalUnread = convs
+    .filter(c => !isMessageRequest(c, currentUserId))
+    .reduce((sum, c) => sum + (c.unread_count || 0), 0)
+  
+  const requestsUnread = convs
+    .filter(c => isMessageRequest(c, currentUserId) && c.unread_count > 0)
+    .length
+  
+  return normalUnread + requestsUnread
+}
+
 // ─── provider ──────────────────────────────────────────────────
 export function ChatNotificationProvider({ children }) {
   const { user, isAuthenticated } = useAuth()
@@ -36,6 +57,24 @@ export function ChatNotificationProvider({ children }) {
   useEffect(() => { locationRef.current = location }, [location])
   useEffect(() => { userRef.current = user }, [user])
 
+  // Define actions early so they can be referenced in useEffects
+  const refreshUnreadCount = useCallback(async () => {
+    try {
+      const r = await api.getConversations()
+      if (r.data?.success) {
+        const convs = r.data.data || []
+        const total = calculateTotalUnread(convs, userRef.current?.id)
+        setUnreadCount(total)
+      }
+    } catch {
+      // ignore
+    }
+  }, [])
+
+  const updateUnreadCount = useCallback((count) => {
+    setUnreadCount(count)
+  }, [])
+
   // ── fetch initial unread count ────────────────────────────────
   useEffect(() => {
     if (!isAuthenticated) {
@@ -43,21 +82,8 @@ export function ChatNotificationProvider({ children }) {
       return
     }
 
-    const fetchUnread = async () => {
-      try {
-        const r = await api.getConversations()
-        if (r.data?.success) {
-          const convs = r.data.data || []
-          const total = convs.reduce((sum, c) => sum + (c.unread_count || 0), 0)
-          setUnreadCount(total)
-        }
-      } catch {
-        // silently ignore — user might not have chat access
-      }
-    }
-
-    fetchUnread()
-  }, [isAuthenticated])
+    refreshUnreadCount()
+  }, [isAuthenticated, refreshUnreadCount])
 
   // ── WebSocket listener (global) ───────────────────────────────
   useEffect(() => {
@@ -86,8 +112,8 @@ export function ChatNotificationProvider({ children }) {
       const isViewingThisConv = isOnChatPage && currentPath.endsWith(`/${convId}`)
 
       if (!isViewingThisConv) {
-        // Increment global unread
-        setUnreadCount((prev) => prev + 1)
+        // Refresh unread count to keep it perfectly accurate
+        refreshUnreadCount()
 
         // Push toast notification (max 3 visible)
         const sender = msg.data?.message?.sender || {}
@@ -137,7 +163,7 @@ export function ChatNotificationProvider({ children }) {
       // Don't disconnect — ChatPage may still need the connection,
       // and the singleton handles reconnects itself.
     }
-  }, [isAuthenticated])
+  }, [isAuthenticated, refreshUnreadCount])
 
   // ── public API ────────────────────────────────────────────────
   const dismissNotification = useCallback((id) => {
@@ -150,23 +176,6 @@ export function ChatNotificationProvider({ children }) {
 
   const decrementUnread = useCallback((amount = 1) => {
     setUnreadCount((prev) => Math.max(0, prev - amount))
-  }, [])
-
-  const refreshUnreadCount = useCallback(async () => {
-    try {
-      const r = await api.getConversations()
-      if (r.data?.success) {
-        const convs = r.data.data || []
-        const total = convs.reduce((sum, c) => sum + (c.unread_count || 0), 0)
-        setUnreadCount(total)
-      }
-    } catch {
-      // ignore
-    }
-  }, [])
-
-  const updateUnreadCount = useCallback((count) => {
-    setUnreadCount(count)
   }, [])
 
   const value = {

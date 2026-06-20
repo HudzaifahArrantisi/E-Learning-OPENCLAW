@@ -273,11 +273,25 @@ const ScanAbsensiContent = () => {
           preferredCamera: 'environment',
           highlightScanRegion: true,
           highlightCodeOutline: true,
+          maxScansPerSecond: 30,
+          onDecodeError: () => {},
+          calculateScanRegion: (video) => {
+            const w = video.videoWidth || 1280
+            const h = video.videoHeight || 720
+            return {
+              x: 0, y: 0,
+              width: w,
+              height: h,
+              downScaledWidth: 800,
+              downScaledHeight: Math.round(800 * h / w),
+            }
+          },
         }
       )
 
       scanner.start()
         .then(() => {
+          scanner.setInversionMode('both')
           setQrScanner(scanner)
           setIsScanning(true)
         })

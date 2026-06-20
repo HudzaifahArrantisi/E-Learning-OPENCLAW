@@ -1,143 +1,92 @@
+#!/usr/bin/env bash
+set -euo pipefail
 
-set -e
-
-# Colors for pretty output
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-RED='\033[0;31m'
-CYAN='\033[0;36m'
-BOLD='\033[1m'
-NC='\033[0m'
-
-MODE="dev"
-COMPOSE_FILE="docker-compose.dev.yml"
-
-# Check for --prod flag
-if [ "$1" = "--prod" ] || [ "$1" = "-p" ]; then
-    MODE="prod"
-    COMPOSE_FILE="docker-compose.yml"
+if [ "${1:-}" = "--docker" ] || [ "${1:-}" = "--prod" ] || [ "${1:-}" = "-p" ]; then
+  exec bash scripts/start-docker.sh "$@"
 fi
 
-echo ""
-echo -e "${CYAN}${BOLD}============================================${NC}"
-echo -e "${CYAN}${BOLD}  🚀 E-Learning-OPENCLAW — Auto Start${NC}"
-echo -e "${CYAN}${BOLD}  Mode: ${MODE}${NC}"
-echo -e "${CYAN}${BOLD}============================================${NC}"
-echo ""
+PYTHON_BIN="${PYTHON_BIN:-python}"
+PYTHON_SERVICE_PATH="${PYTHON_SERVICE_PATH:-./pddikti_service.py}"
+PYTHON_PORT="${PYTHON_PORT:-5001}"
+GO_SERVER_PATH="${GO_SERVER_PATH:-./backend/server}"
+PDDIKTI_HEALTH_URL="${PDDIKTI_HEALTH_URL:-http://localhost:${PYTHON_PORT}/health}"
+PDDIKTI_VERIFY_URL="${PDDIKTI_VERIFY_URL:-http://localhost:${PYTHON_PORT}/validate-nim?nim={nim}}"
+PDDIKTI_STARTUP_TIMEOUT_SECONDS="${PDDIKTI_STARTUP_TIMEOUT_SECONDS:-60}"
 
-# ──────────────────────────────────────────
-# Step 1: Check if Docker is running
-# ──────────────────────────────────────────
-echo -e "${YELLOW}[1/6] Checking Docker...${NC}"
+export PYTHON_PORT
+export PDDIKTI_HEALTH_URL
+export PDDIKTI_VERIFY_URL
+export PDDIKTI_STARTUP_TIMEOUT_SECONDS
 
-if ! command -v docker &> /dev/null; then
-    echo -e "${RED}   ❌ Docker is not installed! Please install Docker first.${NC}"
-    echo "   Visit: https://docs.docker.com/engine/install/"
+PYTHON_PID=""
+GO_PID=""
+
+shutdown() {
+  trap - SIGTERM SIGINT EXIT
+
+  if [ -n "${GO_PID}" ] && kill -0 "${GO_PID}" 2>/dev/null; then
+    echo "Stopping Go backend..."
+    kill "${GO_PID}" 2>/dev/null || true
+  fi
+
+  if [ -n "${PYTHON_PID}" ] && kill -0 "${PYTHON_PID}" 2>/dev/null; then
+    echo "Stopping PDDikti Python service..."
+    kill "${PYTHON_PID}" 2>/dev/null || true
+  fi
+
+  if [ -n "${GO_PID}" ]; then
+    wait "${GO_PID}" 2>/dev/null || true
+  fi
+  if [ -n "${PYTHON_PID}" ]; then
+    wait "${PYTHON_PID}" 2>/dev/null || true
+  fi
+}
+
+trap shutdown SIGTERM SIGINT EXIT
+
+if [ ! -f "${PYTHON_SERVICE_PATH}" ]; then
+  echo "Python service not found: ${PYTHON_SERVICE_PATH}" >&2
+  exit 1
+fi
+
+if [ ! -f "${GO_SERVER_PATH}" ]; then
+  echo "Go binary not found: ${GO_SERVER_PATH}" >&2
+  echo "Build it first with: cd backend && go build -o server ." >&2
+  exit 1
+fi
+
+if [ ! -x "${GO_SERVER_PATH}" ]; then
+  chmod +x "${GO_SERVER_PATH}" 2>/dev/null || true
+fi
+
+echo "Starting PDDikti Python service on port ${PYTHON_PORT}..."
+"${PYTHON_BIN}" "${PYTHON_SERVICE_PATH}" &
+PYTHON_PID=$!
+
+echo "Waiting for PDDikti service health check: ${PDDIKTI_HEALTH_URL}"
+deadline=$((SECONDS + PDDIKTI_STARTUP_TIMEOUT_SECONDS))
+until HEALTH_URL="${PDDIKTI_HEALTH_URL}" "${PYTHON_BIN}" -c 'import os, urllib.request; urllib.request.urlopen(os.environ["HEALTH_URL"], timeout=2).read()' >/dev/null 2>&1; do
+  if ! kill -0 "${PYTHON_PID}" 2>/dev/null; then
+    echo "PDDikti Python service exited before becoming healthy." >&2
     exit 1
-fi
+  fi
 
-if ! docker info &> /dev/null 2>&1; then
-    echo -e "${YELLOW}   ⚠️  Docker daemon is not running. Starting...${NC}"
-    sudo systemctl start docker
-    sleep 2
-
-    if ! docker info &> /dev/null 2>&1; then
-        echo -e "${RED}   ❌ Failed to start Docker. Try: sudo systemctl start docker${NC}"
-        exit 1
-    fi
-fi
-echo -e "${GREEN}   ✅ Docker is running${NC}"
-
-
-echo -e "${YELLOW}[2/6] Setting up environment files...${NC}"
-
-if [ -f "./setup-env.sh" ]; then
-    chmod +x ./setup-env.sh
-    ./setup-env.sh
-else
-    echo -e "${RED}   ❌ setup-env.sh not found! Make sure you're in the project root.${NC}"
+  if [ "${SECONDS}" -ge "${deadline}" ]; then
+    echo "Timed out waiting for PDDikti service after ${PDDIKTI_STARTUP_TIMEOUT_SECONDS}s." >&2
     exit 1
-fi
+  fi
 
-# Verify backend/.env exists
-if [ ! -f "backend/.env" ]; then
-    echo -e "${RED}   ❌ backend/.env still missing after setup!${NC}"
-    echo -e "      Create it manually: cp backend/.env.example backend/.env"
-    exit 1
-fi
+  sleep 1
+done
 
-# Check if DB_DSN has been changed from placeholder
-if grep -q "xxxx" backend/.env 2>/dev/null; then
-    echo ""
-    echo -e "${RED}   ⚠️  WARNING: backend/.env still has placeholder values!${NC}"
-    echo -e "      Edit with: ${YELLOW}nano backend/.env${NC}"
-    echo -e "      Then run: ${YELLOW}./start.sh${NC} again"
-    echo ""
-    read -p "   Continue anyway? (y/N): " CONTINUE
-    if [ "$CONTINUE" != "y" ] && [ "$CONTINUE" != "Y" ]; then
-        exit 0
-    fi
-fi
+echo "PDDikti Python service is healthy."
+echo "Starting Go backend from ${GO_SERVER_PATH}..."
+"${GO_SERVER_PATH}" &
+GO_PID=$!
 
-echo -e "${GREEN}   ✅ Environment files ready${NC}"
-
-# ──────────────────────────────────────────
-# Step 3: Cleanup old containers
-# ──────────────────────────────────────────
-echo -e "${YELLOW}[3/6] Cleaning up old containers...${NC}"
-docker compose -f "$COMPOSE_FILE" down --remove-orphans 2>/dev/null || true
-echo -e "${GREEN}   ✅ Old containers removed${NC}"
-
-# ──────────────────────────────────────────
-# Step 4: Build and start containers
-# ──────────────────────────────────────────
-echo -e "${YELLOW}[4/6] Building and starting containers (this may take a few minutes)...${NC}"
-echo -e "      Using: ${CYAN}$COMPOSE_FILE${NC}"
-
-if [ "$MODE" = "prod" ]; then
-    docker compose -f "$COMPOSE_FILE" up --build -d
-else
-    docker compose -f "$COMPOSE_FILE" up --build -d
-fi
-
-echo -e "${GREEN}   ✅ Containers started${NC}"
-
-# ──────────────────────────────────────────
-# Step 5: Wait for services to be ready
-# ──────────────────────────────────────────
-echo -e "${YELLOW}[5/6] Waiting for services to start...${NC}"
-sleep 5
-echo -e "${GREEN}   ✅ Wait complete${NC}"
-
-# ──────────────────────────────────────────
-# Step 6: Show running containers
-# ──────────────────────────────────────────
-echo -e "${YELLOW}[6/6] Container status:${NC}"
-echo ""
-docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
-echo ""
-
-# ──────────────────────────────────────────
-# Print test URLs
-# ──────────────────────────────────────────
-echo -e "${CYAN}${BOLD}============================================${NC}"
-echo -e "${CYAN}${BOLD}  ✅ All services are running!${NC}"
-echo -e "${CYAN}${BOLD}============================================${NC}"
-echo ""
-echo -e "${BOLD}Test your services:${NC}"
-echo ""
-echo -e "  ${GREEN}Backend health check:${NC}"
-echo "    curl http://localhost:8080/"
-echo ""
-echo -e "  ${GREEN}Backend API test:${NC}"
-echo "    curl http://localhost:8080/api/feed"
-echo ""
-echo -e "  ${GREEN}Frontend (browser):${NC}"
-echo "    http://localhost:3000"
-echo ""
-echo -e "  ${GREEN}View logs:${NC}"
-echo "    docker compose -f $COMPOSE_FILE logs -f"
-echo ""
-echo -e "  ${GREEN}Stop everything:${NC}"
-echo "    docker compose -f $COMPOSE_FILE down"
-echo ""
+set +e
+wait "${GO_PID}"
+GO_STATUS=$?
+GO_PID=""
+shutdown
+exit "${GO_STATUS}"

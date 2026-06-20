@@ -5,9 +5,10 @@ import api from '../../services/api'
 import Sidebar from '../../components/Sidebar'
 import Navbar from '../../components/Navbar'
 import useAuth from '../../hooks/useAuth'
-import { FaCamera, FaEdit, FaEnvelope, FaIdCard, FaMapMarkerAlt, FaSave, FaUser } from 'react-icons/fa'
+import { FaCamera, FaEdit, FaEnvelope, FaIdCard, FaMapMarkerAlt, FaSave, FaUser, FaLock } from 'react-icons/fa'
 import { getProfilePhotoUrl } from '../../utils/profileUtils'
 import SocialProfileStats from '../../components/SocialProfileStats'
+import ChangePasswordModal from '../../components/ChangePasswordModal'
 
 const ProfileMahasiswa = () => {
   const queryClient = useQueryClient()
@@ -15,6 +16,7 @@ const ProfileMahasiswa = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [previewImage, setPreviewImage] = useState(null)
+  const [showChangePassword, setShowChangePassword] = useState(false)
 
   const { data: profile, isLoading, error: profileError } = useQuery({
     queryKey: ['mahasiswaProfile'],
@@ -274,12 +276,22 @@ const ProfileMahasiswa = () => {
                 
                 <div className="space-y-3 pt-8 border-t border-lp-border">
                   {!isEditing ? (
-                    <button
-                      onClick={() => setIsEditing(true)}
-                      className="block w-full py-4 bg-lp-text text-white rounded-full text-[12px] font-bold tracking-[0.15em] uppercase hover:bg-lp-atext transition-all shadow-[0_12px_24px_rgba(0,0,0,0.1)]"
-                    >
-                      Update Profile
-                    </button>
+                    <>
+                      <button
+                        onClick={() => setIsEditing(true)}
+                        className="block w-full py-4 bg-lp-text text-white rounded-full text-[12px] font-bold tracking-[0.15em] uppercase hover:bg-lp-atext transition-all shadow-[0_12px_24px_rgba(0,0,0,0.1)]"
+                      >
+                        Update Profile
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowChangePassword(true)}
+                        className="w-full py-4 mt-3 bg-white border border-lp-border text-lp-text2 rounded-full text-[12px] font-bold tracking-[0.15em] uppercase hover:bg-lp-surface hover:text-lp-text transition-all flex items-center justify-center gap-2 shadow-[0_4px_12px_rgba(0,0,0,0.02)]"
+                      >
+                        <FaLock className="text-[10px]" />
+                        Reset Password
+                      </button>
+                    </>
                   ) : (
                     <div className="grid grid-cols-2 gap-3">
                       <button
@@ -368,6 +380,10 @@ const ProfileMahasiswa = () => {
             </motion.div>
           </div>
         </main>
+        <ChangePasswordModal
+          isOpen={showChangePassword}
+          onClose={() => setShowChangePassword(false)}
+        />
       </div>
     </div>
   )

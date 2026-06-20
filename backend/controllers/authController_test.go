@@ -77,3 +77,48 @@ func TestGetLoginAccountIdentifier(t *testing.T) {
 		})
 	}
 }
+
+func TestStudentVerificationHelpers(t *testing.T) {
+	nim, ok := normalizeStudentNIM(" 0110224237 ")
+	if !ok || nim != "0110224237" {
+		t.Fatalf("normalizeStudentNIM returned (%q, %v), want (0110224237, true)", nim, ok)
+	}
+
+	if _, ok := normalizeStudentNIM("bad-nim!"); ok {
+		t.Fatal("expected invalid NIM with punctuation to be rejected")
+	}
+
+	if !isAllowedInstitution("Sekolah Tinggi Teknologi Terpadu Nurul Fikri") {
+		t.Fatal("expected STT Terpadu Nurul Fikri to be allowed")
+	}
+
+	if isAllowedInstitution("Universitas Lain") {
+		t.Fatal("expected unrelated institution to be rejected")
+	}
+}
+
+func TestStudentVerificationToken(t *testing.T) {
+	student := pddiktiStudent{
+		NIM:          "0110224237",
+		Name:         "Mahasiswa Contoh",
+		Institution:  "Sekolah Tinggi Teknologi Terpadu Nurul Fikri",
+		StudyProgram: "Teknik Informatika",
+	}
+
+	token, err := issueStudentVerificationToken(student)
+	if err != nil {
+		t.Fatalf("issueStudentVerificationToken error: %v", err)
+	}
+
+	got, ok := validateStudentVerificationToken(token, student.NIM)
+	if !ok {
+		t.Fatal("expected token to validate")
+	}
+	if got.NIM != student.NIM || got.Name != student.Name || got.Institution != student.Institution {
+		t.Fatalf("validated student = %#v, want %#v", got, student)
+	}
+
+	if _, ok := validateStudentVerificationToken(token, "0110224999"); ok {
+		t.Fatal("expected token to reject mismatched NIM")
+	}
+}

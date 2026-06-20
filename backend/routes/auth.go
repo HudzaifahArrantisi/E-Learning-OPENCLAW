@@ -10,6 +10,7 @@ func AuthRoutes(r *gin.RouterGroup) {
 	auth := r.Group("/auth")
 	{
 		auth.POST("/login", controllers.Login)
+		auth.POST("/register/verify-student", controllers.VerifyStudentRegistration)
 		auth.POST("/register", controllers.Register)
 	}
 }
