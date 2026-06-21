@@ -585,6 +585,7 @@ api.getCourseInfo = (courseId) => api.get(`/api/courses/${courseId}/info`)
 // ==============================================================
 
 api.verifyStudentRegistration = (data) => api.post('/api/auth/register/verify-student', data, { skipErrorRedirect: true })
+api.getRegistrationOptions = (params) => api.get('/api/auth/register/options', { params, skipErrorRedirect: true })
 api.register = (data) => api.post('/api/auth/register', data, { skipErrorRedirect: true })
 api.resendVerification = (data) => api.post('/api/auth/resend-verification', data, { skipErrorRedirect: true })
 api.changePassword = (data) => api.post('/api/auth/change-password', data)

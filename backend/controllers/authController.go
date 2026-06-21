@@ -5,7 +5,10 @@ import (
 	"fmt"
 	"net/http"
 	"net/mail"
+	"regexp"
+	"strconv"
 	"strings"
+	"time"
 
 	"nf-student-hub-backend/config"
 	"nf-student-hub-backend/utils"
@@ -15,6 +18,21 @@ import (
 )
 
 const nurulFikriDomain = "@nurulfikri.ac.id"
+
+const (
+	minAcademicSemester = 1
+	maxAcademicSemester = 14
+)
+
+var validSpecializations = map[string]string{
+	"cyber_security": "peminatan_cs",
+	"ai":             "peminatan_ai",
+}
+
+var (
+	classNumberPattern = regexp.MustCompile(`\d{1,2}`)
+	classLetterPattern = regexp.MustCompile(`[A-Z]`)
+)
 
 // isInstitutionalEmail: cek domain @nurulfikri.ac.id (case-insensitive).
 func isInstitutionalEmail(s string) bool {
@@ -273,6 +291,39 @@ func Login(c *gin.Context) {
 	})
 }
 
+func GetRegistrationOptions(c *gin.Context) {
+	prodi := strings.TrimSpace(c.Query("prodi"))
+	semester, err := strconv.Atoi(strings.TrimSpace(c.Query("semester")))
+	if err != nil || !isValidAcademicSemester(semester) {
+		utils.ValidationError(c, "Semester harus diisi dengan angka 1 sampai 8.")
+		return
+	}
+	angkatan, err := strconv.Atoi(strings.TrimSpace(c.Query("angkatan")))
+	if err != nil || !isValidAngkatan(angkatan) {
+		utils.ValidationError(c, "Angkatan harus diisi dengan tahun yang valid.")
+		return
+	}
+	if prodi == "" {
+		utils.ValidationError(c, "Prodi wajib diisi.")
+		return
+	}
+
+	specializations := []gin.H{}
+	if requiresSpecialization(semester) {
+		specializations = []gin.H{
+			{"value": "cyber_security", "label": "Cyber Security"},
+			{"value": "ai", "label": "Artificial Intelligence"},
+		}
+	}
+
+	classPrefix := classPrefixForProgram(prodi)
+	utils.SuccessResponse(c, gin.H{
+		"specializations": specializations,
+		"class_prefix":    classPrefix,
+		"class_example":   classPrefix + "-03",
+	}, "Registration options retrieved")
+}
+
 // ============== REGISTER (SUDAH DIPERBAIKI JUGA) ==============
 func Register(c *gin.Context) {
 	var input struct {
@@ -282,6 +333,10 @@ func Register(c *gin.Context) {
 		Role              string `json:"role" binding:"required"`
 		NIM               string `json:"nim,omitempty"`
 		VerificationToken string `json:"verification_token,omitempty"`
+		Semester          int    `json:"semester" binding:"required"`
+		Angkatan          int    `json:"angkatan" binding:"required"`
+		Peminatan         string `json:"peminatan,omitempty"`
+		Kelas             string `json:"kelas" binding:"required"`
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -302,11 +357,26 @@ func Register(c *gin.Context) {
 
 	input.Role = strings.ToLower(strings.TrimSpace(input.Role))
 	input.Email = strings.TrimSpace(input.Email)
+	input.Peminatan = strings.ToLower(strings.TrimSpace(input.Peminatan))
 	if input.Role != "mahasiswa" {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"success": false,
 			"message": "Registrasi mandiri saat ini hanya tersedia untuk mahasiswa.",
 		})
+		return
+	}
+
+	if !isValidAcademicSemester(input.Semester) {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "Semester harus 1 sampai 8."})
+		return
+	}
+	if !isValidAngkatan(input.Angkatan) {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "Angkatan tidak valid."})
+		return
+	}
+	courseCategory, errMsg := resolveSpecializationCategory(input.Semester, input.Peminatan)
+	if errMsg != "" {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": errMsg})
 		return
 	}
 
@@ -347,6 +417,12 @@ func Register(c *gin.Context) {
 		return
 	}
 
+	kelasCode, errMsg := normalizeClassCodeForProgram(input.Kelas, verifiedStudent.StudyProgram)
+	if errMsg != "" {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": errMsg})
+		return
+	}
+
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
 
 	tx, err := config.DB.Begin()
@@ -365,13 +441,23 @@ func Register(c *gin.Context) {
 		return
 	}
 
-	_, err = tx.Exec(`INSERT INTO mahasiswa (user_id, name, nim, nama_pt, prodi, pddikti_verified)
-		VALUES ($1, $2, $3, $4, $5, true)`,
-		userID, input.Name, input.NIM, verifiedStudent.Institution, verifiedStudent.StudyProgram)
+	var mahasiswaID int
+	err = tx.QueryRow(`INSERT INTO mahasiswa
+		(user_id, name, nim, nama_pt, prodi, semester, angkatan, peminatan, kelas, pddikti_verified)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, NULLIF($8, ''), $9, true)
+		RETURNING id`,
+		userID, input.Name, input.NIM, verifiedStudent.Institution, verifiedStudent.StudyProgram,
+		input.Semester, input.Angkatan, input.Peminatan, kelasCode).Scan(&mahasiswaID)
 	redirect := "/mahasiswa"
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "Failed to create profile"})
+		return
+	}
+
+	enrolledCourses, err := enrollMahasiswaCourses(tx, mahasiswaID, input.Semester, courseCategory)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "Gagal memasukkan mata kuliah mahasiswa"})
 		return
 	}
 
@@ -393,12 +479,18 @@ func Register(c *gin.Context) {
 				"email_verification_sent":     emailSent,
 				"email":                       input.Email,
 				"user": gin.H{
-					"id":    userID,
-					"email": input.Email,
-					"role":  input.Role,
-					"name":  input.Name,
-					"nim":   input.NIM,
+					"id":        userID,
+					"email":     input.Email,
+					"role":      input.Role,
+					"name":      input.Name,
+					"nim":       input.NIM,
+					"prodi":     verifiedStudent.StudyProgram,
+					"semester":  input.Semester,
+					"angkatan":  input.Angkatan,
+					"peminatan": input.Peminatan,
+					"kelas":     kelasCode,
 				},
+				"enrolled_courses": enrolledCourses,
 			},
 		})
 		return
@@ -414,14 +506,125 @@ func Register(c *gin.Context) {
 			"redirect":                redirect,
 			"email_verification_sent": emailSent,
 			"user": gin.H{
-				"id":    userID,
-				"email": input.Email,
-				"role":  input.Role,
-				"name":  input.Name,
-				"nim":   input.NIM,
+				"id":        userID,
+				"email":     input.Email,
+				"role":      input.Role,
+				"name":      input.Name,
+				"nim":       input.NIM,
+				"prodi":     verifiedStudent.StudyProgram,
+				"semester":  input.Semester,
+				"angkatan":  input.Angkatan,
+				"peminatan": input.Peminatan,
+				"kelas":     kelasCode,
 			},
+			"enrolled_courses": enrolledCourses,
 		},
 	})
+}
+
+func isValidAcademicSemester(value int) bool {
+	return value >= minAcademicSemester && value <= maxAcademicSemester
+}
+
+func isValidAngkatan(value int) bool {
+	return value >= 2000 && value <= time.Now().Year()+1
+}
+
+func requiresSpecialization(semester int) bool {
+	return semester >= 3
+}
+
+func resolveSpecializationCategory(semester int, peminatan string) (string, string) {
+	if !requiresSpecialization(semester) {
+		return "", ""
+	}
+	category, ok := validSpecializations[peminatan]
+	if !ok {
+		return "", "Peminatan wajib dipilih untuk semester 3 ke atas."
+	}
+	return category, ""
+}
+
+func classPrefixForProgram(prodi string) string {
+	normalized := strings.ToLower(strings.TrimSpace(prodi))
+	normalized = strings.Join(strings.Fields(normalized), " ")
+	switch {
+	case strings.Contains(normalized, "teknik informatika"):
+		return "TI"
+	case strings.Contains(normalized, "sistem informasi"):
+		return "SI"
+	case strings.Contains(normalized, "bisnis digital"):
+		return "BD"
+	}
+
+	words := strings.Fields(strings.NewReplacer("-", " ", "_", " ").Replace(strings.ToUpper(prodi)))
+	var initials strings.Builder
+	for _, word := range words {
+		if word != "" {
+			initials.WriteByte(word[0])
+		}
+		if initials.Len() == 3 {
+			break
+		}
+	}
+	if initials.Len() == 0 {
+		return "KLS"
+	}
+	return initials.String()
+}
+
+func normalizeClassCodeForProgram(value, prodi string) (string, string) {
+	prefix := classPrefixForProgram(prodi)
+	raw := strings.ToUpper(strings.TrimSpace(value))
+	raw = strings.ReplaceAll(raw, "_", "-")
+	raw = strings.ReplaceAll(raw, " ", "-")
+	if raw == "" {
+		return "", "Kelas wajib diisi."
+	}
+
+	number := classNumberPattern.FindString(raw)
+	if number == "" {
+		return "", fmt.Sprintf("Format kelas harus %s-angka, contoh %s-03.", prefix, prefix)
+	}
+	if len(number) == 1 {
+		number = "0" + number
+	}
+
+	compact := strings.ReplaceAll(raw, "-", "")
+	if strings.HasPrefix(compact, prefix) || !classLetterPattern.MatchString(strings.Trim(compact, "0123456789")) {
+		return prefix + "-" + number, ""
+	}
+
+	return "", fmt.Sprintf("Kelas untuk prodi ini harus diawali %s, contoh %s-03.", prefix, prefix)
+}
+
+func enrollMahasiswaCourses(tx *sql.Tx, mahasiswaID, semester int, peminatanCategory string) (int, error) {
+	args := []interface{}{mahasiswaID, semester}
+	categoryFilter := "COALESCE(kategori, 'wajib') = 'wajib'"
+	if peminatanCategory != "" {
+		args = append(args, peminatanCategory)
+		categoryFilter = "(COALESCE(kategori, 'wajib') = 'wajib' OR kategori = $3)"
+	}
+
+	query := fmt.Sprintf(`
+		INSERT INTO mahasiswa_mata_kuliah (mahasiswa_id, mata_kuliah_kode, status)
+		SELECT $1, kode, 'active'
+		FROM mata_kuliah
+		WHERE semester = $2
+		  AND deleted_at IS NULL
+		  AND %s
+		ON CONFLICT DO NOTHING
+	`, categoryFilter)
+
+	result, err := tx.Exec(query, args...)
+	if err != nil {
+		return 0, err
+	}
+	count, err := result.RowsAffected()
+	if err != nil {
+		return 0, nil
+	}
+	return int(count), nil
 }
 
 // ============== HELPER REDIRECT PATH ==============

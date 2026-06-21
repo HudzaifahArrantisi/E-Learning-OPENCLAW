@@ -83,7 +83,7 @@ func VerifyStudentRegistration(c *gin.Context) {
 	if err != nil {
 		switch {
 		case errors.Is(err, errPDDiktiNotAllowed):
-			utils.ErrorResponse(c, http.StatusBadRequest, "NIM valid, tetapi bukan mahasiswa Sekolah Tinggi Teknologi Terpadu Nurul Fikri.")
+			utils.ErrorResponse(c, http.StatusBadRequest, "NIM valid, tapi bukan mahasiswa STT Nurul Fikri.")
 		case errors.Is(err, errPDDiktiNotFound):
 			utils.ErrorResponse(c, http.StatusNotFound, "NIM tidak ditemukan di PDDikti.")
 		default:
@@ -301,6 +301,7 @@ func candidateFromPDDiktiMap(item map[string]interface{}, nim string) pddiktiStu
 		lower["nama"],
 		lower["nama_mahasiswa"],
 		lower["nm_pd"],
+		lower["message"],
 	)
 	candidate := pddiktiStudent{
 		NIM: firstNonEmpty(
@@ -335,6 +336,9 @@ func candidateFromPDDiktiMap(item map[string]interface{}, nim string) pddiktiStu
 	if candidate.NIM == "" && strings.Contains(rawText, nim) {
 		candidate.NIM = nim
 	}
+	if candidate.NIM == "" && isKnownRejectedPDDiktiStudent(lower, candidate.Institution) {
+		candidate.NIM = nim
+	}
 	if candidate.Institution == "" {
 		candidate.Institution = inferInstitutionFromRawText(rawText)
 	}
@@ -342,6 +346,18 @@ func candidateFromPDDiktiMap(item map[string]interface{}, nim string) pddiktiStu
 		candidate.StudyProgram = inferStudyProgramFromRawText(rawText)
 	}
 	return candidate
+}
+
+func isKnownRejectedPDDiktiStudent(fields map[string]string, institution string) bool {
+	if institution == "" {
+		return false
+	}
+	valid := strings.ToLower(strings.TrimSpace(fields["valid"]))
+	if valid != "false" && valid != "0" {
+		return false
+	}
+	message := strings.ToLower(fields["message"])
+	return strings.Contains(message, "bukan") || strings.Contains(message, "terdaftar")
 }
 
 func inferNameFromRawText(text, nim string) string {

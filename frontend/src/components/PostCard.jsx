@@ -199,6 +199,8 @@ const PostCard = memo(({ post, getRelativeTime }) => {
   
   const commentInputRef = useRef(null)
   const isMountedRef = useRef(true)
+  const [doubleTapHearts, setDoubleTapHearts] = useState([])
+  const lastTapRef = useRef(0)
 
   useEffect(() => {
     isMountedRef.current = true
@@ -278,6 +280,17 @@ const PostCard = memo(({ post, getRelativeTime }) => {
 
   const handleTouchStart = (e) => {
     touchStartX.current = e.touches[0].clientX
+
+    // Double tap detection for mobile
+    if (e.touches.length === 1) {
+      const now = Date.now()
+      const DOUBLE_PRESS_DELAY = 300
+      if (now - lastTapRef.current < DOUBLE_PRESS_DELAY) {
+        const touch = e.touches[0]
+        handleImageDoubleInteraction(touch.clientX, touch.clientY, e.currentTarget)
+      }
+      lastTapRef.current = now
+    }
   }
 
   const handleTouchMove = (e) => {
@@ -315,6 +328,33 @@ const PostCard = memo(({ post, getRelativeTime }) => {
     }
     
     setTimeout(() => setAnimateLike(false), 1000)
+  }
+
+  const handleImageDoubleInteraction = (clientX, clientY, currentTarget) => {
+    if (!isLiked) {
+      handleLike()
+    } else {
+      setAnimateLike(true)
+      setTimeout(() => setAnimateLike(false), 1000)
+    }
+
+    const rect = currentTarget.getBoundingClientRect()
+    const x = clientX - rect.left
+    const y = clientY - rect.top
+    const newHeart = {
+      id: Date.now() + Math.random(),
+      x,
+      y
+    }
+    setDoubleTapHearts(prev => [...prev, newHeart])
+  }
+
+  const handleDoubleClick = (e) => {
+    handleImageDoubleInteraction(e.clientX, e.clientY, e.currentTarget)
+  }
+
+  const removeHeart = (id) => {
+    setDoubleTapHearts(prev => prev.filter(h => h.id !== id))
   }
 
   const handleSave = async () => {
@@ -473,14 +513,28 @@ const PostCard = memo(({ post, getRelativeTime }) => {
       {/* Image Carousel */}
       {hasMedia && (
         <div 
-          className="w-full relative bg-lp-surface select-none"
+          className="w-full relative bg-lp-surface select-none overflow-hidden"
           onMouseEnter={() => setShowNavigation(true)}
           onMouseLeave={() => setShowNavigation(false)}
           ref={carouselRef}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
+          onDoubleClick={handleDoubleClick}
         >
+          {doubleTapHearts.map(heart => (
+            <div
+              key={heart.id}
+              className="absolute animate-doubleTapHeart pointer-events-none z-30"
+              style={{
+                left: heart.x,
+                top: heart.y,
+              }}
+              onAnimationEnd={() => removeHeart(heart.id)}
+            >
+              <FaHeart className="text-[#FF3040] text-5xl drop-shadow-[0_4px_10px_rgba(0,0,0,0.3)]" />
+            </div>
+          ))}
           <div className={`relative overflow-hidden ${!imageLoaded ? 'animate-pulse bg-lp-surface' : ''}`}
             style={{ minHeight: '200px', maxHeight: '600px' }}
           >
@@ -741,8 +795,8 @@ const PostCard = memo(({ post, getRelativeTime }) => {
                         </div>
                       </div>
                     </ProfileHoverCard>
-                    <button className="text-lp-text3 hover:text-lp-text2 p-1 font-bold tracking-widest leading-none pb-2">
-                      ...
+                    <button className="text-lp-text3 hover:text-lp-text2 p-1.5 rounded-full hover:bg-lp-surface transition-colors flex items-center justify-center">
+                      <FaEllipsisH className="text-sm" />
                     </button>
                   </div>
 
@@ -838,20 +892,6 @@ const PostCard = memo(({ post, getRelativeTime }) => {
                           <FaPaperPlane className="text-2xl transform -rotate-12" />
                         </button>
                       </div>
-                      <button 
-                        onClick={handleSave}
-                        className={`transition-colors ${
-                          isSaved 
-                            ? 'text-lp-text hover:text-lp-text' 
-                            : 'text-lp-text hover:text-lp-text2'
-                        }`}
-                      >
-                        {isSaved ? (
-                          <FaBookmark className="text-2xl" />
-                        ) : (
-                          <FaRegBookmark className="text-2xl" />
-                        )}
-                      </button>
                     </div>
 
                     {/* Like Count & Timestamp */}

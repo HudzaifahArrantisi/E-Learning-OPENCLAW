@@ -62,7 +62,6 @@ if [ ! -f "backend/.env" ]; then
     fi
 fi
 
-# Warn if still using placeholder values
 if grep -q "xxxx" backend/.env 2>/dev/null || grep -q "your_password_here" backend/.env 2>/dev/null; then
     echo -e "${RED}   ⚠️  WARNING: backend/.env still has placeholder values!${NC}"
     echo -e "      Edit with: ${YELLOW}nano backend/.env${NC}"

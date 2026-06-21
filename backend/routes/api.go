@@ -11,6 +11,7 @@ func SetupAPIRoutes(r *gin.RouterGroup) {
 	// Auth
 	r.POST("/auth/login", controllers.Login)
 	r.POST("/auth/register/verify-student", controllers.VerifyStudentRegistration)
+	r.GET("/auth/register/options", controllers.GetRegistrationOptions)
 	r.POST("/auth/register", controllers.Register)
 	r.GET("/auth/verify", middlewares.JWTMiddleware(), controllers.Verify)
 

@@ -3,8 +3,12 @@ import { useNavigate, Link } from 'react-router-dom'
 import useAuth from '../hooks/useAuth'
 import api from '../services/api'
 import { getIdentifierError } from '../utils/auth'
+import { calculateCurrentSemester, MAX_SEMESTER } from '../utils/semesterUtils'
 
 const NIM_PATTERN = /^[A-Za-z0-9.-]{4,32}$/
+
+const CURRENT_YEAR = new Date().getFullYear()
+const ANGKATAN_OPTIONS = Array.from({ length: 8 }, (_, index) => CURRENT_YEAR - index)
 
 const ROLE_DASHBOARD = {
   admin: '/admin',
@@ -33,10 +37,18 @@ export default function LoginModal({ isOpen, onClose }) {
     role: 'mahasiswa',
     nim: '',
     email: '',
+    semester: '',
+    angkatan: '',
+    peminatan: '',
+    kelas: '',
     password: '',
     confirmPassword: '',
   })
   const [studentVerification, setStudentVerification] = useState(null)
+  const [semesterInfo, setSemesterInfo] = useState(null)
+  const [registrationOptions, setRegistrationOptions] = useState({ specializations: [], classPrefix: '', classExample: '' })
+  const [optionsLoading, setOptionsLoading] = useState(false)
+  const [optionsError, setOptionsError] = useState('')
   const [checkingNim, setCheckingNim] = useState(false)
   const [nimError, setNimError] = useState('')
   const [registering, setRegistering] = useState(false)
@@ -49,11 +61,43 @@ export default function LoginModal({ isOpen, onClose }) {
 
   const nimDebounceRef = useRef(null)
   const nimRequestRef = useRef(0)
+  const optionsRequestRef = useRef(0)
 
   // Clear any pending debounce timer when the modal unmounts.
   useEffect(() => () => {
     if (nimDebounceRef.current) clearTimeout(nimDebounceRef.current)
   }, [])
+
+  useEffect(() => {
+    if (mode !== 'register') return
+    const prodi = studentVerification?.study_program
+    const semester = registerForm.semester
+    const angkatan = registerForm.angkatan
+    if (!prodi || !semester || !angkatan) return
+
+    const requestId = ++optionsRequestRef.current
+    Promise.resolve().then(() => {
+      if (requestId !== optionsRequestRef.current) return
+      setOptionsLoading(true)
+      api.getRegistrationOptions({ prodi, semester, angkatan })
+        .then(response => {
+          if (requestId !== optionsRequestRef.current) return
+          const data = response.data?.data || {}
+        setRegistrationOptions({
+          specializations: data.specializations || [],
+          classPrefix: data.class_prefix || '',
+          classExample: data.class_example || '',
+        })
+        })
+        .catch(err => {
+          if (requestId !== optionsRequestRef.current) return
+          setOptionsError(err.response?.data?.message || 'Gagal mengambil pilihan kelas.')
+        })
+        .finally(() => {
+          if (requestId === optionsRequestRef.current) setOptionsLoading(false)
+        })
+    })
+  }, [mode, studentVerification?.study_program, registerForm.semester, registerForm.angkatan])
 
   if (!isOpen) return null
 
@@ -73,9 +117,47 @@ export default function LoginModal({ isOpen, onClose }) {
     const { name, value } = e.target
     setError('')
     setInfo('')
-    setRegisterForm(prev => ({ ...prev, [name]: value }))
+    setRegisterForm(prev => {
+      const next = { ...prev, [name]: value }
+
+      // When angkatan changes, auto-calculate semester
+      if (name === 'angkatan' && value) {
+        const info = calculateCurrentSemester(Number(value))
+        setSemesterInfo(info)
+        if (!info.error && !info.exceedsLimit) {
+          next.semester = String(info.semester)
+        } else {
+          next.semester = ''
+        }
+        // Reset dependent fields
+        next.kelasId = ''
+        if (info.semester < 3) {
+          next.peminatan = ''
+        }
+      } else if (name === 'angkatan' && !value) {
+        setSemesterInfo(null)
+        next.semester = ''
+        next.kelasId = ''
+        next.peminatan = ''
+      }
+
+      if (name === 'semester' && Number(value) < 3) {
+        next.peminatan = ''
+      }
+      if (name === 'semester' || name === 'angkatan') {
+        next.kelas = ''
+      }
+      return next
+    })
+    if (name === 'semester' || name === 'angkatan') {
+      setRegistrationOptions({ specializations: [], classPrefix: '', classExample: '' })
+      setOptionsError('')
+    }
     if (name === 'nim') {
       setStudentVerification(null)
+      setSemesterInfo(null)
+      setRegistrationOptions({ specializations: [], classPrefix: '', classExample: '' })
+      setOptionsError('')
       setNimError('')
       // Debounced auto-verify (800ms after the user stops typing).
       if (nimDebounceRef.current) clearTimeout(nimDebounceRef.current)
@@ -155,6 +237,26 @@ export default function LoginModal({ isOpen, onClose }) {
       setError('Password minimal 6 karakter.')
       return
     }
+    if (!registerForm.semester) {
+      setError('Semester belum terhitung. Pastikan angkatan dipilih dengan benar.')
+      return
+    }
+    if (semesterInfo?.exceedsLimit) {
+      setError('Masa studi telah melebihi batas semester normal. Registrasi tidak dapat dilanjutkan.')
+      return
+    }
+    if (!registerForm.angkatan) {
+      setError('Angkatan wajib dipilih.')
+      return
+    }
+    if (Number(registerForm.semester) >= 3 && !registerForm.peminatan) {
+      setError('Peminatan wajib dipilih untuk semester 3 ke atas.')
+      return
+    }
+    if (!registerForm.kelas.trim()) {
+      setError('Kelas wajib dipilih.')
+      return
+    }
     if (registerForm.password !== registerForm.confirmPassword) {
       setError('Konfirmasi password tidak sama.')
       return
@@ -171,6 +273,10 @@ export default function LoginModal({ isOpen, onClose }) {
         email: registerForm.email.trim(),
         password: registerForm.password,
         verification_token: studentVerification.verification_token,
+        semester: Number(registerForm.semester),
+        angkatan: Number(registerForm.angkatan),
+        peminatan: registerForm.peminatan,
+        kelas: registerForm.kelas.trim(),
       })
       if (!response.data?.success) {
         throw new Error(response.data?.message || 'Registrasi gagal.')
@@ -518,6 +624,124 @@ export default function LoginModal({ isOpen, onClose }) {
             </div>
           )}
 
+          {studentVerification && (
+            <div className="flex flex-col gap-3">
+              {/* Angkatan selector */}
+              <div className="flex flex-col gap-2">
+                <label className="text-[11px] font-bold text-lp-text2 tracking-[0.08em] uppercase font-mono" htmlFor="register-angkatan">
+                  Angkatan
+                </label>
+                <select
+                  id="register-angkatan"
+                  name="angkatan"
+                  value={registerForm.angkatan}
+                  onChange={handleRegisterChange}
+                  className="w-full h-[46px] bg-lp-surface border border-lp-border rounded-xl px-3.5 text-lp-text text-sm outline-none focus:border-lp-borderA focus:ring-2 focus:ring-lp-accent/10"
+                  required
+                >
+                  <option value="">Pilih angkatan</option>
+                  {ANGKATAN_OPTIONS.map(angkatan => (
+                    <option key={angkatan} value={angkatan}>{angkatan}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Auto-calculated semester display */}
+              {semesterInfo && (
+                <div className="flex flex-col gap-2">
+                  <label className="text-[11px] font-bold text-lp-text2 tracking-[0.08em] uppercase font-mono">
+                    Semester
+                    <span className="text-[9px] font-normal text-lp-text3 ml-1.5 normal-case tracking-normal">(otomatis)</span>
+                  </label>
+
+                  {semesterInfo.error ? (
+                    <div className="flex items-start gap-2.5 bg-lp-red/5 border border-lp-red/15 rounded-xl px-3.5 py-3 text-[12.5px] text-lp-red leading-relaxed">
+                      {semesterInfo.error}
+                    </div>
+                  ) : semesterInfo.exceedsLimit ? (
+                    <div className="flex items-start gap-2.5 bg-lp-amber/5 border border-lp-amber/15 rounded-xl px-3.5 py-3 text-[12.5px] text-lp-amber leading-relaxed">
+                      <svg className="w-3.5 h-3.5 stroke-lp-amber fill-none stroke-2 [stroke-linecap:round] flex-shrink-0 mt-0.5" viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="10" />
+                        <line x1="12" y1="8" x2="12" y2="12" />
+                        <line x1="12" y1="16" x2="12.01" y2="16" />
+                      </svg>
+                      <span>Masa studi telah melebihi batas semester normal (semester {semesterInfo.semester}, maks {MAX_SEMESTER}).</span>
+                    </div>
+                  ) : (
+                    <div className="rounded-xl border border-lp-borderA bg-lp-accentS/30 p-3.5 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-lp-accent/10 text-lp-atext font-bold text-sm">
+                            {semesterInfo.semester}
+                          </span>
+                          <div>
+                            <span className="text-sm font-semibold text-lp-text">Semester {semesterInfo.semester}</span>
+                            <span className="text-[11px] text-lp-text3 ml-1.5">({semesterInfo.periode})</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4 text-[11px] text-lp-text3">
+                        <span>Tahun akademik: {semesterInfo.tahunSaatIni}</span>
+                        <span>•</span>
+                        <span>Estimasi lulus: {semesterInfo.estimasiLulus}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {studentVerification && Number(registerForm.semester) >= 3 && (
+            <div className="flex flex-col gap-2">
+              <label className="text-[11px] font-bold text-lp-text2 tracking-[0.08em] uppercase font-mono" htmlFor="register-peminatan">
+                Peminatan
+              </label>
+              <select
+                id="register-peminatan"
+                name="peminatan"
+                value={registerForm.peminatan}
+                onChange={handleRegisterChange}
+                className="w-full h-[46px] bg-lp-surface border border-lp-border rounded-xl px-3.5 text-lp-text text-sm outline-none focus:border-lp-borderA focus:ring-2 focus:ring-lp-accent/10"
+                required
+              >
+                <option value="">Pilih peminatan</option>
+                {(registrationOptions.specializations.length ? registrationOptions.specializations : [
+                  { value: 'cyber_security', label: 'Cyber Security' },
+                  { value: 'ai', label: 'Artificial Intelligence' },
+                ]).map(item => (
+                  <option key={item.value} value={item.value}>{item.label}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {studentVerification && (
+            <div className="flex flex-col gap-2">
+              <label className="text-[11px] font-bold text-lp-text2 tracking-[0.08em] uppercase font-mono" htmlFor="register-kelas">
+                Kelas
+              </label>
+              <input
+                id="register-kelas"
+                name="kelas"
+                value={registerForm.kelas}
+                onChange={handleRegisterChange}
+                disabled={!registerForm.semester || !registerForm.angkatan || optionsLoading}
+                type="text"
+                placeholder={registrationOptions.classExample || 'TI-03'}
+                className="w-full h-[46px] bg-lp-surface border border-lp-border rounded-xl px-3.5 text-lp-text text-sm outline-none focus:border-lp-borderA focus:ring-2 focus:ring-lp-accent/10 disabled:opacity-60"
+                required
+              />
+              {optionsError ? (
+                <p className="text-[11px] text-lp-red">{optionsError}</p>
+              ) : (
+                <p className="text-[11px] text-lp-text3">
+                  Masukkan kelas dari kemahasiswaan, contoh {registrationOptions.classExample || 'TI-03'}.
+                </p>
+              )}
+            </div>
+          )}
+
           <div className="flex flex-col gap-2">
             <label className="text-[11px] font-bold text-lp-text2 tracking-[0.08em] uppercase font-mono" htmlFor="register-email">
               Email kampus
@@ -574,7 +798,7 @@ export default function LoginModal({ isOpen, onClose }) {
           <button
             type="submit"
             className="w-full h-11 bg-lp-text text-white rounded-full font-sans text-[13px] font-semibold tracking-[0.02em] flex items-center justify-center gap-2 mt-2 transition-all duration-200 hover:bg-lp-atext hover:-translate-y-px shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={registering || checkingNim || !studentVerification}
+            disabled={registering || checkingNim || optionsLoading || !studentVerification}
           >
             {registering ? (
               <>

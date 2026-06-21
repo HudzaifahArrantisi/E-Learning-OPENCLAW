@@ -94,9 +94,55 @@ func InitDB() {
 		if err := ensureUploadSchemaCompatibility(sqlDB); err != nil {
 			log.Printf("WARNING: upload schema compatibility migration failed: %v", err)
 		}
+		if err := ensureAcademicRegistrationSchemaCompatibility(sqlDB); err != nil {
+			log.Printf("WARNING: academic registration schema compatibility migration failed: %v", err)
+		}
 
 		log.Println("Database connected successfully (PostgreSQL/Supabase — Transaction Pooler)")
 	})
+}
+
+func ensureAcademicRegistrationSchemaCompatibility(db *sql.DB) error {
+	statements := []string{
+		`ALTER TABLE mahasiswa ADD COLUMN IF NOT EXISTS nama_pt VARCHAR(255)`,
+		`ALTER TABLE mahasiswa ADD COLUMN IF NOT EXISTS prodi VARCHAR(255)`,
+		`ALTER TABLE mahasiswa ADD COLUMN IF NOT EXISTS semester INTEGER`,
+		`ALTER TABLE mahasiswa ADD COLUMN IF NOT EXISTS angkatan INTEGER`,
+		`ALTER TABLE mahasiswa ADD COLUMN IF NOT EXISTS peminatan VARCHAR(50)`,
+		`ALTER TABLE mahasiswa ADD COLUMN IF NOT EXISTS kelas VARCHAR(50)`,
+		`ALTER TABLE mahasiswa ADD COLUMN IF NOT EXISTS kelas_id INTEGER`,
+		`ALTER TABLE mahasiswa ADD COLUMN IF NOT EXISTS pddikti_verified BOOLEAN NOT NULL DEFAULT false`,
+		`ALTER TABLE mata_kuliah ADD COLUMN IF NOT EXISTS kategori VARCHAR(50) DEFAULT 'wajib'`,
+		`ALTER TABLE mahasiswa_mata_kuliah ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'active'`,
+		`CREATE TABLE IF NOT EXISTS kelas (
+			id SERIAL PRIMARY KEY,
+			kode VARCHAR(50) NOT NULL,
+			prodi VARCHAR(255) NOT NULL,
+			angkatan INTEGER NOT NULL,
+			semester INTEGER NOT NULL,
+			is_active BOOLEAN NOT NULL DEFAULT true,
+			created_at TIMESTAMPTZ NULL DEFAULT CURRENT_TIMESTAMP,
+			updated_at TIMESTAMPTZ NULL DEFAULT CURRENT_TIMESTAMP,
+			deleted_at TIMESTAMPTZ NULL DEFAULT NULL
+		)`,
+		`CREATE UNIQUE INDEX IF NOT EXISTS uq_kelas_active_scope
+			ON kelas (LOWER(kode), LOWER(prodi), angkatan, semester)
+			WHERE deleted_at IS NULL`,
+		`CREATE INDEX IF NOT EXISTS idx_kelas_registration_options
+			ON kelas (LOWER(prodi), angkatan, semester)
+			WHERE is_active = true AND deleted_at IS NULL`,
+		`CREATE UNIQUE INDEX IF NOT EXISTS uq_mahasiswa_mata_kuliah_active
+			ON mahasiswa_mata_kuliah (mahasiswa_id, mata_kuliah_kode)
+			WHERE status = 'active'`,
+	}
+
+	for _, stmt := range statements {
+		if _, err := db.Exec(stmt); err != nil {
+			return fmt.Errorf("%s: %w", stmt, err)
+		}
+	}
+
+	return nil
 }
 
 func ensureUploadSchemaCompatibility(db *sql.DB) error {

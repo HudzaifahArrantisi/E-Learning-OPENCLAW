@@ -11,6 +11,7 @@ func AuthRoutes(r *gin.RouterGroup) {
 	{
 		auth.POST("/login", controllers.Login)
 		auth.POST("/register/verify-student", controllers.VerifyStudentRegistration)
+		auth.GET("/register/options", controllers.GetRegistrationOptions)
 		auth.POST("/register", controllers.Register)
 	}
 }

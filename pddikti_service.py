@@ -12,7 +12,7 @@ ALLOWED_PT = (
     or "SEKOLAH TINGGI TEKNOLOGI TERPADU NURUL FIKRI"
 ).upper()
 
-@app.route("/validate-nim", methods=["GET"])
+@app.route("/validate-nim/", methods=["GET"])
 def validate_nim():
     nim = request.args.get("nim", "").strip()
 
@@ -43,8 +43,11 @@ def validate_nim():
                 else:
                     return jsonify({
                         "valid": False,
+                        "nim": mhs.get("nim") or nim,
+                        "nama": mhs.get("nama"),
                         "nama_pt": mhs.get("nama_pt"),
-                        "message": f"NIM terdaftar di {mhs.get('nama_pt')}, bukan STT Nurul Fikri"
+                        "prodi": mhs.get("nama_prodi"),
+                        "message": "NIM valid, tapi bukan mahasiswa STT Nurul Fikri."
                     })
 
         return jsonify({"valid": False, "message": "NIM tidak ditemukan atau tidak sesuai"})
@@ -59,4 +62,10 @@ def health():
 
 if __name__ == "__main__":
     port = int(os.environ.get("PYTHON_PORT", "5001"))
-    app.run(host="0.0.0.0", port=port, debug=False)
+    try:
+        from waitress import serve
+        logging.info(f"Starting production server (Waitress) on port {port}...")
+        serve(app, host="0.0.0.0", port=port)
+    except ImportError:
+        logging.warning("Waitress not installed. Falling back to development Flask server...")
+        app.run(host="0.0.0.0", port=port, debug=False)

@@ -40,22 +40,33 @@ func GetMahasiswaProfile(c *gin.Context) {
 	}
 
 	var mahasiswa struct {
-		ID     int    `json:"id"`
-		Name   string `json:"name"`
-		NIM    string `json:"nim"`
-		Alamat string `json:"alamat"`
-		Photo  string `json:"photo"`
-		Email  string `json:"email"`
+		ID        int    `json:"id"`
+		Name      string `json:"name"`
+		NIM       string `json:"nim"`
+		Alamat    string `json:"alamat"`
+		Photo     string `json:"photo"`
+		Email     string `json:"email"`
+		NamaPT    string `json:"nama_pt"`
+		Prodi     string `json:"prodi"`
+		Semester  int    `json:"semester"`
+		Angkatan  int    `json:"angkatan"`
+		Peminatan string `json:"peminatan"`
+		Kelas     string `json:"kelas"`
 	}
 
 	// Query dengan LEFT JOIN ke tabel users agar tetap dapat info email jika record mahasiswa belum ada
 	err := config.DB.QueryRow(`
 		SELECT COALESCE(m.id, 0), COALESCE(m.name, 'Mahasiswa'), COALESCE(m.nim, ''), 
-		       COALESCE(m.alamat, ''), COALESCE(m.photo, ''), u.email
+		       COALESCE(m.alamat, ''), COALESCE(m.photo, ''), u.email,
+		       COALESCE(m.nama_pt, ''), COALESCE(m.prodi, ''), COALESCE(m.semester, 0),
+		       COALESCE(m.angkatan, 0), COALESCE(m.peminatan, ''), COALESCE(m.kelas, '')
 		FROM users u
 		LEFT JOIN mahasiswa m ON u.id = m.user_id
 		WHERE u.id = $1
-	`, userID).Scan(&mahasiswa.ID, &mahasiswa.Name, &mahasiswa.NIM, &mahasiswa.Alamat, &mahasiswa.Photo, &mahasiswa.Email)
+	`, userID).Scan(
+		&mahasiswa.ID, &mahasiswa.Name, &mahasiswa.NIM, &mahasiswa.Alamat, &mahasiswa.Photo, &mahasiswa.Email,
+		&mahasiswa.NamaPT, &mahasiswa.Prodi, &mahasiswa.Semester, &mahasiswa.Angkatan, &mahasiswa.Peminatan, &mahasiswa.Kelas,
+	)
 
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusNotFound, "User not found")
@@ -371,38 +382,6 @@ func GetMahasiswaCourses(c *gin.Context) {
 			"jam_selesai": jamSelesai,
 		})
 		courseCount++
-	}
-
-	// Jika tidak ada kursus, tampilkan semua mata kuliah sebagai fallback (untuk testing)
-	if len(courses) == 0 {
-
-		allRows, err := config.DB.Query(`
-			SELECT mk.kode, mk.nama, d.name as dosen, mk.sks, mk.hari, mk.jam_mulai, mk.jam_selesai
-			FROM mata_kuliah mk
-			JOIN dosen d ON mk.dosen_id = d.id
-			WHERE mk.deleted_at IS NULL
-			ORDER BY mk.nama
-			LIMIT 8
-		`)
-
-		if err == nil {
-			defer allRows.Close()
-			for allRows.Next() {
-				var kode, nama, dosen, hari, jamMulai, jamSelesai string
-				var sks int
-				if err := allRows.Scan(&kode, &nama, &dosen, &sks, &hari, &jamMulai, &jamSelesai); err == nil {
-					courses = append(courses, gin.H{
-						"kode":        kode,
-						"nama":        nama,
-						"dosen":       dosen,
-						"sks":         sks,
-						"hari":        hari,
-						"jam_mulai":   jamMulai,
-						"jam_selesai": jamSelesai,
-					})
-				}
-			}
-		}
 	}
 
 	utils.SuccessResponse(c, gin.H{

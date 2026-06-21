@@ -7,7 +7,7 @@ import { usePostInteractions } from '../hooks/usePostInteractions'
 import api from '../services/api'
 import { 
   FaHeart, FaRegHeart, FaComment, FaPaperPlane, 
-  FaBookmark, FaRegBookmark, FaSmile, FaFileAlt,
+  FaBookmark, FaRegBookmark, FaEllipsisH, FaSmile, FaFileAlt,
   FaTimes, FaChevronLeft, FaChevronRight 
 } from 'react-icons/fa'
 import { resolveBackendAssetUrl } from '../utils/assetUrl'
@@ -161,6 +161,9 @@ const PostDetailModal = ({ post, onClose, getRelativeTime }) => {
   const [commentsLoading, setCommentsLoading] = useState(false)
   const [currentSlide, setCurrentSlide] = useState(0)
   const [isMobile, setIsMobile] = useState(false)
+  const [animateLike, setAnimateLike] = useState(false)
+  const [doubleTapHearts, setDoubleTapHearts] = useState([])
+  const lastTapRef = useRef(0)
 
   const commentInputRef = useRef(null)
   const touchStartX = useRef(null)
@@ -270,7 +273,20 @@ const PostDetailModal = ({ post, onClose, getRelativeTime }) => {
   }, [])
 
   // Touch swipe
-  const handleTouchStart = (e) => { touchStartX.current = e.touches[0].clientX }
+  const handleTouchStart = (e) => { 
+    touchStartX.current = e.touches[0].clientX 
+
+    // Double tap detection for mobile
+    if (e.touches.length === 1) {
+      const now = Date.now()
+      const DOUBLE_PRESS_DELAY = 300
+      if (now - lastTapRef.current < DOUBLE_PRESS_DELAY) {
+        const touch = e.touches[0]
+        handleImageDoubleInteraction(touch.clientX, touch.clientY, e.currentTarget)
+      }
+      lastTapRef.current = now
+    }
+  }
   const handleTouchMove = (e) => { touchEndX.current = e.touches[0].clientX }
   const handleTouchEnd = () => {
     if (touchStartX.current === null || touchEndX.current === null) return
@@ -286,12 +302,41 @@ const PostDetailModal = ({ post, onClose, getRelativeTime }) => {
     if (isLiking) return
     const newLikeState = !isLiked
     setIsLiked(newLikeState)
+    setAnimateLike(true)
     setLocalLikes(prev => newLikeState ? prev + 1 : prev - 1)
     try { await likePost(post.id) }
     catch (error) {
       setIsLiked(!newLikeState)
       setLocalLikes(prev => newLikeState ? prev - 1 : prev + 1)
     }
+    setTimeout(() => setAnimateLike(false), 1000)
+  }
+
+  const handleImageDoubleInteraction = (clientX, clientY, currentTarget) => {
+    if (!isLiked) {
+      handleLike()
+    } else {
+      setAnimateLike(true)
+      setTimeout(() => setAnimateLike(false), 1000)
+    }
+
+    const rect = currentTarget.getBoundingClientRect()
+    const x = clientX - rect.left
+    const y = clientY - rect.top
+    const newHeart = {
+      id: Date.now() + Math.random(),
+      x,
+      y
+    }
+    setDoubleTapHearts(prev => [...prev, newHeart])
+  }
+
+  const handleDoubleClick = (e) => {
+    handleImageDoubleInteraction(e.clientX, e.clientY, e.currentTarget)
+  }
+
+  const removeHeart = (id) => {
+    setDoubleTapHearts(prev => prev.filter(h => h.id !== id))
   }
 
   const handleSave = async () => {
@@ -405,11 +450,25 @@ const PostDetailModal = ({ post, onClose, getRelativeTime }) => {
             {hasMedia ? (
               <>
                 <div 
-                  className="w-full h-full md:w-auto md:h-auto flex items-center justify-center bg-lp-surface"
+                  className="w-full h-full md:w-auto md:h-auto flex items-center justify-center bg-lp-surface relative overflow-hidden"
                   onTouchStart={handleTouchStart}
                   onTouchMove={handleTouchMove}
                   onTouchEnd={handleTouchEnd}
+                  onDoubleClick={handleDoubleClick}
                 >
+                  {doubleTapHearts.map(heart => (
+                    <div
+                      key={heart.id}
+                      className="absolute animate-doubleTapHeart pointer-events-none z-30"
+                      style={{
+                        left: heart.x,
+                        top: heart.y,
+                      }}
+                      onAnimationEnd={() => removeHeart(heart.id)}
+                    >
+                      <FaHeart className="text-[#FF3040] text-5xl drop-shadow-[0_4px_10px_rgba(0,0,0,0.3)]" />
+                    </div>
+                  ))}
                   <img
                     src={resolveBackendAssetUrl(mediaItems[currentSlide]?.url)}
                     alt={`Post content ${currentSlide + 1}`}
@@ -488,8 +547,8 @@ const PostDetailModal = ({ post, onClose, getRelativeTime }) => {
                   </div>
                 </div>
               </ProfileHoverCard>
-              <button className="text-lp-text3 hover:text-lp-text2 p-1 font-bold tracking-widest leading-none pb-2">
-                ...
+              <button className="text-lp-text3 hover:text-lp-text2 p-1.5 rounded-full hover:bg-lp-surface transition-colors flex items-center justify-center">
+                <FaEllipsisH className="text-sm" />
               </button>
             </div>
 
@@ -653,7 +712,20 @@ const PostDetailModal = ({ post, onClose, getRelativeTime }) => {
 
         {/* Mobile Image */}
         {hasMedia && (
-          <div className="w-full relative bg-lp-surface" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
+          <div className="w-full relative bg-lp-surface overflow-hidden" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} onDoubleClick={handleDoubleClick}>
+            {doubleTapHearts.map(heart => (
+              <div
+                key={heart.id}
+                className="absolute animate-doubleTapHeart pointer-events-none z-30"
+                style={{
+                  left: heart.x,
+                  top: heart.y,
+                }}
+                onAnimationEnd={() => removeHeart(heart.id)}
+              >
+                <FaHeart className="text-[#FF3040] text-5xl drop-shadow-[0_4px_10px_rgba(0,0,0,0.3)]" />
+              </div>
+            ))}
             <div className="relative overflow-hidden" style={{ maxHeight: '300px' }}>
               <div className="flex transition-transform duration-300 ease-out" style={{ transform: `translateX(-${currentSlide * 100}%)` }}>
                 {mediaItems.map((media, index) => (

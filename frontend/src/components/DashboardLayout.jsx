@@ -8,7 +8,8 @@ import useAuth from '../hooks/useAuth'
 import PostCard from './PostCard'
 import { 
   FaBars, FaSignOutAlt, FaClock, FaPaperclip,
-  FaChevronRight, FaUsers, FaTimes, FaHome, FaUser
+  FaChevronRight, FaUsers, FaTimes, FaHome, FaUser,
+  FaChevronDown
 } from 'react-icons/fa'
 import { MdOutlineSchool } from 'react-icons/md'
 import { BsPeopleFill } from 'react-icons/bs'
@@ -73,6 +74,7 @@ const DashboardLayout = ({
   const [showAccountsDropdown, setShowAccountsDropdown] = useState(false)
   const [showProfileActions, setShowProfileActions] = useState(false)
   const [activeAccountTab, setActiveAccountTab] = useState('ormawa')
+  const [expandedTaskId, setExpandedTaskId] = useState(null)
 
   useEffect(() => {
     if (!showAccountsDropdown) return
@@ -427,66 +429,111 @@ const DashboardLayout = ({
                     const uploadDate = formatDateTime(task.created_at)
                     const fileUrl = getFileUrl(task.file_tugas)
 
+                    const isExpanded = expandedTaskId === task.id
+
                     return (
-                      <button
+                      <div
                         key={task.id}
-                        type="button"
-                        onClick={() => navigate(`/mahasiswa/matkul/${task.course_id}/pertemuan/${task.pertemuan || 1}/tugas?taskId=${task.id}`)}
-                        className="w-full text-left bg-white border border-lp-border rounded-2xl p-5 hover:border-lp-borderA hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] hover:-translate-y-0.5 transition-all duration-300 group"
+                        className="w-full bg-white border border-lp-border rounded-2xl overflow-hidden hover:border-lp-borderA hover:shadow-[0_8px_30px_rgba(0,0,0,0.05)] transition-all duration-300"
                       >
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <h3 className="text-[20px] font-bold text-lp-text tracking-tight">{task.title}</h3>
-                            <p className="text-[14px] text-lp-text2 font-bold mt-1">{task.course_name} • Pertemuan {task.pertemuan}</p>
+                        {/* Collapsed Header */}
+                        <button
+                          type="button"
+                          onClick={() => setExpandedTaskId(isExpanded ? null : task.id)}
+                          className="w-full text-left p-5 flex items-center justify-between gap-4 hover:bg-lp-surface/30 transition-colors focus:outline-none"
+                        >
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                            <span className="text-[16px] font-bold text-lp-text tracking-tight">{task.course_name}</span>
+                            <span className="hidden sm:inline text-lp-text3 font-light">•</span>
+                            <span className="text-[13px] text-lp-text2 font-medium">Pertemuan {task.pertemuan}</span>
                           </div>
-                          <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
-                            {task.is_overdue ? (
-                              <span className="text-[10px] font-mono font-medium px-3 py-1 rounded-full bg-lp-red/8 text-lp-red tracking-wider uppercase">Terlambat</span>
-                            ) : (
-                              <>
-                                <span className="text-[10px] font-mono font-medium px-3 py-1 rounded-full bg-lp-green/8 text-lp-green tracking-wider uppercase">Aktif</span>
-                                {task.due_date && getDaysRemaining(task.due_date) && (
-                                  <span className="text-[10px] text-lp-text3 font-medium font-mono uppercase tracking-tight">
-                                    {getDaysRemaining(task.due_date)}
-                                  </span>
-                                )}
-                              </>
+
+                          <div className="flex items-center gap-3 shrink-0">
+                            <div className="flex flex-col items-end gap-1.5 shrink-0">
+                              {task.is_overdue ? (
+                                <span className="text-[10px] font-mono font-medium px-3 py-1 rounded-full bg-lp-red/8 text-lp-red tracking-wider uppercase">Terlambat</span>
+                              ) : (
+                                <div className="flex items-center gap-2">
+                                  <span className="text-[10px] font-mono font-medium px-3 py-1 rounded-full bg-lp-green/8 text-lp-green tracking-wider uppercase">Aktif</span>
+                                  {task.due_date && getDaysRemaining(task.due_date) && (
+                                    <span className="text-[10px] text-lp-text3 font-medium font-mono uppercase tracking-tight hidden md:inline">
+                                      {getDaysRemaining(task.due_date)}
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                            <FaChevronDown className={`text-lp-text3 text-xs transition-transform duration-300 ${isExpanded ? 'rotate-180 text-lp-accent' : ''}`} />
+                          </div>
+                        </button>
+
+                        {/* Expanded Detail Panel */}
+                        {isExpanded && (
+                          <div className="px-5 pb-5 pt-1 border-t border-lp-border/50 bg-lp-elevated/20 animate-fadeIn space-y-4">
+                            <div>
+                              <span className="text-[10px] font-mono font-semibold tracking-wider text-lp-text3 uppercase block">Judul Tugas</span>
+                              <h4 className="text-[16px] font-bold text-lp-text tracking-tight mt-0.5">{task.title}</h4>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-lp-surface/30 p-4 rounded-xl text-[13px] text-lp-text2 font-light">
+                              <div className="flex items-center gap-2.5">
+                                <div className="w-7 h-7 rounded-lg bg-lp-amber/10 flex items-center justify-center text-lp-amber shrink-0">
+                                  <FaClock className="text-[11px]" />
+                                </div>
+                                <div>
+                                  <span className="text-[9px] font-mono text-lp-text3 block uppercase leading-tight">Deadline</span>
+                                  <span className="font-semibold text-lp-text">{dueDate}</span>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2.5">
+                                <div className="w-7 h-7 rounded-lg bg-lp-accentS flex items-center justify-center text-lp-atext shrink-0">
+                                  <FaClock className="text-[11px]" />
+                                </div>
+                                <div>
+                                  <span className="text-[9px] font-mono text-lp-text3 block uppercase leading-tight">Tanggal Upload</span>
+                                  <span className="font-semibold text-lp-text">{uploadDate}</span>
+                                </div>
+                              </div>
+                            </div>
+
+                            {task.description && (
+                              <div className="bg-lp-surface/10 border border-lp-border/30 p-4 rounded-xl">
+                                <span className="text-[10px] font-mono font-semibold tracking-wider text-lp-text3 uppercase block mb-1">Deskripsi / Instruksi</span>
+                                <p className="text-[13px] text-lp-text2 font-light leading-relaxed whitespace-pre-wrap">
+                                  {task.description}
+                                </p>
+                              </div>
                             )}
-                          </div>
-                        </div>
 
-                        <div className="mt-4 grid gap-2 text-[13px] text-lp-text2 font-light">
-                          <div className="flex items-center gap-2">
-                            <FaClock className="text-lp-amber text-xs" />
-                            <span>Deadline: {dueDate}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <FaClock className="text-lp-accent text-xs" />
-                            <span>Tanggal upload: {uploadDate}</span>
-                          </div>
-                        </div>
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-2">
+                              {fileUrl ? (
+                                <a
+                                  href={fileUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-2 text-[12px] text-lp-atext hover:text-lp-accent font-semibold transition-colors"
+                                >
+                                  <FaPaperclip className="text-xs" />
+                                  <span>Lihat File Tugas</span>
+                                </a>
+                              ) : (
+                                <span className="text-[11px] text-lp-text3 italic">Tidak ada lampiran file.</span>
+                              )}
 
-                        {task.description && (
-                          <p className="mt-4 text-[13px] text-lp-text2 font-light leading-relaxed">
-                            {task.description}
-                          </p>
-                        )}
-
-                        {fileUrl && (
-                          <div className="mt-4">
-                            <a
-                              href={fileUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              onClick={(e) => e.stopPropagation()}
-                              className="inline-flex items-center gap-2 text-[12px] text-lp-atext hover:text-lp-accent font-semibold transition-colors"
-                            >
-                              <FaPaperclip className="text-xs" />
-                              <span>Lihat file tugas</span>
-                            </a>
+                              <button
+                                type="button"
+                                onClick={() => navigate(`/mahasiswa/matkul/${task.course_id}/pertemuan/${task.pertemuan || 1}/tugas?taskId=${task.id}`)}
+                                className="inline-flex items-center justify-center gap-2 bg-lp-text text-white hover:bg-lp-atext text-[12px] font-semibold py-2.5 px-4 rounded-xl transition-all shadow-[0_4px_12px_rgba(0,0,0,0.06)] hover:-translate-y-0.5 active:translate-y-0"
+                              >
+                                <span>Buka Portal Pengumpulan</span>
+                                <svg className="w-3 h-3 fill-none stroke-current stroke-2 [stroke-linecap:round] [stroke-linejoin:round]" viewBox="0 0 24 24">
+                                  <path d="M5 12h14M12 5l7 7-7 7" />
+                                </svg>
+                              </button>
+                            </div>
                           </div>
                         )}
-                      </button>
+                      </div>
                     )
                   })
                 ) : (

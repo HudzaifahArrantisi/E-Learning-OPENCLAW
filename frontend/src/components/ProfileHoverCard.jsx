@@ -21,7 +21,8 @@ export default function ProfileHoverCard({ role, username, displayName, displayA
   const hoverTimeoutRef = useRef(null)
   const closeTimeoutRef = useRef(null)
 
-  const cleanRole = role || 'mahasiswa'
+  const cleanRole = (role || 'mahasiswa').toLowerCase().trim()
+  const canShowProfileHover = ['ukm', 'ormawa'].includes(cleanRole)
   const cleanUser = (username || displayName || '').toLowerCase()
     .replace(/^ormawa_/, '')
     .replace(/^ukm_/, '')
@@ -57,6 +58,7 @@ export default function ProfileHoverCard({ role, username, displayName, displayA
   }
 
   const openCard = () => {
+    if (!canShowProfileHover) return
     if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current)
     if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current)
 
@@ -72,6 +74,7 @@ export default function ProfileHoverCard({ role, username, displayName, displayA
   }
 
   const handleMouseEnter = () => {
+    if (!canShowProfileHover) return
     if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current)
     hoverTimeoutRef.current = setTimeout(() => {
       openCard()
@@ -83,6 +86,7 @@ export default function ProfileHoverCard({ role, username, displayName, displayA
   }
 
   const handleClick = (e) => {
+    if (!canShowProfileHover) return
     e.preventDefault()
     e.stopPropagation()
     if (isOpen) {
@@ -142,7 +146,7 @@ export default function ProfileHoverCard({ role, username, displayName, displayA
   }
 
   useEffect(() => {
-    if (!isOpen || profileData || !cleanRole || !cleanUser) return
+    if (!canShowProfileHover || !isOpen || profileData || !cleanRole || !cleanUser) return
     api.get(`/api/profile/public/${cleanRole}/${cleanUser}`)
       .then((res) => {
         setProfileData(res.data.data)
@@ -153,14 +157,14 @@ export default function ProfileHoverCard({ role, username, displayName, displayA
       .catch(() => {
         setProfileData(null)
       })
-  }, [isOpen, profileData, cleanRole, cleanUser])
+  }, [canShowProfileHover, isOpen, profileData, cleanRole, cleanUser])
 
   useEffect(() => {
-    if (!isOpen || !user || !resolvedUserId || Number(user.id) === Number(resolvedUserId)) return
+    if (!canShowProfileHover || !isOpen || !user || !resolvedUserId || Number(user.id) === Number(resolvedUserId)) return
     api.getFollowStatus(resolvedUserId)
       .then((res) => setFollowState(res.data.data))
       .catch(() => setFollowState(null))
-  }, [isOpen, user, resolvedUserId])
+  }, [canShowProfileHover, isOpen, user, resolvedUserId])
 
   const getRoleDisplay = (r) => {
     switch (r) {
@@ -332,14 +336,14 @@ export default function ProfileHoverCard({ role, username, displayName, displayA
     <>
       <span
         ref={triggerRef}
-        className={`inline-block cursor-pointer ${className}`}
+        className={`inline-block ${canShowProfileHover ? 'cursor-pointer' : ''} ${className}`}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         onClick={handleClick}
       >
         {children}
       </span>
-      {isOpen && createPortal(cardContent, document.body)}
+      {canShowProfileHover && isOpen && createPortal(cardContent, document.body)}
     </>
   )
 }

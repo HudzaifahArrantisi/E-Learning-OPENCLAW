@@ -73,4 +73,32 @@ body {
   animation: drawArrow 1.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
+/* ================= DOUBLE-TAP HEART ANIMATION ================= */
+@keyframes heartFadeScaleUp {
+  0% {
+    transform: translate(-50%, -50%) scale(0) rotate(0deg);
+    opacity: 0;
+  }
+  15% {
+    transform: translate(-50%, -50%) scale(1.4) rotate(-15deg);
+    opacity: 0.95;
+  }
+  30% {
+    transform: translate(-50%, -50%) scale(0.9) rotate(15deg);
+    opacity: 0.95;
+  }
+  85% {
+    transform: translate(-50%, -50%) scale(1) rotate(0deg) translateY(-25px);
+    opacity: 0.95;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(0.4) rotate(0deg) translateY(-70px);
+    opacity: 0;
+  }
+}
+
+.animate-doubleTapHeart {
+  animation: heartFadeScaleUp 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
 

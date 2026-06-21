@@ -9,6 +9,7 @@ const TugasMahasiswa = () => {
   const { user } = useAuth()
   const [tasks, setTasks] = useState([])
   const [loading, setLoading] = useState(true)
+  const [expandedTaskId, setExpandedTaskId] = useState(null)
 
   useEffect(() => {
     let mounted = true
@@ -137,50 +138,73 @@ const TugasMahasiswa = () => {
               <div className="grid grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-2">
                 {tugasList.map((task) => {
                   const deadlineInfo = getDeadlineLabel(task)
+                  const isExpanded = expandedTaskId === task.id
 
                   return (
                     <article
                       key={task.id}
-                      className="group min-w-0 rounded-2xl border border-lp-border bg-lp-surface p-4 transition-all hover:-translate-y-0.5 hover:border-lp-borderA hover:shadow-[0_12px_28px_rgba(75,115,255,0.12)] sm:p-5"
+                      className="min-w-0 rounded-2xl border border-lp-border bg-lp-surface overflow-hidden transition-all hover:border-lp-borderA hover:shadow-[0_8px_30px_rgba(75,115,255,0.06)]"
                     >
-                      <div className="flex flex-col items-start justify-between gap-3 sm:flex-row">
-                        <div className="min-w-0 flex-1">
-                          <h3 className="break-words text-base font-semibold tracking-tight text-lp-text">{task.title}</h3>
-                          <p className="mt-1 text-sm text-lp-text3 line-clamp-2">{task.description || 'Tidak ada deskripsi.'}</p>
-                        </div>
-                        <span className="shrink-0 rounded-full border border-lp-border bg-lp-card px-2.5 py-1 text-[11px] uppercase tracking-wide text-lp-text2">
-                          Pert. {task.pertemuan || 1}
-                        </span>
-                      </div>
-
-                      <div className="mt-4 space-y-2 text-sm">
-                        <div className="flex min-w-0 items-start gap-2 text-lp-text2">
-                          <i className="fas fa-book pt-0.5 text-lp-atext"></i>
-                          <span className="min-w-0 break-words">{task.course_name || 'Mata kuliah tidak tersedia'}</span>
-                        </div>
-                        <div className="flex min-w-0 items-start gap-2 text-lp-text2">
-                          <i className="fas fa-calendar-alt pt-0.5 text-lp-atext"></i>
-                          <span className="min-w-0 break-words">{formatDate(task.due_date)}</span>
-                        </div>
-                      </div>
-
-                      <div className="mt-4 flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center sm:gap-3">
-                        <span className={`rounded-full border px-3 py-1 text-xs font-medium ${deadlineInfo.color}`}>
-                          {deadlineInfo.text}
-                        </span>
-
-                        <span className={`text-sm font-medium ${task.has_submission ? 'text-lp-green' : 'text-lp-red'}`}>
-                          {task.has_submission ? 'Dikumpulkan' : 'Belum Dikerjakan'}
-                        </span>
-                      </div>
-
-                      <Link
-                        to={`/mahasiswa/matkul/${task.course_id}/pertemuan/${task.pertemuan || 1}/tugas?taskId=${task.id}`}
-                        className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-lp-border bg-lp-card px-4 py-2.5 text-sm font-semibold text-lp-atext transition group-hover:border-lp-borderA group-hover:bg-lp-accent/5"
+                      {/* Collapsed Header */}
+                      <button
+                        type="button"
+                        onClick={() => setExpandedTaskId(isExpanded ? null : task.id)}
+                        className="w-full text-left p-4 sm:p-5 flex items-center justify-between gap-4 hover:bg-lp-surface/50 transition-colors focus:outline-none"
                       >
-                        Detail Tugas
-                        <i className="fas fa-arrow-right text-xs"></i>
-                      </Link>
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2">
+                          <span className="text-[16px] font-bold text-lp-text tracking-tight">{task.course_name || 'Mata kuliah tidak tersedia'}</span>
+                          <span className="hidden sm:inline text-lp-text3 font-light">•</span>
+                          <span className="text-[13px] text-lp-text2 font-medium">Pertemuan {task.pertemuan || 1}</span>
+                        </div>
+
+                        <div className="flex items-center gap-3 shrink-0">
+                          <span className={`rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${deadlineInfo.color}`}>
+                            {deadlineInfo.text}
+                          </span>
+                          <i className={`fas fa-chevron-down text-lp-text3 text-xs transition-transform duration-300 ${isExpanded ? 'rotate-180 text-lp-accent' : ''}`}></i>
+                        </div>
+                      </button>
+
+                      {/* Expanded Content */}
+                      {isExpanded && (
+                        <div className="px-4 pb-4 sm:px-5 sm:pb-5 pt-1 border-t border-lp-border/50 bg-white/40 space-y-4 animate-fadeIn">
+                          <div>
+                            <span className="text-[10px] font-mono font-semibold tracking-wider text-lp-text3 uppercase block">Judul Tugas</span>
+                            <h4 className="text-[15px] font-bold text-lp-text tracking-tight mt-0.5">{task.title}</h4>
+                          </div>
+
+                          {task.description && (
+                            <div className="bg-lp-surface/20 border border-lp-border/40 p-4 rounded-xl">
+                              <span className="text-[10px] font-mono font-semibold tracking-wider text-lp-text3 uppercase block mb-1">Deskripsi / Instruksi</span>
+                              <p className="text-[13px] text-lp-text2 font-light leading-relaxed whitespace-pre-wrap">
+                                {task.description}
+                              </p>
+                            </div>
+                          )}
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                            <div className="flex items-center gap-2 text-lp-text2">
+                              <i className="fas fa-calendar-alt text-lp-atext text-xs"></i>
+                              <span>Batas Waktu: {formatDate(task.due_date)}</span>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              <i className={`fas ${task.has_submission ? 'fa-check-circle text-lp-green' : 'fa-exclamation-circle text-lp-red'} text-xs`}></i>
+                              <span className={`font-semibold ${task.has_submission ? 'text-lp-green' : 'text-lp-red'}`}>
+                                {task.has_submission ? 'Dikumpulkan' : 'Belum Dikerjakan'}
+                              </span>
+                            </div>
+                          </div>
+
+                          <Link
+                            to={`/mahasiswa/matkul/${task.course_id}/pertemuan/${task.pertemuan || 1}/tugas?taskId=${task.id}`}
+                            className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-lp-border bg-lp-card px-4 py-2.5 text-sm font-semibold text-lp-atext transition hover:border-lp-borderA hover:bg-lp-accent/5"
+                          >
+                            <span>Buka Portal Pengumpulan</span>
+                            <i className="fas fa-arrow-right text-xs"></i>
+                          </Link>
+                        </div>
+                      )}
                     </article>
                   ) 
                 })}
