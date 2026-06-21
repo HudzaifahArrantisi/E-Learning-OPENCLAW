@@ -135,7 +135,7 @@ const TugasMahasiswa = () => {
                 <p className="mt-1 text-lp-text3">Tugas yang diberikan dosen akan muncul di halaman ini.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-2">
+              <div className="grid grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-2 items-start">
                 {tugasList.map((task) => {
                   const deadlineInfo = getDeadlineLabel(task)
                   const isExpanded = expandedTaskId === task.id
