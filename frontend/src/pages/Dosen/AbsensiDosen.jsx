@@ -44,6 +44,11 @@ const StatCard = ({ label, value, color }) => (
   </div>
 )
 
+const formatCourseTime = (time) => {
+  if (!time) return ''
+  return String(time).trim().replace(/([:.]\d{2})[:.]\d{2}(?:\.\d+)?$/, '$1')
+}
+
 const ConfirmationModal = ({ open, title, description, confirmLabel, pending, onCancel, onConfirm }) => {
   if (typeof document === 'undefined') return null
   return createPortal(
@@ -510,7 +515,7 @@ const AbsensiDosen = () => {
                             <option value="">— Pilih Mata Kuliah —</option>
                             {courses?.map((c) => (
                               <option key={c.kode} value={c.kode}>
-                                {c.nama} ({c.kode}) · {c.hari} {c.jam_mulai}–{c.jam_selesai}
+                                {c.nama} ({c.kode}) · {c.hari} {formatCourseTime(c.jam_mulai)}–{formatCourseTime(c.jam_selesai)}
                               </option>
                             ))}
                           </select>

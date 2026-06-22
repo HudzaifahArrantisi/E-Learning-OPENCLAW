@@ -683,6 +683,7 @@ func CloseAttendanceSession(c *gin.Context) {
 	}
 
 	// Auto-fill status 'alpa' for students who have not scanned/registered attendance
+	sessionIDStr := strconv.Itoa(input.SessionID)
 	_, err = config.DB.Exec(`
 		INSERT INTO attendance (student_id, session_id, student_code, status, pertemuan_ke, created_at)
 		SELECT DISTINCT m.id, $1::text, m.nim, 'alpa', $2::integer, NOW()
@@ -693,7 +694,7 @@ func CloseAttendanceSession(c *gin.Context) {
 			  SELECT 1 FROM attendance a
 			  WHERE a.student_id = m.id AND a.session_id::text = $4::text
 		  )
-	`, input.SessionID, pertemuanKe, courseID, input.SessionID)
+	`, sessionIDStr, pertemuanKe, courseID, sessionIDStr)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, "Gagal memproses absensi alpa otomatis: "+err.Error())
 		return
