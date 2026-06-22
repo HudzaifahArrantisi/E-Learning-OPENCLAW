@@ -47,30 +47,45 @@ func GetMahasiswaProfile(c *gin.Context) {
 		Photo     string `json:"photo"`
 		Email     string `json:"email"`
 		NamaPT    string `json:"nama_pt"`
+		EntryDate string `json:"tanggal_masuk"`
+		Jenjang   string `json:"jenjang"`
+		Status    string `json:"status_mahasiswa"`
 		Prodi     string `json:"prodi"`
 		Semester  int    `json:"semester"`
 		Angkatan  int    `json:"angkatan"`
 		Peminatan string `json:"peminatan"`
 		Kelas     string `json:"kelas"`
+		PDDiktiVerified bool `json:"pddikti_verified"`
 	}
 
 	// Query dengan LEFT JOIN ke tabel users agar tetap dapat info email jika record mahasiswa belum ada
 	err := config.DB.QueryRow(`
-		SELECT COALESCE(m.id, 0), COALESCE(m.name, 'Mahasiswa'), COALESCE(m.nim, ''), 
+		SELECT COALESCE(m.id, 0), COALESCE(m.name, 'Mahasiswa'), SPLIT_PART(COALESCE(m.nim, ''), '@', 1),
 		       COALESCE(m.alamat, ''), COALESCE(m.photo, ''), u.email,
-		       COALESCE(m.nama_pt, ''), COALESCE(m.prodi, ''), COALESCE(m.semester, 0),
-		       COALESCE(m.angkatan, 0), COALESCE(m.peminatan, ''), COALESCE(m.kelas, '')
+		       COALESCE(m.nama_pt, ''), COALESCE(m.tanggal_masuk, ''), COALESCE(m.jenjang, ''),
+		       COALESCE(m.status_mahasiswa, ''), COALESCE(m.prodi, ''), COALESCE(m.semester, 0),
+		       COALESCE(m.angkatan, 0), COALESCE(m.peminatan, ''), COALESCE(m.kelas, ''),
+		       COALESCE(m.pddikti_verified, false)
 		FROM users u
 		LEFT JOIN mahasiswa m ON u.id = m.user_id
 		WHERE u.id = $1
 	`, userID).Scan(
 		&mahasiswa.ID, &mahasiswa.Name, &mahasiswa.NIM, &mahasiswa.Alamat, &mahasiswa.Photo, &mahasiswa.Email,
-		&mahasiswa.NamaPT, &mahasiswa.Prodi, &mahasiswa.Semester, &mahasiswa.Angkatan, &mahasiswa.Peminatan, &mahasiswa.Kelas,
+		&mahasiswa.NamaPT, &mahasiswa.EntryDate, &mahasiswa.Jenjang, &mahasiswa.Status, &mahasiswa.Prodi,
+		&mahasiswa.Semester, &mahasiswa.Angkatan, &mahasiswa.Peminatan, &mahasiswa.Kelas,
+		&mahasiswa.PDDiktiVerified,
 	)
 
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusNotFound, "User not found")
 		return
+	}
+
+	if mahasiswa.Angkatan == 0 {
+		mahasiswa.Angkatan = firstLikelyEnrollmentYear(firstNonEmpty(mahasiswa.EntryDate, mahasiswa.NIM))
+	}
+	if mahasiswa.Angkatan != 0 {
+		mahasiswa.Semester = calculateAcademicSemester(mahasiswa.Angkatan, time.Now())
 	}
 
 	utils.SuccessResponse(c, mahasiswa, "Profile retrieved")
@@ -157,6 +172,10 @@ func UpdateMahasiswaProfile(c *gin.Context) {
 	name := c.Request.FormValue("name")
 	nim := c.Request.FormValue("nim")
 	alamat := c.Request.FormValue("alamat")
+	verificationToken := c.Request.FormValue("verification_token")
+
+	// Simpan NIM sebagai angka saja — buang domain email jika ada (mis. 0110xxxx@nurulfikri.ac.id).
+	nim = strings.TrimSpace(strings.SplitN(nim, "@", 2)[0])
 
 	if name == "" || nim == "" {
 		utils.ErrorResponse(c, http.StatusBadRequest, "Name and NIM are required")
@@ -176,30 +195,212 @@ func UpdateMahasiswaProfile(c *gin.Context) {
 		log.Printf("[Profile] Photo uploaded to DB: %s", fileURL)
 	}
 
-	// Update database
-	var errExec error
-	if photoPath != "" {
-		// Jika ada foto baru, update termasuk photo
-		_, errExec = config.DB.Exec(`
-			UPDATE mahasiswa 
-			SET name = $1, nim = $2, alamat = $3, photo = $4, updated_at = NOW() 
-			WHERE user_id = $5
-		`, name, nim, alamat, photoPath, userID)
+	tx, err := config.DB.Begin()
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Gagal memulai transaksi: "+err.Error())
+		return
+	}
+	defer tx.Rollback()
+
+	var mahasiswaID int
+	if verificationToken != "" {
+		verifiedStudent, ok := validateStudentVerificationToken(verificationToken, nim)
+		if !ok {
+			utils.ErrorResponse(c, http.StatusBadRequest, "Verifikasi NIM tidak valid atau sudah kedaluwarsa.")
+			return
+		}
+
+		name = verifiedStudent.Name
+		angkatan := inferStudentEnrollmentYear(verifiedStudent)
+		semester := calculateAcademicSemester(angkatan, time.Now())
+		prodi := verifiedStudent.StudyProgram
+		jenjang := verifiedStudent.EducationLevel
+		namaPt := verifiedStudent.Institution
+		gender := verifiedStudent.Gender
+		entryDate := verifiedStudent.EntryDate
+		status := verifiedStudent.StudentStatus
+
+		var currentKelas string
+		tx.QueryRow("SELECT COALESCE(kelas, '') FROM mahasiswa WHERE user_id = $1", userID).Scan(&currentKelas)
+		kelasCode := currentKelas
+		if kelasCode == "" {
+			kelasCode = classPrefixForProgram(prodi) + "-01"
+		}
+
+		var errExec error
+		if photoPath != "" {
+			errExec = tx.QueryRow(`
+				UPDATE mahasiswa 
+				SET name = $1, nim = $2, alamat = $3, photo = $4,
+				    nama_pt = $5, jenis_kelamin = NULLIF($6, ''), tanggal_masuk = NULLIF($7, ''),
+				    jenjang = NULLIF($8, ''), prodi = $9, status_mahasiswa = NULLIF($10, ''),
+				    semester = $11, angkatan = $12, kelas = $13, pddikti_verified = true,
+				    updated_at = NOW() 
+				WHERE user_id = $14
+				RETURNING id
+			`, name, nim, alamat, photoPath, namaPt, gender, entryDate, jenjang, prodi, status, semester, angkatan, kelasCode, userID).Scan(&mahasiswaID)
+		} else {
+			errExec = tx.QueryRow(`
+				UPDATE mahasiswa 
+				SET name = $1, nim = $2, alamat = $3,
+				    nama_pt = $4, jenis_kelamin = NULLIF($5, ''), tanggal_masuk = NULLIF($6, ''),
+				    jenjang = NULLIF($7, ''), prodi = $8, status_mahasiswa = NULLIF($9, ''),
+				    semester = $10, angkatan = $11, kelas = $12, pddikti_verified = true,
+				    updated_at = NOW() 
+				WHERE user_id = $13
+				RETURNING id
+			`, name, nim, alamat, namaPt, gender, entryDate, jenjang, prodi, status, semester, angkatan, kelasCode, userID).Scan(&mahasiswaID)
+		}
+
+		if errExec != nil {
+			utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to update profile: "+errExec.Error())
+			return
+		}
+
+		// Enroll courses for active semester
+		_, _ = enrollMahasiswaCourses(tx, mahasiswaID, semester, "")
+
 	} else {
-		// Jika tidak ada foto baru, update tanpa photo
-		_, errExec = config.DB.Exec(`
-			UPDATE mahasiswa 
-			SET name = $1, nim = $2, alamat = $3, updated_at = NOW() 
-			WHERE user_id = $4
-		`, name, nim, alamat, userID)
+		// Update standard profile (without PDDikti verify token)
+		var errExec error
+		if photoPath != "" {
+			errExec = tx.QueryRow(`
+				UPDATE mahasiswa 
+				SET name = $1, nim = $2, alamat = $3, photo = $4, updated_at = NOW() 
+				WHERE user_id = $5
+				RETURNING id
+			`, name, nim, alamat, photoPath, userID).Scan(&mahasiswaID)
+		} else {
+			errExec = tx.QueryRow(`
+				UPDATE mahasiswa 
+				SET name = $1, nim = $2, alamat = $3, updated_at = NOW() 
+				WHERE user_id = $4
+				RETURNING id
+			`, name, nim, alamat, userID).Scan(&mahasiswaID)
+		}
+
+		if errExec != nil {
+			utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to update profile: "+errExec.Error())
+			return
+		}
 	}
 
-	if errExec != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to update profile: "+errExec.Error())
+	if err := tx.Commit(); err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Failed to commit transaction: "+err.Error())
 		return
 	}
 
 	utils.SuccessResponse(c, nil, "Profile updated successfully")
+}
+
+func UpdateMahasiswaPeminatan(c *gin.Context) {
+	userID, exists := c.Get("user_id")
+	if !exists {
+		utils.ErrorResponse(c, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	var input struct {
+		Peminatan string `json:"peminatan" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&input); err != nil {
+		utils.ValidationError(c, "Peminatan wajib dipilih.")
+		return
+	}
+
+	peminatan := strings.ToLower(strings.TrimSpace(input.Peminatan))
+	category, ok := validSpecializations[peminatan]
+	if !ok {
+		utils.ValidationError(c, "Peminatan harus cyber_security atau ai.")
+		return
+	}
+
+	tx, err := config.DB.Begin()
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Gagal memulai transaksi")
+		return
+	}
+	defer tx.Rollback()
+
+	var student struct {
+		ID           int
+		NIM          string
+		Angkatan     int
+		Semester     int
+		EntryDate    string
+		Peminatan    string
+		StudyProgram string
+	}
+	err = tx.QueryRow(`
+		SELECT id, COALESCE(nim, ''), COALESCE(angkatan, 0), COALESCE(semester, 0),
+		       COALESCE(tanggal_masuk, ''), COALESCE(peminatan, ''), COALESCE(prodi, '')
+		FROM mahasiswa
+		WHERE user_id = $1
+		FOR UPDATE
+	`, userID).Scan(&student.ID, &student.NIM, &student.Angkatan, &student.Semester, &student.EntryDate, &student.Peminatan, &student.StudyProgram)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusNotFound, "Mahasiswa not found")
+		return
+	}
+
+	if strings.TrimSpace(student.Peminatan) != "" {
+		utils.ErrorResponse(c, http.StatusConflict, "Peminatan sudah pernah dipilih dan tidak dapat diubah.")
+		return
+	}
+
+	angkatan := student.Angkatan
+	if angkatan == 0 {
+		angkatan = firstLikelyEnrollmentYear(firstNonEmpty(student.EntryDate, student.NIM))
+	}
+	activeSemester := calculateAcademicSemester(angkatan, time.Now())
+	if angkatan == 0 || !isValidAcademicSemester(activeSemester) {
+		utils.ErrorResponse(c, http.StatusBadRequest, "Semester aktif tidak dapat dihitung dari NIM atau tanggal masuk.")
+		return
+	}
+	if activeSemester != 3 && activeSemester != 4 {
+		utils.ErrorResponse(c, http.StatusBadRequest, "Peminatan hanya dapat dipilih saat mahasiswa sedang menjalani semester 3 atau 4.")
+		return
+	}
+
+	if _, err := tx.Exec(`
+		UPDATE mahasiswa
+		SET peminatan = $1, semester = $2, angkatan = $3, updated_at = NOW()
+		WHERE id = $4
+	`, peminatan, activeSemester, angkatan, student.ID); err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Gagal menyimpan peminatan")
+		return
+	}
+
+	if _, err := tx.Exec(`
+		UPDATE mahasiswa_mata_kuliah
+		SET status = 'inactive'
+		WHERE mahasiswa_id = $1
+		  AND mata_kuliah_kode IN (
+		    SELECT kode FROM mata_kuliah
+		    WHERE semester = $2 AND COALESCE(kategori, 'wajib') IN ('peminatan_cs', 'peminatan_ai')
+		  )
+	`, student.ID, activeSemester); err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Gagal memperbarui mata kuliah peminatan lama")
+		return
+	}
+
+	enrolledCourses, err := enrollMahasiswaCourses(tx, student.ID, activeSemester, category)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Gagal memasukkan mata kuliah peminatan")
+		return
+	}
+
+	if err := tx.Commit(); err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Gagal menyimpan perubahan peminatan")
+		return
+	}
+
+	utils.SuccessResponse(c, gin.H{
+		"peminatan":        peminatan,
+		"semester":         activeSemester,
+		"angkatan":         angkatan,
+		"enrolled_courses": enrolledCourses,
+	}, "Peminatan berhasil disimpan")
 }
 
 // GetMahasiswaCoursesByDay - Get mata kuliah berdasarkan hari (untuk filter)
@@ -348,12 +549,15 @@ func GetMahasiswaCourses(c *gin.Context) {
 	config.DB.QueryRow("SELECT COUNT(*) FROM mahasiswa_mata_kuliah WHERE mahasiswa_id = $1", mahasiswaID).Scan(&totalCourses)
 
 	rows, err := config.DB.Query(`
-		SELECT mk.kode, mk.nama, d.name as dosen, mk.sks, mk.hari, mk.jam_mulai, mk.jam_selesai
+		SELECT mk.kode, mk.nama, d.name as dosen, mk.sks, mk.hari, mk.jam_mulai, mk.jam_selesai,
+		       COALESCE(mk.semester, 0), COALESCE(mk.kategori, 'wajib')
 		FROM mata_kuliah mk
 		JOIN dosen d ON mk.dosen_id = d.id
 		JOIN mahasiswa_mata_kuliah mmk ON mk.kode = mmk.mata_kuliah_kode
-		WHERE mmk.mahasiswa_id = $1 AND mk.deleted_at IS NULL
-		ORDER BY mk.nama
+		WHERE mmk.mahasiswa_id = $1
+		  AND COALESCE(mmk.status, 'active') = 'active'
+		  AND mk.deleted_at IS NULL
+		ORDER BY mk.semester, CASE COALESCE(mk.kategori, 'wajib') WHEN 'wajib' THEN 1 WHEN 'peminatan_cs' THEN 2 WHEN 'peminatan_ai' THEN 2 ELSE 3 END, mk.nama
 	`, mahasiswaID)
 
 	if err != nil {
@@ -366,9 +570,9 @@ func GetMahasiswaCourses(c *gin.Context) {
 	var courses []gin.H
 	courseCount := 0
 	for rows.Next() {
-		var kode, nama, dosen, hari, jamMulai, jamSelesai string
-		var sks int
-		if err := rows.Scan(&kode, &nama, &dosen, &sks, &hari, &jamMulai, &jamSelesai); err != nil {
+		var kode, nama, dosen, hari, jamMulai, jamSelesai, kategori string
+		var sks, semester int
+		if err := rows.Scan(&kode, &nama, &dosen, &sks, &hari, &jamMulai, &jamSelesai, &semester, &kategori); err != nil {
 
 			continue
 		}
@@ -380,6 +584,8 @@ func GetMahasiswaCourses(c *gin.Context) {
 			"hari":        hari,
 			"jam_mulai":   jamMulai,
 			"jam_selesai": jamSelesai,
+			"semester":    semester,
+			"kategori":    kategori,
 		})
 		courseCount++
 	}

@@ -417,6 +417,12 @@ api.updateMahasiswaProfile = (formData) =>
     headers: { 'Content-Type': 'multipart/form-data' },
   })
 
+api.verifyMahasiswaProfileStudent = (data) =>
+  api.post('/api/mahasiswa/profile/verify-student', data, { skipErrorRedirect: true })
+
+api.updateMahasiswaPeminatan = (data) =>
+  api.put('/api/mahasiswa/profile/peminatan', data)
+
 api.getPertemuanByMatkul = (courseId) =>
   api.get(`/api/mahasiswa/matkul/${courseId}/pertemuan`)
 

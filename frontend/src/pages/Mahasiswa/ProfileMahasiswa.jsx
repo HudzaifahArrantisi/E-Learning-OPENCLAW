@@ -1,14 +1,57 @@
-import React, { useEffect, useState } from 'react'
+import React, { useMemo, useState, useRef, useEffect } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { motion } from 'framer-motion'
+import { motion as Motion } from 'framer-motion'
 import api from '../../services/api'
 import Sidebar from '../../components/Sidebar'
 import Navbar from '../../components/Navbar'
 import useAuth from '../../hooks/useAuth'
-import { FaCamera, FaEdit, FaEnvelope, FaIdCard, FaMapMarkerAlt, FaSave, FaUser, FaLock } from 'react-icons/fa'
+import { FaBookOpen, FaCamera, FaEnvelope, FaIdCard, FaLock, FaMapMarkerAlt, FaUser } from 'react-icons/fa'
 import { getProfilePhotoUrl } from '../../utils/profileUtils'
 import SocialProfileStats from '../../components/SocialProfileStats'
 import ChangePasswordModal from '../../components/ChangePasswordModal'
+import { calculateCurrentSemester } from '../../utils/semesterUtils'
+
+const CURRENT_YEAR = new Date().getFullYear()
+const NIM_PATTERN = /^[A-Za-z0-9.-]{4,32}$/
+
+// NIM disimpan/ditampilkan sebagai angka saja — buang domain email kampus bila ada
+// (mis. 0110xxxx@nurulfikri.ac.id -> 0110xxxx).
+const sanitizeNim = (value) => String(value || '').split('@')[0]
+
+const deriveAngkatanFromStudent = (student) => {
+  const values = [student?.entry_date, student?.tanggal_masuk, student?.nim].filter(Boolean)
+  for (const value of values) {
+    const digits = String(value).replace(/\D/g, '')
+    const candidates = []
+    if (digits.length >= 4) candidates.push(digits.slice(0, 4))
+    if (digits.length >= 2) candidates.push(digits.slice(0, 2))
+    for (const candidate of candidates) {
+      let year = Number(candidate)
+      if (!Number.isInteger(year)) continue
+      if (year < 100) year += 2000
+      if (year >= 2000 && year <= CURRENT_YEAR + 1) return year
+    }
+  }
+  return null
+}
+
+const PEMINATAN_OPTIONS = [
+  {
+    value: 'cyber_security',
+    label: 'Cyber Security',
+    description: 'KRIPTOGRAFI, ETHICAL HACKING, DIGITAL FORENSIC',
+  },
+  {
+    value: 'ai',
+    label: 'Artificial Intelligence',
+    description: 'MACHINE LEARNING, DATA MINING, NATURAL LANGUAGE PROCESSING',
+  },
+]
+
+const PEMINATAN_LABELS = {
+  cyber_security: 'Cyber Security',
+  ai: 'Artificial Intelligence',
+}
 
 const ProfileMahasiswa = () => {
   const queryClient = useQueryClient()
@@ -17,6 +60,18 @@ const ProfileMahasiswa = () => {
   const [isEditing, setIsEditing] = useState(false)
   const [previewImage, setPreviewImage] = useState(null)
   const [showChangePassword, setShowChangePassword] = useState(false)
+  const [selectedPeminatan, setSelectedPeminatan] = useState('')
+
+  const [checkingNim, setCheckingNim] = useState(false)
+  const [nimError, setNimError] = useState('')
+  const [studentVerification, setStudentVerification] = useState(null)
+
+  const nimDebounceRef = useRef(null)
+  const nimRequestRef = useRef(0)
+
+  useEffect(() => () => {
+    if (nimDebounceRef.current) clearTimeout(nimDebounceRef.current)
+  }, [])
 
   const { data: profile, isLoading, error: profileError } = useQuery({
     queryKey: ['mahasiswaProfile'],
@@ -25,30 +80,36 @@ const ProfileMahasiswa = () => {
   })
 
   const socialUserId = profile?.user_id || user?.id
-
-  const [formData, setFormData] = useState({
-    alamat: '',
+  const [profileDraft, setProfileDraft] = useState(null)
+  const formData = profileDraft || {
+    name: profile?.name || '',
+    nim: sanitizeNim(profile?.nim),
+    alamat: profile?.alamat || '',
     photo: null,
-  })
-
-  useEffect(() => {
-    if (profile) {
-      setFormData({
-        alamat: profile.alamat || '',
-        photo: null,
-      })
-    }
-  }, [profile])
+    verification_token: '',
+    semester: profile?.semester || '',
+    angkatan: profile?.angkatan || '',
+  }
+  const currentSemester = Number(profile?.semester || 0)
+  const currentPeminatan = String(profile?.peminatan || '').trim()
+  const canChoosePeminatan = (currentSemester === 3 || currentSemester === 4) && !currentPeminatan
+  const selectedPeminatanInfo = useMemo(
+    () => PEMINATAN_OPTIONS.find(item => item.value === selectedPeminatan),
+    [selectedPeminatan]
+  )
 
   const updateProfileMutation = useMutation({
     mutationFn: async (data) => {
       const formDataToSend = new FormData()
-      formDataToSend.append('name', profile?.name || '')
-      formDataToSend.append('nim', profile?.nim || '')
+      formDataToSend.append('name', data.name)
+      formDataToSend.append('nim', data.nim)
       formDataToSend.append('alamat', data.alamat)
 
       if (data.photo) {
         formDataToSend.append('photo', data.photo)
+      }
+      if (data.verification_token) {
+        formDataToSend.append('verification_token', data.verification_token)
       }
 
       return api.put('/api/mahasiswa/profile', formDataToSend, {
@@ -61,14 +122,119 @@ const ProfileMahasiswa = () => {
       queryClient.invalidateQueries({ queryKey: ['mahasiswaProfile'] })
       setIsEditing(false)
       setPreviewImage(null)
+      setProfileDraft(null)
+      setStudentVerification(null)
+      setNimError('')
     },
   })
 
+  const updatePeminatanMutation = useMutation({
+    mutationFn: (peminatan) => api.updateMahasiswaPeminatan({ peminatan }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['mahasiswaProfile'] })
+      setSelectedPeminatan('')
+    },
+  })
+
+  const handleStartEdit = () => {
+    setProfileDraft({
+      name: profile?.name || '',
+      nim: sanitizeNim(profile?.nim),
+      alamat: profile?.alamat || '',
+      photo: null,
+      verification_token: '',
+      semester: profile?.semester || '',
+      angkatan: profile?.angkatan || '',
+    })
+    setStudentVerification(null)
+    setNimError('')
+    setIsEditing(true)
+  }
+
   const handleInputChange = (e) => {
-    setFormData((prev) => ({
-      ...prev,
-      [e.target.name]: e.target.value,
-    }))
+    const { name, value } = e.target
+    setProfileDraft((prev) => {
+      const next = prev ? { ...prev } : {
+        name: profile?.name || '',
+        nim: sanitizeNim(profile?.nim),
+        alamat: profile?.alamat || '',
+        photo: null,
+        verification_token: '',
+        semester: profile?.semester || '',
+        angkatan: profile?.angkatan || '',
+      }
+      next[name] = value
+      return next
+    })
+  }
+
+  const handleNimChange = (e) => {
+    const value = e.target.value.replace(/[^A-Za-z0-9.-]/g, '')
+    setProfileDraft((prev) => {
+      const next = prev ? { ...prev } : {
+        name: profile?.name || '',
+        nim: sanitizeNim(profile?.nim),
+        alamat: profile?.alamat || '',
+        photo: null,
+        verification_token: '',
+        semester: profile?.semester || '',
+        angkatan: profile?.angkatan || '',
+      }
+      next.nim = value
+      next.verification_token = ''
+      return next
+    })
+
+    if (nimDebounceRef.current) {
+      clearTimeout(nimDebounceRef.current)
+    }
+
+    setStudentVerification(null)
+    setNimError('')
+
+    const nim = value.trim()
+    if (NIM_PATTERN.test(nim)) {
+      setCheckingNim(true)
+      nimDebounceRef.current = setTimeout(() => runNimCheck(nim), 800)
+    } else {
+      setCheckingNim(false)
+    }
+  }
+
+  const runNimCheck = async (nim) => {
+    const requestId = ++nimRequestRef.current
+    setCheckingNim(true)
+    setNimError('')
+    setStudentVerification(null)
+    try {
+      const response = await api.verifyMahasiswaProfileStudent({ nim })
+      if (requestId !== nimRequestRef.current) return
+
+      const data = response.data?.data
+      if (!response.data?.success || !data?.verification_token) {
+        throw new Error(response.data?.message || 'NIM tidak dapat diverifikasi.')
+      }
+
+      setStudentVerification(data)
+      const derivedAngkatan = deriveAngkatanFromStudent(data)
+      const derivedSemesterInfo = derivedAngkatan ? calculateCurrentSemester(derivedAngkatan) : null
+
+      setProfileDraft((prev) => ({
+        ...prev,
+        name: data.name,
+        nim: data.nim || nim,
+        verification_token: data.verification_token,
+        angkatan: derivedAngkatan ? String(derivedAngkatan) : prev?.angkatan || '',
+        semester: derivedSemesterInfo && !derivedSemesterInfo.error && !derivedSemesterInfo.exceedsLimit
+          ? String(derivedSemesterInfo.semester)
+          : prev?.semester || '',
+      }))
+    } catch (err) {
+      if (requestId !== nimRequestRef.current) return
+      setNimError(err.response?.data?.message || err.message || 'Gagal memverifikasi NIM.')
+    } finally {
+      if (requestId === nimRequestRef.current) setCheckingNim(false)
+    }
   }
 
   const handleFileChange = (e) => {
@@ -87,8 +253,8 @@ const ProfileMahasiswa = () => {
       return
     }
 
-    setFormData((prev) => ({
-      ...prev,
+    setProfileDraft((prev) => ({
+      ...(prev || formData),
       photo: file,
     }))
 
@@ -102,8 +268,8 @@ const ProfileMahasiswa = () => {
   const handleSubmit = (e) => {
     e.preventDefault()
 
-    if (!formData.alamat.trim() && !formData.photo) {
-      alert('Harap isi alamat atau pilih foto untuk diupdate')
+    if (!formData.alamat.trim() && !formData.photo && !formData.verification_token) {
+      alert('Harap isi alamat, pilih foto, atau verifikasi NIM Anda sebelum menyimpan.')
       return
     }
 
@@ -113,13 +279,15 @@ const ProfileMahasiswa = () => {
   const handleCancelEdit = () => {
     setIsEditing(false)
     setPreviewImage(null)
+    setProfileDraft(null)
+    setStudentVerification(null)
+    setNimError('')
+  }
 
-    if (profile) {
-      setFormData({
-        alamat: profile.alamat || '',
-        photo: null,
-      })
-    }
+  const handleSavePeminatan = () => {
+    if (!selectedPeminatan || updatePeminatanMutation.isPending) return
+    const confirmed = window.confirm(`Peminatan ${selectedPeminatanInfo?.label || ''} hanya bisa disimpan satu kali dan tidak dapat diubah. Lanjutkan?`)
+    if (confirmed) updatePeminatanMutation.mutate(selectedPeminatan)
   }
 
   if (isLoading) {
@@ -188,7 +356,7 @@ const ProfileMahasiswa = () => {
     },
     {
       label: 'Nomor Induk Mahasiswa',
-      value: profile?.nim || '-',
+      value: sanitizeNim(profile?.nim) || '-',
       icon: FaIdCard,
       accent: 'text-lp-green',
       bg: 'bg-lp-green/10',
@@ -199,6 +367,48 @@ const ProfileMahasiswa = () => {
       icon: FaEnvelope,
       accent: 'text-lp-accent',
       bg: 'bg-lp-accentS',
+    },
+    {
+      label: 'Semester Aktif',
+      value: currentSemester ? `Semester ${currentSemester}` : '-',
+      icon: FaBookOpen,
+      accent: 'text-lp-amber',
+      bg: 'bg-lp-amber/10',
+    },
+    {
+      label: 'Angkatan',
+      value: profile?.angkatan || '-',
+      icon: FaIdCard,
+      accent: 'text-lp-green',
+      bg: 'bg-lp-green/10',
+    },
+    {
+      label: 'Tanggal Masuk',
+      value: profile?.tanggal_masuk || '-',
+      icon: FaBookOpen,
+      accent: 'text-lp-text2',
+      bg: 'bg-lp-surface',
+    },
+    {
+      label: 'Status Mahasiswa',
+      value: profile?.status_mahasiswa || '-',
+      icon: FaUser,
+      accent: 'text-lp-green',
+      bg: 'bg-lp-green/10',
+    },
+    {
+      label: 'Program Studi',
+      value: [profile?.jenjang, profile?.prodi].filter(Boolean).join(' - ') || '-',
+      icon: FaBookOpen,
+      accent: 'text-lp-atext',
+      bg: 'bg-lp-accentS',
+    },
+    {
+      label: 'Peminatan',
+      value: currentPeminatan ? PEMINATAN_LABELS[currentPeminatan] || currentPeminatan : 'Belum dipilih',
+      icon: FaBookOpen,
+      accent: currentPeminatan ? 'text-lp-green' : 'text-lp-text3',
+      bg: currentPeminatan ? 'bg-lp-green/10' : 'bg-lp-surface',
     },
     {
       label: 'Alamat Tempat Tinggal',
@@ -221,7 +431,7 @@ const ProfileMahasiswa = () => {
 
         <main className="max-w-5xl mx-auto p-6 sm:p-10 relative z-10 flex-1 overflow-y-auto">
           {/* Header */}
-          <motion.div 
+          <Motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             className="mb-12"
@@ -229,11 +439,11 @@ const ProfileMahasiswa = () => {
             <span className="text-[11px] font-mono font-medium tracking-[0.2em] uppercase text-lp-text3 mb-3 block">STUDENT PORTAL</span>
             <h1 className="text-4xl md:text-5xl font-light text-lp-text tracking-tight mb-3">Profil Mahasiswa</h1>
             <p className="text-lg text-lp-text2 font-light">Informasi identitas akademik dan detail personal Anda.</p>
-          </motion.div>
+          </Motion.div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             {/* Left Column: Preview & Avatar */}
-            <motion.div 
+            <Motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.1 }}
@@ -266,7 +476,7 @@ const ProfileMahasiswa = () => {
                 </div>
                 
                 <h3 className="text-2xl font-normal text-lp-text tracking-tight truncate px-2">{profile?.name || 'Mahasiswa'}</h3>
-                <p className="text-lp-text3 font-mono text-[11px] mb-8 mt-1 tracking-widest uppercase">{profile?.nim || 'NIM'}</p>
+                <p className="text-lp-text3 font-mono text-[11px] mb-8 mt-1 tracking-widest uppercase">{sanitizeNim(profile?.nim) || 'NIM'}</p>
 
                 {socialUserId && (
                   <div className="mb-6">
@@ -278,7 +488,7 @@ const ProfileMahasiswa = () => {
                   {!isEditing ? (
                     <>
                       <button
-                        onClick={() => setIsEditing(true)}
+                        onClick={handleStartEdit}
                         className="block w-full py-4 bg-lp-text text-white rounded-full text-[12px] font-bold tracking-[0.15em] uppercase hover:bg-lp-atext transition-all shadow-[0_12px_24px_rgba(0,0,0,0.1)]"
                       >
                         Update Profile
@@ -311,10 +521,10 @@ const ProfileMahasiswa = () => {
                   )}
                 </div>
               </div>
-            </motion.div>
+            </Motion.div>
 
             {/* Right Column: Academic Details */}
-            <motion.div 
+            <Motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.2 }}
@@ -327,7 +537,7 @@ const ProfileMahasiswa = () => {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-8">
-                  {profileInfo.slice(0, 3).map((item, index) => (
+                  {profileInfo.filter(item => !item.fullRow).map((item, index) => (
                     <div key={index} className="group">
                       <label className="block text-[10px] font-mono font-medium tracking-[0.2em] uppercase text-lp-text3 mb-2">{item.label}</label>
                       <div className="flex items-center gap-4 py-1">
@@ -338,6 +548,62 @@ const ProfileMahasiswa = () => {
                       </div>
                     </div>
                   ))}
+                </div>
+
+                <div className="mt-10 pt-8 border-t border-lp-border/50">
+                  <div className="flex flex-col gap-2 mb-5">
+                    <h3 className="text-base font-semibold text-lp-text tracking-tight">Peminatan Semester</h3>
+                    <p className="text-[13px] text-lp-text2 font-light leading-relaxed">
+                      Peminatan hanya bisa dipilih satu kali saat semester aktif Anda adalah semester 3 atau 4. Semester dihitung dari data masuk/NIM, bukan dari input manual.
+                    </p>
+                  </div>
+
+                  {currentPeminatan ? (
+                    <div className="rounded-2xl border border-lp-green/20 bg-lp-green/5 p-5">
+                      <p className="text-[11px] font-mono font-medium tracking-[0.18em] uppercase text-lp-green mb-2">Peminatan terkunci</p>
+                      <p className="text-lg font-semibold text-lp-text">{PEMINATAN_LABELS[currentPeminatan] || currentPeminatan}</p>
+                      <p className="text-[13px] text-lp-text2 mt-2">Pilihan ini sudah tersimpan dan tidak dapat diubah kembali.</p>
+                    </div>
+                  ) : canChoosePeminatan ? (
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {PEMINATAN_OPTIONS.map(item => (
+                          <button
+                            key={item.value}
+                            type="button"
+                            onClick={() => setSelectedPeminatan(item.value)}
+                            className={`text-left rounded-2xl border p-5 transition-all ${
+                              selectedPeminatan === item.value
+                                ? 'border-lp-accent bg-lp-accentS/40 shadow-[0_10px_24px_rgba(75,115,255,0.12)]'
+                                : 'border-lp-border bg-lp-surface/40 hover:border-lp-borderA'
+                            }`}
+                          >
+                            <span className="block text-[15px] font-semibold text-lp-text">{item.label}</span>
+                            <span className="block text-[12px] text-lp-text2 mt-2 leading-relaxed">{item.description}</span>
+                          </button>
+                        ))}
+                      </div>
+                      {updatePeminatanMutation.error && (
+                        <div className="rounded-xl border border-lp-red/15 bg-lp-red/5 px-4 py-3 text-[13px] text-lp-red">
+                          {updatePeminatanMutation.error.response?.data?.message || 'Gagal menyimpan peminatan.'}
+                        </div>
+                      )}
+                      <button
+                        type="button"
+                        onClick={handleSavePeminatan}
+                        disabled={!selectedPeminatan || updatePeminatanMutation.isPending}
+                        className="h-11 px-6 bg-lp-text text-white rounded-full text-[12px] font-bold tracking-[0.14em] uppercase hover:bg-lp-atext transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {updatePeminatanMutation.isPending ? 'Menyimpan...' : 'Simpan Peminatan'}
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="rounded-2xl border border-lp-border bg-lp-surface/50 p-5">
+                      <p className="text-[13px] text-lp-text2 leading-relaxed">
+                        Peminatan belum bisa dipilih karena semester aktif Anda saat ini {currentSemester ? `semester ${currentSemester}` : 'belum terhitung'}. Pilihan akan tersedia pada semester 3 atau 4.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -350,6 +616,128 @@ const ProfileMahasiswa = () => {
 
                 {isEditing ? (
                   <form onSubmit={handleSubmit} className="space-y-8">
+                    {/* NIM Input */}
+                    <div className="group relative">
+                      <label className="block text-[10px] font-mono font-medium tracking-[0.2em] uppercase text-lp-text3 mb-3">
+                        Nomor Induk Mahasiswa (NIM)
+                      </label>
+                      <div className="relative">
+                        <input
+                          id="edit-nim"
+                          type="text"
+                          name="nim"
+                          value={formData.nim}
+                          onChange={handleNimChange}
+                          disabled={profile?.pddikti_verified}
+                          maxLength={32}
+                          placeholder="Masukkan NIM Anda"
+                          className="w-full bg-lp-surface border border-lp-border rounded-2xl p-5 text-lp-text text-[15px] font-normal focus:outline-none focus:border-lp-text transition-all leading-relaxed disabled:opacity-75 disabled:cursor-not-allowed"
+                        />
+                        {/* Status indicator */}
+                        {!profile?.pddikti_verified && (
+                          <div className="absolute right-5 top-1/2 -translate-y-1/2 flex items-center">
+                            {checkingNim ? (
+                              <span className="block w-5 h-5 border-2 border-lp-text3/30 border-t-lp-text3 rounded-full animate-spin" />
+                            ) : studentVerification ? (
+                              <svg className="w-5 h-5 stroke-lp-green fill-none stroke-[2.5]" viewBox="0 0 24 24">
+                                <polyline points="20 6 9 17 4 12" />
+                              </svg>
+                            ) : nimError ? (
+                              <svg className="w-5 h-5 stroke-lp-red fill-none stroke-2" viewBox="0 0 24 24">
+                                <circle cx="12" cy="12" r="10" />
+                                <line x1="12" y1="8" x2="12" y2="12" />
+                                <line x1="12" y1="16" x2="12.01" y2="16" />
+                              </svg>
+                            ) : null}
+                          </div>
+                        )}
+                      </div>
+                      
+                      {!profile?.pddikti_verified ? (
+                        <p className="mt-3 text-[11px] text-lp-text3 font-medium tracking-[0.05em] uppercase opacity-60">
+                          {checkingNim ? 'Menghubungkan ke PDDikti...' : 'Ketik NIM Anda untuk sinkronisasi otomatis dengan data PDDikti.'}
+                        </p>
+                      ) : (
+                        <p className="mt-3 text-[11px] text-lp-green font-medium tracking-[0.05em] uppercase flex items-center gap-1">
+                          <svg className="w-3.5 h-3.5 stroke-lp-green fill-none stroke-[2.5]" viewBox="0 0 24 24">
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                          NIM Anda sudah diverifikasi PDDikti secara resmi.
+                        </p>
+                      )}
+                      
+                      {nimError && (
+                        <div className="mt-3 bg-lp-red/5 border border-lp-red/15 rounded-xl px-4 py-3 text-[13px] text-lp-red">
+                          {nimError}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Detected PDDikti Data Card */}
+                    {studentVerification && (
+                      <Motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="rounded-2xl border border-lp-green/20 bg-lp-green/5 p-6 space-y-4"
+                      >
+                        <div className="flex items-center gap-2 text-lp-green font-semibold text-sm">
+                          <svg className="w-4 h-4 stroke-lp-green fill-none stroke-[2.5]" viewBox="0 0 24 24">
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                          <span>Data Mahasiswa Ditemukan di PDDikti</span>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-[13px]">
+                          <div>
+                            <span className="text-lp-text3 block">Nama Lengkap (Sesuai PDDikti)</span>
+                            <span className="font-semibold text-lp-text">{studentVerification.name}</span>
+                          </div>
+                          <div>
+                            <span className="text-lp-text3 block">Program Studi</span>
+                            <span className="font-semibold text-lp-text">{studentVerification.education_level} - {studentVerification.study_program}</span>
+                          </div>
+                          <div>
+                            <span className="text-lp-text3 block">Tahun Angkatan / Masuk</span>
+                            <span className="font-semibold text-lp-text">{formData.angkatan || '-'} (Masuk: {studentVerification.entry_date || '-'})</span>
+                          </div>
+                          <div>
+                            <span className="text-lp-text3 block">Semester Aktif Terdeteksi</span>
+                            <span className="font-semibold text-lp-text">Semester {formData.semester || '-'}</span>
+                          </div>
+                          <div>
+                            <span className="text-lp-text3 block">Status Mahasiswa</span>
+                            <span className="font-semibold text-lp-text">{studentVerification.student_status}</span>
+                          </div>
+                          <div>
+                            <span className="text-lp-text3 block">Perguruan Tinggi</span>
+                            <span className="font-semibold text-lp-text">{studentVerification.institution}</span>
+                          </div>
+                        </div>
+                        <p className="text-[11px] text-lp-text2 font-light border-t border-lp-green/10 pt-3">
+                          *Menyimpan profil akan secara otomatis memverifikasi akun Anda, menghitung semester secara dinamis, dan mendaftarkan mata kuliah semester Anda.
+                        </p>
+                      </Motion.div>
+                    )}
+
+                    {/* Nama Lengkap Input (locked if verified) */}
+                    <div className="group">
+                      <label className="block text-[10px] font-mono font-medium tracking-[0.2em] uppercase text-lp-text3 mb-3">
+                        Nama Lengkap
+                      </label>
+                      <input
+                        type="text"
+                        name="name"
+                        value={formData.name}
+                        onChange={handleInputChange}
+                        disabled={profile?.pddikti_verified || !!studentVerification}
+                        placeholder="Nama Lengkap Anda"
+                        className="w-full bg-lp-surface border border-lp-border rounded-2xl p-5 text-lp-text text-[15px] font-normal focus:outline-none focus:border-lp-text transition-all leading-relaxed disabled:opacity-75 disabled:cursor-not-allowed"
+                      />
+                      {(profile?.pddikti_verified || !!studentVerification) && (
+                        <p className="mt-3 text-[11px] text-lp-text3 font-medium tracking-[0.05em] uppercase opacity-60">Nama resmi disinkronkan dengan data PDDikti.</p>
+                      )}
+                    </div>
+
+                    {/* Alamat Lengkap */}
                     <div className="group">
                       <label className="block text-[10px] font-mono font-medium tracking-[0.2em] uppercase text-lp-text3 mb-3">ALAMAT LENGKAP</label>
                       <textarea
@@ -377,7 +765,7 @@ const ProfileMahasiswa = () => {
                   </div>
                 )}
               </div>
-            </motion.div>
+            </Motion.div>
           </div>
         </main>
         <ChangePasswordModal

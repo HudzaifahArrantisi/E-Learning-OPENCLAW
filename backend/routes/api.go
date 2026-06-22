@@ -17,6 +17,7 @@ func SetupAPIRoutes(r *gin.RouterGroup) {
 
 	// Mahasiswa
 	r.GET("/mahasiswa/profile", middlewares.JWTMiddleware(), controllers.GetMahasiswaProfile)
+	r.POST("/mahasiswa/profile/verify-student", middlewares.JWTMiddleware(), middlewares.RoleMiddleware("mahasiswa"), controllers.VerifyStudentForMahasiswaProfile)
 	r.POST("/mahasiswa/profile", middlewares.JWTMiddleware(), controllers.UpdateMahasiswaProfile)
 	r.POST("/mahasiswa/scan-attendance", middlewares.JWTMiddleware(), middlewares.RoleMiddleware("mahasiswa"), controllers.ScanAttendance)
 	r.GET("/mahasiswa/ukt/in", middlewares.JWTMiddleware(), controllers.GetUKTInvoices)

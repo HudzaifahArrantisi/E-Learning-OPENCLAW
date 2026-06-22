@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Navbar from '../../components/Navbar'
 import Sidebar from '../../components/Sidebar'
@@ -15,11 +15,48 @@ const MatkulMahasiswa = () => {
   const [searchTerm, setSearchTerm] = useState('')
   const navigate = useNavigate()
 
-  useEffect(() => {
-    fetchMahasiswaCourses()
+  const getFallbackCourses = useCallback(() => {
+    return [
+      {
+        kode: 'KP001',
+        nama: 'KOMPUTASI PARALEL & TERDISTRIBUSI',
+        dosen: 'Dr. Dosen 1',
+        sks: 3,
+        hari: 'Jumat',
+        jam_mulai: '13:30',
+        jam_selesai: '15:00'
+      },
+      {
+        kode: 'KW002',
+        nama: 'KEAMANAN WEB',
+        dosen: 'Dr. Dosen 2',
+        sks: 3,
+        hari: 'Senin',
+        jam_mulai: '13:00',
+        jam_selesai: '15:00'
+      },
+      {
+        kode: 'PBO001',
+        nama: 'PEMROGRAMAN BERORIENTASI OBJEK',
+        dosen: 'Dr. Dosen 3',
+        sks: 4,
+        hari: 'Kamis',
+        jam_mulai: '13:30',
+        jam_selesai: '15:30'
+      },
+      {
+        kode: 'DEV001',
+        nama: 'DEVOPSSEC',
+        dosen: 'Dr. Dosen 4',
+        sks: 3,
+        hari: 'Senin',
+        jam_mulai: '08:30',
+        jam_selesai: '11:00'
+      }
+    ]
   }, [])
 
-  const fetchMahasiswaCourses = async () => {
+  const fetchMahasiswaCourses = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
@@ -78,49 +115,14 @@ const MatkulMahasiswa = () => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [getFallbackCourses])
 
-  // Fallback data jika API gagal
-  const getFallbackCourses = () => {
-    return [
-      {
-        kode: 'KP001',
-        nama: 'KOMPUTASI PARALEL & TERDISTRIBUSI',
-        dosen: 'Dr. Dosen 1',
-        sks: 3,
-        hari: 'Jumat',
-        jam_mulai: '13:30',
-        jam_selesai: '15:00'
-      },
-      {
-        kode: 'KW002',
-        nama: 'KEAMANAN WEB',
-        dosen: 'Dr. Dosen 2',
-        sks: 3,
-        hari: 'Senin',
-        jam_mulai: '13:00',
-        jam_selesai: '15:00'
-      },
-      {
-        kode: 'PBO001',
-        nama: 'PEMROGRAMAN BERORIENTASI OBJEK',
-        dosen: 'Dr. Dosen 3',
-        sks: 4,
-        hari: 'Kamis',
-        jam_mulai: '13:30',
-        jam_selesai: '15:30'
-      },
-      {
-        kode: 'DEV001',
-        nama: 'DEVOPSSEC',
-        dosen: 'Dr. Dosen 4',
-        sks: 3,
-        hari: 'Senin',
-        jam_mulai: '08:30',
-        jam_selesai: '11:00'
-      }
-    ]
-  }
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      fetchMahasiswaCourses()
+    }, 0)
+    return () => window.clearTimeout(timer)
+  }, [fetchMahasiswaCourses])
 
   const handleCardClick = (courseKode) => {
 
@@ -139,6 +141,12 @@ const MatkulMahasiswa = () => {
         )
       })
     : []
+  const activeSemester = Array.isArray(courses) && courses.length
+    ? Math.max(...courses.map(course => Number(course.semester || 0)).filter(Boolean))
+    : null
+  const specializationCount = Array.isArray(courses)
+    ? courses.filter(course => String(course.kategori || '') !== 'wajib').length
+    : 0
 
   if (loading) {
     return (
@@ -174,7 +182,10 @@ const MatkulMahasiswa = () => {
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 space-y-4 sm:space-y-0">
             <div>
               <h1 className="text-2xl md:text-3xl font-bold text-lp-text font-semibold tracking-tight">Mata Kuliah</h1>
-              <p className="text-lp-text2 font-light mt-1">Semester 3 - Total {Array.isArray(courses) ? courses.length : 0} mata kuliah</p>
+              <p className="text-lp-text2 font-light mt-1">
+                {activeSemester ? `Semester ${activeSemester}` : 'Semester aktif'} - Total {Array.isArray(courses) ? courses.length : 0} mata kuliah
+                {specializationCount ? ` (${specializationCount} peminatan)` : ''}
+              </p>
               {error && (
                 <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-lg">
                   <p className="text-yellow-700 text-sm">{error}</p>
@@ -236,6 +247,11 @@ const MatkulMahasiswa = () => {
                           {course.sks || 0} SKS
                         </span>
                         <span className="text-[11px] font-mono text-lp-text3 tracking-wider uppercase">{course.kode}</span>
+                        {course.kategori && course.kategori !== 'wajib' ? (
+                          <span className="mt-1 px-2 py-0.5 rounded-full bg-lp-accentS text-lp-atext text-[10px] font-semibold">
+                            Peminatan
+                          </span>
+                        ) : null}
                       </div>
                     </div>
 

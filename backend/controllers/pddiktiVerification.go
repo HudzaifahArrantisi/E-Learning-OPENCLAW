@@ -39,19 +39,27 @@ var (
 )
 
 type pddiktiStudent struct {
-	NIM          string `json:"nim"`
-	Name         string `json:"name"`
-	Institution  string `json:"institution"`
-	StudyProgram string `json:"study_program"`
-	RawText      string `json:"-"`
+	NIM            string `json:"nim"`
+	Name           string `json:"name"`
+	Gender         string `json:"gender"`
+	Institution    string `json:"institution"`
+	EntryDate      string `json:"entry_date"`
+	EducationLevel string `json:"education_level"`
+	StudyProgram   string `json:"study_program"`
+	StudentStatus  string `json:"student_status"`
+	RawText        string `json:"-"`
 }
 
 type studentVerificationClaims struct {
-	NIM          string `json:"nim"`
-	Name         string `json:"name"`
-	Institution  string `json:"institution"`
-	StudyProgram string `json:"study_program"`
-	ExpiresAt    int64  `json:"exp"`
+	NIM            string `json:"nim"`
+	Name           string `json:"name"`
+	Gender         string `json:"gender"`
+	Institution    string `json:"institution"`
+	EntryDate      string `json:"entry_date"`
+	EducationLevel string `json:"education_level"`
+	StudyProgram   string `json:"study_program"`
+	StudentStatus  string `json:"student_status"`
+	ExpiresAt      int64  `json:"exp"`
 }
 
 func VerifyStudentRegistration(c *gin.Context) {
@@ -102,8 +110,76 @@ func VerifyStudentRegistration(c *gin.Context) {
 		"valid":              true,
 		"nim":                student.NIM,
 		"name":               student.Name,
+		"gender":             student.Gender,
 		"institution":        student.Institution,
+		"entry_date":         student.EntryDate,
+		"education_level":    student.EducationLevel,
 		"study_program":      student.StudyProgram,
+		"student_status":     student.StudentStatus,
+		"verification_token": token,
+	}, "NIM terverifikasi sebagai mahasiswa STT Terpadu Nurul Fikri.")
+}
+
+func VerifyStudentForMahasiswaProfile(c *gin.Context) {
+	userID, exists := c.Get("user_id")
+	if !exists {
+		utils.ErrorResponse(c, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	var input struct {
+		NIM string `json:"nim" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&input); err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, "NIM wajib diisi.")
+		return
+	}
+
+	nim, ok := normalizeStudentNIM(input.NIM)
+	if !ok {
+		utils.ErrorResponse(c, http.StatusBadRequest, "Format NIM tidak valid.")
+		return
+	}
+
+	available, err := isMahasiswaNIMAvailableForUser(nim, userID)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Gagal memeriksa NIM.")
+		return
+	}
+	if !available {
+		utils.ErrorResponse(c, http.StatusConflict, "NIM ini sudah digunakan oleh mahasiswa lain.")
+		return
+	}
+
+	student, err := lookupPDDiktiStudent(c.Request.Context(), nim)
+	if err != nil {
+		switch {
+		case errors.Is(err, errPDDiktiNotAllowed):
+			utils.ErrorResponse(c, http.StatusBadRequest, "NIM valid, tapi bukan mahasiswa STT Nurul Fikri.")
+		case errors.Is(err, errPDDiktiNotFound):
+			utils.ErrorResponse(c, http.StatusNotFound, "NIM tidak ditemukan di PDDikti.")
+		default:
+			utils.ErrorResponse(c, http.StatusServiceUnavailable, "Verifikasi PDDikti sedang tidak tersedia. Coba lagi nanti.")
+		}
+		return
+	}
+
+	token, err := issueStudentVerificationToken(student)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Gagal membuat token verifikasi.")
+		return
+	}
+
+	utils.SuccessResponse(c, gin.H{
+		"valid":              true,
+		"nim":                student.NIM,
+		"name":               student.Name,
+		"gender":             student.Gender,
+		"institution":        student.Institution,
+		"entry_date":         student.EntryDate,
+		"education_level":    student.EducationLevel,
+		"study_program":      student.StudyProgram,
+		"student_status":     student.StudentStatus,
 		"verification_token": token,
 	}, "NIM terverifikasi sebagai mahasiswa STT Terpadu Nurul Fikri.")
 }
@@ -130,20 +206,28 @@ func validateStudentVerificationToken(token, nim string) (pddiktiStudent, bool) 
 		return pddiktiStudent{}, false
 	}
 	return pddiktiStudent{
-		NIM:          claims.NIM,
-		Name:         claims.Name,
-		Institution:  claims.Institution,
-		StudyProgram: claims.StudyProgram,
+		NIM:            claims.NIM,
+		Name:           claims.Name,
+		Gender:         claims.Gender,
+		Institution:    claims.Institution,
+		EntryDate:      claims.EntryDate,
+		EducationLevel: claims.EducationLevel,
+		StudyProgram:   claims.StudyProgram,
+		StudentStatus:  claims.StudentStatus,
 	}, true
 }
 
 func issueStudentVerificationToken(student pddiktiStudent) (string, error) {
 	claims := studentVerificationClaims{
-		NIM:          student.NIM,
-		Name:         student.Name,
-		Institution:  student.Institution,
-		StudyProgram: student.StudyProgram,
-		ExpiresAt:    time.Now().Add(studentVerificationTokenTTL).Unix(),
+		NIM:            student.NIM,
+		Name:           student.Name,
+		Gender:         student.Gender,
+		Institution:    student.Institution,
+		EntryDate:      student.EntryDate,
+		EducationLevel: student.EducationLevel,
+		StudyProgram:   student.StudyProgram,
+		StudentStatus:  student.StudentStatus,
+		ExpiresAt:      time.Now().Add(studentVerificationTokenTTL).Unix(),
 	}
 	payload, err := json.Marshal(claims)
 	if err != nil {
@@ -316,6 +400,13 @@ func candidateFromPDDiktiMap(item map[string]interface{}, nim string) pddiktiStu
 			lower["nm_pd"],
 			lower["name"],
 		),
+		Gender: normalizeGender(firstNonEmpty(
+			lower["jenis_kelamin"],
+			lower["jk"],
+			lower["kelamin"],
+			lower["gender"],
+			lower["sex"],
+		)),
 		Institution: firstNonEmpty(
 			lower["nama_pt"],
 			lower["perguruan_tinggi"],
@@ -324,11 +415,35 @@ func candidateFromPDDiktiMap(item map[string]interface{}, nim string) pddiktiStu
 			lower["kampus"],
 			lower["institution"],
 		),
+		EntryDate: normalizeEntryDate(firstNonEmpty(
+			lower["tanggal_masuk"],
+			lower["tgl_masuk"],
+			lower["tanggal_masuk_kuliah"],
+			lower["tgl_masuk_kuliah"],
+			lower["mulai_smt"],
+			lower["periode_masuk"],
+			lower["tahun_masuk"],
+			lower["angkatan"],
+		)),
+		EducationLevel: firstNonEmpty(
+			lower["jenjang"],
+			lower["jenjang_pendidikan"],
+			lower["strata"],
+			lower["program"],
+		),
 		StudyProgram: firstNonEmpty(
 			lower["nama_prodi"],
 			lower["prodi"],
 			lower["program_studi"],
 			lower["programstudi"],
+		),
+		StudentStatus: firstNonEmpty(
+			lower["status_mahasiswa"],
+			lower["status_terakhir_mahasiswa"],
+			lower["status_terakhir"],
+			lower["status_saat_ini"],
+			lower["status"],
+			lower["ket_keluar"],
 		),
 		RawText: rawText,
 	}
@@ -345,7 +460,64 @@ func candidateFromPDDiktiMap(item map[string]interface{}, nim string) pddiktiStu
 	if candidate.StudyProgram == "" {
 		candidate.StudyProgram = inferStudyProgramFromRawText(rawText)
 	}
+	if candidate.EducationLevel == "" {
+		candidate.EducationLevel = inferEducationLevel(candidate.StudyProgram)
+	}
 	return candidate
+}
+
+func normalizeGender(value string) string {
+	normalized := strings.ToLower(strings.TrimSpace(value))
+	switch normalized {
+	case "l", "laki-laki", "laki laki", "male", "m":
+		return "Laki-laki"
+	case "p", "perempuan", "female", "f":
+		return "Perempuan"
+	default:
+		return strings.TrimSpace(value)
+	}
+}
+
+func normalizeEntryDate(value string) string {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return ""
+	}
+	digitOnly := regexp.MustCompile(`\D`).ReplaceAllString(value, "")
+	if len(digitOnly) >= 8 {
+		year := digitOnly[:4]
+		month := digitOnly[4:6]
+		day := digitOnly[6:8]
+		if _, err := time.Parse("2006-01-02", year+"-"+month+"-"+day); err == nil {
+			return year + "-" + month + "-" + day
+		}
+	}
+	if len(digitOnly) == 6 {
+		return digitOnly[:4] + "-" + digitOnly[4:6]
+	}
+	if len(digitOnly) == 4 {
+		return digitOnly
+	}
+	for _, layout := range []string{"2006-01-02", "02-01-2006", "02/01/2006", "2006/01/02"} {
+		if parsed, err := time.Parse(layout, value); err == nil {
+			return parsed.Format("2006-01-02")
+		}
+	}
+	return value
+}
+
+func inferEducationLevel(studyProgram string) string {
+	normalized := strings.ToLower(studyProgram)
+	if strings.Contains(normalized, "s1") || strings.Contains(normalized, "sarjana") {
+		return "S1"
+	}
+	if strings.Contains(normalized, "d3") || strings.Contains(normalized, "diploma tiga") {
+		return "D3"
+	}
+	if strings.Contains(normalized, "d4") || strings.Contains(normalized, "sarjana terapan") {
+		return "D4"
+	}
+	return ""
 }
 
 func isKnownRejectedPDDiktiStudent(fields map[string]string, institution string) bool {
@@ -485,4 +657,26 @@ func isMahasiswaNIMRegistered(nim string) (bool, error) {
 		)
 	`, nim).Scan(&exists)
 	return exists, err
+}
+
+func isMahasiswaNIMAvailableForUser(nim string, userID interface{}) (bool, error) {
+	var existsOther bool
+	err := config.DB.QueryRow(`
+		SELECT EXISTS(
+			SELECT 1
+			FROM mahasiswa m
+			JOIN users u ON u.id = m.user_id
+			WHERE LOWER(m.nim) = LOWER($1)
+			  AND LOWER(u.role) = 'mahasiswa'
+			  AND m.user_id <> $2
+			UNION ALL
+			SELECT 1
+			FROM users u
+			WHERE LOWER(u.role) = 'mahasiswa'
+			  AND LOWER(SPLIT_PART(u.email, '@', 1)) = LOWER($1)
+			  AND LOWER(SPLIT_PART(u.email, '@', 2)) = 'nurulfikri.ac.id'
+			  AND u.id <> $2
+		)
+	`, nim, userID).Scan(&existsOther)
+	return !existsOther, err
 }

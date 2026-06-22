@@ -140,7 +140,9 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB) {
 	mahasiswa.Use(middlewares.RoleMiddleware("mahasiswa"))
 	{
 		mahasiswa.GET("/profile", controllers.GetMahasiswaProfile)
+		mahasiswa.POST("/profile/verify-student", controllers.VerifyStudentForMahasiswaProfile)
 		mahasiswa.PUT("/profile", controllers.UpdateMahasiswaProfile)
+		mahasiswa.PUT("/profile/peminatan", controllers.UpdateMahasiswaPeminatan)
 		mahasiswa.GET("/stats", controllers.GetMahasiswaStats)
 		mahasiswa.GET("/absensi/summary", controllers.GetAttendanceSummary)
 		mahasiswa.POST("/absensi/scan", controllers.ScanAttendance)

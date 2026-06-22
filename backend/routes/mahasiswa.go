@@ -12,7 +12,9 @@ func MahasiswaRoutes(r *gin.RouterGroup) {
 	mahasiswa.Use(middlewares.JWTMiddleware(), middlewares.RoleMiddleware("mahasiswa"))
 	{
 		mahasiswa.GET("/profile", controllers.GetMahasiswaProfile)
+		mahasiswa.POST("/profile/verify-student", controllers.VerifyStudentForMahasiswaProfile)
 		mahasiswa.PUT("/profile", controllers.UpdateMahasiswaProfile)
+		mahasiswa.PUT("/profile/peminatan", controllers.UpdateMahasiswaPeminatan)
 		mahasiswa.GET("/courses", controllers.GetMahasiswaCourses)
 		mahasiswa.GET("/matkul/:course_id/pertemuan", controllers.GetPertemuanByMatkul)
 		mahasiswa.GET("/matkul/:course_id/pertemuan/:pertemuan", controllers.GetPertemuanDetail)

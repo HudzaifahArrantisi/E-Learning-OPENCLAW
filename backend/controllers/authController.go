@@ -295,7 +295,7 @@ func GetRegistrationOptions(c *gin.Context) {
 	prodi := strings.TrimSpace(c.Query("prodi"))
 	semester, err := strconv.Atoi(strings.TrimSpace(c.Query("semester")))
 	if err != nil || !isValidAcademicSemester(semester) {
-		utils.ValidationError(c, "Semester harus diisi dengan angka 1 sampai 8.")
+		utils.ValidationError(c, fmt.Sprintf("Semester harus diisi dengan angka %d sampai %d.", minAcademicSemester, maxAcademicSemester))
 		return
 	}
 	angkatan, err := strconv.Atoi(strings.TrimSpace(c.Query("angkatan")))
@@ -333,8 +333,8 @@ func Register(c *gin.Context) {
 		Role              string `json:"role" binding:"required"`
 		NIM               string `json:"nim,omitempty"`
 		VerificationToken string `json:"verification_token,omitempty"`
-		Semester          int    `json:"semester" binding:"required"`
-		Angkatan          int    `json:"angkatan" binding:"required"`
+		Semester          int    `json:"semester"`
+		Angkatan          int    `json:"angkatan"`
 		Peminatan         string `json:"peminatan,omitempty"`
 		Kelas             string `json:"kelas" binding:"required"`
 	}
@@ -366,20 +366,6 @@ func Register(c *gin.Context) {
 		return
 	}
 
-	if !isValidAcademicSemester(input.Semester) {
-		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "Semester harus 1 sampai 8."})
-		return
-	}
-	if !isValidAngkatan(input.Angkatan) {
-		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "Angkatan tidak valid."})
-		return
-	}
-	courseCategory, errMsg := resolveSpecializationCategory(input.Semester, input.Peminatan)
-	if errMsg != "" {
-		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": errMsg})
-		return
-	}
-
 	studentNIM, ok := normalizeStudentNIM(input.NIM)
 	if !ok {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -399,6 +385,26 @@ func Register(c *gin.Context) {
 	}
 	input.Name = verifiedStudent.Name
 	input.NIM = verifiedStudent.NIM
+
+	if input.Angkatan == 0 {
+		input.Angkatan = inferStudentEnrollmentYear(verifiedStudent)
+	}
+	if !isValidAngkatan(input.Angkatan) {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": "Angkatan tidak valid atau tidak dapat ditentukan dari NIM."})
+		return
+	}
+	if input.Semester == 0 {
+		input.Semester = calculateAcademicSemester(input.Angkatan, time.Now())
+	}
+	if !isValidAcademicSemester(input.Semester) {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": fmt.Sprintf("Semester harus %d sampai %d.", minAcademicSemester, maxAcademicSemester)})
+		return
+	}
+	courseCategory, errMsg := resolveSpecializationCategory(input.Semester, input.Peminatan)
+	if errMsg != "" {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "message": errMsg})
+		return
+	}
 
 	emailLocalPart, _, _ := strings.Cut(input.Email, "@")
 	if !strings.EqualFold(emailLocalPart, input.NIM) {
@@ -435,7 +441,7 @@ func Register(c *gin.Context) {
 	// PostgreSQL: use RETURNING id instead of LastInsertId
 	var userID int
 	err = tx.QueryRow("INSERT INTO users (email, password, role) VALUES ($1, $2, $3) RETURNING id",
-		input.Email, hashedPassword, input.Role).Scan(&userID)
+		input.Email, string(hashedPassword), input.Role).Scan(&userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "message": "Failed to create user"})
 		return
@@ -443,11 +449,12 @@ func Register(c *gin.Context) {
 
 	var mahasiswaID int
 	err = tx.QueryRow(`INSERT INTO mahasiswa
-		(user_id, name, nim, nama_pt, prodi, semester, angkatan, peminatan, kelas, pddikti_verified)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, NULLIF($8, ''), $9, true)
+		(user_id, name, nim, nama_pt, jenis_kelamin, tanggal_masuk, jenjang, prodi, status_mahasiswa, semester, angkatan, peminatan, kelas, pddikti_verified)
+		VALUES ($1, $2, $3, $4, NULLIF($5, ''), NULLIF($6, ''), NULLIF($7, ''), $8, NULLIF($9, ''), $10, $11, NULLIF($12, ''), $13, true)
 		RETURNING id`,
-		userID, input.Name, input.NIM, verifiedStudent.Institution, verifiedStudent.StudyProgram,
-		input.Semester, input.Angkatan, input.Peminatan, kelasCode).Scan(&mahasiswaID)
+		userID, input.Name, input.NIM, verifiedStudent.Institution, verifiedStudent.Gender,
+		verifiedStudent.EntryDate, verifiedStudent.EducationLevel, verifiedStudent.StudyProgram,
+		verifiedStudent.StudentStatus, input.Semester, input.Angkatan, input.Peminatan, kelasCode).Scan(&mahasiswaID)
 	redirect := "/mahasiswa"
 
 	if err != nil {
@@ -479,16 +486,21 @@ func Register(c *gin.Context) {
 				"email_verification_sent":     emailSent,
 				"email":                       input.Email,
 				"user": gin.H{
-					"id":        userID,
-					"email":     input.Email,
-					"role":      input.Role,
-					"name":      input.Name,
-					"nim":       input.NIM,
-					"prodi":     verifiedStudent.StudyProgram,
-					"semester":  input.Semester,
-					"angkatan":  input.Angkatan,
-					"peminatan": input.Peminatan,
-					"kelas":     kelasCode,
+					"id":               userID,
+					"email":            input.Email,
+					"role":             input.Role,
+					"name":             input.Name,
+					"nim":              input.NIM,
+					"jenis_kelamin":    verifiedStudent.Gender,
+					"nama_pt":          verifiedStudent.Institution,
+					"tanggal_masuk":    verifiedStudent.EntryDate,
+					"jenjang":          verifiedStudent.EducationLevel,
+					"prodi":            verifiedStudent.StudyProgram,
+					"status_mahasiswa": verifiedStudent.StudentStatus,
+					"semester":         input.Semester,
+					"angkatan":         input.Angkatan,
+					"peminatan":        input.Peminatan,
+					"kelas":            kelasCode,
 				},
 				"enrolled_courses": enrolledCourses,
 			},
@@ -506,16 +518,21 @@ func Register(c *gin.Context) {
 			"redirect":                redirect,
 			"email_verification_sent": emailSent,
 			"user": gin.H{
-				"id":        userID,
-				"email":     input.Email,
-				"role":      input.Role,
-				"name":      input.Name,
-				"nim":       input.NIM,
-				"prodi":     verifiedStudent.StudyProgram,
-				"semester":  input.Semester,
-				"angkatan":  input.Angkatan,
-				"peminatan": input.Peminatan,
-				"kelas":     kelasCode,
+				"id":               userID,
+				"email":            input.Email,
+				"role":             input.Role,
+				"name":             input.Name,
+				"nim":              input.NIM,
+				"jenis_kelamin":    verifiedStudent.Gender,
+				"nama_pt":          verifiedStudent.Institution,
+				"tanggal_masuk":    verifiedStudent.EntryDate,
+				"jenjang":          verifiedStudent.EducationLevel,
+				"prodi":            verifiedStudent.StudyProgram,
+				"status_mahasiswa": verifiedStudent.StudentStatus,
+				"semester":         input.Semester,
+				"angkatan":         input.Angkatan,
+				"peminatan":        input.Peminatan,
+				"kelas":            kelasCode,
 			},
 			"enrolled_courses": enrolledCourses,
 		},
@@ -528,6 +545,55 @@ func isValidAcademicSemester(value int) bool {
 
 func isValidAngkatan(value int) bool {
 	return value >= 2000 && value <= time.Now().Year()+1
+}
+
+func inferStudentEnrollmentYear(student pddiktiStudent) int {
+	for _, value := range []string{student.EntryDate, student.NIM} {
+		if year := firstLikelyEnrollmentYear(value); year != 0 {
+			return year
+		}
+	}
+	return 0
+}
+
+func firstLikelyEnrollmentYear(value string) int {
+	digits := regexp.MustCompile(`\D`).ReplaceAllString(value, "")
+	currentYear := time.Now().Year()
+	candidates := []string{}
+	if len(digits) >= 4 {
+		candidates = append(candidates, digits[:4])
+	}
+	if len(digits) >= 2 {
+		candidates = append(candidates, digits[:2])
+	}
+	for _, candidate := range candidates {
+		year, err := strconv.Atoi(candidate)
+		if err != nil {
+			continue
+		}
+		if year < 100 {
+			year += 2000
+		}
+		if year >= 2000 && year <= currentYear+1 {
+			return year
+		}
+	}
+	return 0
+}
+
+func calculateAcademicSemester(angkatan int, now time.Time) int {
+	academicStartYear := now.Year()
+	if now.Month() < time.July {
+		academicStartYear--
+	}
+	yearDiff := academicStartYear - angkatan
+	if yearDiff < 0 {
+		return 0
+	}
+	if now.Month() >= time.July {
+		return yearDiff*2 + 1
+	}
+	return yearDiff*2 + 2
 }
 
 func requiresSpecialization(semester int) bool {

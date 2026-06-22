@@ -105,7 +105,11 @@ func InitDB() {
 func ensureAcademicRegistrationSchemaCompatibility(db *sql.DB) error {
 	statements := []string{
 		`ALTER TABLE mahasiswa ADD COLUMN IF NOT EXISTS nama_pt VARCHAR(255)`,
+		`ALTER TABLE mahasiswa ADD COLUMN IF NOT EXISTS jenis_kelamin VARCHAR(30)`,
+		`ALTER TABLE mahasiswa ADD COLUMN IF NOT EXISTS tanggal_masuk VARCHAR(30)`,
+		`ALTER TABLE mahasiswa ADD COLUMN IF NOT EXISTS jenjang VARCHAR(50)`,
 		`ALTER TABLE mahasiswa ADD COLUMN IF NOT EXISTS prodi VARCHAR(255)`,
+		`ALTER TABLE mahasiswa ADD COLUMN IF NOT EXISTS status_mahasiswa VARCHAR(100)`,
 		`ALTER TABLE mahasiswa ADD COLUMN IF NOT EXISTS semester INTEGER`,
 		`ALTER TABLE mahasiswa ADD COLUMN IF NOT EXISTS angkatan INTEGER`,
 		`ALTER TABLE mahasiswa ADD COLUMN IF NOT EXISTS peminatan VARCHAR(50)`,
@@ -139,6 +143,49 @@ func ensureAcademicRegistrationSchemaCompatibility(db *sql.DB) error {
 	for _, stmt := range statements {
 		if _, err := db.Exec(stmt); err != nil {
 			return fmt.Errorf("%s: %w", stmt, err)
+		}
+	}
+
+	if err := ensureSemesterFourCourseCatalog(db); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func ensureSemesterFourCourseCatalog(db *sql.DB) error {
+	courses := []struct {
+		kode, nama, hari, jamMulai, jamSelesai, kategori string
+		sks, semester                                    int
+	}{
+		{"S4-W01", "VIRTUALISASI KEAMANAN JARINGAN", "Senin", "08:00", "10:30", "wajib", 3, 4},
+		{"S4-W02", "KECERDASAN ARTIFISIAL", "Selasa", "08:00", "10:30", "wajib", 3, 4},
+		{"S4-W03", "MANAJEMEN PROYEK", "Rabu", "08:00", "10:30", "wajib", 3, 4},
+		{"S4-W04", "PEMROGRAMAN FULLSTACK", "Kamis", "08:00", "10:30", "wajib", 3, 4},
+		{"S4-W05", "ETIKA PROFESI", "Jumat", "08:00", "09:40", "wajib", 2, 4},
+		{"S4-AI01", "MACHINE LEARNING", "Senin", "13:00", "15:30", "peminatan_ai", 3, 4},
+		{"S4-AI02", "DATA MINING", "Selasa", "13:00", "15:30", "peminatan_ai", 3, 4},
+		{"S4-AI03", "NATURAL LANGUAGE PROCESSING", "Rabu", "13:00", "15:30", "peminatan_ai", 3, 4},
+		{"S4-CS01", "KRIPTOGRAFI", "Senin", "13:00", "15:30", "peminatan_cs", 3, 4},
+		{"S4-CS02", "ETHICAL HACKING", "Selasa", "13:00", "15:30", "peminatan_cs", 3, 4},
+		{"S4-CS03", "DIGITAL FORENSIC", "Rabu", "13:00", "15:30", "peminatan_cs", 3, 4},
+	}
+
+	for _, course := range courses {
+		if _, err := db.Exec(`
+			UPDATE mata_kuliah
+			SET nama = $2, sks = $3, hari = $4, jam_mulai = $5, jam_selesai = $6, semester = $7, kategori = $8
+			WHERE kode = $1
+		`, course.kode, course.nama, course.sks, course.hari, course.jamMulai, course.jamSelesai, course.semester, course.kategori); err != nil {
+			return fmt.Errorf("update course catalog %s: %w", course.kode, err)
+		}
+		if _, err := db.Exec(`
+			INSERT INTO mata_kuliah (kode, nama, sks, dosen_id, hari, jam_mulai, jam_selesai, semester, kategori)
+			SELECT $1, $2, $3, d.id, $4, $5, $6, $7, $8
+			FROM (SELECT id FROM dosen ORDER BY id LIMIT 1) d
+			WHERE NOT EXISTS (SELECT 1 FROM mata_kuliah WHERE kode = $1)
+		`, course.kode, course.nama, course.sks, course.hari, course.jamMulai, course.jamSelesai, course.semester, course.kategori); err != nil {
+			return fmt.Errorf("insert course catalog %s: %w", course.kode, err)
 		}
 	}
 

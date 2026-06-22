@@ -8,7 +8,7 @@ import { calculateCurrentSemester, MAX_SEMESTER } from '../utils/semesterUtils'
 const NIM_PATTERN = /^[A-Za-z0-9.-]{4,32}$/
 
 const CURRENT_YEAR = new Date().getFullYear()
-const ANGKATAN_OPTIONS = Array.from({ length: 8 }, (_, index) => CURRENT_YEAR - index)
+const OFFICIAL_INSTITUTION = 'Sekolah Tinggi Teknologi Terpadu Nurul Fikri'
 
 const ROLE_DASHBOARD = {
   admin: '/admin',
@@ -26,6 +26,29 @@ const REGISTER_ROLES = [
   { value: 'ukm', label: 'UKM', enabled: false },
   { value: 'ormawa', label: 'Ormawa', enabled: false },
 ]
+
+const deriveAngkatanFromStudent = (student) => {
+  const values = [student?.entry_date, student?.tanggal_masuk, student?.nim].filter(Boolean)
+  for (const value of values) {
+    const digits = String(value).replace(/\D/g, '')
+    const candidates = []
+    if (digits.length >= 4) candidates.push(digits.slice(0, 4))
+    if (digits.length >= 2) candidates.push(digits.slice(0, 2))
+    for (const candidate of candidates) {
+      let year = Number(candidate)
+      if (!Number.isInteger(year)) continue
+      if (year < 100) year += 2000
+      if (year >= 2000 && year <= CURRENT_YEAR + 1) return year
+    }
+  }
+  return null
+}
+
+const formatEmpty = (value) => value || '-'
+const formatProgramInfo = (student) => {
+  const parts = [student?.education_level, student?.study_program].filter(Boolean)
+  return parts.length ? parts.join(' - ') : '-'
+}
 
 export default function LoginModal({ isOpen, onClose }) {
   const navigate = useNavigate()
@@ -187,9 +210,18 @@ export default function LoginModal({ isOpen, onClose }) {
         throw new Error(response.data?.message || 'NIM tidak dapat diverifikasi.')
       }
       setStudentVerification(data)
+      const derivedAngkatan = deriveAngkatanFromStudent(data)
+      const derivedSemesterInfo = derivedAngkatan ? calculateCurrentSemester(derivedAngkatan) : null
+      setSemesterInfo(derivedSemesterInfo)
       setRegisterForm(prev => ({
         ...prev,
         email: `${data.nim}@nurulfikri.ac.id`,
+        angkatan: derivedAngkatan ? String(derivedAngkatan) : '',
+        semester: derivedSemesterInfo && !derivedSemesterInfo.error && !derivedSemesterInfo.exceedsLimit
+          ? String(derivedSemesterInfo.semester)
+          : '',
+        peminatan: derivedSemesterInfo?.semester < 3 ? '' : prev.peminatan,
+        kelas: '',
       }))
     } catch (err) {
       if (requestId !== nimRequestRef.current) return
@@ -614,38 +646,21 @@ export default function LoginModal({ isOpen, onClose }) {
                 </svg>
                 <span>NIM Terverifikasi</span>
               </div>
-              <div className="space-y-0.5">
-                <p><span className="text-lp-text3">Nama:</span> <span className="font-semibold text-lp-text">{studentVerification.name}</span></p>
-                {studentVerification.study_program && (
-                  <p><span className="text-lp-text3">Prodi:</span> <span className="font-semibold text-lp-text">{studentVerification.study_program}</span></p>
-                )}
-                <p><span className="text-lp-text3">Kampus:</span> {studentVerification.institution}</p>
+              <div className="grid grid-cols-1 gap-1.5">
+                <p><span className="text-lp-text3">Nama:</span> <span className="font-semibold text-lp-text">{formatEmpty(studentVerification.name)}</span></p>
+                <p><span className="text-lp-text3">Jenis kelamin:</span> <span className="font-semibold text-lp-text">{formatEmpty(studentVerification.gender)}</span></p>
+                <p><span className="text-lp-text3">NIM / Email:</span> <span className="font-semibold text-lp-text">{studentVerification.nim}@nurulfikri.ac.id</span></p>
+                <p><span className="text-lp-text3">Perguruan tinggi:</span> <span className="font-semibold text-lp-text">{OFFICIAL_INSTITUTION}</span></p>
+                <p><span className="text-lp-text3">Tanggal masuk:</span> <span className="font-semibold text-lp-text">{formatEmpty(studentVerification.entry_date)}</span></p>
+                <p><span className="text-lp-text3">Jenjang / Prodi:</span> <span className="font-semibold text-lp-text">{formatProgramInfo(studentVerification)}</span></p>
+                <p><span className="text-lp-text3">Status terakhir:</span> <span className="font-semibold text-lp-text">{formatEmpty(studentVerification.student_status)}</span></p>
+                <p><span className="text-lp-text3">Angkatan:</span> <span className="font-semibold text-lp-text">{formatEmpty(registerForm.angkatan)}</span></p>
               </div>
             </div>
           )}
 
           {studentVerification && (
             <div className="flex flex-col gap-3">
-              {/* Angkatan selector */}
-              <div className="flex flex-col gap-2">
-                <label className="text-[11px] font-bold text-lp-text2 tracking-[0.08em] uppercase font-mono" htmlFor="register-angkatan">
-                  Angkatan
-                </label>
-                <select
-                  id="register-angkatan"
-                  name="angkatan"
-                  value={registerForm.angkatan}
-                  onChange={handleRegisterChange}
-                  className="w-full h-[46px] bg-lp-surface border border-lp-border rounded-xl px-3.5 text-lp-text text-sm outline-none focus:border-lp-borderA focus:ring-2 focus:ring-lp-accent/10"
-                  required
-                >
-                  <option value="">Pilih angkatan</option>
-                  {ANGKATAN_OPTIONS.map(angkatan => (
-                    <option key={angkatan} value={angkatan}>{angkatan}</option>
-                  ))}
-                </select>
-              </div>
-
               {/* Auto-calculated semester display */}
               {semesterInfo && (
                 <div className="flex flex-col gap-2">
