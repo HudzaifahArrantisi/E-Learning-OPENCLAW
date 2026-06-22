@@ -109,10 +109,7 @@ const ScanAbsensiContent = () => {
         return Promise.resolve({ hari: '', courses: [], total_courses: 0 })
       }
 
-      const isToday = day === getCurrentIndonesianDay()
-      const request = isToday ? api.getTodaySchedule() : api.getMahasiswaCoursesByDay(day)
-
-      return request.then(res => {
+      return api.getMahasiswaCoursesByDay(day).then(res => {
         const data = res.data.data || {}
         return normalizeCoursesResponse({
           ...data,
