@@ -84,11 +84,14 @@ export default function LoginModal({ isOpen, onClose }) {
 
   const nimDebounceRef = useRef(null)
   const nimRequestRef = useRef(0)
+  const nimAbortRef = useRef(null)
+  const currentNimRef = useRef('')
   const optionsRequestRef = useRef(0)
 
   // Clear any pending debounce timer when the modal unmounts.
   useEffect(() => () => {
     if (nimDebounceRef.current) clearTimeout(nimDebounceRef.current)
+    if (nimAbortRef.current) nimAbortRef.current.abort()
   }, [])
 
   useEffect(() => {
@@ -177,6 +180,12 @@ export default function LoginModal({ isOpen, onClose }) {
       setOptionsError('')
     }
     if (name === 'nim') {
+      currentNimRef.current = value.trim()
+      nimRequestRef.current += 1
+      if (nimAbortRef.current) {
+        nimAbortRef.current.abort()
+        nimAbortRef.current = null
+      }
       setStudentVerification(null)
       setSemesterInfo(null)
       setRegistrationOptions({ specializations: [], classPrefix: '', classExample: '' })
@@ -198,13 +207,15 @@ export default function LoginModal({ isOpen, onClose }) {
   // so only the result for the latest typed NIM is applied.
   const runNimCheck = async (nim) => {
     const requestId = ++nimRequestRef.current
+    const controller = new AbortController()
+    nimAbortRef.current = controller
     setCheckingNim(true)
     setNimError('')
     setInfo('')
     setStudentVerification(null)
     try {
-      const response = await api.verifyStudentRegistration({ nim })
-      if (requestId !== nimRequestRef.current) return // a newer request superseded this one
+      const response = await api.verifyStudentRegistration({ nim }, { signal: controller.signal })
+      if (requestId !== nimRequestRef.current || currentNimRef.current !== nim) return // a newer request/input superseded this one
       const data = response.data?.data
       if (!response.data?.success || !data?.verification_token) {
         throw new Error(response.data?.message || 'NIM tidak dapat diverifikasi.')
@@ -224,10 +235,12 @@ export default function LoginModal({ isOpen, onClose }) {
         kelas: '',
       }))
     } catch (err) {
-      if (requestId !== nimRequestRef.current) return
+      if (err.name === 'CanceledError' || err.code === 'ERR_CANCELED') return
+      if (requestId !== nimRequestRef.current || currentNimRef.current !== nim) return
       setNimError(err.response?.data?.message || err.message || 'Gagal memverifikasi NIM.')
     } finally {
-      if (requestId === nimRequestRef.current) setCheckingNim(false)
+      if (nimAbortRef.current === controller) nimAbortRef.current = null
+      if (requestId === nimRequestRef.current && currentNimRef.current === nim) setCheckingNim(false)
     }
   }
 
